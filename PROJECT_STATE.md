@@ -5,7 +5,7 @@ Updated: 2026-10-06
 ## Current baseline
 - Version: **V0.1.2**
 - Codename: **Foundation Stable**
-- Status: V1.0 IMPLEMENTING — INTERNAL GATE PASS; WINDOWS ACCEPTANCE PENDING
+- Status: V1.0 PRE-ACCEPTANCE — INTERNAL GATE PASS; WINDOWS ACCEPTANCE PENDING
 - Stable baseline: **YES**
 - User acceptance test: **PASS — Windows laptop + iPhone GitHub Preview**
 
@@ -80,3 +80,12 @@ Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản ph�
 - Production build: PASS.
 - GitHub Pages deploy: PASS.
 - Remaining: Windows/local real warehouse acceptance; physical image-copy backup policy; dependency security audit (npm reported 2 critical vulnerabilities during install).
+
+## Pre-Acceptance Checkpoint — optimized image backup
+- GitHub Actions run 37489137893: verify SUCCESS, deploy SUCCESS.
+- Production dependency audit: 0 vulnerabilities at critical gate (dev/tooling warnings remain isolated from production audit).
+- Sharp install/runtime on CI: PASS through core integration test.
+- Manual optimized image backup: PASS (real JPEG generation, resize max 1920, quality 85, no enlargement, physical backup file verified, reduced-byte assertion on test fixture).
+- Image backup is manual only; no automatic physical image backup task exists.
+- Original warehouse images remain untouched.
+- V1 is ready for consolidated Windows/local acceptance after acceptance package/instructions are prepared.
