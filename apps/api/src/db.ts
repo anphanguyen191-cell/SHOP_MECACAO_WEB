@@ -8,7 +8,8 @@ const projectRoot = path.resolve(here, '../../..')
 const dataDir = path.join(projectRoot, 'data')
 fs.mkdirSync(dataDir, { recursive: true })
 
-const dbPath = path.join(dataDir, 'shop.db')
+const dbPath = process.env.SHOP_DB_PATH ? path.resolve(process.env.SHOP_DB_PATH) : path.join(dataDir, 'shop.db')
+fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 export const db = new DatabaseSync(dbPath)
 
 db.exec(`
@@ -112,6 +113,8 @@ const upsert = db.prepare(`
     updated_at = datetime('now')
 `)
 
+const currentSchema = Number((db.prepare("SELECT value FROM app_metadata WHERE key='schema_version'").get() as { value?: string } | undefined)?.value ?? 0)
+if (currentSchema > 100) throw new Error('Database schema mới hơn phiên bản ứng dụng; dừng để bảo vệ dữ liệu')
 upsert.run('schema_version', '100')
 upsert.run('app_version', '1.0.0-dev')
 
