@@ -69,6 +69,7 @@ app.post('/api/inventory/import-batch', (req, res) => {
 })
 app.post('/api/inventory/adjust', (req, res) => {
   try {
+    if(req.body.direction!=='plus'&&req.body.direction!=='minus') return res.status(400).json({error:'Hướng điều chỉnh kho không hợp lệ'})
     const type = req.body.direction === 'minus' ? 'ADJUST_MINUS' : 'ADJUST_PLUS'
     const r = addInventory(Number(req.body.variantId), type, Number(req.body.quantity), undefined, req.body.note)
     res.status(201).json({ ok: true, id: Number(r.lastInsertRowid) })
