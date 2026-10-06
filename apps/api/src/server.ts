@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dbPath } from './db.js'
 import { createProduct, getProduct, listProducts, suggestProductCode, suggestSku } from './products.js'
-import { addInventory, history } from './inventory.js'
+import { addInventory, batchImport, history } from './inventory.js'
 import { scanStore } from './storeScanner.js'
 import { commitStoreImport } from './storeImport.js'
 import { createBackup } from './backup.js'
@@ -32,6 +32,10 @@ app.post('/api/products', (req, res) => {
 app.post('/api/inventory/import', (req, res) => {
   try { const r = addInventory(Number(req.body.variantId), 'IMPORT', Number(req.body.quantity), req.body.unitCost, req.body.note); res.status(201).json({ ok: true, id: Number(r.lastInsertRowid) }) }
   catch (e) { res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể nhập kho' }) }
+})
+app.post('/api/inventory/import-batch', (req, res) => {
+  try { res.status(201).json({ ok:true, ids:batchImport(req.body.items) }) }
+  catch(e){ res.status(400).json({ error:e instanceof Error?e.message:'Không thể nhập kho nhiều size' }) }
 })
 app.post('/api/inventory/adjust', (req, res) => {
   try {
