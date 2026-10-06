@@ -48,4 +48,8 @@ Updated: 2026-10-06
 ## Next milestone
 **V1.0 — Product + SKU + Inventory Ledger**
 
-Status: **PROPOSAL REQUIRED — implementation must not start until user approves scope.**
+Status: **APPROVED / READY FOR IMPLEMENTATION**
+
+Specification: `V1_SPEC.md`
+
+Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản phẩm>/<Size>/ảnh`; mã/SKU được gợi ý tự động nhưng người dùng được chọn/chỉnh trước khi lưu.
