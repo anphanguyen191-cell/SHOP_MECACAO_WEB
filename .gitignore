@@ -4,6 +4,7 @@ apps/*/dist/
 data/*.db
 data/*.db-shm
 data/*.db-wal
+data/backups/
 storage/images/*
 !storage/images/.gitkeep
 .env
