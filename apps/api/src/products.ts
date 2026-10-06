@@ -112,3 +112,15 @@ export function createProduct(input: ProductInput) {
     throw error
   }
 }
+
+export function listCategories() {
+  return db.prepare("SELECT id,name,status FROM categories WHERE status='active' ORDER BY name").all()
+}
+
+export function setProductStatus(id: number, status: 'active'|'inactive') {
+  if (!Number.isInteger(id) || id <= 0) throw new Error('Sản phẩm không hợp lệ')
+  if (status !== 'active' && status !== 'inactive') throw new Error('Trạng thái không hợp lệ')
+  const result = db.prepare("UPDATE products SET status=?,updated_at=datetime('now') WHERE id=?").run(status,id)
+  if (Number(result.changes) !== 1) throw new Error('Không tìm thấy sản phẩm')
+  return getProduct(id)
+}
