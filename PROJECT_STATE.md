@@ -48,7 +48,7 @@ Updated: 2026-10-06
 ## Next milestone
 **V1.0 — Product + SKU + Inventory Ledger**
 
-Status: **IMPLEMENTING — DB schema v100 committed**
+Status: **IMPLEMENTING — DB + API/Product/SKU backend committed**
 
 Specification: `V1_SPEC.md`
 
@@ -59,8 +59,8 @@ Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản ph�
 - [x] Specification locked.
 - [x] SQLite schema v100: categories, products, variants, images, inventory ledger, settings.
 - [x] Derived stock view; no direct stock column.
-- [ ] API/service layer.
-- [ ] Product/SKU workflows.
+- [x] API/service layer.
+- [x] Product/SKU engine/workflows (backend).
 - [ ] Existing folder/image integration.
 - [ ] Inventory UI.
 - [ ] Automated test gate.
