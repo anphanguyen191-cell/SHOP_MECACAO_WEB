@@ -18,8 +18,10 @@ function slug(value: string) {
 
 export function suggestProductCode(name: string) {
   const prefix = slug(name).slice(0, 2) || 'SP'
-  const row = db.prepare('SELECT COUNT(*) AS total FROM products WHERE product_code LIKE ?').get(prefix + '%') as { total: number }
-  return prefix + String(row.total + 1).padStart(4, '0')
+  let n = 1
+  const exists = db.prepare('SELECT 1 FROM products WHERE product_code = ?')
+  while (exists.get(prefix + String(n).padStart(4, '0'))) n++
+  return prefix + String(n).padStart(4, '0')
 }
 
 export function suggestSku(productCode: string, size: string) {
@@ -64,6 +66,8 @@ export function getProduct(id: number) {
 export function createProduct(input: ProductInput) {
   if (!input.name?.trim()) throw new Error('Tên sản phẩm là bắt buộc')
   if (!Array.isArray(input.variants) || input.variants.length === 0) throw new Error('Cần ít nhất một size')
+  if (!Number.isFinite(input.costPrice ?? 0) || (input.costPrice ?? 0) < 0) throw new Error('Giá nhập không hợp lệ')
+  if (!Number.isFinite(input.salePrice ?? 0) || (input.salePrice ?? 0) < 0) throw new Error('Giá bán không hợp lệ')
   const sizes = input.variants.map(v => v.size.trim())
   if (sizes.some(s => !s)) throw new Error('Size không được để trống')
   if (new Set(sizes.map(s => s.toLowerCase())).size !== sizes.length) throw new Error('Size bị trùng')
@@ -93,7 +97,8 @@ export function createProduct(input: ProductInput) {
       const size = item.size.trim()
       const sku = (item.sku?.trim() || suggestSku(productCode, size)).toUpperCase()
       const vr = insertVariant.run(productId, sku, size)
-      const qty = Math.max(0, Math.trunc(item.openingStock ?? 0))
+      const qty = item.openingStock ?? 0
+      if (!Number.isFinite(qty) || !Number.isInteger(qty) || qty < 0) throw new Error('Tồn đầu phải là số nguyên không âm')
       if (qty > 0) opening.run(Number(vr.lastInsertRowid), qty, input.costPrice ?? 0, 'Tồn đầu')
     }
     db.exec('COMMIT')
