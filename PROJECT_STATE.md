@@ -3,42 +3,49 @@
 Updated: 2026-10-06
 
 ## Current baseline
-- Version: **V0.1.1**
-- Codename: **Foundation local setup patch**
-- Status: **TESTING**
-- Stable baseline: **NO — local retest pending**
+- Version: **V0.1.2**
+- Codename: **Foundation Stable**
+- Status: **DONE / STABLE**
+- Stable baseline: **YES**
+- User acceptance test: **PASS — Windows laptop + iPhone GitHub Preview**
 
 ## Architecture decisions — APPROVED
 1. Greenfield; không phụ thuộc core desktop cũ.
 2. Local-first web app.
 3. React + TypeScript + Vite + PWA frontend.
 4. Node.js + Express local API.
-5. SQLite local database.
-6. Dùng built-in `node:sqlite`; không dùng native npm SQLite addon cần Visual Studio Build Tools.
+5. SQLite local database via built-in `node:sqlite`.
+6. Không dùng native SQLite npm addon cần Visual Studio Build Tools.
 7. GitHub = source/version/preview; không lưu dữ liệu shop thật.
 8. GitHub Pages = DEMO/PREVIEW.
 9. Local production = `http://localhost:3000`.
-10. Proposal → Approve → Implement → Test → PASS → Baseline.
+10. Development gate: Proposal → Approve → Implement → Internal checks → User Test → PASS → Baseline.
+11. Không giao user test khi chưa qua pre-test gate; phần không thể xác minh phải ghi UNVERIFIED.
 
-## PASS
-- [x] GitHub repository.
+## V0.1.2 PASS checklist
+- [x] GitHub repository/source.
 - [x] GitHub Actions install/build.
 - [x] GitHub Pages deploy.
 - [x] iPhone preview.
 - [x] DEMO mode detection.
+- [x] Windows Node/npm environment.
+- [x] `SETUP_FIRST_TIME.bat` → SETUP PASS.
+- [x] API/frontend production build.
+- [x] `START_SHOP.bat` startup patch.
+- [x] `http://localhost:3000` reachable.
+- [x] LOCAL mode detection.
+- [x] `data/shop.db` created.
 
-## Local test history
-- V0.1 initial local setup: **FAIL**.
-- Root cause: `better-sqlite3` attempted native compilation on Node 24 and required Visual Studio Build Tools.
-- Decision: **do not require Visual Studio/C++ toolchain**.
-- Patch V0.1.1: replaced `better-sqlite3` with Node built-in `node:sqlite`.
+## Defects found and closed
+1. `better-sqlite3` required native compilation/Visual Studio Build Tools on Node 24.
+   - Resolution: replaced with built-in `node:sqlite`.
+2. Initial Windows startup script opened browser while server was unavailable / quoting was fragile.
+   - Resolution: V0.1.2 startup waits for `/api/health` before opening browser and preserves server error output.
 
-## RETEST REQUIRED
-- [ ] Download/refresh V0.1.1 source.
-- [ ] `SETUP_FIRST_TIME.bat` → PASS.
-- [ ] `START_SHOP.bat` → localhost.
-- [ ] Badge → LOCAL.
-- [ ] `data/shop.db` created.
+## Known non-blocking item
+- GitHub Preview mobile navigation can overflow horizontally; defer UI polish until feature UI exists.
 
-## Next milestone after PASS
+## Next milestone
 **V1.0 — Product + SKU + Inventory Ledger**
+
+Status: **PROPOSAL REQUIRED — implementation must not start until user approves scope.**
