@@ -48,7 +48,7 @@ Updated: 2026-10-06
 ## Next milestone
 **V1.0 — Product + SKU + Inventory Ledger**
 
-Status: **IMPLEMENTING — scanner + approved import backend committed**
+Status: **IMPLEMENTING — first V1 frontend committed; test gate pending**
 
 Specification: `V1_SPEC.md`
 
@@ -63,6 +63,7 @@ Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản ph�
 - [x] Product/SKU engine/workflows (backend).
 - [x] Existing folder/image scanner backend (read-only preview).
 - [x] Import approval/commit backend with explicit confirmation + DB rollback.
-- [ ] Inventory UI.
+- [x] Product/Inventory list UI + store scanner preview UI.
+- [ ] Import edit/approval UI.
 - [ ] Automated test gate.
 - [ ] User acceptance test.
