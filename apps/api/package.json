@@ -1,6 +1,6 @@
 {
   "name": "@shopmecacao/api",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,9 +9,8 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
-  "dependencies": {"better-sqlite3": "^11.8.1", "express": "^4.21.2"},
+  "dependencies": {"express": "^4.21.2"},
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.5",
     "tsx": "^4.19.2",
