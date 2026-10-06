@@ -35,7 +35,8 @@ export function scanStore(rootPath: string): ScannedProduct[] {
 }
 
 export function isPathInsideRoot(rootPath: string, candidate: string) {
-  const root = path.resolve(rootPath) + path.sep
+  const root = path.resolve(rootPath)
   const target = path.resolve(candidate)
-  return target.startsWith(root)
+  const rel = path.relative(root, target)
+  return rel.length > 0 && rel !== '..' && !rel.startsWith('..' + path.sep) && !path.isAbsolute(rel)
 }
