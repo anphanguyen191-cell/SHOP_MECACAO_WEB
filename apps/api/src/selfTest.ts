@@ -1,5 +1,5 @@
 import { db } from './db.js'
-import { createProduct } from './products.js'
+import { createProduct, suggestProductCode, suggestSku } from './products.js'
 import { addInventory, batchImport, history } from './inventory.js'
 import { isPathInsideRoot } from './storeScanner.js'
 import { createBackup } from './backup.js'
@@ -13,6 +13,14 @@ const suffix=Date.now().toString(36).toUpperCase()
 const product=createProduct({name:'SELF TEST '+suffix,productCode:'T'+suffix,costPrice:10000,salePrice:20000,variants:[{size:'Size Test',sku:'SKU-'+suffix,openingStock:5}]})
 assert(product,'create product')
 const variant=(product.variants as Array<{id:number;stock:number}>)[0]
+assert(suggestSku('T'+suffix,'Size Test')!=='SKU-'+suffix,'SKU suggestion must avoid existing collision only when same normalized base applies')
+let badOpening=false
+try{createProduct({name:'BAD OPEN '+suffix,productCode:'O'+suffix,variants:[{size:'X',sku:'OSKU-'+suffix,openingStock:1.5}]})}catch{badOpening=true}
+assert(badOpening,'fractional opening stock must be rejected')
+assert(!(db.prepare('SELECT 1 FROM products WHERE product_code=?').get('O'+suffix)),'bad opening product must rollback')
+let badPrice=false
+try{createProduct({name:'BAD PRICE '+suffix,productCode:'P'+suffix,costPrice:-1,variants:[{size:'X',sku:'PSKU-'+suffix}]})}catch{badPrice=true}
+assert(badPrice,'negative price must be rejected')
 assert(variant.stock===5,'opening stock must be 5')
 addInventory(variant.id,'IMPORT',3,11000,'self test import')
 addInventory(variant.id,'ADJUST_PLUS',2,undefined,'self test plus')
@@ -67,4 +75,4 @@ try{
  db.prepare('DELETE FROM products WHERE id=?').run((product.product as {id:number}).id)
  db.exec('COMMIT')
 }catch(e){db.exec('ROLLBACK');throw e}
-console.log('SELF_TEST_V1 PASS: product, opening, import, adjustments, negative guard, integer guard, history, batch rollback, path guard, store import rollback, backup, cleanup')
+console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, path guard, store import rollback, backup, cleanup')
