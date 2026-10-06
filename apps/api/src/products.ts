@@ -25,8 +25,12 @@ export function suggestProductCode(name: string) {
 }
 
 export function suggestSku(productCode: string, size: string) {
-  const sizePart = slug(size).slice(0, 12) || 'SIZE'
-  return `${productCode}-${sizePart}`
+  const base = `${slug(productCode) || 'SP'}-${slug(size).slice(0, 12) || 'SIZE'}`
+  const exists = db.prepare('SELECT 1 FROM product_variants WHERE sku = ?')
+  if (!exists.get(base)) return base
+  let n = 2
+  while (exists.get(`${base}-${n}`)) n++
+  return `${base}-${n}`
 }
 
 export function listProducts(search = '') {
