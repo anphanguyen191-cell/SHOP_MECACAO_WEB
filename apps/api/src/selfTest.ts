@@ -19,7 +19,11 @@ const suffix=Date.now().toString(36).toUpperCase()
 const product=createProduct({name:'SELF TEST '+suffix,productCode:'T'+suffix,costPrice:10000,salePrice:20000,variants:[{size:'Size Test',sku:'SKU-'+suffix,openingStock:5}]})
 assert(product,'create product')
 const variant=(product.variants as Array<{id:number;stock:number}>)[0]
-assert(suggestSku('T'+suffix,'Size Test')!=='SKU-'+suffix,'SKU suggestion must avoid existing collision only when same normalized base applies')
+const suggestedBase=suggestSku('COLLIDE'+suffix,'Size X')
+const collision=createProduct({name:'COLLISION '+suffix,productCode:'C'+suffix,variants:[{size:'Size X',sku:suggestedBase}]})
+const suggestedAfterCollision=suggestSku('COLLIDE'+suffix,'Size X')
+assert(suggestedAfterCollision!==suggestedBase,'SKU suggestion must avoid an existing normalized-base collision')
+const collisionVariant=(collision.variants as Array<{id:number}>)[0]
 let badOpening=false
 try{createProduct({name:'BAD OPEN '+suffix,productCode:'O'+suffix,variants:[{size:'X',sku:'OSKU-'+suffix,openingStock:1.5}]})}catch{badOpening=true}
 assert(badOpening,'fractional opening stock must be rejected')
@@ -114,6 +118,9 @@ db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(imported
 db.prepare('DELETE FROM product_variants WHERE id=?').run(importedVariant.id)
 db.prepare('DELETE FROM products WHERE id=?').run(importedId)
 fs.rmSync(importRoot,{recursive:true,force:true})
+db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(collisionVariant.id)
+db.prepare('DELETE FROM product_variants WHERE id=?').run(collisionVariant.id)
+db.prepare('DELETE FROM products WHERE id=?').run((collision.product as {id:number}).id)
 db.exec('BEGIN IMMEDIATE')
 try{
  db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(variant.id)
