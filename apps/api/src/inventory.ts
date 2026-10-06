@@ -1,28 +1,39 @@
 import { db } from './db.js'
 
 export type InventoryType = 'IMPORT' | 'ADJUST_PLUS' | 'ADJUST_MINUS'
+export type BatchImportItem = { variantId:number; quantity:number; unitCost?:number; note?:string }
 
-export function addInventory(variantId: number, type: InventoryType, quantity: number, unitCost?: number, note?: string) {
-  const qty = Math.trunc(quantity)
-  if (!Number.isInteger(variantId) || variantId <= 0) throw new Error('Variant không hợp lệ')
-  if (!['IMPORT','ADJUST_PLUS','ADJUST_MINUS'].includes(type)) throw new Error('Loại giao dịch kho không hợp lệ')
-  if (!Number.isFinite(quantity) || !Number.isInteger(quantity) || qty <= 0) throw new Error('Số lượng phải là số nguyên lớn hơn 0')
-  if (unitCost !== undefined && (!Number.isFinite(unitCost) || unitCost < 0)) throw new Error('Giá nhập không hợp lệ')
-  const variant = db.prepare('SELECT id FROM product_variants WHERE id = ?').get(variantId)
-  if (!variant) throw new Error('Không tìm thấy SKU')
-  if (type === 'ADJUST_MINUS') {
-    const row = db.prepare('SELECT COALESCE(stock,0) AS stock FROM inventory_stock WHERE variant_id = ?').get(variantId) as { stock: number } | undefined
-    if (qty > Number(row?.stock ?? 0)) throw new Error('Điều chỉnh âm vượt quá tồn hiện tại')
-  }
-  return db.prepare(`
-    INSERT INTO inventory_transactions(variant_id,transaction_type,quantity,unit_cost,note)
-    VALUES(?,?,?,?,?)
-  `).run(variantId, type, qty, unitCost ?? null, note ?? null)
+function validate(variantId:number,type:InventoryType,quantity:number,unitCost?:number){
+ if(!Number.isInteger(variantId)||variantId<=0) throw new Error('Variant không hợp lệ')
+ if(!['IMPORT','ADJUST_PLUS','ADJUST_MINUS'].includes(type)) throw new Error('Loại giao dịch kho không hợp lệ')
+ if(!Number.isFinite(quantity)||!Number.isInteger(quantity)||quantity<=0) throw new Error('Số lượng phải là số nguyên lớn hơn 0')
+ if(unitCost!==undefined&&(!Number.isFinite(unitCost)||unitCost<0)) throw new Error('Giá nhập không hợp lệ')
+ const variant=db.prepare('SELECT id FROM product_variants WHERE id=?').get(variantId)
+ if(!variant) throw new Error('Không tìm thấy SKU')
+ if(type==='ADJUST_MINUS'){
+  const row=db.prepare('SELECT COALESCE(stock,0) AS stock FROM inventory_stock WHERE variant_id=?').get(variantId) as {stock:number}|undefined
+  if(quantity>Number(row?.stock??0)) throw new Error('Điều chỉnh âm vượt quá tồn hiện tại')
+ }
 }
 
-export function history(variantId: number) {
-  return db.prepare(`
-    SELECT id, transaction_type, quantity, unit_cost, note, created_at
-    FROM inventory_transactions WHERE variant_id = ? ORDER BY id DESC
-  `).all(variantId)
+export function addInventory(variantId:number,type:InventoryType,quantity:number,unitCost?:number,note?:string){
+ validate(variantId,type,quantity,unitCost)
+ return db.prepare('INSERT INTO inventory_transactions(variant_id,transaction_type,quantity,unit_cost,note) VALUES(?,?,?,?,?)')
+  .run(variantId,type,quantity,unitCost??null,note??null)
+}
+
+export function batchImport(items:BatchImportItem[]){
+ if(!Array.isArray(items)||items.length===0) throw new Error('Cần ít nhất một SKU để nhập kho')
+ db.exec('BEGIN IMMEDIATE')
+ try{
+  const insert=db.prepare("INSERT INTO inventory_transactions(variant_id,transaction_type,quantity,unit_cost,note) VALUES(?,'IMPORT',?,?,?)")
+  const ids:number[]=[]
+  for(const item of items){validate(item.variantId,'IMPORT',item.quantity,item.unitCost);const r=insert.run(item.variantId,item.quantity,item.unitCost??null,item.note??null);ids.push(Number(r.lastInsertRowid))}
+  db.exec('COMMIT');return ids
+ }catch(e){db.exec('ROLLBACK');throw e}
+}
+
+export function history(variantId:number){
+ if(!Number.isInteger(variantId)||variantId<=0) throw new Error('Variant không hợp lệ')
+ return db.prepare('SELECT id,transaction_type,quantity,unit_cost,note,created_at FROM inventory_transactions WHERE variant_id=? ORDER BY id DESC').all(variantId)
 }
