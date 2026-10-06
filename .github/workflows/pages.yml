@@ -19,12 +19,8 @@ jobs:
         with:
           node-version: 22
       - run: npm install
-      - name: Typecheck all workspaces
-        run: npm run typecheck
-      - name: Core integration self-test
-        run: npm run test:core
-      - name: Build all workspaces
-        run: npm run build
+      - name: V1 internal gate
+        run: npm run test:gate
   deploy:
     environment:
       name: github-pages
