@@ -5,7 +5,7 @@ Updated: 2026-10-06
 ## Current baseline
 - Version: **V0.1.2**
 - Codename: **Foundation Stable**
-- Status: **DONE / STABLE**
+- Status: V1.0 IMPLEMENTING — INTERNAL GATE PASS; WINDOWS ACCEPTANCE PENDING
 - Stable baseline: **YES**
 - User acceptance test: **PASS — Windows laptop + iPhone GitHub Preview**
 
@@ -71,3 +71,12 @@ Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản ph�
 - [x] Backup creation self-test source.
 - [ ] Automated test gate runtime PASS (GitHub workflow status unavailable via connector).
 - [ ] User acceptance test.
+
+## Internal Gate Evidence — 2026-10-06
+- GitHub Actions run 37486889569: verify SUCCESS, deploy SUCCESS.
+- TypeScript web/API: PASS.
+- SCHEMA_SELF_TEST: PASS (blank, reopen, future-version guard, legacy guard, corrupt-version guard).
+- SELF_TEST_V1: PASS (ledger, rollback, filters/settings/inactive, image pipeline, persistence/integrity/FK, store import rollback, backup cleanup).
+- Production build: PASS.
+- GitHub Pages deploy: PASS.
+- Remaining: Windows/local real warehouse acceptance; physical image-copy backup policy; dependency security audit (npm reported 2 critical vulnerabilities during install).
