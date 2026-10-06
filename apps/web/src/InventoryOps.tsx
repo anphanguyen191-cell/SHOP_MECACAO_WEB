@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 
 type Variant={id:number;sku:string;size:string;stock:number}
-type Detail={product:{id:number;product_code:string;name:string};variants:Variant[]}
+type ImageRow={id:number;variant_id?:number|null;is_primary:number}
+type Detail={product:{id:number;product_code:string;name:string};variants:Variant[];images:ImageRow[]}
 type History={id:number;transaction_type:string;quantity:number;note?:string;created_at:string}
 
 export default function InventoryOps({productId,onClose}:{productId:number;onClose:()=>void}){
@@ -18,6 +19,7 @@ export default function InventoryOps({productId,onClose}:{productId:number;onClo
  async function loadHistory(){const r=await fetch('/api/inventory/history/'+variantId);if(r.ok)setRows(await r.json())}
  if(!detail)return <div className="approval">Đang tải...</div>
  return <div className="approval"><div className="row"><div><b>{detail.product.product_code}</b><h3>{detail.product.name}</h3></div><button onClick={onClose}>ĐÓNG</button></div>
+ {detail.images?.length>0&&<div className="imageStrip">{detail.images.slice(0,6).map(img=><img key={img.id} src={'/api/images/'+img.id} alt={detail.product.name} onError={e=>{e.currentTarget.style.display='none'}}/>)}</div>}
  <label>Size / SKU<select value={variantId} onChange={e=>setVariantId(Number(e.target.value))}>{detail.variants.map(v=><option key={v.id} value={v.id}>{v.size} · {v.sku} · tồn {v.stock}</option>)}</select></label>
  <div className="formGrid"><label>Số lượng<input type="number" min="1" value={qty} onChange={e=>setQty(Math.max(1,Number(e.target.value)||1))}/></label><label>Giá nhập<input type="number" min="0" value={cost} onChange={e=>setCost(Math.max(0,Number(e.target.value)||0))}/></label><label>Ghi chú<input value={note} onChange={e=>setNote(e.target.value)}/></label></div>
  <div className="inventoryActions"><button className="primary" onClick={()=>mutate('import')}>NHẬP KHO +</button><button onClick={()=>mutate('plus')}>ĐIỀU CHỈNH +</button><button onClick={()=>mutate('minus')}>ĐIỀU CHỈNH -</button><button onClick={loadHistory}>LỊCH SỬ</button></div>{msg&&<p className="notice">{msg}</p>}
