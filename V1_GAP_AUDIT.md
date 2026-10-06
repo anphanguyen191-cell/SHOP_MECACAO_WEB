@@ -1,7 +1,7 @@
 # V1.0 GAP AUDIT
 Updated: 2026-10-06
 Source of truth: V1_SPEC.md
-Status: IMPLEMENTING — INTERNAL GATE SOURCE COMPLETE, RUNTIME PASS NOT YET CONFIRMED
+Status: IMPLEMENTING — INTERNAL RUNTIME GATE PASS; WINDOWS ACCEPTANCE PENDING
 
 ## Implemented
 - Schema v100 with guarded bootstrap and integrity/foreign-key checks.
@@ -19,7 +19,7 @@ Status: IMPLEMENTING — INTERNAL GATE SOURCE COMPLETE, RUNTIME PASS NOT YET CON
 - Consolidated `npm run test:gate` wired into GitHub Actions.
 
 ## Remaining before user test
-1. Confirm runtime PASS of consolidated gate (typecheck + schema tests + core integration + build).
+1. DONE — consolidated runtime gate PASS on GitHub Actions run 37486889569.
 2. Normalize remaining API error paths/runtime query validation.
 3. Complete category/size/status inventory filters in UI/API parity.
 4. Finish product inactive UI controls.
