@@ -5,7 +5,7 @@ Statuses: BACKLOG / PROPOSED / APPROVED / IMPLEMENTING / TESTING / DONE / REJECT
 | Version | Milestone | Status |
 |---|---|---|
 | V0.1.2 | Foundation / local + GitHub preview | DONE / STABLE |
-| V1.0 | Product + SKU + Inventory Ledger | PROPOSED NEXT |
+| V1.0 | Product + SKU + Inventory Ledger | APPROVED / READY FOR IMPLEMENTATION |
 | V2.0 | Orders / sales / stock deduction | BACKLOG |
 | V3.0 | Customers + receipt PNG | BACKLOG |
 | V4.0 | Reports + stocktake | BACKLOG |
