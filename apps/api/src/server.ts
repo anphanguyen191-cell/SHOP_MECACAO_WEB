@@ -76,8 +76,8 @@ app.post('/api/inventory/adjust', (req, res) => {
 })
 app.get('/api/inventory/history/:variantId', (req,res) => { try{res.json(history(Number(req.params.variantId)))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể đọc lịch sử kho'})} })
 
-app.post('/api/backup', (_req, res) => {
-  try { res.status(201).json({ ok: true, backup: createBackup() }) }
+app.post('/api/backup', (req, res) => {
+  try { const mode=req.body?.mode==='full'?'full':'manifest'; res.status(201).json({ ok: true, backup: createBackup(mode) }) }
   catch (e) { res.status(500).json({ error: e instanceof Error ? e.message : 'Không thể backup database' }) }
 })
 
