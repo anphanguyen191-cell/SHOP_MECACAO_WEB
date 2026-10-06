@@ -10,6 +10,7 @@ import { commitStoreImport } from './storeImport.js'
 import { createBackup } from './backup.js'
 import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
 import { inventoryRows, inventoryHistory } from './inventoryQuery.js'
+import { getImageRecord, imageMime } from './images.js'
 
 const app = express()
 const PORT = Number(process.env.PORT ?? 3000)
@@ -18,6 +19,17 @@ app.use(express.json({ limit: '2mb' }))
 app.get('/api/health', (_req, res) => res.json({
   ok: true, app: 'SHOP_MECACAO_WEB', version: '1.0.0-dev', schema: 100, database: path.basename(dbPath)
 }))
+
+app.get('/api/images/:id', (req,res) => {
+  try {
+    const image=getImageRecord(Number(req.params.id))
+    if(!image) return res.status(404).json({error:'Không tìm thấy ảnh'})
+    if(image.missing) return res.status(410).json({error:'File ảnh không còn trên ổ đĩa'})
+    res.type(imageMime(image.file_path))
+    res.setHeader('Cache-Control','private, max-age=300')
+    return res.sendFile(image.file_path)
+  } catch(e) { return res.status(400).json({error:e instanceof Error?e.message:'Không thể đọc ảnh'}) }
+})
 
 app.get('/api/products', (req, res) => res.json(listProducts(String(req.query.search ?? ''))))
 app.get('/api/categories', (_req,res) => res.json(listCategories()))
