@@ -1,5 +1,5 @@
 import { useEffect,useState } from 'react'
-type Row={variant_id:number;sku:string;size:string;product_code:string;product_name:string;category?:string;stock:number;product_status:string}
+type Row={variant_id:number;product_id:number;sku:string;size:string;product_code:string;product_name:string;category?:string;stock:number;product_status:string}
 type Hist={id:number;transaction_type:string;quantity:number;created_at:string;product_name:string;sku:string;size:string;note?:string}
 import BatchImport from './BatchImport'
 
