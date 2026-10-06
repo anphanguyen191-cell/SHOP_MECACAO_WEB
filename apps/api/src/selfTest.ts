@@ -10,6 +10,7 @@ import { commitStoreImport } from './storeImport.js'
 import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
 import { inventoryRows, inventoryHistory } from './inventoryQuery.js'
 import { setProductStatus } from './products.js'
+import { getImageRecord, imageMime } from './images.js'
 
 function assert(ok: unknown, message: string): asserts ok { if (!ok) throw new Error('SELF_TEST FAIL: '+message) }
 const suffix=Date.now().toString(36).toUpperCase()
@@ -71,6 +72,14 @@ assert(imported,'store import must commit')
 const importedId=(imported!.product as {id:number}).id
 const importedVariant=(imported!.variants as Array<{id:number;stock:number}>)[0]
 assert(importedVariant.stock===3,'store import opening stock must persist')
+const importedImage=(db.prepare('SELECT id FROM product_images WHERE product_id=? ORDER BY id LIMIT 1').get(importedId) as {id:number})
+const imageRecord=getImageRecord(importedImage.id)
+assert(imageRecord&&!imageRecord.missing,'registered image must resolve by database id')
+assert(imageMime(imageRecord.file_path)==='image/jpeg','jpg MIME must be correct')
+fs.unlinkSync(goodImage)
+const missingImage=getImageRecord(importedImage.id)
+assert(missingImage?.missing===true,'missing image file must not corrupt product metadata')
+fs.writeFileSync(goodImage,'test-image')
 let rollbackBlocked=false
 try{commitStoreImport({rootPath:importRoot,name:'BAD '+suffix,productCode:'B'+suffix,variants:[{size:'Size X',sku:'BSKU-'+suffix,openingStock:1,images:[path.join(importRoot,'missing.jpg')]}]})}catch{rollbackBlocked=true}
 assert(rollbackBlocked,'bad image import must fail')
@@ -91,4 +100,4 @@ try{
  db.prepare('DELETE FROM products WHERE id=?').run((product.product as {id:number}).id)
  db.exec('COMMIT')
 }catch(e){db.exec('ROLLBACK');throw e}
-console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, store import rollback, backup, cleanup')
+console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, store import rollback, backup, cleanup')
