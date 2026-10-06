@@ -48,8 +48,20 @@ Updated: 2026-10-06
 ## Next milestone
 **V1.0 — Product + SKU + Inventory Ledger**
 
-Status: **APPROVED / READY FOR IMPLEMENTATION**
+Status: **IMPLEMENTING — DB schema v100 committed**
 
 Specification: `V1_SPEC.md`
 
 Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản phẩm>/<Size>/ảnh`; mã/SKU được gợi ý tự động nhưng người dùng được chọn/chỉnh trước khi lưu.
+
+
+## V1.0 implementation progress
+- [x] Specification locked.
+- [x] SQLite schema v100: categories, products, variants, images, inventory ledger, settings.
+- [x] Derived stock view; no direct stock column.
+- [ ] API/service layer.
+- [ ] Product/SKU workflows.
+- [ ] Existing folder/image integration.
+- [ ] Inventory UI.
+- [ ] Automated test gate.
+- [ ] User acceptance test.
