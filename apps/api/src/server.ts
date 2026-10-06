@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { dbPath } from './db.js'
 import { createProduct, getProduct, listProducts, suggestProductCode, suggestSku } from './products.js'
 import { addInventory, history } from './inventory.js'
+import { scanStore } from './storeScanner.js'
 
 const app = express()
 const PORT = Number(process.env.PORT ?? 3000)
@@ -38,6 +39,22 @@ app.post('/api/inventory/adjust', (req, res) => {
   } catch (e) { res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể điều chỉnh kho' }) }
 })
 app.get('/api/inventory/history/:variantId', (req, res) => res.json(history(Number(req.params.variantId))))
+
+app.post('/api/store/scan', (req, res) => {
+  try {
+    const rootPath = String(req.body.rootPath ?? '').trim()
+    if (!rootPath) return res.status(400).json({ error: 'Cần chọn thư mục 1-Me CaCao Store' })
+    const products = scanStore(rootPath)
+    res.json({
+      mode: 'PREVIEW_ONLY',
+      rootPath: path.resolve(rootPath),
+      productCount: products.length,
+      products
+    })
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể quét kho' })
+  }
+})
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const webDist = path.resolve(here, '../../web/dist')
