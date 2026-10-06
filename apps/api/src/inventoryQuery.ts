@@ -10,6 +10,9 @@ export function inventoryRows(filters: InventoryFilters = {}) {
   const status = filters.status ?? 'all'
   if(!['all','out','low','ok'].includes(state)) throw new Error('Trạng thái tồn không hợp lệ')
   if(!['all','active','inactive'].includes(status)) throw new Error('Trạng thái sản phẩm không hợp lệ')
+  const status = filters.status ?? 'all'
+  if(!['all','out','low','ok'].includes(state)) throw new Error('Trạng thái tồn không hợp lệ')
+  if(!['all','active','inactive'].includes(status)) throw new Error('Trạng thái sản phẩm không hợp lệ')
   const threshold = Number.isInteger(filters.threshold) && Number(filters.threshold) >= 0 ? Number(filters.threshold) : 2
   return db.prepare(`
     SELECT v.id AS variant_id, v.sku, v.size, v.status AS variant_status,
@@ -22,6 +25,7 @@ export function inventoryRows(filters: InventoryFilters = {}) {
     WHERE (?='%%' OR p.name LIKE ? OR p.product_code LIKE ? OR v.sku LIKE ?)
       AND (?='' OR c.name=?)
       AND (?='' OR v.size=?)
+      AND (?='all' OR p.status=?)
       AND (?='all' OR p.status=?)
       AND (?='all' OR (?='out' AND COALESCE(s.stock,0)=0)
         OR (?='low' AND COALESCE(s.stock,0)>0 AND COALESCE(s.stock,0)<=?)
@@ -45,6 +49,13 @@ export function inventoryHistory(limit = 200) {
 export function inventoryFilterOptions(){
  return {
   categories:(db.prepare("SELECT name FROM categories WHERE status='active' ORDER BY name").all() as Array<{name:string}>).map(x=>x.name),
+  sizes:(db.prepare("SELECT DISTINCT size FROM product_variants ORDER BY size").all() as Array<{size:string}>).map(x=>x.size)
+ }
+}
+
+export function inventoryFilterOptions(){
+ return {
+  categories:(db.prepare("SELECT DISTINCT c.name FROM categories c JOIN products p ON p.category_id=c.id ORDER BY c.name").all() as Array<{name:string}>).map(x=>x.name),
   sizes:(db.prepare("SELECT DISTINCT size FROM product_variants ORDER BY size").all() as Array<{size:string}>).map(x=>x.size)
  }
 }
