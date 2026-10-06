@@ -1,7 +1,7 @@
 # V1.0 GAP AUDIT
 Updated: 2026-10-06
 Source of truth: V1_SPEC.md
-Status: IMPLEMENTING — INTERNAL RUNTIME GATE PASS; WINDOWS ACCEPTANCE PENDING
+Status: PRE-ACCEPTANCE — INTERNAL RUNTIME GATE PASS; WINDOWS ACCEPTANCE PENDING
 
 ## Implemented
 - Schema v100 with guarded bootstrap and integrity/foreign-key checks.
@@ -23,7 +23,7 @@ Status: IMPLEMENTING — INTERNAL RUNTIME GATE PASS; WINDOWS ACCEPTANCE PENDING
 2. Normalize remaining API error paths/runtime query validation.
 3. Complete category/size/status inventory filters in UI/API parity.
 4. Finish product inactive UI controls.
-5. Decide/implement full physical-image backup policy; current backup contains DB snapshot + image manifest, not copied image bytes.
+5. DONE — image backup policy is manual optimized backup (max 1920px, JPEG quality 85, no enlargement); original files untouched; runtime integration test PASS.
 6. Verify GitHub DEMO deploy after V1 changes.
 7. Windows real-runtime acceptance remains final user gate.
 
