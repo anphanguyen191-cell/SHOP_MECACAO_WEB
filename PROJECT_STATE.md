@@ -66,5 +66,8 @@ Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản ph�
 - [x] Product/Inventory list UI + store scanner preview UI.
 - [x] Import edit/approval UI with explicit confirmation.
 - [x] Inventory operations/history UI source committed.
-- [ ] Automated test gate.
+- [x] Isolated disposable test database runner.
+- [x] Store import commit/rollback self-test source.
+- [x] Backup creation self-test source.
+- [ ] Automated test gate runtime PASS (GitHub workflow status unavailable via connector).
 - [ ] User acceptance test.
