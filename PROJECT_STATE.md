@@ -48,7 +48,7 @@ Updated: 2026-10-06
 ## Next milestone
 **V1.0 — Product + SKU + Inventory Ledger**
 
-Status: **IMPLEMENTING — import approval UI committed; inventory operations next**
+Status: **IMPLEMENTING — inventory operations/history UI committed; automated gate next**
 
 Specification: `V1_SPEC.md`
 
@@ -65,5 +65,6 @@ Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản ph�
 - [x] Import approval/commit backend with explicit confirmation + DB rollback.
 - [x] Product/Inventory list UI + store scanner preview UI.
 - [x] Import edit/approval UI with explicit confirmation.
+- [x] Inventory operations/history UI source committed.
 - [ ] Automated test gate.
 - [ ] User acceptance test.
