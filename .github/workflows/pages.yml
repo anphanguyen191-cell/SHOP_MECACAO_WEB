@@ -19,6 +19,8 @@ jobs:
         with:
           node-version: 22
       - run: npm install
+      - name: Dependency security audit
+        run: npm audit --omit=dev --audit-level=critical
       - name: V1 internal gate
         run: npm run test:gate
   deploy:
