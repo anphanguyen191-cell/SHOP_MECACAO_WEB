@@ -9,7 +9,7 @@ import { scanStore } from './storeScanner.js'
 import { commitStoreImport } from './storeImport.js'
 import { createBackup } from './backup.js'
 import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
-import { inventoryRows, inventoryHistory } from './inventoryQuery.js'
+import { inventoryRows, inventoryHistory, inventoryFilterOptions } from './inventoryQuery.js'
 import { getImageRecord, imageMime } from './images.js'
 
 const app = express()
@@ -39,9 +39,10 @@ app.put('/api/settings/low-stock-threshold', (req,res) => {
   catch(e){ res.status(400).json({ error:e instanceof Error?e.message:'Không thể cập nhật cài đặt' }) }
 })
 app.get('/api/inventory', (req,res) => {
-  const threshold=getLowStockThreshold()
-  res.json(inventoryRows({search:String(req.query.search??''),category:String(req.query.category??''),size:String(req.query.size??''),state:String(req.query.state??'all') as 'all'|'out'|'low'|'ok',threshold}))
+ try { const threshold=getLowStockThreshold(); res.json(inventoryRows({search:String(req.query.search??''),category:String(req.query.category??''),size:String(req.query.size??''),status:String(req.query.status??'all') as 'all'|'active'|'inactive',state:String(req.query.state??'all') as 'all'|'out'|'low'|'ok',threshold})) }
+ catch(e){res.status(400).json({error:e instanceof Error?e.message:'Bộ lọc tồn kho không hợp lệ'})}
 })
+app.get('/api/inventory/filter-options', (_req,res)=>res.json(inventoryFilterOptions()))
 app.get('/api/inventory/history', (req,res) => res.json(inventoryHistory(Number(req.query.limit??200))))
 app.patch('/api/products/:id/status', (req,res) => {
   try { res.json(setProductStatus(Number(req.params.id), req.body.status)) }
@@ -73,7 +74,7 @@ app.post('/api/inventory/adjust', (req, res) => {
     res.status(201).json({ ok: true, id: Number(r.lastInsertRowid) })
   } catch (e) { res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể điều chỉnh kho' }) }
 })
-app.get('/api/inventory/history/:variantId', (req, res) => res.json(history(Number(req.params.variantId))))
+app.get('/api/inventory/history/:variantId', (req,res) => { try{res.json(history(Number(req.params.variantId)))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể đọc lịch sử kho'})} })
 
 app.post('/api/backup', (_req, res) => {
   try { res.status(201).json({ ok: true, backup: createBackup() }) }
