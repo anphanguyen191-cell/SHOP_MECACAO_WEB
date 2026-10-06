@@ -18,6 +18,8 @@ export function commitStoreImport(input: ApprovedStoreImport) {
 
   const root = path.resolve(input.rootPath)
   if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) throw new Error('Thư mục kho không còn tồn tại')
+  if (!Number.isFinite(input.costPrice ?? 0) || (input.costPrice ?? 0) < 0) throw new Error('Giá nhập không hợp lệ')
+  if (!Number.isFinite(input.salePrice ?? 0) || (input.salePrice ?? 0) < 0) throw new Error('Giá bán không hợp lệ')
   const sizes = input.variants.map(v => v.size.trim())
   if (sizes.some(s => !s)) throw new Error('Size không được để trống')
   if (new Set(sizes.map(s => s.toLowerCase())).size !== sizes.length) throw new Error('Size bị trùng')
@@ -49,7 +51,8 @@ export function commitStoreImport(input: ApprovedStoreImport) {
         if (!fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) throw new Error('Không tìm thấy ảnh: ' + file)
         insertImage.run(productId, variantId, resolved, index, index === 0 ? 1 : 0)
       })
-      const qty = Math.max(0, Math.trunc(variant.openingStock ?? 0))
+      const qty = variant.openingStock ?? 0
+      if (!Number.isFinite(qty) || !Number.isInteger(qty) || qty < 0) throw new Error('Tồn đầu phải là số nguyên không âm')
       if (qty > 0) opening.run(variantId, qty, input.costPrice ?? 0, 'Tồn đầu từ kho hiện hữu')
     }
     db.exec('COMMIT')
