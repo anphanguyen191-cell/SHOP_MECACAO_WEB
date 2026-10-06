@@ -16,6 +16,9 @@ assert(stock.stock===6,'ledger stock must be 6')
 let blocked=false
 try{addInventory(variant.id,'ADJUST_MINUS',7)}catch{blocked=true}
 assert(blocked,'negative stock guard')
+let fractionBlocked=false
+try{addInventory(variant.id,'IMPORT',1.5)}catch{fractionBlocked=true}
+assert(fractionBlocked,'fractional quantity guard')
 assert(history(variant.id).length===4,'history must contain 4 transactions')
 db.exec('BEGIN IMMEDIATE')
 try{
@@ -24,4 +27,4 @@ try{
  db.prepare('DELETE FROM products WHERE id=?').run((product.product as {id:number}).id)
  db.exec('COMMIT')
 }catch(e){db.exec('ROLLBACK');throw e}
-console.log('SELF_TEST_V1 PASS: product, opening, import, adjustments, negative guard, history, cleanup')
+console.log('SELF_TEST_V1 PASS: product, opening, import, adjustments, negative guard, integer guard, history, cleanup')
