@@ -2,6 +2,8 @@ import { db } from './db.js'
 import { createProduct } from './products.js'
 import { addInventory, history } from './inventory.js'
 import { isPathInsideRoot } from './storeScanner.js'
+import { createBackup } from './backup.js'
+import fs from 'node:fs'
 
 function assert(ok: unknown, message: string): asserts ok { if (!ok) throw new Error('SELF_TEST FAIL: '+message) }
 const suffix=Date.now().toString(36).toUpperCase()
@@ -25,6 +27,9 @@ const root=process.cwd()
 assert(isPathInsideRoot(root,root+'/child/file.jpg'),'child path must be accepted')
 assert(!isPathInsideRoot(root,root),'root itself is not an image child')
 assert(!isPathInsideRoot(root,root+'/../outside.jpg'),'parent traversal must be rejected')
+const backup=createBackup()
+assert(fs.existsSync(backup.path),'backup file must exist')
+assert(fs.statSync(backup.path).size>0,'backup file must not be empty')
 db.exec('BEGIN IMMEDIATE')
 try{
  db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(variant.id)
@@ -32,4 +37,4 @@ try{
  db.prepare('DELETE FROM products WHERE id=?').run((product.product as {id:number}).id)
  db.exec('COMMIT')
 }catch(e){db.exec('ROLLBACK');throw e}
-console.log('SELF_TEST_V1 PASS: product, opening, import, adjustments, negative guard, integer guard, history, path guard, cleanup')
+console.log('SELF_TEST_V1 PASS: product, opening, import, adjustments, negative guard, integer guard, history, path guard, backup, cleanup')
