@@ -11,6 +11,8 @@ import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
 import { inventoryRows, inventoryHistory } from './inventoryQuery.js'
 import { setProductStatus } from './products.js'
 import { getImageRecord, imageMime } from './images.js'
+import { DatabaseSync } from 'node:sqlite'
+import { dbPath } from './db.js'
 
 function assert(ok: unknown, message: string): asserts ok { if (!ok) throw new Error('SELF_TEST FAIL: '+message) }
 const suffix=Date.now().toString(36).toUpperCase()
@@ -85,6 +87,16 @@ try{commitStoreImport({rootPath:importRoot,name:'BAD '+suffix,productCode:'B'+su
 assert(rollbackBlocked,'bad image import must fail')
 const badCount=(db.prepare('SELECT COUNT(*) AS n FROM products WHERE product_code=?').get('B'+suffix) as {n:number}).n
 assert(badCount===0,'failed import must rollback product')
+const secondConnection=new DatabaseSync(dbPath)
+const persistedStock=(secondConnection.prepare('SELECT stock FROM inventory_stock WHERE variant_id=?').get(variant.id) as {stock:number}).stock
+const persistedThreshold=Number((secondConnection.prepare("SELECT value FROM app_settings WHERE key='low_stock_threshold'").get() as {value:string}).value)
+const integrity=(secondConnection.prepare('PRAGMA integrity_check').get() as {integrity_check:string}).integrity_check
+const foreignKeys=secondConnection.prepare('PRAGMA foreign_key_check').all()
+assert(persistedStock===9,'second connection must see persisted ledger stock')
+assert(persistedThreshold===originalThreshold,'restored setting must persist across connection reopen')
+assert(integrity==='ok','SQLite integrity_check must be ok')
+assert(foreignKeys.length===0,'foreign_key_check must have no violations')
+secondConnection.close()
 const backup=createBackup()
 assert(fs.existsSync(backup.path),'backup file must exist')
 assert(fs.statSync(backup.path).size>0,'backup file must not be empty')
@@ -100,4 +112,4 @@ try{
  db.prepare('DELETE FROM products WHERE id=?').run((product.product as {id:number}).id)
  db.exec('COMMIT')
 }catch(e){db.exec('ROLLBACK');throw e}
-console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, store import rollback, backup, cleanup')
+console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, persistence/integrity/foreign-key, store import rollback, backup, cleanup')
