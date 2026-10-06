@@ -1,0 +1,8 @@
+import { useEffect,useState } from 'react'
+type V={id:number;sku:string;size:string;stock:number;qty:number}
+export default function BatchImport({productId,onDone}:{productId:number;onDone:()=>void}){
+ const [name,setName]=useState(''),[rows,setRows]=useState<V[]>([]),[cost,setCost]=useState(0),[note,setNote]=useState(''),[msg,setMsg]=useState('')
+ useEffect(()=>{fetch('/api/products/'+productId).then(r=>r.json()).then(j=>{setName(j.product?.name||'');setRows((j.variants||[]).map((v:V)=>({...v,qty:0})))})},[productId])
+ async function save(){const items=rows.filter(v=>v.qty>0).map(v=>({variantId:v.id,quantity:v.qty,unitCost:cost,note}));if(!items.length)return setMsg('Nhập số lượng cho ít nhất một size.');const r=await fetch('/api/inventory/import-batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});const j=await r.json();if(!r.ok)return setMsg(j.error||'Nhập kho thất bại');setMsg('Đã nhập kho nhiều size trong một giao dịch.');onDone()}
+ return <div className="approval"><h3>Nhập nhiều size · {name}</h3>{rows.map((v,i)=><div className="batchRow" key={v.id}><b>{v.size}</b><small>{v.sku} · tồn {v.stock}</small><input type="number" min="0" step="1" value={v.qty} onChange={e=>{const n=[...rows];n[i]={...n[i],qty:Math.max(0,Number(e.target.value)||0)};setRows(n)}}/></div>)}<div className="formGrid"><label>Giá nhập<input type="number" min="0" value={cost} onChange={e=>setCost(Math.max(0,Number(e.target.value)||0))}/></label><label>Ghi chú<input value={note} onChange={e=>setNote(e.target.value)}/></label></div><div className="inventoryActions"><button className="primary" onClick={save}>XÁC NHẬN NHẬP KHO</button></div>{msg&&<p className="notice">{msg}</p>}</div>
+}
