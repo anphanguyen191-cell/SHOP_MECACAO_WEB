@@ -1,0 +1,14 @@
+{
+  "name": "shop-mecacao-web",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["apps/web", "apps/api"],
+  "scripts": {
+    "dev": "concurrently -k -n API,WEB -c auto \"npm --workspace apps/api run dev\" \"npm --workspace apps/web run dev\"",
+    "build": "npm --workspace apps/web run build && npm --workspace apps/api run build",
+    "start": "npm --workspace apps/api run start",
+    "typecheck": "npm --workspace apps/web run typecheck && npm --workspace apps/api run typecheck"
+  },
+  "devDependencies": {"concurrently": "^9.2.1"},
+  "engines": {"node": ">=20"}
+}
