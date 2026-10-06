@@ -5,7 +5,9 @@ export type InventoryType = 'IMPORT' | 'ADJUST_PLUS' | 'ADJUST_MINUS'
 export function addInventory(variantId: number, type: InventoryType, quantity: number, unitCost?: number, note?: string) {
   const qty = Math.trunc(quantity)
   if (!Number.isInteger(variantId) || variantId <= 0) throw new Error('Variant không hợp lệ')
-  if (!Number.isInteger(qty) || qty <= 0) throw new Error('Số lượng phải lớn hơn 0')
+  if (!['IMPORT','ADJUST_PLUS','ADJUST_MINUS'].includes(type)) throw new Error('Loại giao dịch kho không hợp lệ')
+  if (!Number.isFinite(quantity) || !Number.isInteger(quantity) || qty <= 0) throw new Error('Số lượng phải là số nguyên lớn hơn 0')
+  if (unitCost !== undefined && (!Number.isFinite(unitCost) || unitCost < 0)) throw new Error('Giá nhập không hợp lệ')
   const variant = db.prepare('SELECT id FROM product_variants WHERE id = ?').get(variantId)
   if (!variant) throw new Error('Không tìm thấy SKU')
   if (type === 'ADJUST_MINUS') {
