@@ -10,7 +10,7 @@ export function readSchemaVersion(db:DatabaseSync){
  const row=db.prepare("SELECT value FROM app_metadata WHERE key='schema_version'").get() as {value?:string}|undefined
  const raw=row?.value
  if(raw===undefined) return 0
- if(!/^\\d+$/.test(raw)) throw new Error('schema_version không hợp lệ; dừng để bảo vệ dữ liệu')
+ if(!/^\d+$/.test(raw)) throw new Error('schema_version không hợp lệ; dừng để bảo vệ dữ liệu')
  return Number(raw)
 }
 export function assertDatabaseIntegrity(db:DatabaseSync){
