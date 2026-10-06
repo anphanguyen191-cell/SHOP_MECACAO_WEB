@@ -7,7 +7,7 @@ import { createProduct, getProduct, listProducts, suggestProductCode, suggestSku
 import { addInventory, batchImport, history } from './inventory.js'
 import { scanStore } from './storeScanner.js'
 import { commitStoreImport } from './storeImport.js'
-import { createBackup } from './backup.js'
+import { createBackup, createOptimizedImageBackup } from './backup.js'
 import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
 import { inventoryRows, inventoryHistory, inventoryFilterOptions } from './inventoryQuery.js'
 import { getImageRecord, imageMime } from './images.js'
@@ -76,9 +76,13 @@ app.post('/api/inventory/adjust', (req, res) => {
 })
 app.get('/api/inventory/history/:variantId', (req,res) => { try{res.json(history(Number(req.params.variantId)))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể đọc lịch sử kho'})} })
 
-app.post('/api/backup', (req, res) => {
-  try { const mode=req.body?.mode==='full'?'full':'manifest'; res.status(201).json({ ok: true, backup: createBackup(mode) }) }
-  catch (e) { res.status(500).json({ error: e instanceof Error ? e.message : 'Không thể backup database' }) }
+app.post('/api/backup', (_req, res) => {
+  try { res.status(201).json({ ok:true, backup:createBackup() }) }
+  catch(e){res.status(500).json({error:e instanceof Error?e.message:'Không thể backup database'})}
+})
+app.post('/api/backup/images-optimized', async (_req,res) => {
+ try{res.status(201).json({ok:true,backup:await createOptimizedImageBackup()})}
+ catch(e){res.status(500).json({error:e instanceof Error?e.message:'Không thể sao lưu ảnh tối ưu'})}
 })
 
 app.post('/api/store/scan', (req, res) => {
