@@ -7,6 +7,7 @@ import { createProduct, getProduct, listProducts, suggestProductCode, suggestSku
 import { addInventory, history } from './inventory.js'
 import { scanStore } from './storeScanner.js'
 import { commitStoreImport } from './storeImport.js'
+import { createBackup } from './backup.js'
 
 const app = express()
 const PORT = Number(process.env.PORT ?? 3000)
@@ -40,6 +41,11 @@ app.post('/api/inventory/adjust', (req, res) => {
   } catch (e) { res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể điều chỉnh kho' }) }
 })
 app.get('/api/inventory/history/:variantId', (req, res) => res.json(history(Number(req.params.variantId))))
+
+app.post('/api/backup', (_req, res) => {
+  try { res.status(201).json({ ok: true, backup: createBackup() }) }
+  catch (e) { res.status(500).json({ error: e instanceof Error ? e.message : 'Không thể backup database' }) }
+})
 
 app.post('/api/store/scan', (req, res) => {
   try {
