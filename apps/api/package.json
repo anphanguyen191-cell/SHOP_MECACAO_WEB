@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:core": "node scripts/run-self-test.mjs"
+    "test:core": "node scripts/run-self-test.mjs",
+    "test:schema": "tsx src/schemaSelfTest.ts"
   },
   "dependencies": {
     "express": "^4.21.2"
