@@ -6,6 +6,7 @@ import { dbPath } from './db.js'
 import { createProduct, getProduct, listProducts, suggestProductCode, suggestSku } from './products.js'
 import { addInventory, history } from './inventory.js'
 import { scanStore } from './storeScanner.js'
+import { commitStoreImport } from './storeImport.js'
 
 const app = express()
 const PORT = Number(process.env.PORT ?? 3000)
@@ -53,6 +54,16 @@ app.post('/api/store/scan', (req, res) => {
     })
   } catch (e) {
     res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể quét kho' })
+  }
+})
+
+app.post('/api/store/import', (req, res) => {
+  try {
+    if (req.body.confirmed !== true) return res.status(400).json({ error: 'Import chưa được người dùng xác nhận' })
+    const product = commitStoreImport(req.body.product)
+    res.status(201).json({ ok: true, mode: 'COMMITTED', product })
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể import sản phẩm' })
   }
 })
 
