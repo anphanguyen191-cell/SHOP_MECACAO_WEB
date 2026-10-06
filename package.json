@@ -2,13 +2,21 @@
   "name": "shop-mecacao-web",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["apps/web", "apps/api"],
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
   "scripts": {
     "dev": "concurrently -k -n API,WEB -c auto \"npm --workspace apps/api run dev\" \"npm --workspace apps/web run dev\"",
     "build": "npm --workspace apps/web run build && npm --workspace apps/api run build",
     "start": "npm --workspace apps/api run start",
-    "typecheck": "npm --workspace apps/web run typecheck && npm --workspace apps/api run typecheck"
+    "typecheck": "npm --workspace apps/web run typecheck && npm --workspace apps/api run typecheck",
+    "test:core": "npm --workspace apps/api run test:core"
   },
-  "devDependencies": {"concurrently": "^9.2.1"},
-  "engines": {"node": ">=20"}
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
 }
