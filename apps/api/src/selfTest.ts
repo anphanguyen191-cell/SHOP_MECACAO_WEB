@@ -114,6 +114,11 @@ assert(fs.statSync(backup.path).size>0,'backup file must not be empty')
 assert(fs.existsSync(path.join(backup.directory,backup.manifest)),'backup image manifest must exist')
 const backupManifest=JSON.parse(fs.readFileSync(path.join(backup.directory,backup.manifest),'utf8')) as {images:Array<{product_id:number;exists:boolean}>}
 assert(backupManifest.images.some(x=>x.product_id===importedId&&x.exists),'backup manifest must include existing imported image')
+const fullBackup=createBackup('full')
+assert(fullBackup.copiedImageCount>=1,'full backup must physically copy existing image')
+const fullManifest=JSON.parse(fs.readFileSync(path.join(fullBackup.directory,fullBackup.manifest),'utf8')) as {images:Array<{product_id:number;backup_path?:string}>}
+const copied=fullManifest.images.find(x=>x.product_id===importedId&&x.backup_path)
+assert(copied&&fs.existsSync(path.join(fullBackup.directory,copied.backup_path!)),'full backup copied image must exist inside backup package')
 db.prepare('DELETE FROM product_images WHERE product_id=?').run(importedId)
 db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(importedVariant.id)
 db.prepare('DELETE FROM product_variants WHERE id=?').run(importedVariant.id)
