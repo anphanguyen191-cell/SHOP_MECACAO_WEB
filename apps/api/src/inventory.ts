@@ -8,8 +8,9 @@ function validate(variantId:number,type:InventoryType,quantity:number,unitCost?:
  if(!['IMPORT','ADJUST_PLUS','ADJUST_MINUS'].includes(type)) throw new Error('Loại giao dịch kho không hợp lệ')
  if(!Number.isFinite(quantity)||!Number.isInteger(quantity)||quantity<=0) throw new Error('Số lượng phải là số nguyên lớn hơn 0')
  if(unitCost!==undefined&&(!Number.isFinite(unitCost)||unitCost<0)) throw new Error('Giá nhập không hợp lệ')
- const variant=db.prepare('SELECT id FROM product_variants WHERE id=?').get(variantId)
+ const variant=db.prepare('SELECT v.id,v.status AS variant_status,p.status AS product_status FROM product_variants v JOIN products p ON p.id=v.product_id WHERE v.id=?').get(variantId) as {id:number;variant_status:string;product_status:string}|undefined
  if(!variant) throw new Error('Không tìm thấy SKU')
+ if(variant.variant_status!=='active'||variant.product_status!=='active') throw new Error('SKU hoặc sản phẩm đang ngưng hoạt động')
  if(type==='ADJUST_MINUS'){
   const row=db.prepare('SELECT COALESCE(stock,0) AS stock FROM inventory_stock WHERE variant_id=?').get(variantId) as {stock:number}|undefined
   if(quantity>Number(row?.stock??0)) throw new Error('Điều chỉnh âm vượt quá tồn hiện tại')
