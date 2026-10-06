@@ -3,63 +3,42 @@
 Updated: 2026-10-06
 
 ## Current baseline
-
-- Version: **V0.1**
-- Codename: **Foundation**
-- Status: **READY FOR USER TEST**
-- Stable baseline: **NO — pending user test**
+- Version: **V0.1.1**
+- Codename: **Foundation local setup patch**
+- Status: **TESTING**
+- Stable baseline: **NO — local retest pending**
 
 ## Architecture decisions — APPROVED
-
-1. Greenfield project; không phụ thuộc core desktop cũ.
+1. Greenfield; không phụ thuộc core desktop cũ.
 2. Local-first web app.
-3. React + TypeScript + Vite + PWA cho frontend.
-4. Node.js + Express cho local API.
-5. SQLite là database local chính.
-6. GitHub dùng cho source/version/test preview; không lưu dữ liệu shop thật.
-7. GitHub Pages chạy DEMO/PREVIEW mode.
-8. Local production chạy tại `http://localhost:3000`.
-9. Module hóa để tránh phụ thuộc chéo.
-10. Mọi phát triển mới phải Proposal → Approve → Implement → Test → PASS → Baseline.
+3. React + TypeScript + Vite + PWA frontend.
+4. Node.js + Express local API.
+5. SQLite local database.
+6. Dùng built-in `node:sqlite`; không dùng native npm SQLite addon cần Visual Studio Build Tools.
+7. GitHub = source/version/preview; không lưu dữ liệu shop thật.
+8. GitHub Pages = DEMO/PREVIEW.
+9. Local production = `http://localhost:3000`.
+10. Proposal → Approve → Implement → Test → PASS → Baseline.
 
-## DONE in V0.1
+## PASS
+- [x] GitHub repository.
+- [x] GitHub Actions install/build.
+- [x] GitHub Pages deploy.
+- [x] iPhone preview.
+- [x] DEMO mode detection.
 
-- [x] Monorepo foundation.
-- [x] Web shell responsive.
-- [x] PWA build foundation.
-- [x] Local API `/api/health`.
-- [x] SQLite bootstrap + metadata.
-- [x] LOCAL/DEMO mode indicator.
-- [x] Windows first-time setup script.
-- [x] Windows start script.
-- [x] GitHub Pages Actions workflow.
-- [x] Project governance files.
-- [x] Clean GitHub repository connected.
+## Local test history
+- V0.1 initial local setup: **FAIL**.
+- Root cause: `better-sqlite3` attempted native compilation on Node 24 and required Visual Studio Build Tools.
+- Decision: **do not require Visual Studio/C++ toolchain**.
+- Patch V0.1.1: replaced `better-sqlite3` with Node built-in `node:sqlite`.
 
-## TESTING
+## RETEST REQUIRED
+- [ ] Download/refresh V0.1.1 source.
+- [ ] `SETUP_FIRST_TIME.bat` → PASS.
+- [ ] `START_SHOP.bat` → localhost.
+- [ ] Badge → LOCAL.
+- [ ] `data/shop.db` created.
 
-- [ ] GitHub Actions build.
-- [ ] GitHub Pages preview on iPhone.
-- [ ] Setup on actual Windows laptop.
-- [ ] `START_SHOP.bat` opens localhost correctly.
-- [ ] Local badge shows `LOCAL`.
-- [ ] PWA installability on target devices.
-
-## NOT STARTED
-
-- Product master.
-- SKU / variants.
-- Inventory ledger.
-- Stock import/export/adjustment.
-- Orders.
-- Customers.
-- Receipt PNG.
-- Reports.
-- LAN mobile access.
-- Cloud sync.
-
-## Next milestone after V0.1 PASS
-
+## Next milestone after PASS
 **V1.0 — Product + SKU + Inventory Ledger**
-
-Do not start V1.0 until V0.1 is user-tested and this file is checkpointed as STABLE.
