@@ -7,13 +7,13 @@ type History={id:number;transaction_type:string;quantity:number;note?:string;cre
 export default function InventoryOps({productId,onClose}:{productId:number;onClose:()=>void}){
  const [detail,setDetail]=useState<Detail|null>(null),[variantId,setVariantId]=useState(0),[qty,setQty]=useState(1)
  const [cost,setCost]=useState(0),[note,setNote]=useState(''),[rows,setRows]=useState<History[]>([]),[msg,setMsg]=useState('')
- async function load(){const r=await fetch('/api/products/'+productId);const j=await r.json();if(r.ok){setDetail(j);setVariantId((v)=>v||j.variants?.[0]?.id||0)}}
+ async function load(){const r=await fetch('/api/products/'+productId);const j=await r.json();if(r.ok){setDetail(j);setVariantId(j.variants?.[0]?.id||0)}}
  useEffect(()=>{void load()},[productId])
  async function mutate(kind:'import'|'plus'|'minus'){
   const url=kind==='import'?'/api/inventory/import':'/api/inventory/adjust'
   const body=kind==='import'?{variantId,quantity:qty,unitCost:cost,note}:{variantId,quantity:qty,direction:kind==='minus'?'minus':'plus',note}
   const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json()
-  setMsg(r.ok?'Đã ghi nhận biến động kho.':j.error||'Không thể cập nhật kho');if(r.ok)await load()
+  setMsg(r.ok?'Đã ghi nhận biến động kho.':j.error||'Không thể cập nhật kho');if(r.ok){await load();if(rows.length)await loadHistory()}
  }
  async function loadHistory(){const r=await fetch('/api/inventory/history/'+variantId);if(r.ok)setRows(await r.json())}
  if(!detail)return <div className="approval">Đang tải...</div>
