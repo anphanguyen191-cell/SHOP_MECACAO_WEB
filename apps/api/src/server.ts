@@ -3,11 +3,13 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dbPath } from './db.js'
-import { createProduct, getProduct, listProducts, suggestProductCode, suggestSku } from './products.js'
+import { createProduct, getProduct, listProducts, suggestProductCode, suggestSku, listCategories, setProductStatus } from './products.js'
 import { addInventory, batchImport, history } from './inventory.js'
 import { scanStore } from './storeScanner.js'
 import { commitStoreImport } from './storeImport.js'
 import { createBackup } from './backup.js'
+import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
+import { inventoryRows, inventoryHistory } from './inventoryQuery.js'
 
 const app = express()
 const PORT = Number(process.env.PORT ?? 3000)
@@ -18,6 +20,21 @@ app.get('/api/health', (_req, res) => res.json({
 }))
 
 app.get('/api/products', (req, res) => res.json(listProducts(String(req.query.search ?? ''))))
+app.get('/api/categories', (_req,res) => res.json(listCategories()))
+app.get('/api/settings', (_req,res) => res.json({ lowStockThreshold:getLowStockThreshold() }))
+app.put('/api/settings/low-stock-threshold', (req,res) => {
+  try { res.json({ lowStockThreshold:updateLowStockThreshold(Number(req.body.value)) }) }
+  catch(e){ res.status(400).json({ error:e instanceof Error?e.message:'Không thể cập nhật cài đặt' }) }
+})
+app.get('/api/inventory', (req,res) => {
+  const threshold=getLowStockThreshold()
+  res.json(inventoryRows({search:String(req.query.search??''),category:String(req.query.category??''),size:String(req.query.size??''),state:String(req.query.state??'all') as 'all'|'out'|'low'|'ok',threshold}))
+})
+app.get('/api/inventory/history', (req,res) => res.json(inventoryHistory(Number(req.query.limit??200))))
+app.patch('/api/products/:id/status', (req,res) => {
+  try { res.json(setProductStatus(Number(req.params.id), req.body.status)) }
+  catch(e){ res.status(400).json({ error:e instanceof Error?e.message:'Không thể đổi trạng thái sản phẩm' }) }
+})
 app.get('/api/products/suggest-code', (req, res) => res.json({ productCode: suggestProductCode(String(req.query.name ?? '')) }))
 app.get('/api/products/suggest-sku', (req, res) => res.json({ sku: suggestSku(String(req.query.productCode ?? 'SP0001'), String(req.query.size ?? 'SIZE')) }))
 app.get('/api/products/:id', (req, res) => {
