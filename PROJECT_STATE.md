@@ -48,7 +48,7 @@ Updated: 2026-10-06
 ## Next milestone
 **V1.0 — Product + SKU + Inventory Ledger**
 
-Status: **IMPLEMENTING — DB + API/Product/SKU backend committed**
+Status: **IMPLEMENTING — scanner preview backend committed**
 
 Specification: `V1_SPEC.md`
 
@@ -61,7 +61,8 @@ Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản ph�
 - [x] Derived stock view; no direct stock column.
 - [x] API/service layer.
 - [x] Product/SKU engine/workflows (backend).
-- [ ] Existing folder/image integration.
+- [x] Existing folder/image scanner backend (read-only preview).
+- [ ] Import approval/commit workflow.
 - [ ] Inventory UI.
 - [ ] Automated test gate.
 - [ ] User acceptance test.
