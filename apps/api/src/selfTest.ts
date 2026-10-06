@@ -7,6 +7,9 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { commitStoreImport } from './storeImport.js'
+import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
+import { inventoryRows, inventoryHistory } from './inventoryQuery.js'
+import { setProductStatus } from './products.js'
 
 function assert(ok: unknown, message: string): asserts ok { if (!ok) throw new Error('SELF_TEST FAIL: '+message) }
 const suffix=Date.now().toString(36).toUpperCase()
@@ -42,6 +45,19 @@ let batchRollback=false
 try{batchImport([{variantId:variant.id,quantity:1},{variantId:999999999,quantity:1}])}catch{batchRollback=true}
 assert(batchRollback,'invalid batch must fail')
 assert(history(variant.id).length===beforeFailedBatch,'failed batch must rollback all rows')
+const originalThreshold=getLowStockThreshold()
+updateLowStockThreshold(8)
+assert(getLowStockThreshold()===8,'low stock setting must persist in DB')
+assert((inventoryRows({state:'low',threshold:getLowStockThreshold()}) as Array<{variant_id:number}>).some(r=>r.variant_id===variant.id),'threshold must affect low-stock query')
+assert((inventoryHistory(50) as Array<{variant_id:number}>).some(r=>r.variant_id===variant.id),'global history must include ledger transaction')
+setProductStatus((product.product as {id:number}).id,'inactive')
+let inactiveBlocked=false
+try{addInventory(variant.id,'IMPORT',1)}catch{inactiveBlocked=true}
+assert(inactiveBlocked,'inactive product must block inventory writes')
+setProductStatus((product.product as {id:number}).id,'active')
+addInventory(variant.id,'IMPORT',1,undefined,'reactivated write')
+assert((db.prepare('SELECT stock FROM inventory_stock WHERE variant_id=?').get(variant.id) as {stock:number}).stock===9,'reactivated product must accept inventory write')
+updateLowStockThreshold(originalThreshold)
 const root=process.cwd()
 assert(isPathInsideRoot(root,root+'/child/file.jpg'),'child path must be accepted')
 assert(!isPathInsideRoot(root,root),'root itself is not an image child')
@@ -75,4 +91,4 @@ try{
  db.prepare('DELETE FROM products WHERE id=?').run((product.product as {id:number}).id)
  db.exec('COMMIT')
 }catch(e){db.exec('ROLLBACK');throw e}
-console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, path guard, store import rollback, backup, cleanup')
+console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, store import rollback, backup, cleanup')
