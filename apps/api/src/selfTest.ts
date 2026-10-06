@@ -21,6 +21,7 @@ assert(product,'create product')
 const variant=(product.variants as Array<{id:number;stock:number}>)[0]
 const suggestedBase=suggestSku('COLLIDE'+suffix,'Size X')
 const collision=createProduct({name:'COLLISION '+suffix,productCode:'C'+suffix,variants:[{size:'Size X',sku:suggestedBase}]})
+assert(collision,'collision fixture must be created')
 const suggestedAfterCollision=suggestSku('COLLIDE'+suffix,'Size X')
 assert(suggestedAfterCollision!==suggestedBase,'SKU suggestion must avoid an existing normalized-base collision')
 const collisionVariant=(collision.variants as Array<{id:number}>)[0]
