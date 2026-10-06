@@ -8,7 +8,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { commitStoreImport } from './storeImport.js'
 import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
-import { inventoryRows, inventoryHistory } from './inventoryQuery.js'
+import { inventoryRows, inventoryHistory, inventoryFilterOptions } from './inventoryQuery.js'
 import { setProductStatus } from './products.js'
 import { getImageRecord, imageMime } from './images.js'
 import { DatabaseSync } from 'node:sqlite'
@@ -53,7 +53,13 @@ updateLowStockThreshold(8)
 assert(getLowStockThreshold()===8,'low stock setting must persist in DB')
 assert((inventoryRows({state:'low',threshold:getLowStockThreshold()}) as Array<{variant_id:number}>).some(r=>r.variant_id===variant.id),'threshold must affect low-stock query')
 assert((inventoryHistory(50) as Array<{variant_id:number}>).some(r=>r.variant_id===variant.id),'global history must include ledger transaction')
+assert((inventoryRows({size:'Size Test',status:'active'}) as Array<{variant_id:number}>).some(r=>r.variant_id===variant.id),'size/status filter must find active SKU')
+assert(inventoryFilterOptions().sizes.includes('Size Test'),'filter options must include SKU size')
+let invalidFilter=false
+try{inventoryRows({state:'broken' as 'all'})}catch{invalidFilter=true}
+assert(invalidFilter,'invalid inventory state must be rejected')
 setProductStatus((product.product as {id:number}).id,'inactive')
+assert((inventoryRows({status:'inactive'}) as Array<{variant_id:number}>).some(r=>r.variant_id===variant.id),'inactive filter must expose inactive SKU')
 let inactiveBlocked=false
 try{addInventory(variant.id,'IMPORT',1)}catch{inactiveBlocked=true}
 assert(inactiveBlocked,'inactive product must block inventory writes')
