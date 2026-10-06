@@ -8,15 +8,15 @@ type History={id:number;transaction_type:string;quantity:number;note?:string;cre
 export default function InventoryOps({productId,onClose}:{productId:number;onClose:()=>void}){
  const [detail,setDetail]=useState<Detail|null>(null),[variantId,setVariantId]=useState(0),[qty,setQty]=useState(1)
  const [cost,setCost]=useState(0),[note,setNote]=useState(''),[rows,setRows]=useState<History[]>([]),[msg,setMsg]=useState('')
- async function load(){const r=await fetch('/api/products/'+productId);const j=await r.json();if(r.ok){setDetail(j);setVariantId(j.variants?.[0]?.id||0)}}
+ async function load(preserveVariant=false){const r=await fetch('/api/products/'+productId);const j=await r.json();if(r.ok){setDetail(j);setVariantId(current=>preserveVariant&&j.variants?.some((v:Variant)=>v.id===current)?current:(j.variants?.[0]?.id||0))}}
  useEffect(()=>{void load()},[productId])
  async function mutate(kind:'import'|'plus'|'minus'){
   const url=kind==='import'?'/api/inventory/import':'/api/inventory/adjust'
   const body=kind==='import'?{variantId,quantity:qty,unitCost:cost,note}:{variantId,quantity:qty,direction:kind==='minus'?'minus':'plus',note}
   const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json()
-  setMsg(r.ok?'Đã ghi nhận biến động kho.':j.error||'Không thể cập nhật kho');if(r.ok){await load();if(rows.length)await loadHistory()}
+  setMsg(r.ok?'Đã ghi nhận biến động kho.':j.error||'Không thể cập nhật kho');if(r.ok){await load(true);if(rows.length)await loadHistory()}
  }
- async function toggleStatus(){const next=detail?.product.status==='active'?'inactive':'active';const r=await fetch('/api/products/'+productId+'/status',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:next})});const j=await r.json();setMsg(r.ok?(next==='inactive'?'Đã ngưng sản phẩm.':'Đã kích hoạt sản phẩm.'):j.error||'Không thể đổi trạng thái');if(r.ok)await load()}
+ async function toggleStatus(){const next=detail?.product.status==='active'?'inactive':'active';const r=await fetch('/api/products/'+productId+'/status',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:next})});const j=await r.json();setMsg(r.ok?(next==='inactive'?'Đã ngưng sản phẩm.':'Đã kích hoạt sản phẩm.'):j.error||'Không thể đổi trạng thái');if(r.ok)await load(true)}
  async function loadHistory(){const r=await fetch('/api/inventory/history/'+variantId);if(r.ok)setRows(await r.json())}
  if(!detail)return <div className="approval">Đang tải...</div>
  return <div className="approval"><div className="row"><div><b>{detail.product.product_code}</b><h3>{detail.product.name}</h3></div><div className="inventoryCell"><button onClick={toggleStatus}>{detail.product.status==='active'?'NGƯNG SẢN PHẨM':'KÍCH HOẠT'}</button><button onClick={onClose}>ĐÓNG</button></div></div>
