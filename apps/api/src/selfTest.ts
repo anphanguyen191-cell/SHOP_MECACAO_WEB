@@ -64,6 +64,9 @@ assert(inventoryFilterOptions().sizes.includes('Size Test'),'filter options must
 let invalidFilter=false
 try{inventoryRows({state:'broken' as 'all'})}catch{invalidFilter=true}
 assert(invalidFilter,'invalid inventory state must be rejected')
+let invalidStatus=false
+try{inventoryRows({status:'broken' as 'all'})}catch{invalidStatus=true}
+assert(invalidStatus,'invalid product status filter must be rejected')
 setProductStatus((product.product as {id:number}).id,'inactive')
 assert((inventoryRows({status:'inactive'}) as Array<{variant_id:number}>).some(r=>r.variant_id===variant.id),'inactive filter must expose inactive SKU')
 let inactiveBlocked=false
