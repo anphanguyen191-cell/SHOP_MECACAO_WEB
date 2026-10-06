@@ -1,6 +1,6 @@
 import { db } from './db.js'
 import { createProduct } from './products.js'
-import { addInventory, history } from './inventory.js'
+import { addInventory, batchImport, history } from './inventory.js'
 import { isPathInsideRoot } from './storeScanner.js'
 import { createBackup } from './backup.js'
 import fs from 'node:fs'
@@ -26,6 +26,14 @@ let fractionBlocked=false
 try{addInventory(variant.id,'IMPORT',1.5)}catch{fractionBlocked=true}
 assert(fractionBlocked,'fractional quantity guard')
 assert(history(variant.id).length===4,'history must contain 4 transactions')
+batchImport([{variantId:variant.id,quantity:2,unitCost:11500,note:'batch test'}])
+const afterBatch=(db.prepare('SELECT stock FROM inventory_stock WHERE variant_id=?').get(variant.id) as {stock:number}).stock
+assert(afterBatch===8,'batch import must increase stock atomically')
+const beforeFailedBatch=history(variant.id).length
+let batchRollback=false
+try{batchImport([{variantId:variant.id,quantity:1},{variantId:999999999,quantity:1}])}catch{batchRollback=true}
+assert(batchRollback,'invalid batch must fail')
+assert(history(variant.id).length===beforeFailedBatch,'failed batch must rollback all rows')
 const root=process.cwd()
 assert(isPathInsideRoot(root,root+'/child/file.jpg'),'child path must be accepted')
 assert(!isPathInsideRoot(root,root),'root itself is not an image child')
@@ -59,4 +67,4 @@ try{
  db.prepare('DELETE FROM products WHERE id=?').run((product.product as {id:number}).id)
  db.exec('COMMIT')
 }catch(e){db.exec('ROLLBACK');throw e}
-console.log('SELF_TEST_V1 PASS: product, opening, import, adjustments, negative guard, integer guard, history, path guard, store import rollback, backup, cleanup')
+console.log('SELF_TEST_V1 PASS: product, opening, import, adjustments, negative guard, integer guard, history, batch rollback, path guard, store import rollback, backup, cleanup')
