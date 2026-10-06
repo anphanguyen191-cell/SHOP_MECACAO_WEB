@@ -2,7 +2,8 @@ import { db } from './db.js'
 import { createProduct, suggestProductCode, suggestSku } from './products.js'
 import { addInventory, batchImport, history } from './inventory.js'
 import { isPathInsideRoot } from './storeScanner.js'
-import { createBackup } from './backup.js'
+import { createBackup, createOptimizedImageBackup } from './backup.js'
+import sharp from 'sharp'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -79,7 +80,7 @@ assert(!isPathInsideRoot(root,root+'/../outside.jpg'),'parent traversal must be 
 const importRoot=fs.mkdtempSync(path.join(os.tmpdir(),'shop-import-'))
 const sizeDir=path.join(importRoot,'Test Product','Size 8')
 fs.mkdirSync(sizeDir,{recursive:true})
-const goodImage=path.join(sizeDir,'001.jpg'); fs.writeFileSync(goodImage,'test-image')
+const goodImage=path.join(sizeDir,'001.jpg'); await sharp({create:{width:2400,height:1600,channels:3,background:{r:180,g:120,b:90}}}).jpeg({quality:96}).toFile(goodImage)
 const imported=commitStoreImport({rootPath:importRoot,name:'IMPORT '+suffix,productCode:'I'+suffix,costPrice:12000,salePrice:22000,variants:[{size:'Size 8',sku:'ISKU-'+suffix,openingStock:3,images:[goodImage]}]})
 assert(imported,'store import must commit')
 const importedId=(imported!.product as {id:number}).id
@@ -92,7 +93,7 @@ assert(imageMime(imageRecord.file_path)==='image/jpeg','jpg MIME must be correct
 fs.unlinkSync(goodImage)
 const missingImage=getImageRecord(importedImage.id)
 assert(missingImage?.missing===true,'missing image file must not corrupt product metadata')
-fs.writeFileSync(goodImage,'test-image')
+await sharp({create:{width:2400,height:1600,channels:3,background:{r:180,g:120,b:90}}}).jpeg({quality:96}).toFile(goodImage)
 let rollbackBlocked=false
 try{commitStoreImport({rootPath:importRoot,name:'BAD '+suffix,productCode:'B'+suffix,variants:[{size:'Size X',sku:'BSKU-'+suffix,openingStock:1,images:[path.join(importRoot,'missing.jpg')]}]})}catch{rollbackBlocked=true}
 assert(rollbackBlocked,'bad image import must fail')
@@ -114,11 +115,13 @@ assert(fs.statSync(backup.path).size>0,'backup file must not be empty')
 assert(fs.existsSync(path.join(backup.directory,backup.manifest)),'backup image manifest must exist')
 const backupManifest=JSON.parse(fs.readFileSync(path.join(backup.directory,backup.manifest),'utf8')) as {images:Array<{product_id:number;exists:boolean}>}
 assert(backupManifest.images.some(x=>x.product_id===importedId&&x.exists),'backup manifest must include existing imported image')
-const fullBackup=createBackup('full')
-assert(fullBackup.copiedImageCount>=1,'full backup must physically copy existing image')
-const fullManifest=JSON.parse(fs.readFileSync(path.join(fullBackup.directory,fullBackup.manifest),'utf8')) as {images:Array<{product_id:number;backup_path?:string}>}
-const copied=fullManifest.images.find(x=>x.product_id===importedId&&x.backup_path)
-assert(copied&&fs.existsSync(path.join(fullBackup.directory,copied.backup_path!)),'full backup copied image must exist inside backup package')
+const optimizedBackup=await createOptimizedImageBackup()
+assert(optimizedBackup.optimizedImageCount>=1,'manual optimized backup must process existing image')
+assert(optimizedBackup.totalBackupBytes<optimizedBackup.totalOriginalBytes,'optimized backup should reduce test image bytes')
+const optimizedManifest=JSON.parse(fs.readFileSync(path.join(optimizedBackup.directory,optimizedBackup.manifest),'utf8')) as {images:Array<{product_id:number;backup_path?:string;width?:number;height?:number}>}
+const optimizedImage=optimizedManifest.images.find(x=>x.product_id===importedId&&x.backup_path)
+assert(optimizedImage&&fs.existsSync(path.join(optimizedBackup.directory,optimizedImage.backup_path!)),'optimized image backup file must exist')
+assert(Math.max(optimizedImage.width??0,optimizedImage.height??0)<=1920,'optimized image must respect max dimension')
 db.prepare('DELETE FROM product_images WHERE product_id=?').run(importedId)
 db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(importedVariant.id)
 db.prepare('DELETE FROM product_variants WHERE id=?').run(importedVariant.id)
@@ -134,4 +137,4 @@ try{
  db.prepare('DELETE FROM products WHERE id=?').run((product.product as {id:number}).id)
  db.exec('COMMIT')
 }catch(e){db.exec('ROLLBACK');throw e}
-console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, persistence/integrity/foreign-key, store import rollback, backup, cleanup')
+console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, persistence/integrity/foreign-key, store import rollback, DB backup, manual optimized image backup, cleanup')
