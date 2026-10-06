@@ -1,42 +1,31 @@
 # V1.0 GAP AUDIT
-
 Updated: 2026-10-06
 Source of truth: V1_SPEC.md
-Status: IMPLEMENTATION GAPS IDENTIFIED — NOT READY FOR USER TEST
+Status: IMPLEMENTING — INTERNAL GATE SOURCE COMPLETE, RUNTIME PASS NOT YET CONFIRMED
 
 ## Implemented
-- Schema v100 core tables + derived inventory_stock view.
-- Product/SKU backend create/read/search.
-- OPENING / IMPORT / ADJUST_PLUS / ADJUST_MINUS ledger.
-- Negative-stock guard and integer quantity validation.
-- Existing warehouse scanner with preview.
-- Explicitly confirmed store import with DB transaction/rollback.
-- Warehouse image path containment validation.
-- Product/stock UI and per-SKU inventory operations/history.
-- SQLite backup service + API.
-- Disposable self-test DB and ledger/import/rollback/backup source tests.
-- GitHub DEMO isolation.
+- Schema v100 with guarded bootstrap and integrity/foreign-key checks.
+- Product/SKU create/read/search, collision-safe suggestions and validation.
+- OPENING / IMPORT / ADJUST_PLUS / ADJUST_MINUS ledger; negative-stock and inactive-product guards.
+- Atomic multi-size batch import and rollback.
+- Existing warehouse scanner + explicit confirmed transactional import.
+- Safe image-by-database-ID resolver/API; missing files do not corrupt product metadata.
+- Inventory filters/history UI; configurable low-stock threshold.
+- Product inactive backend workflow.
+- Settings and backup UI/API.
+- DB backup package with image manifest.
+- Disposable core self-test + isolated schema safety self-test.
+- Persistence/reopen, rollback, integrity and foreign-key regression coverage.
+- Consolidated `npm run test:gate` wired into GitHub Actions.
 
-## Missing vs approved V1_SPEC
-### P0 — required before user test
-1. Product creation UI independent of warehouse scanner.
-2. Batch stock import for multiple sizes in one atomic operation.
-3. Inventory list/filter by category, size and stock state; configurable low-stock threshold.
-4. Dedicated inventory history screen, not only history inside selected product.
-5. Safe local image-serving endpoint + product image preview.
-6. Settings/Backup UI and settings API.
-7. Product inactive workflow; no hard-delete for products with ledger history.
-8. Product input validation parity: createProduct still truncates opening stock and needs price validation.
-9. Collision-safe product-code/SKU suggestions.
-10. Migration framework with pre-migration backup/version steps.
-11. Persistence/reopen test and schema-integrity test.
-12. Runtime CI/typecheck/build confirmation.
-
-### P1 — complete V1 UX
-- Categories API/list support.
-- Better scanner warnings for unreadable folders.
-- Full API validation/error normalization.
-- Mobile navigation polish.
+## Remaining before user test
+1. Confirm runtime PASS of consolidated gate (typecheck + schema tests + core integration + build).
+2. Normalize remaining API error paths/runtime query validation.
+3. Complete category/size/status inventory filters in UI/API parity.
+4. Finish product inactive UI controls.
+5. Decide/implement full physical-image backup policy; current backup contains DB snapshot + image manifest, not copied image bytes.
+6. Verify GitHub DEMO deploy after V1 changes.
+7. Windows real-runtime acceptance remains final user gate.
 
 ## Decision
-Do not ask the user to test V1 yet. Complete P0 items, run automated gate, then perform one consolidated Windows + real-warehouse acceptance test.
+Do not call V1 STABLE and do not ask for Windows acceptance until internal runtime gate is evidenced or explicitly marked UNVERIFIED.
