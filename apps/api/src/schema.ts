@@ -8,7 +8,10 @@ function metadataExists(db:DatabaseSync){
 export function readSchemaVersion(db:DatabaseSync){
  if(!metadataExists(db)) return 0
  const row=db.prepare("SELECT value FROM app_metadata WHERE key='schema_version'").get() as {value?:string}|undefined
- return Number(row?.value??0)
+ const raw=row?.value
+ if(raw===undefined) return 0
+ if(!/^\\d+$/.test(raw)) throw new Error('schema_version không hợp lệ; dừng để bảo vệ dữ liệu')
+ return Number(raw)
 }
 export function assertDatabaseIntegrity(db:DatabaseSync){
  const integrity=db.prepare('PRAGMA integrity_check').get() as {integrity_check?:string}|undefined
