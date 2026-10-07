@@ -8,3 +8,10 @@
 .batchRow{display:grid;grid-template-columns:1fr 2fr 110px;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #f2ebe7}.batchRow input{width:100%}@media(max-width:760px){.batchRow{grid-template-columns:1fr}.batchRow small{margin-top:-6px}}
 
 .imageStrip{display:flex;gap:10px;overflow-x:auto;margin:12px 0 16px}.imageStrip img{width:92px;height:112px;object-fit:cover;border-radius:12px;border:1px solid #eee5e0;background:#f7f2ef}.filterBar{display:flex;gap:10px;margin:14px 0}.filterBar input{flex:1}.filterBar select{border:1px solid #dfd4cf;border-radius:12px;padding:10px;background:#fff}.inventoryTable>div{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #f2ebe7}.inventoryTable small{display:block;margin-top:4px;color:#756b66}.inventoryCell{display:flex;align-items:center;gap:10px}.inventoryCell button{border:1px solid #dfd4cf;border-radius:10px;padding:8px;background:#fff}@media(max-width:760px){.filterBar{flex-direction:column}.inventoryTable>div{align-items:flex-start}.imageStrip img{width:78px;height:96px}}
+
+.receipt{background:#fff;border:1px solid #eee;border-radius:18px;padding:22px;margin-top:18px}
+.receiptRow{display:grid;grid-template-columns:1fr 1.2fr minmax(300px,2.5fr) .6fr .8fr 1fr 1fr;gap:8px;align-items:center;margin:8px 0}
+.progressBox{margin-top:16px;padding:16px;border:1px solid #ddd;border-radius:14px;background:#fafafa}
+.progressBox progress{width:100%;height:18px;margin:10px 0}
+.receipt select{width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;background:white}
+@media(max-width:900px){.receiptRow{grid-template-columns:1fr 1fr}.receiptRow>div{grid-column:1/-1}}
