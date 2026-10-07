@@ -1,0 +1,8 @@
+import {useEffect,useState} from 'react'
+
+export default function FolderPicker({title,onPick,onClose}:{title:string;onPick:(path:string)=>void;onClose:()=>void}){
+ const [roots,setRoots]=useState<string[]>([]),[current,setCurrent]=useState(''),[parent,setParent]=useState<string|null>(null),[dirs,setDirs]=useState<Array<{name:string;path:string}>>([]),[error,setError]=useState('')
+ useEffect(()=>{fetch('/api/fs/roots').then(r=>r.json()).then(j=>setRoots(Array.isArray(j)?j:[])).catch(()=>setError('Không đọc được ổ đĩa'))},[])
+ async function open(p:string){setError('');const r=await fetch('/api/fs/list?path='+encodeURIComponent(p));const j=await r.json();if(!r.ok){setError(j.error||'Không mở được thư mục');return}setCurrent(j.path);setParent(j.parent);setDirs(j.directories??[])}
+ return <div className="folderOverlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><section className="folderModal"><div className="row"><div><p className="eyebrow">CHỌN THƯ MỤC TRÊN MÁY</p><h3>{title}</h3></div><button onClick={onClose}>ĐÓNG</button></div>{!current?<div className="driveGrid">{roots.map(r=><button key={r} onClick={()=>void open(r)}>Ổ {r}</button>)}</div>:<><div className="folderPath"><button disabled={!parent} onClick={()=>parent&&void open(parent)}>← LÊN</button><code>{current}</code></div><div className="folderList">{dirs.map(d=><button key={d.path} onDoubleClick={()=>void open(d.path)} onClick={()=>void open(d.path)}><span>📁</span><b>{d.name}</b></button>)}{dirs.length===0&&<p>Thư mục này không có thư mục con.</p>}</div><button className="primary chooseFolder" onClick={()=>onPick(current)}>CHỌN THƯ MỤC NÀY</button></>}{error&&<p className="warning">{error}</p>}</section></div>
+}
