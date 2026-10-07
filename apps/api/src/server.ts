@@ -3,7 +3,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dbPath } from './db.js'
-import { createProduct, getProduct, listProducts, suggestProductCode, suggestSku, listCategories, setProductStatus } from './products.js'
+import { createProduct, getProduct, listProducts, suggestProductCode, suggestSku, listCategories, setProductStatus, updateVariantPricing } from './products.js'
 import { addInventory, batchImport, history } from './inventory.js'
 import { scanStore } from './storeScanner.js'
 import { commitStoreImport } from './storeImport.js'
@@ -17,7 +17,7 @@ const PORT = Number(process.env.PORT ?? 3000)
 app.use(express.json({ limit: '2mb' }))
 
 app.get('/api/health', (_req, res) => res.json({
-  ok: true, app: 'SHOP_MECACAO_WEB', version: '1.0.0-dev', schema: 100, database: path.basename(dbPath)
+  ok: true, app: 'SHOP_MECACAO_WEB', version: '1.0.0-dev', schema: 110, database: path.basename(dbPath)
 }))
 
 app.get('/api/images/:id', (req,res) => {
@@ -55,6 +55,7 @@ app.get('/api/products/:id', (req, res) => {
   if (!data) return res.status(404).json({ error: 'Không tìm thấy sản phẩm' })
   res.json(data)
 })
+app.patch('/api/variants/:id/pricing', (req,res)=>{try{res.json(updateVariantPricing(Number(req.params.id),Number(req.body.costPrice),Number(req.body.salePrice)))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể cập nhật giá'})}})
 app.post('/api/products', (req, res) => {
   try { res.status(201).json(createProduct(req.body)) }
   catch (e) { res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể tạo sản phẩm' }) }
