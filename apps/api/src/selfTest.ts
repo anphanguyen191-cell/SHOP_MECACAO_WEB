@@ -81,7 +81,8 @@ assert(isPathInsideRoot(root,root+'/child/file.jpg'),'child path must be accepte
 assert(!isPathInsideRoot(root,root),'root itself is not an image child')
 assert(!isPathInsideRoot(root,root+'/../outside.jpg'),'parent traversal must be rejected')
 const importRoot=fs.mkdtempSync(path.join(os.tmpdir(),'shop-import-'))
-const sizeDir=path.join(importRoot,'Test Product','Size 8')
+const productFolder=path.join(importRoot,'IMPORT '+suffix)
+const sizeDir=path.join(productFolder,'Size 8')
 fs.mkdirSync(sizeDir,{recursive:true})
 const goodImage=path.join(sizeDir,'001.jpg'); await sharp({create:{width:2400,height:1600,channels:3,background:{r:180,g:120,b:90}}}).jpeg({quality:96}).toFile(goodImage)
 const imported=commitStoreImport({rootPath:importRoot,name:'IMPORT '+suffix,productCode:'I'+suffix,costPrice:12000,salePrice:22000,variants:[{size:'Size 8',sku:'ISKU-'+suffix,openingStock:3,images:[goodImage]}]})
@@ -95,9 +96,9 @@ assert(duplicateImportSkuBlocked,'duplicate warehouse SKU must be rejected clear
 const importedId=(imported!.product as {id:number}).id
 const importedVariant=(imported!.variants as Array<{id:number;stock:number}>)[0]
 assert(importedVariant.stock===3,'store import opening stock must persist')
-const laterDir=path.join(importRoot,'Test Product','Size 10');fs.mkdirSync(laterDir,{recursive:true})
+const laterDir=path.join(productFolder,'Size 10');fs.mkdirSync(laterDir,{recursive:true})
 const laterImage=path.join(laterDir,'002.jpg');await sharp({create:{width:800,height:800,channels:3,background:{r:90,g:120,b:180}}}).jpeg().toFile(laterImage)
-const scanAgain=scanStore(importRoot).find(x=>x.name==='Test Product')
+const scanAgain=scanStore(importRoot).find(x=>x.name==='IMPORT '+suffix)
 assert(scanAgain?.status==='PARTIAL','scan must identify partial product')
 assert(scanAgain?.sizes.some(x=>x.size==='Size 8'&&x.status==='EXISTING'),'existing size recognized')
 assert(scanAgain?.sizes.some(x=>x.size==='Size 10'&&x.status==='NEW'),'new size recognized')
