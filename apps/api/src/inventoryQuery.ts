@@ -9,7 +9,7 @@ export function inventoryRows(filters:InventoryFilters={}){
  if(!['all','out','low','ok'].includes(state))throw new Error('Trạng thái tồn không hợp lệ')
  if(!['all','active','inactive'].includes(status))throw new Error('Trạng thái sản phẩm không hợp lệ')
  const threshold=Number.isInteger(filters.threshold)&&Number(filters.threshold)>=0?Number(filters.threshold):2
- const sql=`SELECT v.id AS variant_id,v.sku,v.size,v.status AS variant_status,p.id AS product_id,p.product_code,p.name AS product_name,p.status AS product_status,c.name AS category,v.cost_price,v.sale_price,COALESCE(s.stock,0) AS stock,(SELECT pi.id FROM product_images pi WHERE pi.product_id=p.id AND (pi.variant_id=v.id OR pi.variant_id IS NULL) ORDER BY CASE WHEN pi.variant_id=v.id THEN 0 ELSE 1 END,pi.is_primary DESC,pi.sort_order,pi.id LIMIT 1) AS image_id
+ const sql=`SELECT v.id AS variant_id,v.sku,v.size,v.status AS variant_status,p.id AS product_id,p.product_code,p.name AS product_name,p.status AS product_status,c.name AS category,v.cost_price,v.sale_price,COALESCE(s.stock,0) AS stock,(SELECT pi.id FROM product_images pi WHERE pi.product_id=p.id AND (pi.variant_id=v.id OR pi.variant_id IS NULL) ORDER BY pi.variant_id DESC,pi.is_primary DESC,pi.sort_order,pi.id LIMIT 1) AS image_id
  FROM product_variants v
  JOIN products p ON p.id=v.product_id
  LEFT JOIN categories c ON c.id=p.category_id
