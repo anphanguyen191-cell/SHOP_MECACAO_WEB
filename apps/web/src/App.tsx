@@ -5,8 +5,8 @@ import InventoryView from './InventoryView'
 import SettingsView from './SettingsView'
 
 type Health={ok:boolean;version:string;schema:number;database:string}
-type ScanSize={size:string;images:string[];suggestedSku:string}
-type ScanProduct={name:string;suggestedProductCode:string;sizes:ScanSize[];warnings:string[]}
+type ScanSize={size:string;images:string[];suggestedSku:string;existingVariantId?:number;costPrice?:number;salePrice?:number;status?:'NEW'|'EXISTING'}
+type ScanProduct={name:string;suggestedProductCode:string;existingProductId?:number;status?:'NEW'|'EXISTING'|'PARTIAL';sizes:ScanSize[];warnings:string[]}
 type ScanResult={mode:string;rootPath:string;productCount:number;products:ScanProduct[]}
 type DraftSize=ScanSize&{openingStock:number;sku:string;costPrice:number;salePrice:number;selected:boolean}
 type DraftProduct={name:string;productCode:string;category:string;costPrice:number;salePrice:number;variants:DraftSize[]}
