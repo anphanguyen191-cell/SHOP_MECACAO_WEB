@@ -10,7 +10,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { commitStoreImport } from './storeImport.js'
 import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
-import { inventoryRows, inventoryHistory, inventoryFilterOptions } from './inventoryQuery.js'
+import { inventoryRows, inventoryHistory, inventoryFilterOptions, inventoryExplorer, inventoryDashboard, inventorySuggestions } from './inventoryQuery.js'
 import { setProductStatus } from './products.js'
 import { getImageRecord, imageMime } from './images.js'
 import { DatabaseSync } from 'node:sqlite'
@@ -104,6 +104,12 @@ assert(scanAgain?.status==='PARTIAL','scan must identify partial product')
 assert(scanAgain?.sizes.some(x=>x.size==='Size 8'&&x.status==='EXISTING'),'existing size recognized')
 assert(scanAgain?.sizes.some(x=>x.size==='Size 10'&&x.status==='NEW'),'new size recognized')
 assert(scanAgain?.sizes.find(x=>x.size==='Size 10')?.images.length===1,'scanner image count must support opening-stock inference')
+const physicalTree=inventoryExplorer({search:'IMPORT '+suffix,status:'active'}) as any[]
+const physicalProduct=physicalTree.find(x=>x.product_id===importedId)
+assert(physicalProduct&&physicalProduct.variants.some((x:any)=>x.size==='Size 8'&&x.stock===1),'physical explorer stock must equal existing registered images, not ledger opening quantity')
+const physicalDash=inventoryDashboard()
+assert(physicalDash.mismatches>=1,'physical dashboard must flag ledger/image mismatch')
+assert((inventorySuggestions('Size 8') as any[]).some(x=>x.product_id===importedId),'inventory autocomplete must suggest existing size/product')
 const merged=commitStoreImport({rootPath:importRoot,name:'IMPORT '+suffix,productCode:'I'+suffix,variants:[{size:'Size 8',sku:'ISKU-'+suffix,costPrice:13000,salePrice:23000,images:[goodImage]},{size:'Size 10',sku:'ISKU10-'+suffix,costPrice:14000,salePrice:24000,openingStock:2,images:[laterImage]}]})
 assert((merged!.variants as Array<{size:string;cost_price:number}>).some(v=>v.size==='Size 8'&&v.cost_price===13000),'existing size price editable')
 assert((merged!.variants as Array<{size:string;stock:number}>).some(v=>v.size==='Size 10'&&v.stock===2),'new size addable later')
