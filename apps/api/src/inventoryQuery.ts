@@ -72,3 +72,25 @@ export function inventoryHistory(limit=200){
 export function inventoryFilterOptions(){
  return {categories:(db.prepare("SELECT DISTINCT c.name FROM categories c JOIN products p ON p.category_id=c.id ORDER BY c.name").all() as Array<{name:string}>).map(x=>x.name),sizes:(db.prepare("SELECT DISTINCT size FROM product_variants ORDER BY size").all() as Array<{size:string}>).map(x=>x.size)}
 }
+
+
+export function catalogDashboard(){
+ const products=inventoryExplorer({status:'active'})
+ const variants=products.flatMap(p=>p.variants)
+ const categories=new Map<string,number>()
+ for(const p of products){const k=p.category||'Chưa phân loại';categories.set(k,(categories.get(k)??0)+1)}
+ const missingImages=variants.filter(v=>v.images.length===0).length
+ const missingPrices=variants.filter(v=>v.cost_price<=0||v.sale_price<=0).length
+ const sizeMap=new Map<string,number>()
+ for(const v of variants)sizeMap.set(v.size,(sizeMap.get(v.size)??0)+1)
+ return {
+  products:products.length,
+  skus:variants.length,
+  categories:categories.size,
+  missingImages,
+  missingPrices,
+  categoryBreakdown:[...categories.entries()].map(([category,count])=>({category,count})).sort((a,b)=>b.count-a.count||a.category.localeCompare(b.category,'vi')),
+  sizeBreakdown:[...sizeMap.entries()].map(([size,count])=>({size,count})).sort((a,b)=>b.count-a.count||a.size.localeCompare(b.size,'vi')),
+  mostVariants:[...products].sort((a,b)=>b.variants.length-a.variants.length||a.product_name.localeCompare(b.product_name,'vi')).slice(0,8).map(p=>({product_id:p.product_id,product_name:p.product_name,count:p.variants.length}))
+ }
+}
