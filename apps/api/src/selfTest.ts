@@ -87,7 +87,7 @@ const goodImage=path.join(sizeDir,'001.jpg'); await sharp({create:{width:2400,he
 const imported=commitStoreImport({rootPath:importRoot,name:'IMPORT '+suffix,productCode:'I'+suffix,costPrice:12000,salePrice:22000,variants:[{size:'Size 8',sku:'ISKU-'+suffix,openingStock:3,images:[goodImage]}]})
 assert(imported,'store import must commit')
 let duplicateImportCodeBlocked=false
-try{commitStoreImport({rootPath:importRoot,name:'DUP CODE '+suffix,productCode:'I'+suffix,variants:[{size:'Other',sku:'OTHER-'+suffix,images:[]}]})}catch(e){duplicateImportCodeBlocked=e instanceof Error&&e.message.includes('đã tồn tại')}
+try{commitStoreImport({rootPath:importRoot,name:'DUP CODE '+suffix,productCode:'I'+suffix,variants:[{size:'Other',sku:'OTHER-'+suffix,images:[]}]})}catch(e){duplicateImportCodeBlocked=e instanceof Error&&e.message.includes('đã thuộc sản phẩm khác')}
 assert(duplicateImportCodeBlocked,'duplicate warehouse product code must be rejected clearly')
 let duplicateImportSkuBlocked=false
 try{commitStoreImport({rootPath:importRoot,name:'DUP SKU '+suffix,productCode:'UNIQ'+suffix,variants:[{size:'Other',sku:'ISKU-'+suffix,images:[]}]})}catch(e){duplicateImportSkuBlocked=e instanceof Error&&e.message.includes('SKU')&&e.message.includes('đã tồn tại')}
