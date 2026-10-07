@@ -50,3 +50,9 @@ main{min-width:0;padding:14px}.hero{padding:18px 20px;border-radius:20px}.hero h
 .brandLogo{height:58px;width:58px;object-fit:contain;border-radius:13px;background:white;flex:none}.brandIdentity:has(.brandLogo:not([style*="display: none"])) .brandMonogram{display:none}
 .brandBanner{display:block;width:100%;height:auto;max-height:350px;object-fit:contain;object-position:center;border-radius:18px;margin-bottom:12px;background:#fff8f8}
 @media(max-width:760px){.brandLogo{height:44px;width:44px}.brandBanner{width:100%;max-height:none;aspect-ratio:1536/572;object-fit:contain;border-radius:12px}.hero:has(.brandBanner) {padding:12px}.hero:has(.brandBanner) h2,.hero:has(.brandBanner) p{margin-left:8px;margin-right:8px}}
+
+.catalogPhoto{width:100%;aspect-ratio:4/3;border-radius:13px;overflow:hidden;background:linear-gradient(135deg,#fff0f5,#fff7e8);display:grid;place-items:center;color:#9d7181;font-size:12px}
+.catalogPhoto img{display:block;width:100%;height:100%;object-fit:contain;background:#fff}
+.catalogInfo{width:100%;min-width:0}.catalogInfo h3{overflow-wrap:anywhere}.catalogInfo>b{font-size:11px;color:#ad5b7b}.productList .product{gap:10px}
+.productList .product>strong small{display:block;text-align:right}
+@media(max-width:760px){.catalogPhoto{aspect-ratio:4/5}.productList .product{min-height:0}.catalogInfo h3{line-height:1.35}}
