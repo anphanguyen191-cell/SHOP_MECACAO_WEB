@@ -32,6 +32,13 @@ export function commitStoreImport(input: ApprovedStoreImport) {
       categoryId = Number((db.prepare('SELECT id FROM categories WHERE name=?').get(input.category.trim()) as {id:number}).id)
     }
     const code = input.productCode.trim().toUpperCase()
+    const duplicateCode = db.prepare('SELECT 1 FROM products WHERE product_code=?').get(code)
+    if (duplicateCode) throw new Error('Mã sản phẩm "'+code+'" đã tồn tại. Hãy đổi mã sản phẩm rồi lưu lại.')
+    const requestedSkus = input.variants.map(v => (v.sku?.trim() || suggestSku(code, v.size.trim())).toUpperCase())
+    if (new Set(requestedSkus).size !== requestedSkus.length) throw new Error('SKU bị trùng trong sản phẩm đang duyệt. Hãy kiểm tra lại SKU.')
+    const skuExists = db.prepare('SELECT 1 FROM product_variants WHERE sku=?')
+    const duplicateSku = requestedSkus.find(sku => skuExists.get(sku))
+    if (duplicateSku) throw new Error('SKU "'+duplicateSku+'" đã tồn tại. Hãy đổi SKU rồi lưu lại.')
     const pr = db.prepare('INSERT INTO products(product_code,name,category_id,cost_price,sale_price) VALUES(?,?,?,?,?)')
       .run(code, input.name.trim(), categoryId, input.costPrice ?? 0, input.salePrice ?? 0)
     const productId = Number(pr.lastInsertRowid)
@@ -39,9 +46,9 @@ export function commitStoreImport(input: ApprovedStoreImport) {
     const insertImage = db.prepare('INSERT INTO product_images(product_id,variant_id,file_path,sort_order,is_primary) VALUES(?,?,?,?,?)')
     const opening = db.prepare("INSERT INTO inventory_transactions(variant_id,transaction_type,quantity,unit_cost,note) VALUES(?,'OPENING',?,?,?)")
 
-    for (const variant of input.variants) {
+    for (const [variantIndex, variant] of input.variants.entries()) {
       const size = variant.size.trim()
-      const sku = (variant.sku?.trim() || suggestSku(code, size)).toUpperCase()
+      const sku = requestedSkus[variantIndex]
       const vr = insertVariant.run(productId, sku, size)
       const variantId = Number(vr.lastInsertRowid)
       const images = variant.images ?? []
