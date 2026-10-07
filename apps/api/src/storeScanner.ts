@@ -15,9 +15,19 @@ export function scanStore(rootPath: string): ScannedProduct[] {
   const root = path.resolve(rootPath)
   if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) throw new Error('Không tìm thấy thư mục kho')
   const products: ScannedProduct[] = []
+  const reservedCodes = new Set<string>()
   for (const productDir of safeChildren(root).filter(e => e.isDirectory())) {
     const productPath = path.join(root, productDir.name)
-    const code = suggestProductCode(productDir.name)
+    let code = suggestProductCode(productDir.name)
+    if (reservedCodes.has(code)) {
+      const match = code.match(/^(.*?)(\\d+)$/)
+      const prefix = match?.[1] ?? code
+      let n = match ? Number(match[2]) + 1 : 2
+      const width = match?.[2].length ?? 4
+      while (reservedCodes.has(prefix + String(n).padStart(width, '0'))) n++
+      code = prefix + String(n).padStart(width, '0')
+    }
+    reservedCodes.add(code)
     const sizes: ScannedSize[] = []
     const warnings: string[] = []
     for (const sizeDir of safeChildren(productPath).filter(e => e.isDirectory())) {
