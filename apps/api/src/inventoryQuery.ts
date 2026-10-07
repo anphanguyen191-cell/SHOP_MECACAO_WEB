@@ -28,8 +28,8 @@ type ExplorerVariant={variant_id:number;sku:string;size:string;cost_price:number
 type ExplorerProduct={product_id:number;product_code:string;product_name:string;category:string|null;product_status:string;stock:number;variants:ExplorerVariant[]}
 
 function actualImages(variantId:number,productId:number):ExplorerImage[]{
- const rows=db.prepare(`SELECT id,file_name,file_path FROM product_images WHERE product_id=? AND variant_id=? ORDER BY sort_order,id`).all(productId,variantId) as Array<{id:number;file_name:string;file_path:string}>
- return rows.map(x=>({...x,exists:fs.existsSync(x.file_path)}))
+ const rows=db.prepare(`SELECT id,file_path FROM product_images WHERE product_id=? AND variant_id=? ORDER BY sort_order,id`).all(productId,variantId) as Array<{id:number;file_path:string}>
+ return rows.map(x=>({...x,file_name:x.file_path.split(/[\\/]/).pop()||x.file_path,exists:fs.existsSync(x.file_path)}))
 }
 
 export function inventoryExplorer(filters:Pick<InventoryFilters,'search'|'category'|'size'|'status'>={}){
