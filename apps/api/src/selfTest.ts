@@ -1,3 +1,4 @@
+import { receiveGoods } from './goodsReceipt.js'
 import { db } from './db.js'
 import { createProduct, suggestProductCode, suggestSku } from './products.js'
 import { addInventory, batchImport, history } from './inventory.js'
@@ -147,6 +148,7 @@ const importedVariantIds=(db.prepare('SELECT id FROM product_variants WHERE prod
 for(const id of importedVariantIds)db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(id)
 db.prepare('DELETE FROM product_variants WHERE product_id=?').run(importedId)
 db.prepare('DELETE FROM products WHERE id=?').run(importedId)
+const receiptSource=fs.mkdtempSync(path.join(os.tmpdir(),'shop-receipt-src-'));const receiptStore=fs.mkdtempSync(path.join(os.tmpdir(),'shop-receipt-store-'));const receiptImg=path.join(receiptSource,'photo.jpg');await sharp({create:{width:100,height:100,channels:3,background:{r:1,g:2,b:3}}}).jpeg().toFile(receiptImg);const progress:string[]=[];const receipt=receiveGoods({storeRoot:receiptStore,name:'Receipt '+suffix,productCode:'R'+suffix,sizes:[{size:'Size 8',quantity:1,costPrice:10000,salePrice:20000,images:[receiptImg]}]},p=>progress.push(p.phase));assert(receipt.copiedImages===1,'goods receipt must copy physical image');assert(fs.existsSync(path.join(receiptStore,'Receipt '+suffix,'Size 8','001.jpg')),'goods receipt image must exist in canonical warehouse');assert(progress.includes('COPY')&&progress.at(-1)==='DONE','goods receipt must expose real progress phases');const rp=receipt.product as any;const rv=rp.variants[0];assert(rv.stock===1,'goods receipt must create IMPORT stock');db.prepare('DELETE FROM product_images WHERE product_id=?').run(receipt.productId);db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(rv.id);db.prepare('DELETE FROM product_variants WHERE product_id=?').run(receipt.productId);db.prepare('DELETE FROM products WHERE id=?').run(receipt.productId);fs.rmSync(receiptSource,{recursive:true,force:true});fs.rmSync(receiptStore,{recursive:true,force:true});
 fs.rmSync(importRoot,{recursive:true,force:true})
 db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(collisionVariant.id)
 db.prepare('DELETE FROM product_variants WHERE id=?').run(collisionVariant.id)
