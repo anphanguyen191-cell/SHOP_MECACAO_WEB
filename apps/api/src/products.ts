@@ -38,6 +38,7 @@ export function listProducts(search = '') {
   return db.prepare(`
     SELECT p.id, p.product_code, p.name, p.cost_price, p.sale_price, p.status,
            c.name AS category,
+           (SELECT pi.id FROM product_images pi WHERE pi.product_id=p.id ORDER BY pi.is_primary DESC,pi.sort_order,pi.id LIMIT 1) AS image_id,
            COUNT(DISTINCT v.id) AS variant_count,
            COALESCE(SUM(s.stock), 0) AS total_stock
     FROM products p
