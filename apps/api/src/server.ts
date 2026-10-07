@@ -9,7 +9,7 @@ import { scanStore } from './storeScanner.js'
 import { commitStoreImport } from './storeImport.js'
 import { createBackup, createOptimizedImageBackup } from './backup.js'
 import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
-import { inventoryRows, inventoryHistory, inventoryFilterOptions, inventoryExplorer, inventoryDashboard, inventorySuggestions } from './inventoryQuery.js'
+import { inventoryRows, inventoryHistory, inventoryFilterOptions, inventoryExplorer, inventoryDashboard, inventorySuggestions, catalogDashboard } from './inventoryQuery.js'
 import { getImageRecord, imageMime } from './images.js'
 import { receiveGoods, inspectImageFolder } from './goodsReceipt.js'
 import { dashboardSummary } from './dashboard.js'
@@ -45,6 +45,7 @@ app.get('/api/inventory', (req,res) => {
  try { const threshold=getLowStockThreshold(); res.json(inventoryRows({search:String(req.query.search??''),category:String(req.query.category??''),size:String(req.query.size??''),status:String(req.query.status??'all') as 'all'|'active'|'inactive',state:String(req.query.state??'all') as 'all'|'out'|'low'|'ok',threshold})) }
  catch(e){res.status(400).json({error:e instanceof Error?e.message:'Bộ lọc tồn kho không hợp lệ'})}
 })
+app.get('/api/catalog/dashboard', (_req,res)=>{try{res.json(catalogDashboard())}catch(e){res.status(500).json({error:e instanceof Error?e.message:'Không thể tổng hợp danh mục'})}})
 app.get('/api/inventory/filter-options', (_req,res)=>res.json(inventoryFilterOptions()))
 app.get('/api/inventory/dashboard', (_req,res)=>{try{res.json(inventoryDashboard())}catch(e){res.status(500).json({error:e instanceof Error?e.message:'Không thể tổng hợp tồn kho'})}})
 app.get('/api/inventory/explorer', (req,res)=>{try{res.json(inventoryExplorer({search:String(req.query.search??''),category:String(req.query.category??''),size:String(req.query.size??''),status:String(req.query.status??'active') as 'all'|'active'|'inactive'}))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể đọc cây tồn kho'})}})
