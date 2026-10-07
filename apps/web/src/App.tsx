@@ -3,6 +3,7 @@ import InventoryOps from './InventoryOps'
 import AddProduct from './AddProduct'
 import InventoryView from './InventoryView'
 import SettingsView from './SettingsView'
+import GoodsReceipt from './GoodsReceipt'
 
 type Health={ok:boolean;version:string;schema:number;database:string}
 type ScanSize={size:string;images:string[];suggestedSku:string;existingVariantId?:number;costPrice?:number;salePrice?:number;status?:'NEW'|'EXISTING'}
@@ -15,7 +16,7 @@ const demo:ProductRow[]=[
 {id:1,product_code:'LG0001',name:'Lửng gái T5',category:'Đồ tole bé gái',variant_count:3,total_stock:12},
 {id:2,product_code:'BG0001',name:'Bộ gái hoa',category:'Đồ tole bé gái',variant_count:4,total_stock:7}
 ]
-const nav=['Tổng quan','Sản phẩm','Import kho','Tồn kho','Cài đặt']
+const nav=['Tổng quan','Sản phẩm','Nhập hàng','Import kho','Tồn kho','Cài đặt']
 
 export default function App(){
  const isDemo=useMemo(()=>location.hostname.endsWith('github.io'),[])
@@ -56,6 +57,7 @@ export default function App(){
   <div className="layout"><nav className="sidebar">{nav.map(n=><button key={n} className={active===n?'active':''} onClick={()=>setActive(n)}><strong>{n}</strong></button>)}</nav>
   <main><section className="hero"><p className="eyebrow">V1.0 DEVELOPMENT</p><h2>{active}</h2><p>Product + SKU + Inventory Ledger. Dữ liệu thật chỉ hoạt động ở LOCAL.</p></section>
   {active==='Tổng quan'&&<section className="grid"><article className="card"><span>Schema</span><strong>{health?.schema??100}</strong><p>Inventory v1</p></article><article className="card"><span>Chế độ</span><strong>{mode}</strong><p>{isDemo?'GitHub preview':health?.database??'API offline'}</p></article><article className="card"><span>Nguyên tắc</span><strong>Ledger</strong><p>Không sửa tồn trực tiếp</p></article></section>}
+  {active==='Nhập hàng'&&(isDemo?<section className="panel"><h3>Nhập hàng</h3><p>DEMO chỉ xem. Copy ảnh và ghi tồn chỉ chạy LOCAL.</p></section>:<GoodsReceipt/>)}
   {active==='Tồn kho'&&(isDemo?<section className="panel"><h3>Tồn kho</h3><p>DEMO chỉ xem giao diện. Dữ liệu tồn thật chỉ hoạt động ở LOCAL.</p></section>:<InventoryView/>)}
   {active==='Cài đặt'&&(isDemo?<section className="panel"><h3>Cài đặt & Backup</h3><p>DEMO không ghi cài đặt hoặc tạo backup. Các chức năng này chỉ hoạt động ở LOCAL.</p></section>:<SettingsView/>)}
   {active==='Sản phẩm'&&<section className="panel"><div className="row"><h3>{active}</h3><div className="row"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Tìm tên / mã / SKU"/>{active==='Sản phẩm'&&!isDemo&&<button className="primary" onClick={()=>setShowAdd(!showAdd)}>+ SẢN PHẨM</button>}</div></div>{showAdd&&active==='Sản phẩm'&&<AddProduct onDone={()=>{setShowAdd(false);setProductReload(x=>x+1)}}/>}<div className="productList">{products.map(p=><article className="product clickable" key={p.id} onClick={()=>{if(!isDemo)setOpsProductId(p.id)}}><div><b>{p.product_code}</b><h3>{p.name}</h3><small>{p.category||'Chưa phân loại'} · {p.variant_count} size</small></div><strong>{p.total_stock}<small> tồn</small></strong></article>)}{!products.length&&<p>Chưa có sản phẩm.</p>}</div>{opsProductId&&<InventoryOps productId={opsProductId} onClose={()=>setOpsProductId(null)}/>}</section>}
