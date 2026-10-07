@@ -11,7 +11,7 @@ import { createBackup, createOptimizedImageBackup } from './backup.js'
 import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
 import { inventoryRows, inventoryHistory, inventoryFilterOptions } from './inventoryQuery.js'
 import { getImageRecord, imageMime } from './images.js'
-import { receiveGoods } from './goodsReceipt.js'
+import { receiveGoods, inspectImageFolder } from './goodsReceipt.js'
 
 const app = express()
 const PORT = Number(process.env.PORT ?? 3000)
@@ -61,6 +61,7 @@ app.post('/api/products', (req, res) => {
   try { res.status(201).json(createProduct(req.body)) }
   catch (e) { res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể tạo sản phẩm' }) }
 })
+app.post('/api/goods-receipt/inspect',(req,res)=>{try{res.json(inspectImageFolder(String(req.body.path??'')))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể đọc folder ảnh'})}})
 app.post('/api/goods-receipt', (req,res)=>{try{const events:any[]=[];const result=receiveGoods(req.body,p=>events.push(p));res.status(201).json({result,events})}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể nhập hàng'})}})
 app.post('/api/inventory/import', (req, res) => {
   try { const r = addInventory(Number(req.body.variantId), 'IMPORT', Number(req.body.quantity), req.body.unitCost, req.body.note); res.status(201).json({ ok: true, id: Number(r.lastInsertRowid) }) }
