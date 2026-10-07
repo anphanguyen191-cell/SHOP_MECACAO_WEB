@@ -12,6 +12,7 @@ import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
 import { inventoryRows, inventoryHistory, inventoryFilterOptions } from './inventoryQuery.js'
 import { getImageRecord, imageMime } from './images.js'
 import { receiveGoods, inspectImageFolder } from './goodsReceipt.js'
+import { dashboardSummary } from './dashboard.js'
 
 const app = express()
 const PORT = Number(process.env.PORT ?? 3000)
@@ -32,6 +33,7 @@ app.get('/api/images/:id', (req,res) => {
   } catch(e) { return res.status(400).json({error:e instanceof Error?e.message:'Không thể đọc ảnh'}) }
 })
 
+app.get('/api/dashboard', (_req,res) => res.json(dashboardSummary()))
 app.get('/api/products', (req, res) => res.json(listProducts(String(req.query.search ?? ''))))
 app.get('/api/categories', (_req,res) => res.json(listCategories()))
 app.get('/api/settings', (_req,res) => res.json({ lowStockThreshold:getLowStockThreshold() }))
