@@ -1,7 +1,7 @@
 import { db } from './db.js'
 import { createProduct, suggestProductCode, suggestSku } from './products.js'
 import { addInventory, batchImport, history } from './inventory.js'
-import { isPathInsideRoot } from './storeScanner.js'
+import { isPathInsideRoot, scanStore } from './storeScanner.js'
 import { createBackup, createOptimizedImageBackup } from './backup.js'
 import sharp from 'sharp'
 import fs from 'node:fs'
@@ -95,6 +95,15 @@ assert(duplicateImportSkuBlocked,'duplicate warehouse SKU must be rejected clear
 const importedId=(imported!.product as {id:number}).id
 const importedVariant=(imported!.variants as Array<{id:number;stock:number}>)[0]
 assert(importedVariant.stock===3,'store import opening stock must persist')
+const laterDir=path.join(importRoot,'Test Product','Size 10');fs.mkdirSync(laterDir,{recursive:true})
+const laterImage=path.join(laterDir,'002.jpg');await sharp({create:{width:800,height:800,channels:3,background:{r:90,g:120,b:180}}}).jpeg().toFile(laterImage)
+const scanAgain=scanStore(importRoot).find(x=>x.name==='Test Product')
+assert(scanAgain?.status==='PARTIAL','scan must identify partial product')
+assert(scanAgain?.sizes.some(x=>x.size==='Size 8'&&x.status==='EXISTING'),'existing size recognized')
+assert(scanAgain?.sizes.some(x=>x.size==='Size 10'&&x.status==='NEW'),'new size recognized')
+const merged=commitStoreImport({rootPath:importRoot,name:'IMPORT '+suffix,productCode:'I'+suffix,variants:[{size:'Size 8',sku:'ISKU-'+suffix,costPrice:13000,salePrice:23000,images:[goodImage]},{size:'Size 10',sku:'ISKU10-'+suffix,costPrice:14000,salePrice:24000,openingStock:2,images:[laterImage]}]})
+assert((merged!.variants as Array<{size:string;cost_price:number}>).some(v=>v.size==='Size 8'&&v.cost_price===13000),'existing size price editable')
+assert((merged!.variants as Array<{size:string;stock:number}>).some(v=>v.size==='Size 10'&&v.stock===2),'new size addable later')
 const importedImage=(db.prepare('SELECT id FROM product_images WHERE product_id=? ORDER BY id LIMIT 1').get(importedId) as {id:number})
 const imageRecord=getImageRecord(importedImage.id)
 assert(imageRecord&&!imageRecord.missing,'registered image must resolve by database id')
