@@ -1,4 +1,5 @@
 import { useEffect,useMemo,useState } from 'react'
+import FolderPicker from './FolderPicker'
 
 type Product={id:number;product_code:string;name:string}
 type Variant={id:number;sku:string;size:string;cost_price:number;sale_price:number}
@@ -12,7 +13,7 @@ const labels:Record<string,string>={VALIDATE:'Kiểm tra dữ liệu',PREPARE:'C
 export default function GoodsReceipt(){
  const [products,setProducts]=useState<Product[]>([]),[flow,setFlow]=useState<Flow>('EXISTING_SIZE'),[productId,setProductId]=useState(0),[detail,setDetail]=useState<ProductDetail|null>(null)
  const [name,setName]=useState(''),[code,setCode]=useState(''),[category,setCategory]=useState(''),[storeRoot,setStoreRoot]=useState(''),[rows,setRows]=useState<SizeRow[]>([blank()]),[note,setNote]=useState('')
- const [busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[progress,setProgress]=useState<Progress|null>(null),[productSearch,setProductSearch]=useState('')
+ const [busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[progress,setProgress]=useState<Progress|null>(null),[productSearch,setProductSearch]=useState(''),[pick,setPick]=useState<{kind:'store'|'source';row?:number}|null>(null)
  useEffect(()=>{fetch('/api/products').then(r=>r.json()).then(setProducts).catch(()=>{})},[])
  const filteredProducts=useMemo(()=>{const q=productSearch.trim().toLowerCase();return q?products.filter(p=>p.name.toLowerCase().includes(q)||p.product_code.toLowerCase().includes(q)):products},[products,productSearch])
  async function chooseProduct(id:number){setProductId(id);setMsg('');if(!id){setDetail(null);return}const r=await fetch('/api/products/'+id);const j=await r.json();if(r.ok){setDetail(j);setName(j.product.name);setCode(j.product.product_code);if(flow==='EXISTING_SIZE'){const first=j.variants?.[0];setRows(first?[{size:first.size,sku:first.sku,quantity:1,costPrice:first.cost_price??0,salePrice:first.sale_price??0,sourcePath:'',imageCount:0}]:[blank()])}else if(flow==='NEW_SIZE'){setRows([blank()])}}}
@@ -37,7 +38,7 @@ export default function GoodsReceipt(){
    <button className={flow==='NEW_SIZE'?'active':''} onClick={()=>switchFlow('NEW_SIZE')}><b>2. Thêm Size mới</b><span>Product đã có, Size chưa có</span></button>
    <button className={flow==='EXISTING_SIZE'?'active':''} onClick={()=>switchFlow('EXISTING_SIZE')}><b>3. Nhập thêm Size đã có</b><span>Product + Size đều có sẵn</span></button>
   </div>
-  <div className="formGrid"><label>Kho đích<input value={storeRoot} onChange={e=>setStoreRoot(e.target.value)} placeholder={'D:\\1-Me CaCao Store'}/></label><label>Ghi chú<input value={note} onChange={e=>setNote(e.target.value)} placeholder="Ví dụ: Hàng về đợt chiều"/></label></div>
+  <div className="formGrid"><label>Kho đích<div className="pickerInput"><input value={storeRoot} readOnly placeholder={'D:\\1-Me CaCao Store'}/><button onClick={()=>setPick({kind:'store'})}>CHỌN KHO</button></div></label><label>Ghi chú<input value={note} onChange={e=>setNote(e.target.value)} placeholder="Ví dụ: Hàng về đợt chiều"/></label></div>
   {flow!=='NEW_PRODUCT'&&<div className="productPicker"><label>Tìm sản phẩm có sẵn<input value={productSearch} onChange={e=>setProductSearch(e.target.value)} placeholder="Gõ tên hoặc mã sản phẩm..."/></label><div className="pickerResults">{filteredProducts.slice(0,12).map(p=><button key={p.id} className={productId===p.id?'selected':''} onClick={()=>void chooseProduct(p.id)}><b>{p.name}</b><span>{p.product_code}</span></button>)}</div></div>}
   {flow==='NEW_PRODUCT'&&<div className="formGrid"><label>Tên sản phẩm mới<input value={name} onChange={e=>setName(e.target.value)}/></label><label>Mã sản phẩm<input value={code} onChange={e=>setCode(e.target.value)} placeholder="Để trống = tự đề xuất"/></label><label>Danh mục<input value={category} onChange={e=>setCategory(e.target.value)} placeholder="Danh mục mới hoặc hiện có"/></label></div>}
   {flow==='NEW_SIZE'&&detail&&<div className="existingContext"><b>{detail.product.name}</b><span>Size đang có: {existingSizes.map(v=>v.size).join(' · ')||'Chưa có'}</span></div>}
@@ -46,7 +47,7 @@ export default function GoodsReceipt(){
   {rows.map((x,i)=><div className="receiptRowV2" key={i}>
    <input value={x.size} disabled={flow==='EXISTING_SIZE'} onChange={e=>patch(i,'size',e.target.value)} placeholder="Size"/>
    <input value={x.sku} disabled={flow==='EXISTING_SIZE'} onChange={e=>patch(i,'sku',e.target.value)} placeholder="SKU tự động"/>
-   <div className="sourcePicker"><input value={x.sourcePath} onChange={e=>patch(i,'sourcePath',e.target.value)} placeholder="Folder ảnh nguồn"/><button onClick={()=>void inspect(i)} disabled={busy}>QUÉT ẢNH</button></div>
+   <div className="sourcePicker"><input value={x.sourcePath} readOnly placeholder="Folder ảnh nguồn"/><button onClick={()=>setPick({kind:'source',row:i})} disabled={busy}>CHỌN ẢNH</button><button onClick={()=>void inspect(i)} disabled={busy||!x.sourcePath}>QUÉT</button></div>
    <div className="imageCountBadge"><b>{x.imageCount}</b><span>ảnh = tồn nhập</span></div>
    <input type="number" min="0" value={x.costPrice} onChange={e=>patch(i,'costPrice',e.target.value)} placeholder="Giá nhập"/>
    <input type="number" min="0" value={x.salePrice} onChange={e=>patch(i,'salePrice',e.target.value)} placeholder="Giá bán"/>
@@ -55,5 +56,6 @@ export default function GoodsReceipt(){
   <div className="row actions"><span className="receiptRule">1 ảnh hợp lệ trong Size = 1 sản phẩm vật lý nhập kho</span><button className="primary" disabled={busy||!storeRoot||(flow!=='NEW_PRODUCT'&&!productId)||rows.every(r=>!r.imageCount)} onClick={()=>void submit()}>{busy?'ĐANG NHẬP...':'XÁC NHẬN NHẬP HÀNG'}</button></div>
   {progress&&<div className="progressBox"><div className="row"><b>{labels[progress.phase]??progress.phase}</b><strong>{progress.percent}%</strong></div><progress max="100" value={progress.percent}/><small>{progress.total?progress.copied+'/'+progress.total+' ảnh':''}{progress.current?' · '+progress.current:''}</small></div>}
   {msg&&<p className="notice">{msg}</p>}
+  {pick&&<FolderPicker title={pick.kind==='store'?'Chọn kho ảnh Shop Mẹ CaCao':'Chọn folder ảnh hàng mới'} onClose={()=>setPick(null)} onPick={p=>{if(pick.kind==='store')setStoreRoot(p);else if(pick.row!==undefined){patch(pick.row,'sourcePath',p);setTimeout(()=>void inspect(pick.row!),0)}setPick(null)}}/>}
  </section>
 }
