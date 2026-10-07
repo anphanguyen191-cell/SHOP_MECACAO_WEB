@@ -29,7 +29,7 @@ export function scanStore(rootPath: string): ScannedProduct[] {
       code = prefix + String(n).padStart(width, '0')
     }
     reservedCodes.add(code)
-    const existingProduct=db.prepare('SELECT id,product_code FROM products WHERE lower(name)=lower(?) LIMIT 1').get(productDir.name) as {id:number;product_code:string}|undefined
+    const existingProduct=db.prepare('SELECT id,product_code FROM products WHERE lower(name)=lower(?) OR product_code=? LIMIT 1').get(productDir.name,code) as {id:number;product_code:string}|undefined
     if(existingProduct){code=existingProduct.product_code;reservedCodes.add(code)}
     const sizes: ScannedSize[] = []
     const warnings: string[] = []
