@@ -5,7 +5,7 @@ Updated: 2026-10-06
 ## Current baseline
 - Version: **V0.1.2**
 - Codename: **Foundation Stable**
-- Status: V1.0 PRE-ACCEPTANCE — INTERNAL GATE PASS; WINDOWS ACCEPTANCE PENDING
+- Status: V1.0 READY FOR WINDOWS ACCEPTANCE — INTERNAL GATE + DEPLOY PASS
 - Stable baseline: **YES**
 - User acceptance test: **PASS — Windows laptop + iPhone GitHub Preview**
 
@@ -44,6 +44,15 @@ Updated: 2026-10-06
 
 ## Known non-blocking item
 - GitHub Preview mobile navigation can overflow horizontally; defer UI polish until feature UI exists.
+
+## 2026-10-07 V1 acceptance candidate
+- Schema target: **110**, per-size/SKU current pricing.
+- Automatic pre-migration snapshot for existing schema 100 before migration to 110.
+- Daily **Nhập hàng** flow added separately from existing-store onboarding.
+- Goods receipt supports existing/new Product and Size, per-size quantity/prices, physical image COPY into canonical warehouse, source-folder image counting, confirmed quantity override, ledger `IMPORT`, rollback, and progress phases.
+- Inventory remains ledger-derived; image count never mutates stock after SKU exists.
+- GitHub Actions run **37636041261**: verify SUCCESS + deploy SUCCESS.
+- Windows real-runtime/real-warehouse acceptance remains **UNVERIFIED** until user executes acceptance procedure.
 
 ## Next milestone
 **V1.0 — Product + SKU + Inventory Ledger**
