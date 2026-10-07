@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 
 export const TARGET_SCHEMA=110
@@ -37,6 +39,7 @@ function migrate100to110(db:DatabaseSync){
  UPDATE app_metadata SET value='110',updated_at=datetime('now') WHERE key='schema_version';
  `)
 }
+function backupBeforeMigration(db:DatabaseSync){const row=db.prepare('PRAGMA database_list').all().find((x:any)=>x.name==='main') as {file?:string}|undefined;const file=row?.file;if(!file)return null;const resolved=path.resolve(file);if(!fs.existsSync(resolved))return null;const stamp=new Date().toISOString().replace(/[:.]/g,'-');const backup=resolved+'.pre-v110-'+stamp+'.bak';fs.copyFileSync(resolved,backup,fs.constants.COPYFILE_EXCL);return backup}
 export function bootstrapV100(db:DatabaseSync){
  const current=readSchemaVersion(db)
  if(current>TARGET_SCHEMA)throw new Error('Database schema mới hơn phiên bản ứng dụng; dừng để bảo vệ dữ liệu')
@@ -46,6 +49,7 @@ export function bootstrapV100(db:DatabaseSync){
   const hasBusinessTables=Boolean(db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name IN ('products','product_variants','inventory_transactions') LIMIT 1").get())
   if(hasBusinessTables)throw new Error('Phát hiện database legacy chưa có schema_version; không tự động ghi đè')
  }
+ if(current===100)backupBeforeMigration(db)
  db.exec('BEGIN IMMEDIATE')
  try{if(current===0)createV100(db);migrate100to110(db);db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}
  assertDatabaseIntegrity(db);return TARGET_SCHEMA
