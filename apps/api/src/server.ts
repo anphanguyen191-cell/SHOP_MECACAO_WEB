@@ -33,6 +33,19 @@ app.get('/api/images/:id', (req,res) => {
   } catch(e) { return res.status(400).json({error:e instanceof Error?e.message:'Không thể đọc ảnh'}) }
 })
 
+app.get('/api/fs/roots', (_req,res)=>{
+ try{
+  if(process.platform==='win32'){const roots:string[]=[];for(let code=65;code<=90;code++){const drive=String.fromCharCode(code)+':\\\\';try{if(fs.existsSync(drive)&&fs.statSync(drive).isDirectory())roots.push(drive)}catch{}}return res.json(roots)}
+  return res.json([process.cwd()])
+ }catch(e){return res.status(500).json({error:e instanceof Error?e.message:'Không thể đọc ổ đĩa'})}
+})
+app.get('/api/fs/list', (req,res)=>{
+ try{
+  const raw=String(req.query.path??'').trim();if(!raw)return res.status(400).json({error:'Thiếu đường dẫn'})
+  const target=path.resolve(raw);const entries=fs.readdirSync(target,{withFileTypes:true}).filter(x=>x.isDirectory()).map(x=>({name:x.name,path:path.join(target,x.name)})).sort((a,b)=>a.name.localeCompare(b.name,'vi'))
+  return res.json({path:target,parent:path.dirname(target)===target?null:path.dirname(target),directories:entries})
+ }catch(e){return res.status(400).json({error:e instanceof Error?e.message:'Không thể mở thư mục'})}
+})
 app.get('/api/dashboard', (_req,res) => res.json(dashboardSummary()))
 app.get('/api/products', (req, res) => res.json(listProducts(String(req.query.search ?? ''))))
 app.get('/api/categories', (_req,res) => res.json(listCategories()))
@@ -131,7 +144,7 @@ if (fs.existsSync(webDist)) {
   app.get('/', (_req, res) => res.status(503).send('Frontend chưa build. Chạy npm run build trước.'))
 }
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, process.env.SHOP_HOST ?? '127.0.0.1', () => {
   console.log(`Shop Mẹ CaCao đang chạy: http://localhost:${PORT}`)
   console.log(`Database: ${dbPath}`)
 })
