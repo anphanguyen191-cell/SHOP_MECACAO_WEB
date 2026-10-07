@@ -5,9 +5,10 @@ Updated: 2026-10-06
 ## Current baseline
 - Version: **V0.1.2**
 - Codename: **Foundation Stable**
-- Status: V1.0 READY FOR WINDOWS ACCEPTANCE — INTERNAL GATE + DEPLOY PASS
+- Status: **V1.0 REOPENED — UX + PHYSICAL-INVENTORY IMPLEMENTATION**
 - Stable baseline: **YES**
-- User acceptance test: **PASS — Windows laptop + iPhone GitHub Preview**
+- Foundation acceptance: **PASS — Windows laptop + iPhone GitHub Preview**
+- V1 acceptance: **NOT PASS / REOPENED** after real Windows UX review.
 
 ## Architecture decisions — APPROVED
 1. Greenfield; không phụ thuộc core desktop cũ.
@@ -50,7 +51,7 @@ Updated: 2026-10-06
 - Automatic pre-migration snapshot for existing schema 100 before migration to 110.
 - Daily **Nhập hàng** flow added separately from existing-store onboarding.
 - Goods receipt supports existing/new Product and Size, per-size quantity/prices, physical image COPY into canonical warehouse, source-folder image counting, confirmed quantity override, ledger `IMPORT`, rollback, and progress phases.
-- Inventory remains ledger-derived; image count never mutates stock after SKU exists.
+- **Superseded 2026-10-07:** physical inventory is now image-backed for Shop Mẹ CaCao: one existing canonical Size image represents one physical item. Ledger remains audit/history and must be reconciled against physical images; mismatches are explicit, never silently rewritten.
 - GitHub Actions run **37636041261**: verify SUCCESS + deploy SUCCESS.
 - Windows real-runtime/real-warehouse acceptance remains **UNVERIFIED** until user executes acceptance procedure.
 
@@ -98,3 +99,16 @@ Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản ph�
 - Image backup is manual only; no automatic physical image backup task exists.
 - Original warehouse images remain untouched.
 - V1 is ready for consolidated Windows/local acceptance after acceptance package/instructions are prepared.
+
+
+## 2026-10-07 — Approved V1 UX / inventory baseline
+- V1 remains REOPENED until DATA + BUSINESS + FILESYSTEM + UX + WINDOWS gates pass.
+- UI direction: colorful Shop Mẹ CaCao identity (pink/yellow/mint/baby-blue/cream), logo/banner assets, consistent controls and responsive states.
+- Danh mục sản phẩm = catalog/dashboard, not a duplicate inventory list.
+- Tồn kho = inventory dashboard + Windows-Explorer-style Product → Size → physical images.
+- Inventory dashboard: total physical stock, products, Size/SKU, out-of-stock, Top 5 high stock, Top 5 lowest positive stock, stock by Size, reconciliation warnings.
+- Inventory search must autocomplete existing Product / product code / SKU / Size; known values are selected, not retyped.
+- Physical stock rule: **1 existing canonical image in a Size = 1 physical item in stock**. Missing physical image reduces physical count; ledger/image mismatch is shown for reconciliation.
+- Images in Size gallery are selectable. Selection is V1 foundation for future send-to-customer, order, sale and closing-slip workflows; selection itself never performs SALE.
+- Nhập hàng UX must have 3 explicit flows: (1) completely new Product, (2) new Size for existing Product, (3) additional stock for existing Product+Size. Existing Product/Size/SKU values must be selectable/autofilled.
+- Incoming goods, folder picker, real-time progress, crash recovery and scanner reconciliation remain IMPLEMENTING / UNVERIFIED until deep regression passes.
