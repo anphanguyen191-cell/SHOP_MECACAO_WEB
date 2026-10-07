@@ -1,11 +1,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { suggestProductCode, suggestSku } from './products.js'
+import { db } from './db.js'
 
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic'])
 
-export type ScannedSize = { size: string; folderPath: string; images: string[]; suggestedSku: string }
-export type ScannedProduct = { name: string; folderPath: string; suggestedProductCode: string; sizes: ScannedSize[]; warnings: string[] }
+export type ScannedSize = { size:string;folderPath:string;images:string[];suggestedSku:string;existingVariantId?:number;existingSku?:string;costPrice?:number;salePrice?:number;status:'NEW'|'EXISTING' }
+export type ScannedProduct = { name:string;folderPath:string;suggestedProductCode:string;existingProductId?:number;status:'NEW'|'EXISTING'|'PARTIAL';sizes:ScannedSize[];warnings:string[] }
 
 function safeChildren(dir: string) {
   try { return fs.readdirSync(dir, { withFileTypes: true }) } catch { return [] }
@@ -28,6 +29,8 @@ export function scanStore(rootPath: string): ScannedProduct[] {
       code = prefix + String(n).padStart(width, '0')
     }
     reservedCodes.add(code)
+    const existingProduct=db.prepare('SELECT id,product_code FROM products WHERE lower(name)=lower(?) LIMIT 1').get(productDir.name) as {id:number;product_code:string}|undefined
+    if(existingProduct){code=existingProduct.product_code;reservedCodes.add(code)}
     const sizes: ScannedSize[] = []
     const warnings: string[] = []
     for (const sizeDir of safeChildren(productPath).filter(e => e.isDirectory())) {
@@ -36,10 +39,13 @@ export function scanStore(rootPath: string): ScannedProduct[] {
         .filter(e => e.isFile() && IMAGE_EXTENSIONS.has(path.extname(e.name).toLowerCase()))
         .map(e => path.join(sizePath, e.name))
       if (images.length === 0) warnings.push(`${sizeDir.name}: không có ảnh sản phẩm`)
-      sizes.push({ size: sizeDir.name, folderPath: sizePath, images, suggestedSku: suggestSku(code, sizeDir.name) })
+      const existing=existingProduct?db.prepare('SELECT id,sku,cost_price,sale_price FROM product_variants WHERE product_id=? AND lower(size)=lower(?)').get(existingProduct.id,sizeDir.name) as {id:number;sku:string;cost_price:number;sale_price:number}|undefined:undefined
+      sizes.push({size:sizeDir.name,folderPath:sizePath,images,suggestedSku:existing?.sku??suggestSku(code,sizeDir.name),existingVariantId:existing?.id,existingSku:existing?.sku,costPrice:existing?.cost_price,salePrice:existing?.sale_price,status:existing?'EXISTING':'NEW'})
     }
     if (sizes.length === 0) warnings.push('Không phát hiện folder size')
-    products.push({ name: productDir.name, folderPath: productPath, suggestedProductCode: code, sizes, warnings })
+    const existingCount=sizes.filter(s=>s.status==='EXISTING').length
+    const status:ScannedProduct['status']=existingProduct?(existingCount===sizes.length?'EXISTING':'PARTIAL'):'NEW'
+    products.push({name:productDir.name,folderPath:productPath,suggestedProductCode:code,existingProductId:existingProduct?.id,status,sizes,warnings})
   }
   return products
 }
