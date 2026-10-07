@@ -37,10 +37,11 @@ export function inventoryExplorer(filters:Pick<InventoryFilters,'search'|'catego
  const products=new Map<number,ExplorerProduct>()
  for(const r of rows){
   const images=actualImages(r.variant_id,r.product_id)
-  const stock=images.filter(x=>x.exists).length
+  const registered=images.filter(x=>x.exists)
+  const stock=registered.length
   let product=products.get(r.product_id)
   if(!product){product={product_id:r.product_id,product_code:r.product_code,product_name:r.product_name,category:r.category??null,product_status:r.product_status,stock:0,variants:[]};products.set(r.product_id,product)}
-  product.variants.push({variant_id:r.variant_id,sku:r.sku,size:r.size,cost_price:Number(r.cost_price||0),sale_price:Number(r.sale_price||0),ledger_stock:Number(r.stock||0),stock,images})
+  product.variants.push({variant_id:r.variant_id,sku:r.sku,size:r.size,cost_price:Number(r.cost_price||0),sale_price:Number(r.sale_price||0),ledger_stock:Number(r.stock||0),stock,images:registered})
   product.stock+=stock
  }
  return [...products.values()]
