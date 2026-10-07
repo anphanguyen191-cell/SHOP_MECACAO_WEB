@@ -4,7 +4,7 @@ import { db } from './db.js'
 import { getProduct, suggestSku } from './products.js'
 import { isPathInsideRoot } from './storeScanner.js'
 
-type ImportVariant = { size: string; sku?: string; openingStock?: number; images?: string[] }
+type ImportVariant = { size: string; sku?: string; openingStock?: number; images?: string[]; costPrice?: number; salePrice?: number }
 export type ApprovedStoreImport = {
   rootPath: string; name: string; productCode: string; category?: string;
   costPrice?: number; salePrice?: number; variants: ImportVariant[]
@@ -42,14 +42,16 @@ export function commitStoreImport(input: ApprovedStoreImport) {
     const pr = db.prepare('INSERT INTO products(product_code,name,category_id,cost_price,sale_price) VALUES(?,?,?,?,?)')
       .run(code, input.name.trim(), categoryId, input.costPrice ?? 0, input.salePrice ?? 0)
     const productId = Number(pr.lastInsertRowid)
-    const insertVariant = db.prepare('INSERT INTO product_variants(product_id,sku,size) VALUES(?,?,?)')
+    const insertVariant = db.prepare('INSERT INTO product_variants(product_id,sku,size,cost_price,sale_price) VALUES(?,?,?,?,?)')
     const insertImage = db.prepare('INSERT INTO product_images(product_id,variant_id,file_path,sort_order,is_primary) VALUES(?,?,?,?,?)')
     const opening = db.prepare("INSERT INTO inventory_transactions(variant_id,transaction_type,quantity,unit_cost,note) VALUES(?,'OPENING',?,?,?)")
 
     for (const [variantIndex, variant] of input.variants.entries()) {
       const size = variant.size.trim()
       const sku = requestedSkus[variantIndex]
-      const vr = insertVariant.run(productId, sku, size)
+      const variantCost=variant.costPrice ?? input.costPrice ?? 0,variantSale=variant.salePrice ?? input.salePrice ?? 0
+      if(!Number.isFinite(variantCost)||variantCost<0||!Number.isFinite(variantSale)||variantSale<0)throw new Error('Giá theo size không hợp lệ')
+      const vr = insertVariant.run(productId, sku, size, variantCost, variantSale)
       const variantId = Number(vr.lastInsertRowid)
       const images = variant.images ?? []
       images.forEach((file, index) => {
@@ -60,7 +62,7 @@ export function commitStoreImport(input: ApprovedStoreImport) {
       })
       const qty = variant.openingStock ?? 0
       if (!Number.isFinite(qty) || !Number.isInteger(qty) || qty < 0) throw new Error('Tồn đầu phải là số nguyên không âm')
-      if (qty > 0) opening.run(variantId, qty, input.costPrice ?? 0, 'Tồn đầu từ kho hiện hữu')
+      if (qty > 0) opening.run(variantId, qty, variantCost, 'Tồn đầu từ kho hiện hữu')
     }
     db.exec('COMMIT')
     return getProduct(productId)
