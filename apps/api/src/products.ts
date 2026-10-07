@@ -1,6 +1,6 @@
 import { db } from './db.js'
 
-export type VariantInput = { size: string; sku?: string; openingStock?: number }
+export type VariantInput = { size: string; sku?: string; openingStock?: number; costPrice?: number; salePrice?: number }
 export type ProductInput = {
   name: string
   productCode?: string
@@ -92,7 +92,7 @@ export function createProduct(input: ProductInput) {
     `).run(productCode, input.name.trim(), categoryId, input.costPrice ?? 0, input.salePrice ?? 0, input.description ?? null)
     const productId = Number(result.lastInsertRowid)
 
-    const insertVariant = db.prepare('INSERT INTO product_variants(product_id,sku,size) VALUES(?,?,?)')
+    const insertVariant = db.prepare('INSERT INTO product_variants(product_id,sku,size,cost_price,sale_price) VALUES(?,?,?,?,?)')
     const opening = db.prepare(`
       INSERT INTO inventory_transactions(variant_id,transaction_type,quantity,unit_cost,note)
       VALUES(?,'OPENING',?,?,?)
@@ -100,10 +100,12 @@ export function createProduct(input: ProductInput) {
     for (const item of input.variants) {
       const size = item.size.trim()
       const sku = (item.sku?.trim() || suggestSku(productCode, size)).toUpperCase()
-      const vr = insertVariant.run(productId, sku, size)
+      const variantCost=item.costPrice ?? input.costPrice ?? 0,variantSale=item.salePrice ?? input.salePrice ?? 0
+      if(!Number.isFinite(variantCost)||variantCost<0||!Number.isFinite(variantSale)||variantSale<0)throw new Error('Giá theo size không hợp lệ')
+      const vr = insertVariant.run(productId, sku, size, variantCost, variantSale)
       const qty = item.openingStock ?? 0
       if (!Number.isFinite(qty) || !Number.isInteger(qty) || qty < 0) throw new Error('Tồn đầu phải là số nguyên không âm')
-      if (qty > 0) opening.run(Number(vr.lastInsertRowid), qty, input.costPrice ?? 0, 'Tồn đầu')
+      if (qty > 0) opening.run(Number(vr.lastInsertRowid), qty, variantCost, 'Tồn đầu')
     }
     db.exec('COMMIT')
     return getProduct(productId)
@@ -123,4 +125,12 @@ export function setProductStatus(id: number, status: 'active'|'inactive') {
   const result = db.prepare("UPDATE products SET status=?,updated_at=datetime('now') WHERE id=?").run(status,id)
   if (Number(result.changes) !== 1) throw new Error('Không tìm thấy sản phẩm')
   return getProduct(id)
+}
+
+export function updateVariantPricing(id:number,costPrice:number,salePrice:number){
+ if(!Number.isInteger(id)||id<=0)throw new Error('SKU không hợp lệ')
+ if(!Number.isFinite(costPrice)||costPrice<0||!Number.isFinite(salePrice)||salePrice<0)throw new Error('Giá theo size không hợp lệ')
+ const r=db.prepare("UPDATE product_variants SET cost_price=?,sale_price=?,updated_at=datetime('now') WHERE id=?").run(costPrice,salePrice,id)
+ if(Number(r.changes)!==1)throw new Error('Không tìm thấy SKU')
+ return db.prepare('SELECT * FROM product_variants WHERE id=?').get(id)
 }
