@@ -25,7 +25,19 @@ export function receiveGoods(input:ReceiveInput,onProgress?:(p:ReceiveProgress)=
  const productName=safeName(String((existing?.product as any)?.name??input.name??''))
  const productCode=String((existing?.product as any)?.product_code??input.productCode??suggestProductCode(productName)).trim().toUpperCase()
  const currentVariants=((existing?.variants??[]) as any[])
+ if(input.productId&&!existing)throw new Error('Sản phẩm đã chọn không tồn tại')
+ if(existing&&(existing.product as any).status!=='active')throw new Error('Sản phẩm đã ngưng hoạt động')
+ const normalizedSizes=input.sizes.map(s=>safeName(s.size).toLowerCase())
+ if(new Set(normalizedSizes).size!==normalizedSizes.length)throw new Error('Size nhập bị trùng trong cùng phiếu')
+ const explicitSkus=input.sizes.map(s=>s.sku?.trim().toUpperCase()).filter(Boolean) as string[]
+ if(new Set(explicitSkus).size!==explicitSkus.length)throw new Error('SKU nhập bị trùng trong cùng phiếu')
  const sizes=input.sizes.map(s=>{validateQty(s.quantity);validateMoney(s.costPrice,'Giá nhập');validateMoney(s.salePrice,'Giá bán');const size=safeName(s.size);const images=imageFiles(s.images,s.sourcePath);for(const p of images){if(!fs.existsSync(p)||!fs.statSync(p).isFile())throw new Error('Không tìm thấy ảnh nguồn: '+p)}return {...s,size,images}})
+ for(const s of sizes){
+  if(s.quantity!==s.images.length)throw new Error('Tồn phải bám theo ảnh thực tế: Size '+s.size+' có '+s.images.length+' ảnh nhưng SL nhập là '+s.quantity)
+  const existingSize=currentVariants.find(v=>String(v.size).toLowerCase()===s.size.toLowerCase())
+  if(existingSize&&existingSize.status!=='active')throw new Error('Size '+s.size+' đã ngưng hoạt động')
+  if(s.sku?.trim()){const owner=db.prepare('SELECT product_id,id FROM product_variants WHERE UPPER(sku)=UPPER(?)').get(s.sku.trim()) as {product_id:number;id:number}|undefined;if(owner&&owner.id!==existingSize?.id)throw new Error('SKU '+s.sku+' đã thuộc sản phẩm/Size khác')}
+ }
  const total=sizes.reduce((n,s)=>n+s.images.length,0),created:string[]=[],createdDirs:string[]=[]
  const productDir=path.join(root,productName);if(!inside(root,productDir))throw new Error('Đường dẫn Product không an toàn')
  const plans:{size:typeof sizes[number];dir:string;copies:{src:string;dest:string}[]}[]=[];const reserved=new Set<string>()
