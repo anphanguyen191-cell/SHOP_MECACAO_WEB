@@ -97,7 +97,8 @@ try{commitStoreImport({rootPath:importRoot,name:'DUP SKU '+suffix,productCode:'U
 assert(duplicateImportSkuBlocked,'duplicate warehouse SKU must be rejected clearly')
 const importedId=(imported!.product as {id:number}).id
 const importedVariant=(imported!.variants as Array<{id:number;stock:number}>)[0]
-assert(importedVariant.stock===3,'store import opening stock must persist')
+assert(importedVariant.stock===1,'store import physical stock must match one registered image')
+assert((db.prepare('SELECT stock FROM product_variants WHERE id=?').get(importedVariant.id) as {stock:number}).stock===3,'store import ledger opening stock must persist separately')
 const laterDir=path.join(productFolder,'Size 10');fs.mkdirSync(laterDir,{recursive:true})
 const laterImage=path.join(laterDir,'002.jpg');await sharp({create:{width:800,height:800,channels:3,background:{r:90,g:120,b:180}}}).jpeg().toFile(laterImage)
 const scanAgain=scanStore(importRoot).find(x=>x.name==='IMPORT '+suffix)
