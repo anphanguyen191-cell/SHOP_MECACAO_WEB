@@ -3,13 +3,14 @@ import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { db } from './db.js'
 import { suggestProductCode, suggestSku, getProduct } from './products.js'
+import { createReceiptJournal, finishReceiptJournal, recoverPendingGoodsReceipts } from './receiptRecovery.js'
 
 const IMAGE_EXTENSIONS=new Set(['.jpg','.jpeg','.png','.webp','.heic'])
 export type ReceiveSize={size:string;sku?:string;quantity:number;costPrice:number;salePrice:number;images?:string[];sourcePath?:string}
 export type ReceiveInput={storeRoot:string;productId?:number;name?:string;productCode?:string;category?:string;sizes:ReceiveSize[];note?:string}
 export type ReceiveProgress={phase:'VALIDATE'|'PREPARE'|'COPY'|'VERIFY'|'DB_COMMIT'|'INTEGRITY'|'DONE'|'ROLLBACK';percent:number;copied:number;total:number;current?:string}
 
-function safeName(v:string){const s=v.trim();if(!s||/[<>:"/\\|?*]/.test(s)||s==='.'||s==='..')throw new Error('Tên Product/Size không hợp lệ');return s}
+function safeName(v:string){const s=v.trim();if(!s||s.length>180||/[<>:"/\\|?*\x00-\x1f]/.test(s)||s==='.'||s==='..'||/[. ]$/.test(s)||/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)/i.test(s))throw new Error('Tên Product/Size không hợp lệ trên Windows');return s}
 function validateMoney(v:number,label:string){if(!Number.isInteger(v)||v<0)throw new Error(label+' phải là số nguyên không âm')}
 function validateQty(v:number){if(!Number.isInteger(v)||v<=0)throw new Error('Số lượng nhập phải là số nguyên lớn hơn 0')}
 export function inspectImageFolder(sourcePath:string){const dir=path.resolve(sourcePath||'');if(!sourcePath||!fs.existsSync(dir)||!fs.statSync(dir).isDirectory())throw new Error('Folder ảnh nguồn không tồn tại');const images=fs.readdirSync(dir,{withFileTypes:true}).filter(x=>x.isFile()&&IMAGE_EXTENSIONS.has(path.extname(x.name).toLowerCase())).map(x=>path.join(dir,x.name));return {path:dir,count:images.length,images}}
@@ -41,19 +42,27 @@ export function receiveGoods(input:ReceiveInput,onProgress?:(p:ReceiveProgress)=
   if(existingSize&&existingSize.status!=='active')throw new Error('Size '+s.size+' đã ngưng hoạt động')
   if(s.sku?.trim()){const owner=db.prepare('SELECT product_id,id FROM product_variants WHERE UPPER(sku)=UPPER(?)').get(s.sku.trim()) as {product_id:number;id:number}|undefined;if(owner&&owner.id!==existingSize?.id)throw new Error('SKU '+s.sku+' đã thuộc sản phẩm/Size khác')}
  }
+ // The journal is serialized with each copy and recovered on next startup.
+ // Fail safely if a previous interrupted receipt has not yet been reconciled.
+ recoverPendingGoodsReceipts()
  const total=sizes.reduce((n,s)=>n+s.images.length,0),created:string[]=[],createdDirs:string[]=[]
  const productDir=path.join(root,productName);if(!inside(root,productDir))throw new Error('Đường dẫn Product không an toàn')
- const plans:{size:typeof sizes[number];dir:string;copies:{src:string;dest:string}[]}[]=[];const reserved=new Set<string>()
+ const plans:{size:typeof sizes[number];dir:string;copies:{src:string;dest:string;sha256:string}[]}[]=[];const reserved=new Set<string>()
+ let journal:string|undefined,committed=false
  try{
   if(!fs.existsSync(productDir)){fs.mkdirSync(productDir,{recursive:true});createdDirs.push(productDir)};emit({phase:'PREPARE',percent:5,copied:0,total})
   for(const s of sizes){const dir=path.join(productDir,s.size);if(!inside(productDir,dir))throw new Error('Đường dẫn Size không an toàn');if(!fs.existsSync(dir)){fs.mkdirSync(dir,{recursive:true});createdDirs.push(dir)};const canonicalDir=fs.realpathSync(dir)
    const hashes=new Set<string>()
    for(const existingFile of fs.readdirSync(dir)){const candidate=path.join(dir,existingFile);if(IMAGE_EXTENSIONS.has(path.extname(existingFile).toLowerCase())&&fs.statSync(candidate).isFile())hashes.add(digest(candidate))}
-   for(const src of s.images){const source=fs.realpathSync(src);if(source===canonicalDir||inside(canonicalDir,source))throw new Error('Ảnh nguồn nằm trong chính thư mục kho đích: '+src);const hash=digest(source);if(hashes.has(hash))throw new Error('Ảnh trùng nội dung đã có trong kho hoặc trong phiếu: '+path.basename(src));hashes.add(hash)}
-   const copies=s.images.map(src=>({src,dest:nextTarget(dir,path.extname(src),reserved)}));plans.push({size:s,dir,copies})}
+   if(!inside(fs.realpathSync(root),canonicalDir))throw new Error('Thư mục kho đích nằm ngoài kho đã chọn')
+   const copies:{src:string;dest:string;sha256:string}[]=[]
+   for(const src of s.images){const source=fs.realpathSync(src);if(source===fs.realpathSync(root)||inside(fs.realpathSync(root),source))throw new Error('Không được nhập ảnh nguồn từ chính kho đích: '+src);const hash=digest(source);if(hashes.has(hash))throw new Error('Ảnh trùng nội dung đã có trong kho hoặc trong phiếu: '+path.basename(src));hashes.add(hash);copies.push({src,dest:nextTarget(dir,path.extname(src),reserved),sha256:hash})}
+   plans.push({size:s,dir,copies})}
+  // Journal MUST be persisted before creating any inventory image.
+  journal=createReceiptJournal({storeRoot:root,files:plans.flatMap(p=>p.copies.map(x=>({dest:x.dest,sha256:x.sha256}))),createdDirs})
   let copied=0
-  for(const plan of plans)for(const x of plan.copies){fs.copyFileSync(x.src,x.dest,fs.constants.COPYFILE_EXCL);created.push(x.dest);copied++;emit({phase:'COPY',percent:5+Math.round(70*copied/Math.max(total,1)),copied,total,current:path.basename(x.dest)})}
-  emit({phase:'VERIFY',percent:78,copied,total});for(const p of created)if(!fs.existsSync(p)||fs.statSync(p).size<=0)throw new Error('Copy ảnh không toàn vẹn: '+p)
+  for(const plan of plans)for(const x of plan.copies){created.push(x.dest);fs.copyFileSync(x.src,x.dest,fs.constants.COPYFILE_EXCL);const fd=fs.openSync(x.dest,'r');try{fs.fsyncSync(fd)}finally{fs.closeSync(fd)};copied++;emit({phase:'COPY',percent:5+Math.round(70*copied/Math.max(total,1)),copied,total,current:path.basename(x.dest)})}
+  emit({phase:'VERIFY',percent:78,copied,total});for(const plan of plans)for(const x of plan.copies)if(!fs.existsSync(x.dest)||fs.statSync(x.dest).size<=0||digest(x.dest)!==x.sha256)throw new Error('Copy ảnh không toàn vẹn: '+x.dest)
   emit({phase:'DB_COMMIT',percent:82,copied,total});db.exec('BEGIN IMMEDIATE')
   try{
    let productId=input.productId
@@ -62,9 +71,23 @@ export function receiveGoods(input:ReceiveInput,onProgress?:(p:ReceiveProgress)=
    const addImage=db.prepare('INSERT INTO product_images(product_id,variant_id,file_path,sort_order) VALUES(?,?,?,?)')
    const addTx=db.prepare("INSERT INTO inventory_transactions(variant_id,transaction_type,quantity,unit_cost,note) VALUES(?,'IMPORT',?,?,?)")
    for(const plan of plans){let v=currentVariants.find(v=>String(v.size).toLowerCase()===plan.size.size.toLowerCase());let variantId:number;if(v){variantId=v.id;db.prepare("UPDATE product_variants SET cost_price=?,sale_price=?,updated_at=datetime('now') WHERE id=?").run(plan.size.costPrice,plan.size.salePrice,variantId)}else{const sku=(plan.size.sku?.trim()||suggestSku(productCode,plan.size.size)).toUpperCase();variantId=Number(addVariant.run(productId,sku,plan.size.size,plan.size.costPrice,plan.size.salePrice).lastInsertRowid)}plan.copies.forEach((x,i)=>addImage.run(productId,variantId,x.dest,i));addTx.run(variantId,plan.size.quantity,plan.size.costPrice,input.note??'Nhập hàng')}
-   emit({phase:'INTEGRITY',percent:96,copied,total});const fk=db.prepare('PRAGMA foreign_key_check').all();if(fk.length)throw new Error('SQLite foreign_key_check thất bại');db.exec('COMMIT');emit({phase:'DONE',percent:100,copied,total});return {ok:true,productId,product:getProduct(productId!),copiedImages:copied,totalQuantity:sizes.reduce((n,s)=>n+s.quantity,0)}
-  }catch(e){try{db.exec('ROLLBACK')}catch{}throw e}
- }catch(e){emit({phase:'ROLLBACK',percent:0,copied:created.length,total});for(const p of created.reverse())try{fs.rmSync(p,{force:true})}catch{};for(const d of createdDirs.reverse())try{fs.rmdirSync(d)}catch{};throw e}
+   emit({phase:'INTEGRITY',percent:96,copied,total});const fk=db.prepare('PRAGMA foreign_key_check').all();if(fk.length)throw new Error('SQLite foreign_key_check thất bại');db.exec('COMMIT');committed=true
+   // Never roll back committed physical copies even if a status callback fails.
+   const result={ok:true,productId,product:getProduct(productId!),copiedImages:copied,totalQuantity:sizes.reduce((n,s)=>n+s.quantity,0)}
+   try{if(journal)finishReceiptJournal(journal)}catch{/* committed receipt journal is cleared safely on next startup */}
+   try{emit({phase:'DONE',percent:100,copied,total})}catch{}
+   return result
+  }catch(e){if(!committed)try{db.exec('ROLLBACK')}catch{}throw e}
+ }catch(e){
+  if(committed)throw e
+  try{recoverPendingGoodsReceipts()}catch(recoveryError){
+   // Leave the persisted journal for safe retry/manual investigation.
+   throw new Error('Nhập hàng thất bại và cần kiểm tra phục hồi: '+(recoveryError instanceof Error?recoveryError.message:String(recoveryError)),{cause:e})
+  }
+  try{emit({phase:'ROLLBACK',percent:0,copied:created.length,total})}catch{}
+  for(const d of createdDirs.reverse())try{if(fs.existsSync(d)&&fs.readdirSync(d).length===0)fs.rmdirSync(d)}catch{}
+  throw e
+ }
 }
 
 
