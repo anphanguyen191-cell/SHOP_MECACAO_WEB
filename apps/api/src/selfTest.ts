@@ -9,6 +9,7 @@ import { createBackup, createOptimizedImageBackup, createLosslessBackup, verifyL
 import sharp from 'sharp'
 import fs from 'node:fs'
 import os from 'node:os'
+import {spawnSync} from 'node:child_process'
 import path from 'node:path'
 import { commitStoreImport } from './storeImport.js'
 import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
@@ -228,6 +229,17 @@ try{recoverPendingGoodsReceipts()}catch(e){mixedBlocked=e instanceof Error&&e.me
 assert(mixedBlocked&&fs.existsSync(copiedDest)&&fs.existsSync(mixedCopy),'mixed-commit recovery must not remove any registered or unregistered file')
 fs.rmSync(mixedCopy);finishReceiptJournal(mixedJournal)
 assert(recoverPendingGoodsReceipts().journals===0,'successful recovery tests must clear all active journals')
+const hardName='Hard Crash '+suffix,hardCode='HC'+suffix
+const hardProcess=spawnSync(process.execPath,['--import','tsx',path.resolve('scripts/crash-receipt-test.mjs'),receiptStore,receiptImg,hardName,hardCode],{cwd:process.cwd(),env:process.env,encoding:'utf8'})
+assert(hardProcess.status===77,'child process must really terminate mid-receipt: '+hardProcess.stderr)
+const hardDest=path.join(receiptStore,hardName,'Size Crash','001.jpg')
+assert(fs.existsSync(hardDest),'hard exit must leave one uncommitted warehouse copy for recovery')
+assert((db.prepare('SELECT COUNT(*) AS n FROM products WHERE product_code=?').get(hardCode) as {n:number}).n===0,'hard exit before SQLite commit must not create product')
+const resume=spawnSync(process.execPath,['--import','tsx',path.resolve('scripts/recover-receipt-test.mjs')],{cwd:process.cwd(),env:process.env,encoding:'utf8'})
+assert(resume.status===0&&resume.stdout.includes('HARD_CRASH_RECOVERY PASS'),'fresh-process receipt recovery must complete: '+resume.stderr)
+assert(!fs.existsSync(hardDest)&&!fs.existsSync(path.join(receiptStore,hardName)),'hard-crash recovery must remove uncommitted image and empty folders')
+assert(digestTest(receiptImg)===beforeCrashSource,'hard-crash recovery must leave original incoming image byte-identical')
+assert(recoverPendingGoodsReceipts().journals===0,'crash recovery must leave no unresolved receipt journal')
 db.prepare('DELETE FROM product_images WHERE product_id=?').run(receipt.productId);db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(rv.id);db.prepare('DELETE FROM product_variants WHERE product_id=?').run(receipt.productId);db.prepare('DELETE FROM products WHERE id=?').run(receipt.productId);let failedReceipt=false;try{receiveGoods({storeRoot:receiptStore,name:'Rollback '+suffix,productCode:'RR'+suffix,sizes:[{size:'Size 9',quantity:1,costPrice:1,salePrice:2,images:[receiptImg]},{size:'Size 10',quantity:1,costPrice:1,salePrice:2,images:[path.join(receiptSource,'missing.jpg')]}]})}catch{failedReceipt=true}assert(failedReceipt,'receipt with missing image must fail');assert(!fs.existsSync(path.join(receiptStore,'Rollback '+suffix)),'failed receipt must not leave product folder');assert((db.prepare('SELECT COUNT(*) AS n FROM products WHERE product_code=?').get('RR'+suffix) as {n:number}).n===0,'failed receipt must not write product');let mismatchReceipt=false;try{receiveGoods({storeRoot:receiptStore,name:'Mismatch '+suffix,productCode:'RM'+suffix,sizes:[{size:'Size 7',quantity:2,costPrice:1,salePrice:2,images:[receiptImg]}]})}catch{mismatchReceipt=true}assert(mismatchReceipt,'receipt quantity must equal physical image count');assert(!fs.existsSync(path.join(receiptStore,'Mismatch '+suffix)),'mismatched receipt must fail before creating warehouse folder');fs.rmSync(receiptSource,{recursive:true,force:true});fs.rmSync(receiptStore,{recursive:true,force:true});
 fs.rmSync(importRoot,{recursive:true,force:true})
 db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(collisionVariant.id)
@@ -240,4 +252,4 @@ try{
  db.prepare('DELETE FROM products WHERE id=?').run((product.product as {id:number}).id)
  db.exec('COMMIT')
 }catch(e){db.exec('ROLLBACK');throw e}
-console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, persistence/integrity/foreign-key, store import rollback/rescan-idempotence, goods receipt copy/folder-inspect/rollback/progress, durable crash recovery/uncommitted/committed/mixed/corrupt safeguards, DB backup, manual optimized image backup, lossless image+DB recovery bundle/corruption detection, cleanup')
+console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, persistence/integrity/foreign-key, store import rollback/rescan-idempotence, goods receipt copy/folder-inspect/rollback/progress, durable crash recovery/uncommitted/committed/mixed/corrupt safeguards plus hard-process-exit/restart simulation, DB backup, manual optimized image backup, lossless image+DB recovery bundle/corruption detection, cleanup')
