@@ -129,6 +129,15 @@ assert((merged!.variants as Array<{size:string;cost_price:number}>).some(v=>v.si
 assert((merged!.variants as Array<{size:string;stock:number}>).some(v=>v.size==='Size 10'&&v.stock===1),'new size physical stock must equal one image')
 assert((listProducts('ISKU10-'+suffix) as Array<{id:number;variant_count:number;total_stock:number}>).some(p=>p.id===importedId&&p.variant_count===2&&p.total_stock===2),'SKU search must preserve full product Size count and physical total')
 assert((db.prepare('SELECT stock FROM inventory_stock WHERE variant_id=?').get((merged!.variants as Array<{size:string;id:number}>).find(v=>v.size==='Size 10')!.id) as {stock:number}).stock===2,'new size ledger opening stock persists')
+const foundNewImage=path.join(sizeDir,'003.jpg')
+await sharp({create:{width:480,height:480,channels:3,background:{r:41,g:139,b:229}}}).jpeg().toFile(foundNewImage)
+const checkExistingReimport=()=>commitStoreImport({rootPath:importRoot,name:'IMPORT '+suffix,productCode:'I'+suffix,variants:[{size:'Size 8',images:[goodImage,foundNewImage],costPrice:13000,salePrice:23000}]})!
+const discovered=checkExistingReimport()
+assert((discovered.variants as Array<{size:string;stock:number}>).find(v=>v.size==='Size 8')?.stock===2,'existing size scanner must register newly found physical image')
+const countBeforeAgain=(db.prepare('SELECT COUNT(*) AS n FROM product_images WHERE product_id=?').get(importedId) as {n:number}).n
+checkExistingReimport()
+assert((db.prepare('SELECT COUNT(*) AS n FROM product_images WHERE product_id=?').get(importedId) as {n:number}).n===countBeforeAgain,'rescan must not duplicate already registered images')
+assert((db.prepare('SELECT stock FROM inventory_stock WHERE variant_id=?').get(importedVariant.id) as {stock:number}).stock===3,'new physical images must not silently rewrite historical ledger')
 const importedImage=(db.prepare('SELECT id FROM product_images WHERE product_id=? ORDER BY id LIMIT 1').get(importedId) as {id:number})
 const imageRecord=getImageRecord(importedImage.id)
 assert(imageRecord&&!imageRecord.missing,'registered image must resolve by database id')
@@ -218,4 +227,4 @@ try{
  db.prepare('DELETE FROM products WHERE id=?').run((product.product as {id:number}).id)
  db.exec('COMMIT')
 }catch(e){db.exec('ROLLBACK');throw e}
-console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, persistence/integrity/foreign-key, store import rollback, goods receipt copy/folder-inspect/rollback/progress, durable crash recovery/uncommitted/committed/mixed/corrupt safeguards, DB backup, manual optimized image backup, cleanup')
+console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, persistence/integrity/foreign-key, store import rollback/rescan-idempotence, goods receipt copy/folder-inspect/rollback/progress, durable crash recovery/uncommitted/committed/mixed/corrupt safeguards, DB backup, manual optimized image backup, cleanup')
