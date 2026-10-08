@@ -1,4 +1,6 @@
 import { receiveGoods, inspectImageFolder } from './goodsReceipt.js'
+import { createReceiptJournal, recoverPendingGoodsReceipts, finishReceiptJournal } from './receiptRecovery.js'
+import {createHash} from 'node:crypto'
 import { db } from './db.js'
 import { createProduct, suggestProductCode, suggestSku, listProducts } from './products.js'
 import { addInventory, batchImport, history } from './inventory.js'
@@ -168,7 +170,43 @@ const importedVariantIds=(db.prepare('SELECT id FROM product_variants WHERE prod
 for(const id of importedVariantIds)db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(id)
 db.prepare('DELETE FROM product_variants WHERE product_id=?').run(importedId)
 db.prepare('DELETE FROM products WHERE id=?').run(importedId)
-const receiptSource=fs.mkdtempSync(path.join(os.tmpdir(),'shop-receipt-src-'));const receiptStore=fs.mkdtempSync(path.join(os.tmpdir(),'shop-receipt-store-'));const receiptImg=path.join(receiptSource,'photo.jpg');await sharp({create:{width:100,height:100,channels:3,background:{r:1,g:2,b:3}}}).jpeg().toFile(receiptImg);const inspected=inspectImageFolder(receiptSource);assert(inspected.count===1&&inspected.images[0]===receiptImg,'receipt folder inspect must count supported images');const progress:string[]=[];const receipt=receiveGoods({storeRoot:receiptStore,name:'Receipt '+suffix,productCode:'R'+suffix,sizes:[{size:'Size 8',quantity:1,costPrice:10000,salePrice:20000,images:[receiptImg]}]},p=>progress.push(p.phase));assert(receipt.copiedImages===1,'goods receipt must copy physical image');assert(fs.existsSync(path.join(receiptStore,'Receipt '+suffix,'Size 8','001.jpg')),'goods receipt image must exist in canonical warehouse');assert(progress.includes('COPY')&&progress.at(-1)==='DONE','goods receipt must expose real progress phases');const rp=receipt.product as any;const rv=rp.variants[0];assert(rv.stock===1,'goods receipt must create IMPORT stock');db.prepare('DELETE FROM product_images WHERE product_id=?').run(receipt.productId);db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(rv.id);db.prepare('DELETE FROM product_variants WHERE product_id=?').run(receipt.productId);db.prepare('DELETE FROM products WHERE id=?').run(receipt.productId);let failedReceipt=false;try{receiveGoods({storeRoot:receiptStore,name:'Rollback '+suffix,productCode:'RR'+suffix,sizes:[{size:'Size 9',quantity:1,costPrice:1,salePrice:2,images:[receiptImg]},{size:'Size 10',quantity:1,costPrice:1,salePrice:2,images:[path.join(receiptSource,'missing.jpg')]}]})}catch{failedReceipt=true}assert(failedReceipt,'receipt with missing image must fail');assert(!fs.existsSync(path.join(receiptStore,'Rollback '+suffix)),'failed receipt must not leave product folder');assert((db.prepare('SELECT COUNT(*) AS n FROM products WHERE product_code=?').get('RR'+suffix) as {n:number}).n===0,'failed receipt must not write product');let mismatchReceipt=false;try{receiveGoods({storeRoot:receiptStore,name:'Mismatch '+suffix,productCode:'RM'+suffix,sizes:[{size:'Size 7',quantity:2,costPrice:1,salePrice:2,images:[receiptImg]}]})}catch{mismatchReceipt=true}assert(mismatchReceipt,'receipt quantity must equal physical image count');assert(!fs.existsSync(path.join(receiptStore,'Mismatch '+suffix)),'mismatched receipt must fail before creating warehouse folder');fs.rmSync(receiptSource,{recursive:true,force:true});fs.rmSync(receiptStore,{recursive:true,force:true});
+const receiptSource=fs.mkdtempSync(path.join(os.tmpdir(),'shop-receipt-src-'));const receiptStore=fs.mkdtempSync(path.join(os.tmpdir(),'shop-receipt-store-'));const receiptImg=path.join(receiptSource,'photo.jpg');await sharp({create:{width:100,height:100,channels:3,background:{r:1,g:2,b:3}}}).jpeg().toFile(receiptImg);const inspected=inspectImageFolder(receiptSource);assert(inspected.count===1&&inspected.images[0]===receiptImg,'receipt folder inspect must count supported images');const progress:string[]=[];const receipt=receiveGoods({storeRoot:receiptStore,name:'Receipt '+suffix,productCode:'R'+suffix,sizes:[{size:'Size 8',quantity:1,costPrice:10000,salePrice:20000,images:[receiptImg]}]},p=>progress.push(p.phase));assert(receipt.copiedImages===1,'goods receipt must copy physical image');assert(fs.existsSync(path.join(receiptStore,'Receipt '+suffix,'Size 8','001.jpg')),'goods receipt image must exist in canonical warehouse');assert(progress.includes('COPY')&&progress.at(-1)==='DONE','goods receipt must expose real progress phases');const rp=receipt.product as any;const rv=rp.variants[0];assert(rv.stock===1,'goods receipt must create IMPORT stock');
+const digestTest=(file:string)=>createHash('sha256').update(fs.readFileSync(file)).digest('hex')
+const copiedDest=path.join(receiptStore,'Receipt '+suffix,'Size 8','001.jpg')
+assert(digestTest(copiedDest)===digestTest(receiptImg),'receipt copy must be byte-identical to original')
+const committedJournal=createReceiptJournal({storeRoot:receiptStore,files:[{dest:copiedDest,sha256:digestTest(copiedDest)}],createdDirs:[]})
+const committedRecovery=recoverPendingGoodsReceipts()
+assert(committedRecovery.committed===1&&!fs.existsSync(committedJournal)&&fs.existsSync(copiedDest),'committed receipt recovery must keep database-registered warehouse images')
+const crashProduct=path.join(receiptStore,'Crash '+suffix),crashSize=path.join(crashProduct,'Size X')
+fs.mkdirSync(crashSize,{recursive:true})
+const crashCopy=path.join(crashSize,'001.jpg')
+const crashJournal=createReceiptJournal({storeRoot:receiptStore,files:[{dest:crashCopy,sha256:digestTest(receiptImg)}],createdDirs:[crashProduct,crashSize]})
+fs.copyFileSync(receiptImg,crashCopy)
+const beforeCrashSource=digestTest(receiptImg)
+const crashed=recoverPendingGoodsReceipts()
+assert(crashed.removedCopies===1&&!fs.existsSync(crashCopy)&&!fs.existsSync(crashProduct)&&!fs.existsSync(crashJournal),'uncommitted receipt after simulated process loss must remove only planned copies')
+assert(digestTest(receiptImg)===beforeCrashSource,'recovery must never alter customer source image')
+const corruptProduct=path.join(receiptStore,'Corrupt '+suffix),corruptSize=path.join(corruptProduct,'Size X')
+fs.mkdirSync(corruptSize,{recursive:true})
+const partialCopy=path.join(corruptSize,'001.jpg')
+const corruptJournal=createReceiptJournal({storeRoot:receiptStore,files:[{dest:partialCopy,sha256:digestTest(receiptImg)}],createdDirs:[corruptProduct,corruptSize]})
+fs.writeFileSync(partialCopy,'incomplete-data')
+let corruptionBlocked=false
+try{recoverPendingGoodsReceipts()}catch(e){corruptionBlocked=e instanceof Error&&e.message.includes('refusing deletion')}
+assert(corruptionBlocked&&fs.existsSync(partialCopy)&&fs.existsSync(corruptJournal),'modified or partially copied receipt image must fail closed for manual investigation')
+fs.rmSync(partialCopy);finishReceiptJournal(corruptJournal);fs.rmdirSync(corruptSize);fs.rmdirSync(corruptProduct)
+let outsideJournalBlocked=false
+try{createReceiptJournal({storeRoot:receiptStore,files:[{dest:path.join(receiptSource,'no-touch.jpg'),sha256:digestTest(receiptImg)}],createdDirs:[]})}catch{outsideJournalBlocked=true}
+assert(outsideJournalBlocked,'receipt recovery must not accept a destination outside approved warehouse')
+const mixedCopy=path.join(receiptStore,'mixed-'+suffix+'.jpg')
+const mixedJournal=createReceiptJournal({storeRoot:receiptStore,files:[{dest:copiedDest,sha256:digestTest(copiedDest)},{dest:mixedCopy,sha256:digestTest(receiptImg)}],createdDirs:[]})
+fs.copyFileSync(receiptImg,mixedCopy)
+let mixedBlocked=false
+try{recoverPendingGoodsReceipts()}catch(e){mixedBlocked=e instanceof Error&&e.message.includes('Mixed committed')}
+assert(mixedBlocked&&fs.existsSync(copiedDest)&&fs.existsSync(mixedCopy),'mixed-commit recovery must not remove any registered or unregistered file')
+fs.rmSync(mixedCopy);finishReceiptJournal(mixedJournal)
+assert(recoverPendingGoodsReceipts().journals===0,'successful recovery tests must clear all active journals')
+db.prepare('DELETE FROM product_images WHERE product_id=?').run(receipt.productId);db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(rv.id);db.prepare('DELETE FROM product_variants WHERE product_id=?').run(receipt.productId);db.prepare('DELETE FROM products WHERE id=?').run(receipt.productId);let failedReceipt=false;try{receiveGoods({storeRoot:receiptStore,name:'Rollback '+suffix,productCode:'RR'+suffix,sizes:[{size:'Size 9',quantity:1,costPrice:1,salePrice:2,images:[receiptImg]},{size:'Size 10',quantity:1,costPrice:1,salePrice:2,images:[path.join(receiptSource,'missing.jpg')]}]})}catch{failedReceipt=true}assert(failedReceipt,'receipt with missing image must fail');assert(!fs.existsSync(path.join(receiptStore,'Rollback '+suffix)),'failed receipt must not leave product folder');assert((db.prepare('SELECT COUNT(*) AS n FROM products WHERE product_code=?').get('RR'+suffix) as {n:number}).n===0,'failed receipt must not write product');let mismatchReceipt=false;try{receiveGoods({storeRoot:receiptStore,name:'Mismatch '+suffix,productCode:'RM'+suffix,sizes:[{size:'Size 7',quantity:2,costPrice:1,salePrice:2,images:[receiptImg]}]})}catch{mismatchReceipt=true}assert(mismatchReceipt,'receipt quantity must equal physical image count');assert(!fs.existsSync(path.join(receiptStore,'Mismatch '+suffix)),'mismatched receipt must fail before creating warehouse folder');fs.rmSync(receiptSource,{recursive:true,force:true});fs.rmSync(receiptStore,{recursive:true,force:true});
 fs.rmSync(importRoot,{recursive:true,force:true})
 db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(collisionVariant.id)
 db.prepare('DELETE FROM product_variants WHERE id=?').run(collisionVariant.id)
@@ -180,4 +218,4 @@ try{
  db.prepare('DELETE FROM products WHERE id=?').run((product.product as {id:number}).id)
  db.exec('COMMIT')
 }catch(e){db.exec('ROLLBACK');throw e}
-console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, persistence/integrity/foreign-key, store import rollback, goods receipt copy/folder-inspect/rollback/progress, DB backup, manual optimized image backup, cleanup')
+console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, persistence/integrity/foreign-key, store import rollback, goods receipt copy/folder-inspect/rollback/progress, durable crash recovery/uncommitted/committed/mixed/corrupt safeguards, DB backup, manual optimized image backup, cleanup')
