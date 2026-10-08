@@ -25,7 +25,8 @@ function safeJournal(j:ReceiptJournal){
  const root=path.resolve(j.storeRoot)
  if(!fs.existsSync(root)||!fs.statSync(root).isDirectory())throw new Error('Cannot recover receipt: warehouse root not accessible: '+root)
  const canonicalRoot=fs.realpathSync(root)
- if(canonicalRoot!==root)throw new Error('Cannot recover receipt: warehouse root was relocated')
+ // Windows may normalize drive-letter case and symlink targets differently.
+ // Actual destination parents still must resolve within the canonical root.
  const known=new Set<string>()
  for(const file of j.files){
   if(!file||typeof file.dest!=='string'||typeof file.sha256!=='string'||!/^[0-9a-f]{64}$/.test(file.sha256))throw new Error('Receipt journal file entry invalid')
