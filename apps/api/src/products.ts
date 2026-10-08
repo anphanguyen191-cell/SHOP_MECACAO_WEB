@@ -57,7 +57,7 @@ export function listProducts(search = '',filters:ProductListFilters={}) {
     WHERE (? = '%%' OR p.name LIKE ? OR p.product_code LIKE ? OR v.sku LIKE ? OR v.size LIKE ?)
     GROUP BY p.id
   `).all(q,q,q,q,q) as Array<any>
-  const variants=db.prepare("SELECT id,size FROM product_variants WHERE product_id=? AND status='active'")
+  const variants=db.prepare("SELECT id,size FROM product_variants WHERE product_id=?")
   const result=rows.map(p=>{
     const sizes=(variants.all(p.id) as Array<{id:number;size:string}>).map(v=>({size:v.size,stock:physicalStock(v.id)}))
     const totalStock=sizes.reduce((n,v)=>n+v.stock,0)
