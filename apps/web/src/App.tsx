@@ -21,7 +21,7 @@ const demo:ProductRow[]=[
 const nav=['Tổng quan','Danh mục sản phẩm','Nhập hàng','Import kho','Tồn kho','Cài đặt']
 
 export default function App(){
- const isDemo=useMemo(()=>location.hostname.endsWith('github.io'),[])
+ const isDemo=useMemo(()=>location.hostname.endsWith('github.io')||new URLSearchParams(location.search).get('demo')==='1',[])
  const [health,setHealth]=useState<Health|null>(null),[active,setActive]=useState('Tổng quan')
  const [menuOpen,setMenuOpen]=useState(false),[menuSearch,setMenuSearch]=useState(''),[darkMode,setDarkMode]=useState(false)
  const [overviewExpanded,setOverviewExpanded]=useState(true),[catalogExpanded,setCatalogExpanded]=useState(true)
