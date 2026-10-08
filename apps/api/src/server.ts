@@ -11,7 +11,7 @@ import { createBackup, createOptimizedImageBackup } from './backup.js'
 import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
 import { inventoryRows, inventoryHistory, inventoryFilterOptions, inventoryExplorer, inventoryDashboard, inventorySuggestions, catalogDashboard } from './inventoryQuery.js'
 import { getImageRecord, imageMime } from './images.js'
-import { receiveGoods, inspectImageFolder } from './goodsReceipt.js'
+import { receiveGoods, goodsReceiptDashboard, inspectImageFolder } from './goodsReceipt.js'
 import { dashboardSummary } from './dashboard.js'
 
 const app = express()
@@ -80,6 +80,7 @@ app.post('/api/products', (req, res) => {
   try { res.status(201).json(createProduct(req.body)) }
   catch (e) { res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể tạo sản phẩm' }) }
 })
+app.get('/api/goods-receipt/dashboard',(_req,res)=>{try{res.json(goodsReceiptDashboard())}catch(e){res.status(500).json({error:e instanceof Error?e.message:'Không thể tổng hợp nhập hàng'})}})
 app.post('/api/goods-receipt/inspect',(req,res)=>{try{res.json(inspectImageFolder(String(req.body.path??'')))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể đọc folder ảnh'})}})
 app.post('/api/goods-receipt', (req,res)=>{try{const events:any[]=[];const result=receiveGoods(req.body,p=>events.push(p));res.status(201).json({result,events})}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể nhập hàng'})}})
 app.post('/api/inventory/import', (req, res) => {
