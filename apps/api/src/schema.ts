@@ -39,7 +39,7 @@ function migrate100to110(db:DatabaseSync){
  UPDATE app_metadata SET value='110',updated_at=datetime('now') WHERE key='schema_version';
  `)
 }
-function backupBeforeMigration(db:DatabaseSync){const row=db.prepare('PRAGMA database_list').all().find((x:any)=>x.name==='main') as {file?:string}|undefined;const file=row?.file;if(!file)return null;const resolved=path.resolve(file);if(!fs.existsSync(resolved))return null;const stamp=new Date().toISOString().replace(/[:.]/g,'-');const backup=resolved+'.pre-v110-'+stamp+'.bak';fs.copyFileSync(resolved,backup,fs.constants.COPYFILE_EXCL);return backup}
+function backupBeforeMigration(db:DatabaseSync){const row=db.prepare('PRAGMA database_list').all().find((x:any)=>x.name==='main') as {file?:string}|undefined;const file=row?.file;if(!file)return null;const resolved=path.resolve(file);if(!fs.existsSync(resolved))return null;const stamp=new Date().toISOString().replace(/[:.]/g,'-');const backup=resolved+'.pre-v110-'+stamp+'.bak';if(fs.existsSync(backup))throw new Error('Backup schema đích đã tồn tại');db.exec("VACUUM INTO '"+backup.replace(/'/g,"''")+"'");return backup}
 export function bootstrapV100(db:DatabaseSync){
  const current=readSchemaVersion(db)
  if(current>TARGET_SCHEMA)throw new Error('Database schema mới hơn phiên bản ứng dụng; dừng để bảo vệ dữ liệu')
