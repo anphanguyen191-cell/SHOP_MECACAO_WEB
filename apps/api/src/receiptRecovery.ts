@@ -33,7 +33,7 @@ function safeJournal(j:ReceiptJournal){
   const dest=path.resolve(file.dest)
   if(dest!==file.dest||!isInside(root,dest)||known.has(dest))throw new Error('Unsafe or repeated receipt recovery destination')
   known.add(dest)
-  if(fs.existsSync(path.dirname(dest))&&!isInside(canonicalRoot,fs.realpathSync(path.dirname(dest))))throw new Error('Receipt recovery directory escaped warehouse')
+  if(fs.existsSync(path.dirname(dest))){const parent=fs.realpathSync(path.dirname(dest));if(parent!==canonicalRoot&&!isInside(canonicalRoot,parent))throw new Error('Receipt recovery directory escaped warehouse')}
  }
  for(const dir of j.createdDirs){
   if(typeof dir!=='string'||dir!==path.resolve(dir)||!isInside(root,dir))throw new Error('Unsafe receipt recovery directory')
