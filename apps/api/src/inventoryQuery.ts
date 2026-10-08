@@ -18,9 +18,9 @@ export function inventoryRows(filters:InventoryFilters={}){
  AND (?='' OR c.name=?)
  AND (?='' OR v.size=?)
  AND (?='all' OR p.status=?)
- AND (?='all' OR (?='out' AND COALESCE(s.stock,0)=0) OR (?='low' AND COALESCE(s.stock,0)>0 AND COALESCE(s.stock,0)<=?) OR (?='ok' AND COALESCE(s.stock,0)>?))
+
  ORDER BY p.name,v.id`
- const rows=db.prepare(sql).all(q,q,q,q,q,category,category,size,size,status,status,'all','all','all',threshold,'all',threshold) as Array<any>
+ const rows=db.prepare(sql).all(q,q,q,q,q,category,category,size,size,status,status) as Array<any>
  const actual=rows.map(r=>({...r,ledger_stock:Number(r.stock||0),stock:physicalImageCount(r.variant_id,r.product_id)}))
  return actual.filter(r=>state==='all'||(state==='out'&&r.stock===0)||(state==='low'&&r.stock>0&&r.stock<=threshold)||(state==='ok'&&r.stock>threshold))
 }
