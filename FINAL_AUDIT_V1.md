@@ -1,3 +1,24 @@
+# V1 ACCEPTANCE REPORT — latest checkpoint 2026-10-08
+
+**Verdict:** Web UI automated gate PASSED; Windows warehouse acceptance NOT STARTED. Therefore **V1 is NOT STABLE and NOT fully accepted**. Historical claims below about Windows readiness/old endpoint states do not override this verdict.
+
+## Browser evidence
+- GitHub Actions [run 37716663127](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/runs/37716663127): schema regression, SQLite integration, TypeScript, production build, 16 UI source-contract checks, Chromium mobile smoke and Pages deployment all SUCCESS.
+- GitHub Actions [run 37716897742](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/runs/37716897742): 320px/390px/430px/768px responsive overflow and chart-label smoke, real DOM navigation, mobile search autocomplete, Size filtering, collapsible dashboards and dark KPI legibility; verify SUCCESS. Later six-tab test requires a fresh CI result.
+- Every Chromium run uploads visual snapshots to the workflow artifact named `mobile-smoke-<commit SHA>`.
+- Corrected screenshot findings: vertical per-character labels in stock chart; dark-mode white figures on pale KPI cards; dark square inside a light drawer input; nearly invisible inventory heading; missing catalog demo breakdowns; weak receipt-KPI contrast.
+- User-provided iPhone screenshots are evidence of the OLD broken rendering, not a pass. Chrome CI cannot replace final visual checks on the user's iPhone.
+
+## Business / data gates remaining
+- Inventory: registered canonical images that still exist are the sole physical-stock count; ledger balances remain audit figures and may differ.
+- Goods receipts: content-hash duplicate detection and rollback on ordinary exceptions tested; **forced termination during file-copy/SQLite commit is not crash-safe until durable recovery journal implemented and tested**.
+- No-image physical receipt is rejected. Explicit ledger-only transaction workflow must never be presented as creating physical inventory.
+- Progress callbacks are buffered on the server; **not true real-time streaming**.
+- Windows acceptance is restricted to a disposable copy of `D:\\1-Me CaCao Store`; verify import modes, originals unchanged, SQLite/database persistence, reboot, filesystem recovery, backup manifest, and full restore. Never mutate originals during test.
+- Security: backend binds `127.0.0.1` by default; overriding `SHOP_HOST` to expose it beyond localhost requires access controls.
+- A successful CI/deploy is necessary, not sufficient, for Windows deployment or V1 STABLE sign-off.
+
+---
 # FINAL AUDIT V1
 Updated: 2026-10-06
 Status: READY FOR WINDOWS ACCEPTANCE — INTERNAL VERIFY + DEPLOY PASS
@@ -38,7 +59,7 @@ GitHub Actions run 37636041261 verify SUCCESS + deploy SUCCESS (acceptance candi
 - GitHub Actions emits deprecation warnings for action runtime internals; workflow itself passes.
 - Scanner permission failures currently surface indirectly as empty results/warnings rather than detailed per-folder permission diagnostics.
 - HEIC/HEIF browser preview support depends on browser; optimized image backup can decode supported Sharp inputs, but local preview may not render every HEIC in-browser.
-- Current server binds 0.0.0.0; intended future LAN/mobile work should add explicit access/auth/network policy before exposing beyond trusted local network.
+- Current server binds 127.0.0.1 by default. Explicit SHOP_HOST override must not be exposed without authentication/network policy.
 - V1 remains PRE-ACCEPTANCE until Windows real-runtime acceptance with actual warehouse data passes.
 
 ## Stability decision
@@ -52,7 +73,7 @@ Run this once on the real Windows machine before marking V1 STABLE.
 3. Run `START_SHOP.bat`. Expected: server health becomes READY and browser opens `http://localhost:3000`.
 4. Product flow: create one temporary manual product with at least 2 free-form sizes and opening stock. Verify code/SKU suggestions remain editable.
 5. Existing-store flow: scan the real warehouse root, inspect preview/warnings, import one safe product only after confirmation, verify its image thumbnails.
-6. Daily incoming-goods flow: use **Nhập hàng** with one existing SKU, one new Size, and one new Product. Use a safe test image folder; verify image count proposal, override quantity once, confirm images are physically copied to canonical Product/Size folders and originals remain untouched. Verify failed/invalid source leaves no stock increment or orphan session files/folders.
+6. Daily incoming-goods flow: use **Nhập hàng** with one existing SKU, one new Size, and one new Product. Use a safe test image folder; verify image count proposal, deliberately try an incorrect quantity and confirm it is rejected, then confirm images are physically copied to canonical Product/Size folders and originals remain untouched. Verify failed/invalid source leaves no stock increment or orphan session files/folders.
 7. Inventory flow: batch-import at least 2 sizes, adjust +, adjust -, attempt an over-minus and confirm it is rejected. Verify totals and per-SKU/global history.
 8. Filter flow: search + category + size + stock state + active/inactive filters.
 9. Lifecycle flow: mark a product inactive and verify stock mutations are blocked; reactivate it.
