@@ -1,6 +1,6 @@
 import { receiveGoods, inspectImageFolder } from './goodsReceipt.js'
 import { db } from './db.js'
-import { createProduct, suggestProductCode, suggestSku } from './products.js'
+import { createProduct, suggestProductCode, suggestSku, listProducts } from './products.js'
 import { addInventory, batchImport, history } from './inventory.js'
 import { isPathInsideRoot, scanStore } from './storeScanner.js'
 import { createBackup, createOptimizedImageBackup } from './backup.js'
@@ -98,6 +98,10 @@ assert(duplicateImportSkuBlocked,'duplicate warehouse SKU must be rejected clear
 const importedId=(imported!.product as {id:number}).id
 const importedVariant=(imported!.variants as Array<{id:number;stock:number}>)[0]
 assert(importedVariant.stock===1,'store import physical stock must match one registered image')
+const filteredCatalog=listProducts('IMPORT '+suffix,{size:'Size 8',stockState:'in',sort:'stock_desc'}) as Array<{id:number;filtered_stock:number;total_stock:number;sizes:string[]}>
+assert(filteredCatalog.some(p=>p.id===importedId&&p.filtered_stock===1&&p.total_stock===1&&p.sizes.includes('Size 8')),'catalog size search + in-stock filter must use physical registered images')
+assert(!(listProducts('IMPORT '+suffix,{size:'Size 8',stockState:'out'}) as Array<{id:number}>).some(p=>p.id===importedId),'catalog out-of-stock filter must exclude physical in-stock product')
+assert((inventorySuggestions('Size 8') as Array<{product_id:number;stock:number}>).some(x=>x.product_id===importedId&&x.stock===1),'search suggestion must report actual physical stock, not ledger count')
 assert((inventoryRows({state:'low',threshold:1}) as Array<{variant_id:number}>).some(r=>r.variant_id===importedVariant.id),'physical low-stock filter must include one-image SKU even when ledger says three')
 assert(!(inventoryRows({state:'ok',threshold:1}) as Array<{variant_id:number}>).some(r=>r.variant_id===importedVariant.id),'physical ok-stock filter must exclude one-image SKU regardless of ledger')
 assert((db.prepare('SELECT stock FROM inventory_stock WHERE variant_id=?').get(importedVariant.id) as {stock:number}).stock===3,'store import ledger opening stock must persist separately')
