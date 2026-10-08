@@ -1,5 +1,4 @@
 import fs from 'node:fs'
-import path from 'node:path'
 import { db } from './db.js'
 
 export type InventoryFilters={search?:string;category?:string;size?:string;status?:'all'|'active'|'inactive';state?:'all'|'out'|'low'|'ok';threshold?:number}
