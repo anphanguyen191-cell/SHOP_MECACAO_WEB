@@ -13,7 +13,21 @@ echo.
 
 where node >nul 2>nul
 if errorlevel 1 (
-  echo [ERROR] Chua co Node.js 22+.
+  echo [ERROR] Chua tim thay Node.js 22.5+.
+  pause
+  exit /b 1
+)
+for /f "tokens=1,2 delims=." %%a in ('node -p "process.versions.node"') do (
+  set "NODE_MAJOR=%%a"
+  set "NODE_MINOR=%%b"
+)
+if %NODE_MAJOR% LSS 22 (
+  echo [ERROR] Can Node.js 22.5 tro len vi ung dung dung node:sqlite.
+  pause
+  exit /b 1
+)
+if %NODE_MAJOR% EQU 22 if %NODE_MINOR% LSS 5 (
+  echo [ERROR] Can Node.js 22.5 tro len vi ung dung dung node:sqlite.
   pause
   exit /b 1
 )
@@ -29,7 +43,7 @@ if not exist "node_modules" (
   if errorlevel 1 goto :fail
 )
 
-echo [2/4] Tao kho anh va thu muc nhap GIẢ LẬP...
+echo [2/4] Tao kho anh va thu muc nhap GIA LAP...
 node scripts\create-windows-acceptance-sandbox.mjs
 if errorlevel 1 goto :fail
 
