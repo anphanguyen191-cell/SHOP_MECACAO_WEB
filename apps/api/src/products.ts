@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import { db } from './db.js'
 
 export type VariantInput = { size: string; sku?: string; openingStock?: number; costPrice?: number; salePrice?: number }
@@ -33,9 +34,11 @@ export function suggestSku(productCode: string, size: string) {
   return `${base}-${n}`
 }
 
+function physicalStock(variantId:number){const images=db.prepare('SELECT file_path FROM product_images WHERE variant_id=?').all(variantId) as Array<{file_path:string}>;return images.filter(x=>fs.existsSync(x.file_path)).length}
+
 export function listProducts(search = '') {
   const q = `%${search.trim()}%`
-  return db.prepare(`
+  const rows=db.prepare(`
     SELECT p.id, p.product_code, p.name, p.cost_price, p.sale_price, p.status,
            c.name AS category,
            (SELECT pi.id FROM product_images pi WHERE pi.product_id=p.id ORDER BY pi.is_primary DESC,pi.sort_order,pi.id LIMIT 1) AS image_id,
@@ -48,7 +51,9 @@ export function listProducts(search = '') {
     WHERE (? = '%%' OR p.name LIKE ? OR p.product_code LIKE ? OR v.sku LIKE ?)
     GROUP BY p.id
     ORDER BY p.id DESC
-  `).all(q, q, q, q)
+  `).all(q, q, q, q) as Array<any>
+  const byProduct=db.prepare('SELECT id FROM product_variants WHERE product_id=? AND status=\'active\'')
+  return rows.map(p=>({...p,ledger_stock:p.total_stock,total_stock:(byProduct.all(p.id) as Array<{id:number}>).reduce((n,v)=>n+physicalStock(v.id),0)}))
 }
 
 export function getProduct(id: number) {
@@ -63,9 +68,10 @@ export function getProduct(id: number) {
     FROM product_variants v
     LEFT JOIN inventory_stock s ON s.variant_id = v.id
     WHERE v.product_id = ? ORDER BY v.id
-  `).all(id)
+  `).all(id) as Array<any>
+  const physicalVariants=variants.map(v=>({...v,ledger_stock:v.stock,stock:physicalStock(v.id)}))
   const images = db.prepare('SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order, id').all(id)
-  return { product, variants, images }
+  return { product, variants:physicalVariants, images }
 }
 
 export function createProduct(input: ProductInput) {
