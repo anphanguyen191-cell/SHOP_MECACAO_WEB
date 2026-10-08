@@ -195,3 +195,19 @@ button.overviewStat:focus-visible{outline:3px solid #aa4d79;outline-offset:3px}
  .inventoryFilters select:nth-of-type(3){grid-column:auto}
  .inventoryFilters .clearFilter{grid-column:1/-1}
 }
+
+
+/* Compact task pages: keep search and operational controls above the fold */
+.pageBreadcrumb{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 14px;color:#977d89;font-size:12px}
+.pageBreadcrumb button{border:0;background:transparent;color:#a24977;font-weight:750;padding:8px 0;cursor:pointer}
+.pageBreadcrumb strong{color:#604351;font-size:13px}
+.pageBreadcrumb small{margin-left:auto;border-radius:99px;padding:5px 9px;background:#fff0f6;color:#a8507b;font-size:10px;font-weight:750}
+.inventoryPage .inventoryFilters{margin:12px 0 16px}
+.inventoryPage .inventoryHeading{margin-bottom:14px}
+.catalogPanel .catalogSearchArea{margin-top:15px}
+.themeDark .pageBreadcrumb strong{color:#fce5ef}
+@media(max-width:760px){
+ .pageBreadcrumb{margin:0 0 10px;padding:0 1px}
+ .pageBreadcrumb small{margin-left:0}
+ .inventoryPage .inventoryFilters{margin:10px 0 15px}
+}
