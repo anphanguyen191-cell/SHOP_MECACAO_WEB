@@ -112,3 +112,14 @@ Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản ph�
 - Images in Size gallery are selectable. Selection is V1 foundation for future send-to-customer, order, sale and closing-slip workflows; selection itself never performs SALE.
 - Nhập hàng UX must have 3 explicit flows: (1) completely new Product, (2) new Size for existing Product, (3) additional stock for existing Product+Size. Existing Product/Size/SKU values must be selectable/autofilled.
 - Incoming goods, folder picker, real-time progress, crash recovery and scanner reconciliation remain IMPLEMENTING / UNVERIFIED until deep regression passes.
+
+## 2026-10-08 — V1 deep audit (work in progress)
+- Latest UI baseline: official logo/banner committed, feature drawer, responsive product cards, physical-stock dashboard; GitHub DEMO charts explicitly illustrative.
+- Goods receipt hardening commits: ec4f449 (reject SHA-256 duplicate images and self-import from canonical Size folder), 4392cbc (folder picker stale-state fix; remove misleading post-response progress replay).
+- Physical stock remains count of existing registered canonical image files; ledger is a separate audit balance. `inventoryRows` and product-list totals still use ledger and must be relabeled or migrated to physical-stock queries before acceptance.
+- No-image goods receipt is **currently explicitly rejected**, not silently posted as physical stock. Separate ledger-only workflows remain distinct and need UX clarification.
+- Progress is **not live-streamed**; API currently returns phase events only after synchronous completion. UI must not imply live progress.
+- Crash-safe journaling/recovery and full restore testing remain **OPEN**.
+- CI verification for the newest commits: **PENDING at time of this update**. Do not infer PASS from older workflow runs.
+- Real Windows D: warehouse acceptance, actual restart, image-original protection, restore and iPhone visual acceptance: **UNVERIFIED**. Never use real warehouse for destructive testing.
+- V1 status: **NOT STABLE / NOT ACCEPTED**. No V2.
