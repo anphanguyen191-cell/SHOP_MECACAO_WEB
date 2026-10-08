@@ -1,3 +1,18 @@
+# Latest V1 pre-Windows quality checkpoint — 2026-10-08
+
+**Status: AUTOMATED PRE-WINDOWS GATE PASS at GitHub Actions run 37729772120; real Windows test UNVERIFIED; V1 NOT STABLE.** This section supersedes historical progress statements below.
+
+- [PASS] TypeScript/web/API build, schema110 migration snapshots via SQLite VACUUM INTO, isolated SQLite core tests, 16 UI source regressions and Chromium mobile smoke screenshots.
+- [PASS] Real HTTP server exercised on temporary Linux warehouse: **HTTP_API_ACCEPTANCE PASS (26 assertions)** covering scan/import approval, 3 receipt flows, duplicate rejection, physical-vs-ledger separation, four original SHA hashes, full lossless backup verification, server restart/persistence.
+- [PASS] Crash-safety simulation: separate worker forcibly exits after first copied image and separate new worker recovers only the uncommitted copy; source originals are unchanged. Mixed-commit/corrupt-file journals fail closed rather than deleting ambiguous warehouse files.
+- [PASS] Receipt workflow journals planned target filenames and SHA-256 before copying; SQLite WAL synchronous=FULL; existing Size scanner idempotently incorporates new images without duplicating their registration.
+- [PASS] Manual full backup now includes byte-identical physical images + SQLite + SHA-256 checks; legacy DB-only and lossy optimized backups are clearly labeled as partial/non-lossless.
+- [PASS] UI smoke at 320/390/430/768 width, dark-mode contrast, product chart labels, six-tab navigation, smart search, toggleable dashboards and screenshotted browser evidence.
+- [PREPARED] One-click Windows *isolated* test: `RUN_WINDOWS_V1_SAFE_TEST.bat`; help in `WINDOWS_V1_ACCEPTANCE_TEST.md`; test-only port 3005, sandbox under LOCALAPPDATA. Actual Windows execution remains pending.
+- [BLOCKER] Full lossless restore into an operational Windows warehouse path has **not** been proven. Journal corruption during an interrupted partial copy intentionally halts for manual review; true live progress streaming is not implemented. No external LAN authentication. Never test writes directly on the real D: warehouse.
+- [RELEASE] V1 may enter disposable Windows acceptance after latest CI passes, but must remain NOT STABLE until real Windows test and recovery protocol review pass. Do not begin V2.
+
+---
 # V1 CURRENT STATUS — 2026-10-08 (authoritative; supersedes older checkpoints)
 
 **Buildable DEMO UI: PASSED browser regression on commit 3b537594 (GitHub Actions 37716663127, verify + deploy SUCCESS).** Further six-tab browser checks are committed and require their own CI result. **Windows business-data acceptance: NOT PASSED / NOT EXECUTED. V1 remains NOT STABLE.**
