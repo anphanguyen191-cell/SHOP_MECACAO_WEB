@@ -152,3 +152,46 @@ button.overviewStat:focus-visible{outline:3px solid #aa4d79;outline-offset:3px}
 .overviewPanel .overviewPanelTitle button.overviewTextAction{margin:0;font-size:12px;white-space:nowrap}
 .overviewPanel .productStockBar{margin-bottom:18px}
 @media(max-width:650px){.overviewStatLink{font-size:11px;padding-top:8px}.overviewPanel .overviewPanelTitle{gap:10px;align-items:flex-start}.overviewPanel .overviewPanelTitle h3{font-size:clamp(18px,4.5vw,23px)}.overviewPanel .overviewPanelTitle button.overviewTextAction{white-space:normal;text-align:right;flex-shrink:0;max-width:96px}}
+
+
+/* V1 smart search across catalog and physical inventory */
+.catalogPanel{overflow:visible}
+.catalogPanelHeading{display:flex;justify-content:space-between;align-items:center;gap:14px}
+.catalogPanelHeading h3{margin:0;color:#633d52}
+.catalogPanelHeading p{font-size:12px;line-height:1.5;color:#8d7582;margin:7px 0 0}
+.catalogSearchArea{display:grid;gap:12px;margin-top:16px}
+.catalogSearch{min-width:0}
+.catalogSearch>label,.inventoryFilters .smartSearch>label{display:block;font-size:12px;font-weight:750;color:#77536b;margin-bottom:7px}
+.catalogSearch input,.inventoryFilters .smartSearch input{width:100%;min-height:45px;padding:11px 14px;border:1px solid #ead5df;border-radius:13px;background:white;color:#392f35;font-size:14px}
+.catalogSearch input:focus,.inventoryFilters .smartSearch input:focus{outline:2px solid #f09abf;outline-offset:1px}
+.catalogFilterGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.catalogFilterGrid label{display:grid;gap:7px;font-size:12px;color:#77536b;font-weight:750;min-width:0}
+.catalogFilterGrid select,.inventoryFilters select{min-height:44px;width:100%;min-width:0;border-radius:12px;border:1px solid #ead5df;background:white;color:#3b3038;padding:9px 12px;font:inherit;font-size:13px}
+.catalogFilterSummary{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-top:15px;color:#8d6278;font-size:12px;font-weight:750}
+.catalogFilterSummary button{padding:9px 12px;border:1px solid #f3c8d9;border-radius:11px;background:#fff1f7;color:#9e3e70;font-weight:750;cursor:pointer}
+.catalogPanel .suggestions,.inventoryFilters .suggestions{top:calc(100% + 5px);z-index:40}
+.catalogPanel .suggestions button,.inventoryFilters .suggestions button{min-height:52px}
+.catalogPanel .suggestions button:focus-visible,.inventoryFilters .suggestions button:focus-visible{outline:2px solid #cc6494}
+.inventoryFilters{display:flex;flex-wrap:wrap;align-items:flex-end}
+.inventoryFilters .smartSearch{min-width:260px;flex:2 1 290px}
+.inventoryFilters select{width:auto;flex:1 1 142px;max-width:230px}
+.inventoryFilters .clearFilter{min-height:44px;padding:9px 12px;cursor:pointer}
+.inventoryResultCount{margin:8px 0 13px;font-size:12px;font-weight:750;color:#9e5b7a}
+.inventoryFilters .suggestions{max-height:280px}
+.themeDark .catalogPanelHeading h3,.themeDark .catalogPanelHeading p,.themeDark .catalogFilterSummary,.themeDark .catalogFilterGrid label,.themeDark .catalogSearch>label,.themeDark .inventoryFilters .smartSearch>label{color:#ead8e3}
+.themeDark .catalogSearch input,.themeDark .catalogFilterGrid select,.themeDark .inventoryFilters select{background:#302c37;color:#fff1f9;border-color:#6b5367}
+@media(max-width:760px){
+ .catalogPanel{padding:16px}
+ .catalogPanelHeading{align-items:flex-start}
+ .catalogPanelHeading h3{font-size:18px}
+ .catalogPanelHeading .primary{font-size:12px;padding:10px;white-space:nowrap}
+ .catalogSearchArea{gap:12px}
+ .catalogFilterGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .catalogFilterGrid label:last-child{grid-column:1/-1}
+ .catalogFilterGrid select{font-size:13px}
+ .inventoryFilters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .inventoryFilters .smartSearch{grid-column:1/-1;min-width:0}
+ .inventoryFilters select{max-width:none;width:100%;min-width:0;flex:auto}
+ .inventoryFilters select:nth-of-type(3){grid-column:auto}
+ .inventoryFilters .clearFilter{grid-column:1/-1}
+}
