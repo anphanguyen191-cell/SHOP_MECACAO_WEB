@@ -106,3 +106,26 @@ main{min-width:0;padding:14px}.hero{padding:18px 20px;border-radius:20px}.hero h
 .receiptOverview{display:grid;gap:16px;margin-top:16px}.receiptIntro{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(115deg,#ffe8f2,#fff2dd,#e8f9ef);padding:21px;border:1px solid #f3dce7;border-radius:22px}.receiptIntro h2{margin:5px 0;color:#833c63;font-size:26px}.receiptIntro p:last-child{margin:0;color:#856c77;font-size:13px}.receiptStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.receiptStats article{background:#fff;border:1px solid #f2e2e9;border-radius:19px;padding:17px;min-width:0}.receiptStats article:nth-child(1){background:#ffecf4}.receiptStats article:nth-child(2){background:#e8f7f0}.receiptStats article:nth-child(3){background:#fff2dd}.receiptStats article:nth-child(4){background:#e9f0ff}.receiptStats span,.receiptStats small{display:block;color:#806e78;font-size:11px}.receiptStats span{font-weight:800;letter-spacing:.06em}.receiptStats strong{display:block;font-size:clamp(18px,2.3vw,31px);margin:12px 0 7px;overflow-wrap:anywhere;color:#6e3f58}.receiptCharts{display:grid;grid-template-columns:1fr 1fr;gap:13px}.receiptTop{padding:12px 0;border-bottom:1px solid #f4e8ed}.receiptTop b,.receiptTop small{display:block}.receiptTop small,.receiptRecent small{color:#987c8b;font-size:11px;margin-top:4px}.receiptTop>strong{display:block;text-align:right;color:#9c4872;font-size:12px;margin-top:4px}.receiptTrack{height:10px;background:#f7e8ef;border-radius:20px;margin-top:9px;overflow:hidden}.receiptTrack i{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#e46b9f,#f6b45c)}.receiptRecent{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid #f4e8ed}.receiptRecent b,.receiptRecent small{display:block}.receiptRecent strong{color:#3b9772;white-space:nowrap}.receiptNote{font-size:12px;color:#8b6b7d;background:#fff7f9;border:1px solid #f5e1ea;border-radius:12px;padding:12px}.receiptDemoNotice{padding:19px;border-radius:19px;background:#fff;border:1px solid #f1e3e9}.receiptDemoNotice h3{margin:0 0 8px}.receiptDemoNotice p{margin:0;color:#8b7781}
 @media(max-width:760px){.receiptIntro{padding:16px;flex-wrap:wrap}.receiptIntro h2{font-size:22px}.receiptStats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.receiptStats article{padding:13px;border-radius:16px}.receiptStats strong{font-size:22px}.receiptCharts{grid-template-columns:1fr}.receiptRecent b{font-size:12px}}
 .themeDark .receiptIntro{background:#3c2b3b;border-color:#5b4053}.themeDark .receiptIntro h2{color:#ffe3f0}.themeDark .receiptStats article,.themeDark .receiptDemoNotice{background:#302b3c;border-color:#59475a}.themeDark .receiptStats strong{color:#ffe3f0}
+
+
+/* Inventory dashboard layout and touch-target corrections */
+.inventoryPage .overviewRank{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:56px}
+.inventoryPage .overviewRank>span{width:32px;height:32px;flex:none}
+.inventoryPage .overviewRank>div{min-width:0;overflow:hidden}
+.inventoryPage .overviewRank b{font-size:14px;line-height:1.4}
+.inventoryPage .overviewRank small{font-size:11px}
+.inventoryPage .overviewRank>strong{font-size:14px;text-align:right}
+.inventoryPage .insightCard{overflow:hidden}
+.inventoryPage .overviewBarRow{grid-template-columns:minmax(55px,76px) minmax(0,1fr) 32px;gap:10px}
+.inventoryPage .overviewBarRow>b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:650px){
+ .inventoryPage .inventoryInsights{gap:12px}
+ .inventoryPage .insightCard{padding:17px 15px;border-radius:19px}
+ .inventoryPage .insightCard h3{font-size:clamp(17px,4.7vw,22px);line-height:1.25;margin:0 0 16px;overflow-wrap:anywhere}
+ .inventoryPage .overviewRank{gap:9px;grid-template-columns:30px minmax(0,1fr) auto}
+ .inventoryPage .overviewRank>span{width:28px;height:28px}
+ .inventoryPage .overviewRank b{font-size:13px}
+ .inventoryPage .overviewRank>strong{font-size:12px}
+ .inventoryPage .overviewBarRow{grid-template-columns:53px minmax(0,1fr) 22px;gap:8px}
+ .inventoryPage .inventoryMetrics article strong{font-variant-numeric:tabular-nums}
+}
