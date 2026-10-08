@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import path from 'node:path'
 import { db } from './db.js'
 
 export type InventoryFilters={search?:string;category?:string;size?:string;status?:'all'|'active'|'inactive';state?:'all'|'out'|'low'|'ok';threshold?:number}
@@ -20,13 +21,16 @@ export function inventoryRows(filters:InventoryFilters={}){
  AND (?='all' OR p.status=?)
  AND (?='all' OR (?='out' AND COALESCE(s.stock,0)=0) OR (?='low' AND COALESCE(s.stock,0)>0 AND COALESCE(s.stock,0)<=?) OR (?='ok' AND COALESCE(s.stock,0)>?))
  ORDER BY p.name,v.id`
- return db.prepare(sql).all(q,q,q,q,q,category,category,size,size,status,status,state,state,state,threshold,state,threshold)
+ const rows=db.prepare(sql).all(q,q,q,q,q,category,category,size,size,status,status,'all','all','all',threshold,'all',threshold) as Array<any>
+ const actual=rows.map(r=>({...r,ledger_stock:Number(r.stock||0),stock:physicalImageCount(r.variant_id,r.product_id)}))
+ return actual.filter(r=>state==='all'||(state==='out'&&r.stock===0)||(state==='low'&&r.stock>0&&r.stock<=threshold)||(state==='ok'&&r.stock>threshold))
 }
 
 type ExplorerImage={id:number;file_name:string;file_path:string;exists:boolean}
 type ExplorerVariant={variant_id:number;sku:string;size:string;cost_price:number;sale_price:number;ledger_stock:number;stock:number;images:ExplorerImage[]}
 type ExplorerProduct={product_id:number;product_code:string;product_name:string;category:string|null;product_status:string;stock:number;variants:ExplorerVariant[]}
 
+function physicalImageCount(variantId:number,productId:number){return actualImages(variantId,productId).filter(x=>x.exists).length}
 function actualImages(variantId:number,productId:number):ExplorerImage[]{
  const rows=db.prepare(`SELECT id,file_path FROM product_images WHERE product_id=? AND variant_id=? ORDER BY sort_order,id`).all(productId,variantId) as Array<{id:number;file_path:string}>
  return rows.map(x=>({...x,file_name:x.file_path.split(/[\\/]/).pop()||x.file_path,exists:fs.existsSync(x.file_path)}))
@@ -41,7 +45,7 @@ export function inventoryExplorer(filters:Pick<InventoryFilters,'search'|'catego
   const stock=registered.length
   let product=products.get(r.product_id)
   if(!product){product={product_id:r.product_id,product_code:r.product_code,product_name:r.product_name,category:r.category??null,product_status:r.product_status,stock:0,variants:[]};products.set(r.product_id,product)}
-  product.variants.push({variant_id:r.variant_id,sku:r.sku,size:r.size,cost_price:Number(r.cost_price||0),sale_price:Number(r.sale_price||0),ledger_stock:Number(r.stock||0),stock,images:registered})
+  product.variants.push({variant_id:r.variant_id,sku:r.sku,size:r.size,cost_price:Number(r.cost_price||0),sale_price:Number(r.sale_price||0),ledger_stock:Number(r.ledger_stock||0),stock,images:registered})
   product.stock+=stock
  }
  return [...products.values()]
