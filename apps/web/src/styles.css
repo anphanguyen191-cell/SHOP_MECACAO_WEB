@@ -323,3 +323,21 @@ button.overviewStat:focus-visible{outline:3px solid #aa4d79;outline-offset:3px}
  .inventoryPage .sizesInsight .productStockBarLabel b{font-size:13px}
  .inventoryPage .sizesInsight .productStockBarLabel strong{font-size:13px}
 }
+
+
+/* Findings from actual 390px Chrome screenshot artifacts */
+.themeDark .inventoryHeading h2{color:#322635}
+.themeDark .inventoryHeading p{color:#6e6170}
+.themeDark .inventoryHeading .eyebrow{color:#9f657b}
+.themeDark .receiptIntro p{color:#dfc7d4}
+.themeDark .receiptIntro .eyebrow{color:#edacc9}
+.themeDark .receiptStats article span,.themeDark .receiptStats article small{color:#e0c6d4}
+.themeDark .receiptStats article strong{color:#fff1f9}
+.themeDark .receiptStats article{background:#302b3d;border-color:#624b60}
+.themeDark .receiptCharts .insightCard h3{color:#ffeaf5}
+.receiptStats article{min-width:0}
+.receiptStats article strong{overflow-wrap:anywhere;line-height:1.2}
+@media(max-width:760px){
+ .receiptIntro h2{font-size:clamp(20px,6vw,27px);line-height:1.2}
+ .receiptStats article strong{font-size:clamp(20px,6vw,29px)}
+}
