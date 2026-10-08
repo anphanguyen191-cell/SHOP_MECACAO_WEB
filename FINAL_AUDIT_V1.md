@@ -1,3 +1,28 @@
+# Latest V1 quality gate — 2026-10-08 / pre-Windows handoff
+
+**Automated verification PASS (run 37729772120). Real Windows warehouse verification: NOT PERFORMED. Verdict: PRE-WINDOWS TEST CANDIDATE, NOT V1 STABLE.** Earlier paragraphs below are retained for history and must not override this conclusion.
+
+## Evidence matrix
+| Gate | Latest result | Evidence |
+| --- | --- | --- |
+| Dependency production audit | PASS at critical threshold | GitHub Actions verify |
+| TypeScript, build, schema migration | PASS | schema110 core and SQLite VACUUM INTO snapshot tests |
+| Core business/inventory integrity | PASS | disposable SQLite self-test |
+| Goods receipt loss/restart, idempotence | PASS | hard child process termination after COPY + fresh child recovery; three receipt workflows; corrupt/mixed journals halt safely |
+| HTTP integration | PASS, 26 assertions | Disposable local server, approval, import, physical stock, ledger, original SHA, lossless backup, restart |
+| Browser UI | PASS | Chromium widths 320/390/430/768, all six tabs, responsive charts, autocomplete, dark mode and fold controls |
+| Full backup validation | PASS (byte copy / checksum) | verified SQLite snapshot + image SHA256; detects corrupt backup |
+| Real Windows D: copy / browser / restart | **NOT TESTED** | `WINDOWS_V1_ACCEPTANCE_TEST.md` user acceptance procedure |
+| Full restore onto Windows destination | **NOT TESTED** | Needs explicit restore dry-run on a disposable directory |
+| Live goods-receipt progress streaming | **NOT IMPLEMENTED** | UI honestly reports result after server completes |
+| Corrupted partial copy recovery | **FAIL-CLOSED / MANUAL** | Journal preserved; no dangerous automatic deletion |
+
+## Windows test handoff
+Use `RUN_WINDOWS_V1_SAFE_TEST.bat` only. It creates and uses a separate database at `%LOCALAPPDATA%\ShopMeCaCao\V1AcceptanceSandbox\database\shop-acceptance.db` and images under the same sandbox. Opens `http://127.0.0.1:3005` and shows an explicit TEST SANDBOX warning. It must never write to `D:\1-Me CaCao Store`. Follow the detailed checklist in `WINDOWS_V1_ACCEPTANCE_TEST.md`.
+
+Original customer image protection remains mandatory: original source files must stay byte-identical, unregistered copies are removed only when verified safe, and mixed/corrupt journals block startup rather than delete ambiguous files.
+
+---
 # V1 ACCEPTANCE REPORT — latest checkpoint 2026-10-08
 
 **Verdict:** Web UI automated gate PASSED; Windows warehouse acceptance NOT STARTED. Therefore **V1 is NOT STABLE and NOT fully accepted**. Historical claims below about Windows readiness/old endpoint states do not override this verdict.
