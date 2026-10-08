@@ -34,7 +34,7 @@ assert(!(db.prepare('SELECT 1 FROM products WHERE product_code=?').get('O'+suffi
 let badPrice=false
 try{createProduct({name:'BAD PRICE '+suffix,productCode:'P'+suffix,costPrice:-1,variants:[{size:'X',sku:'PSKU-'+suffix}]})}catch{badPrice=true}
 assert(badPrice,'negative price must be rejected')
-assert(variant.stock===5,'opening stock must be 5')
+assert(variant.stock===0&&variant.ledger_stock===5,'opening ledger must be 5 while physical stock is zero without images')
 addInventory(variant.id,'IMPORT',3,11000,'self test import')
 addInventory(variant.id,'ADJUST_PLUS',2,undefined,'self test plus')
 addInventory(variant.id,'ADJUST_MINUS',4,undefined,'self test minus')
