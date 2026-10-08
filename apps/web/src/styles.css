@@ -77,3 +77,28 @@ main{min-width:0;padding:14px}.hero{padding:18px 20px;border-radius:20px}.hero h
 .themeDark .overviewPanel,.themeDark .overviewShortcuts{background:#242532;border-color:#49404c}.themeDark .overviewWelcome{background:#392b3a;border-color:#614558}.themeDark .overviewWelcome h2{color:#ffe9f2}.themeDark .overviewStat{background:#302b3c;border-color:#554050}.themeDark .overviewStat strong{color:#ffe6f0}.themeDark .overviewRank{border-color:#4a4050}.themeDark .overviewAlert{background:#40353a}.themeDark .overviewShortcuts button{background:#42303f;color:#ffd9ea;border-color:#62465a}
 
 .overviewDemoLabel{display:inline-block;margin:0 0 10px;padding:5px 9px;border:1px dashed #e3a5bb;border-radius:8px;color:#ad547b;background:#fff1f6;font-size:10px;font-weight:850;letter-spacing:.04em}
+
+
+/* V1 mobile polish: compact operational KPI and accessible inventory tree */
+@media(max-width:650px){
+ .inventoryPage{margin-top:12px}
+ .inventoryHeading{padding:18px;border-radius:20px;display:block}
+ .inventoryHeading h2{font-size:28px}
+ .inventoryHeading .reconcileAlert,.inventoryHeading .okPill{display:inline-block;margin-top:12px;white-space:normal}
+ .inventoryMetrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+ .inventoryMetrics article{padding:15px 12px;border-radius:18px;min-width:0}
+ .inventoryMetrics article span{font-size:11px;letter-spacing:.04em}
+ .inventoryMetrics article strong{font-size:clamp(26px,7vw,36px);line-height:1.2}
+ .inventoryMetrics article small{font-size:11px;line-height:1.4}
+ .inventoryInsights{display:grid;grid-template-columns:1fr;gap:12px}
+ .insightCard{min-width:0}
+ .inventoryFilters{display:grid;grid-template-columns:1fr;gap:10px}
+ .inventoryFilters select,.inventoryFilters input{width:100%;min-width:0;max-width:100%}
+ .treeProductHead{min-width:0;gap:8px;padding:12px}
+ .treeName{min-width:0;overflow-wrap:anywhere}
+ .treeName b{font-size:14px}
+ .treeVariantHead{gap:8px;flex-wrap:wrap}
+ .selectableGallery{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .selectableGallery img{width:100%;height:auto;aspect-ratio:4/5;object-fit:cover}
+ .productDetail .detailTable>div{border:1px solid #f1e5e0;border-radius:12px;padding:12px;margin:8px 0;background:#fff}
+}
