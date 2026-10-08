@@ -17,7 +17,7 @@ export default function InventoryView(){
  useEffect(()=>{void load()},[search,category,size])
  useEffect(()=>{fetch('/api/inventory/filter-options').then(r=>r.json()).then(j=>{setCategories(j.categories??[]);setSizes(j.sizes??[])})},[])
  useEffect(()=>{if(search.trim().length<1){setSuggestions([]);return}const t=setTimeout(()=>fetch('/api/inventory/suggestions?search='+encodeURIComponent(search)).then(r=>r.json()).then(j=>setSuggestions(Array.isArray(j)?j:[])),180);return()=>clearTimeout(t)},[search])
- const maxSize=useMemo(()=>Math.max(1,...(dashboard?.sizeStock??[]).map(x=>x.stock)),[dashboard])
+ const maxProduct=useMemo(()=>Math.max(1,...(dashboard?.topProducts??[]).map(x=>x.stock)),[dashboard])
  function toggle(set:Set<number>,id:number,setter:(v:Set<number>)=>void){const n=new Set(set);n.has(id)?n.delete(id):n.add(id);setter(n)}
  function chooseSuggestion(s:Suggestion){setSearch(s.product_name);setExpandedProducts(new Set([s.product_id]));setExpandedVariants(new Set([s.variant_id]));setSuggestions([])}
  function chooseImage(id:number){toggle(selectedImages,id,setSelectedImages)}
@@ -32,7 +32,7 @@ export default function InventoryView(){
   <div className="inventoryInsights">
    <article className="insightCard"><h3>Tồn nhiều nhất</h3>{dashboard?.topProducts?.map((x,i)=><button key={x.product_id} onClick={()=>{setSearch(x.product_name);setExpandedProducts(new Set([x.product_id]))}}><b>{i+1}. {x.product_name}</b><strong>{x.stock}</strong></button>)}</article>
    <article className="insightCard"><h3>Tồn thấp còn hàng</h3>{dashboard?.lowProducts?.map((x,i)=><button key={x.product_id} onClick={()=>{setSearch(x.product_name);setExpandedProducts(new Set([x.product_id]))}}><b>{i+1}. {x.product_name}</b><strong>{x.stock}</strong></button>)}</article>
-   <article className="insightCard sizesInsight"><h3>Tồn theo Size</h3>{dashboard?.sizeStock?.slice(0,7).map(x=><button key={x.size} onClick={()=>setSize(x.size)}><span>{x.size}</span><i><em style={{width:(x.stock/maxSize*100)+'%'}}/></i><strong>{x.stock}</strong></button>)}</article>
+   <article className="insightCard sizesInsight"><h3>Tồn thực tế theo sản phẩm</h3><p className="chartCaption">Số ảnh vật lý còn tồn của mỗi mẫu, cộng tất cả Size.</p>{dashboard?.topProducts?.length?dashboard.topProducts.map(x=><button className="productStockBar" key={x.product_id} onClick={()=>{setSearch(x.product_name);setExpandedProducts(new Set([x.product_id]))}}><span className="productStockBarLabel"><b title={x.product_name}>{x.product_name}</b><strong>{x.stock} bộ</strong></span><span className="overviewTrack"><span style={{width:(x.stock/maxProduct*100)+'%'}}/></span></button>):<p className="overviewEmpty">Chưa có sản phẩm tồn ảnh vật lý để hiển thị biểu đồ.</p>}</article>
   </div>
   <div className="inventoryFilters">
    <div className="smartSearch"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Tìm tên sản phẩm, mã, SKU hoặc Size..."/>{suggestions.length>0&&<div className="suggestions">{suggestions.map(s=><button key={s.variant_id} onClick={()=>chooseSuggestion(s)}><b>{s.product_name}</b><span>{s.product_code} · Size {s.size} · {s.sku}</span></button>)}</div>}</div>
