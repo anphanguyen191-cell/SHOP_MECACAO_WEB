@@ -19,15 +19,15 @@ export default function GoodsReceipt(){
  async function chooseProduct(id:number){setProductId(id);setMsg('');if(!id){setDetail(null);return}const r=await fetch('/api/products/'+id);const j=await r.json();if(r.ok){setDetail(j);setName(j.product.name);setCode(j.product.product_code);if(flow==='EXISTING_SIZE'){const first=j.variants?.[0];setRows(first?[{size:first.size,sku:first.sku,quantity:1,costPrice:first.cost_price??0,salePrice:first.sale_price??0,sourcePath:'',imageCount:0}]:[blank()])}else if(flow==='NEW_SIZE'){setRows([blank()])}}}
  function switchFlow(next:Flow){setFlow(next);setMsg('');setProgress(null);setProductId(0);setDetail(null);setProductSearch('');setName('');setCode('');setCategory('');setRows([blank()])}
  function patch(i:number,k:keyof SizeRow,v:string|number){const a=[...rows];a[i]={...a[i],[k]:typeof a[i][k]==='number'?Math.max(0,Number(v)||0):v};setRows(a)}
- async function inspect(i:number){const p=rows[i].sourcePath.trim();if(!p){setMsg('Chọn hoặc nhập folder ảnh nguồn của Size.');return}const r=await fetch('/api/goods-receipt/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:p})});const j=await r.json();if(!r.ok){setMsg(j.error||'Không đọc được folder ảnh');return}const a=[...rows];a[i]={...a[i],imageCount:j.count,quantity:j.count};setRows(a);setMsg(j.count+' ảnh hợp lệ — tồn nhập đề xuất '+j.count)}
+ async function inspect(i:number,selectedPath?:string){const p=(selectedPath??rows[i].sourcePath).trim();if(!p){setMsg('Chọn hoặc nhập folder ảnh nguồn của Size.');return}const r=await fetch('/api/goods-receipt/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:p})});const j=await r.json();if(!r.ok){setMsg(j.error||'Không đọc được folder ảnh');return}const a=[...rows];a[i]={...a[i],imageCount:j.count,quantity:j.count};setRows(a);setMsg(j.count+' ảnh hợp lệ — tồn nhập đề xuất '+j.count)}
  function chooseExistingVariant(id:number){const v=detail?.variants.find(x=>x.id===id);if(v)setRows([{size:v.size,sku:v.sku,quantity:1,costPrice:v.cost_price??0,salePrice:v.sale_price??0,sourcePath:'',imageCount:0}])}
  async function submit(){if(busy)return;setBusy(true);setMsg('');setProgress({phase:'VALIDATE',percent:2,copied:0,total:rows.reduce((n,r)=>n+r.imageCount,0)})
   try{
    for(const r of rows.filter(x=>x.size.trim())) if(r.imageCount!==r.quantity) throw new Error('Tồn phải bám theo ảnh thực tế: Size '+r.size+' có '+r.imageCount+' ảnh nhưng SL nhập là '+r.quantity)
    const payload={storeRoot,productId:flow==='NEW_PRODUCT'?undefined:productId||undefined,name,productCode:code,category,note,sizes:rows.filter(r=>r.size.trim()).map(r=>({size:r.size,sku:r.sku||undefined,quantity:r.imageCount,costPrice:Math.trunc(r.costPrice),salePrice:Math.trunc(r.salePrice),sourcePath:r.sourcePath||undefined}))}
    const r=await fetch('/api/goods-receipt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const j=await r.json();if(!r.ok)throw new Error(j.error||'Nhập hàng thất bại')
-   for(const e of j.events??[])setProgress(e)
-   setMsg('Nhập thành công: '+j.result.totalQuantity+' sản phẩm · '+j.result.copiedImages+' ảnh đã copy vào kho.')
+   setProgress((j.events??[]).at(-1)??{phase:'DONE',percent:100,copied:j.result.copiedImages,total:j.result.copiedImages})
+   setMsg('Nhập thành công: '+j.result.totalQuantity+' bộ · '+j.result.copiedImages+' ảnh đã copy vào kho. Tiến độ được xác nhận sau khi máy chủ hoàn tất, không phải cập nhật trực tiếp.')
   }catch(e){setMsg(e instanceof Error?e.message:'Nhập hàng thất bại')}finally{setBusy(false)}
  }
  const existingSizes=detail?.variants??[]
@@ -56,6 +56,6 @@ export default function GoodsReceipt(){
   <div className="row actions"><span className="receiptRule">1 ảnh hợp lệ trong Size = 1 sản phẩm vật lý nhập kho</span><button className="primary" disabled={busy||!storeRoot||(flow!=='NEW_PRODUCT'&&!productId)||rows.every(r=>!r.imageCount)} onClick={()=>void submit()}>{busy?'ĐANG NHẬP...':'XÁC NHẬN NHẬP HÀNG'}</button></div>
   {progress&&<div className="progressBox"><div className="row"><b>{labels[progress.phase]??progress.phase}</b><strong>{progress.percent}%</strong></div><progress max="100" value={progress.percent}/><small>{progress.total?progress.copied+'/'+progress.total+' ảnh':''}{progress.current?' · '+progress.current:''}</small></div>}
   {msg&&<p className="notice">{msg}</p>}
-  {pick&&<FolderPicker title={pick.kind==='store'?'Chọn kho ảnh Shop Mẹ CaCao':'Chọn folder ảnh hàng mới'} onClose={()=>setPick(null)} onPick={p=>{if(pick.kind==='store')setStoreRoot(p);else if(pick.row!==undefined){patch(pick.row,'sourcePath',p);setTimeout(()=>void inspect(pick.row!),0)}setPick(null)}}/>}
+  {pick&&<FolderPicker title={pick.kind==='store'?'Chọn kho ảnh Shop Mẹ CaCao':'Chọn folder ảnh hàng mới'} onClose={()=>setPick(null)} onPick={p=>{if(pick.kind==='store')setStoreRoot(p);else if(pick.row!==undefined){patch(pick.row,'sourcePath',p);void inspect(pick.row,p)}setPick(null)}}/>}
  </section>
 }
