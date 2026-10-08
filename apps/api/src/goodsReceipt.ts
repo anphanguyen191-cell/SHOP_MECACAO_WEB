@@ -66,3 +66,12 @@ export function receiveGoods(input:ReceiveInput,onProgress?:(p:ReceiveProgress)=
   }catch(e){try{db.exec('ROLLBACK')}catch{}throw e}
  }catch(e){emit({phase:'ROLLBACK',percent:0,copied:created.length,total});for(const p of created.reverse())try{fs.rmSync(p,{force:true})}catch{};for(const d of createdDirs.reverse())try{fs.rmdirSync(d)}catch{};throw e}
 }
+
+
+/** Aggregates posted imports; ledger quantities are transaction history, never physical stock. */
+export function goodsReceiptDashboard(){
+ const row=db.prepare(`SELECT COUNT(*) AS transactions,COALESCE(SUM(t.quantity),0) AS importedQuantity,COALESCE(SUM(t.quantity*t.unit_cost),0) AS importedValue,MAX(t.created_at) AS lastImport FROM inventory_transactions t WHERE t.transaction_type='IMPORT'`).get() as {transactions:number;importedQuantity:number;importedValue:number;lastImport:string|null}
+ const top=db.prepare(`SELECT p.id AS productId,p.name AS name,p.product_code AS code,SUM(t.quantity) AS quantity,COALESCE(SUM(t.quantity*t.unit_cost),0) AS value FROM inventory_transactions t JOIN product_variants v ON v.id=t.variant_id JOIN products p ON p.id=v.product_id WHERE t.transaction_type='IMPORT' GROUP BY p.id ORDER BY quantity DESC,p.name LIMIT 5`).all()
+ const recent=db.prepare(`SELECT t.id,p.name AS productName,v.size,t.quantity,t.unit_cost AS unitCost,t.created_at AS createdAt FROM inventory_transactions t JOIN product_variants v ON v.id=t.variant_id JOIN products p ON p.id=v.product_id WHERE t.transaction_type='IMPORT' ORDER BY t.id DESC LIMIT 8`).all()
+ return {...row,top,recent,source:'INVENTORY_TRANSACTIONS',valueBasis:'QUANTITY_X_UNIT_COST',note:'Giá trị lịch sử nhập theo đơn giá đã ghi; không phải giá trị tồn hiện tại'}
+}
