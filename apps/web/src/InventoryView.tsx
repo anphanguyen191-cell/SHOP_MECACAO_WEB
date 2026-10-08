@@ -72,14 +72,15 @@ export default function InventoryView({isDemo=false}:{isDemo?:boolean}){
  function chooseSuggestion(s:Suggestion){setSearch(s.product_name);setSize(s.size);setExpandedProducts(new Set([s.product_id]));setExpandedVariants(new Set([s.variant_id]));setSuggestions([])}
  function chooseImage(id:number){toggle(selectedImages,id,setSelectedImages)}
  return <section className="inventoryPage">
-  <div className="inventoryHeading"><div><p className="eyebrow">{isDemo?'DỮ LIỆU MINH HỌA · DEMO':'KHO HÀNG THỰC TẾ'}</p><h2>Tồn kho</h2><p>{isDemo?'Số liệu mẫu để kiểm tra giao diện, không phải tồn hàng của Shop. LOCAL mới kết nối kho ảnh.':'Tồn thực tế đếm ảnh hợp lệ theo từng Size. Chọn sản phẩm để xem ảnh và đối soát.'}</p></div>{isDemo?<span className="okPill">BẢN XEM THỬ</span>:dashboard?.mismatches?<span className="reconcileAlert">⚠ {dashboard.mismatches} Size lệch ledger/ảnh</span>:<span className="okPill">✓ Ảnh kho đã đối chiếu</span>}</div>
+  <div className="inventoryHeading"><div><p className="eyebrow">{isDemo?'DỮ LIỆU MINH HỌA · DEMO':'KHO HÀNG THỰC TẾ'}</p><h2>Tồn kho</h2><p>{isDemo?'Số liệu mẫu để kiểm tra giao diện, không phải tồn hàng của Shop. LOCAL mới kết nối kho ảnh.':'Tồn thực tế đếm ảnh hợp lệ theo từng Size. Chọn sản phẩm để xem ảnh và đối soát.'}</p></div>{isDemo?<span className="okPill">BẢN XEM THỬ</span>:!dashboard?<span className="reconcileAlert">Đang tải / không có dữ liệu kho</span>:dashboard.mismatches?<span className="reconcileAlert">⚠ {dashboard.mismatches} Size lệch ledger/ảnh</span>:<span className="okPill">✓ Đã so sánh ảnh và sổ</span>}</div>
+  {loadError&&<p className="notice warning" role="alert">{loadError}</p>}
   <section className="inventoryDashboardBlock" aria-label="Dashboard tồn kho">
    <div className="dashboardFoldHeader">
     <div><span className="dashboardFoldEyebrow">BÁO CÁO TỒN KHO</span><h3>Dashboard tồn kho</h3><p>{isDemo?'Chỉ số minh họa · không phải tồn kho thật':'Chỉ số tổng theo ảnh vật lý đã đăng ký'}</p></div>
     <button type="button" className="dashboardFoldToggle" aria-expanded={dashboardExpanded} aria-controls="inventory-dashboard-body" onClick={()=>setDashboardExpanded(v=>!v)}>{dashboardExpanded?'Thu gọn':'Xem dashboard'} <span aria-hidden="true">{dashboardExpanded?'⌃':'⌄'}</span></button>
    </div>
    {dashboardExpanded&&<div id="inventory-dashboard-body" className="dashboardFoldBody">
-  {loadError&&<p className="notice warning" role="alert">{loadError}</p>}<div className="inventoryMetrics">
+  <div className="inventoryMetrics">
    <article><span>{isDemo?'TỒN MINH HỌA':'TỔNG TỒN'}</span><strong>{dashboard?.stock??'—'}</strong><small>{isDemo?'Số mẫu, không phải kho thật':'Bộ theo ảnh vật lý thực tế'}</small></article>
    <article><span>SẢN PHẨM</span><strong>{dashboard?.products??'—'}</strong><small>{dashboard?.productsInStock??0} mẫu còn hàng</small></article>
    <article><span>SIZE / SKU</span><strong>{dashboard?.skus??'—'}</strong><small>{dashboard?.sizes??0} tên Size</small></article>
