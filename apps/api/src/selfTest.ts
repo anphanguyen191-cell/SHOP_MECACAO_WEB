@@ -5,7 +5,7 @@ import { db } from './db.js'
 import { createProduct, suggestProductCode, suggestSku, listProducts } from './products.js'
 import { addInventory, batchImport, history } from './inventory.js'
 import { isPathInsideRoot, scanStore } from './storeScanner.js'
-import { createBackup, createOptimizedImageBackup } from './backup.js'
+import { createBackup, createOptimizedImageBackup, createLosslessBackup, verifyLosslessBackup } from './backup.js'
 import sharp from 'sharp'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -174,6 +174,19 @@ const optimizedManifest=JSON.parse(fs.readFileSync(path.join(optimizedBackup.dir
 const optimizedImage=optimizedManifest.images.find(x=>x.product_id===importedId&&x.backup_path)
 assert(optimizedImage&&fs.existsSync(path.join(optimizedBackup.directory,optimizedImage.backup_path!)),'optimized image backup file must exist')
 assert(Math.max(optimizedImage.width??0,optimizedImage.height??0)<=1920,'optimized image must respect max dimension')
+const completeBackup=createLosslessBackup()
+assert(completeBackup.verified.ok&&completeBackup.verified.dbVerified&&completeBackup.verified.imagesVerified>=2,'byte-exact recovery bundle must verify database and every registered image')
+const bundleManifest=JSON.parse(fs.readFileSync(path.join(completeBackup.directory,'lossless-manifest.json'),'utf8')) as {files:Array<{source_path:string;backup_path:string;sha256:string}>}
+const backedImage=bundleManifest.files.find(x=>x.source_path===goodImage)!
+assert(backedImage,'byte-exact backup must include canonical source path')
+const verifiedCopy=path.join(completeBackup.directory,backedImage.backup_path)
+fs.writeFileSync(verifiedCopy,'corrupted-backup-bytes')
+let damageDetected=false
+try{verifyLosslessBackup(completeBackup.directory)}catch(e){damageDetected=e instanceof Error&&e.message.includes('checksum')}
+assert(damageDetected,'checksum verifier must reject corrupted backup without touching original')
+fs.copyFileSync(goodImage,verifiedCopy)
+assert(verifyLosslessBackup(completeBackup.directory).ok,'restoring damaged backup copy from original should make recovery bundle verify')
+
 db.prepare('DELETE FROM product_images WHERE product_id=?').run(importedId)
 const importedVariantIds=(db.prepare('SELECT id FROM product_variants WHERE product_id=?').all(importedId) as Array<{id:number}>).map(x=>x.id)
 for(const id of importedVariantIds)db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(id)
@@ -227,4 +240,4 @@ try{
  db.prepare('DELETE FROM products WHERE id=?').run((product.product as {id:number}).id)
  db.exec('COMMIT')
 }catch(e){db.exec('ROLLBACK');throw e}
-console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, persistence/integrity/foreign-key, store import rollback/rescan-idempotence, goods receipt copy/folder-inspect/rollback/progress, durable crash recovery/uncommitted/committed/mixed/corrupt safeguards, DB backup, manual optimized image backup, cleanup')
+console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, persistence/integrity/foreign-key, store import rollback/rescan-idempotence, goods receipt copy/folder-inspect/rollback/progress, durable crash recovery/uncommitted/committed/mixed/corrupt safeguards, DB backup, manual optimized image backup, lossless image+DB recovery bundle/corruption detection, cleanup')
