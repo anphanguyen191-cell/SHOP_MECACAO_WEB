@@ -4,8 +4,12 @@ cd /d "%~dp0.."
 title Shop Me CaCao - First Time Setup
 where node >nul 2>nul
 if errorlevel 1 (echo [ERROR] Chua tim thay Node.js.&pause&exit /b 1)
-for /f "tokens=1 delims=." %%v in ('node -p "process.versions.node"') do set NODE_MAJOR=%%v
-if %NODE_MAJOR% LSS 22 (echo [ERROR] Can Node.js 22 tro len de dung SQLite an toan.&pause&exit /b 1)
+for /f "tokens=1,2 delims=." %%a in ('node -p "process.versions.node"') do (
+  set "NODE_MAJOR=%%a"
+  set "NODE_MINOR=%%b"
+)
+if %NODE_MAJOR% LSS 22 (echo [ERROR] Can Node.js 22.5 tro len vi ung dung dung node:sqlite.&pause&exit /b 1)
+if %NODE_MAJOR% EQU 22 if %NODE_MINOR% LSS 5 (echo [ERROR] Can Node.js 22.5 tro len vi ung dung dung node:sqlite.&pause&exit /b 1)
 echo [1/4] Cai thu vien...
 call npm install
 if errorlevel 1 goto :fail
