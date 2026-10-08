@@ -142,3 +142,13 @@ button.productStockBar{cursor:pointer}
 .productStockBar>small{display:block;color:#99838d;font-size:11px;margin-top:5px}
 button.productStockBar:focus-visible{outline:2px solid #b44b81;outline-offset:4px;border-radius:4px}
 @media(max-width:650px){.productStockBarLabel b{font-size:13px}.productStockBarLabel strong{font-size:12px}.productStockBar{margin-bottom:17px}}
+
+
+/* Overview navigation: KPI cards are interactive drill-down entry points */
+button.overviewStat{font:inherit;color:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:0;min-width:0;width:100%;appearance:none}
+button.overviewStat:hover{box-shadow:0 8px 26px rgba(143,70,111,.13);transform:translateY(-1px)}
+button.overviewStat:focus-visible{outline:3px solid #aa4d79;outline-offset:3px}
+.overviewStatLink{display:block;margin-top:auto;padding-top:12px;color:#a34c78;font-size:12px;font-weight:750;letter-spacing:0}
+.overviewPanel .overviewPanelTitle button.overviewTextAction{margin:0;font-size:12px;white-space:nowrap}
+.overviewPanel .productStockBar{margin-bottom:18px}
+@media(max-width:650px){.overviewStatLink{font-size:11px;padding-top:8px}.overviewPanel .overviewPanelTitle{gap:10px;align-items:flex-start}.overviewPanel .overviewPanelTitle h3{font-size:clamp(18px,4.5vw,23px)}.overviewPanel .overviewPanelTitle button.overviewTextAction{white-space:normal;text-align:right;flex-shrink:0;max-width:96px}}
