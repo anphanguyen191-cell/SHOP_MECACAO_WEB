@@ -47,7 +47,15 @@ app.get('/api/fs/list', (req,res)=>{
  }catch(e){return res.status(400).json({error:e instanceof Error?e.message:'Không thể mở thư mục'})}
 })
 app.get('/api/dashboard', (_req,res) => res.json(dashboardSummary()))
-app.get('/api/products', (req, res) => res.json(listProducts(String(req.query.search ?? ''))))
+app.get('/api/products', (req,res)=>{
+  try{
+    res.json(listProducts(String(req.query.search??''),{
+      size:String(req.query.size??''),
+      stockState:String(req.query.stockState??'all') as 'all'|'in'|'out',
+      sort:String(req.query.sort??'newest') as 'newest'|'name'|'stock_desc'|'stock_asc'
+    }))
+  }catch(e){res.status(400).json({error:e instanceof Error?e.message:'Bộ lọc danh mục không hợp lệ'})}
+})
 app.get('/api/categories', (_req,res) => res.json(listCategories()))
 app.get('/api/settings', (_req,res) => res.json({ lowStockThreshold:getLowStockThreshold() }))
 app.put('/api/settings/low-stock-threshold', (req,res) => {
