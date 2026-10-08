@@ -1,3 +1,16 @@
+# V1 CURRENT STATUS — 2026-10-08 (authoritative; supersedes older checkpoints)
+
+**Buildable DEMO UI: PASSED browser regression on commit 3b537594 (GitHub Actions 37716663127, verify + deploy SUCCESS).** Further six-tab browser checks are committed and require their own CI result. **Windows business-data acceptance: NOT PASSED / NOT EXECUTED. V1 remains NOT STABLE.**
+
+- Four collapsible dashboards are now above task content: overview, catalog, goods receipts and inventory. Large branding banner is compact and placed below overview analytics.
+- Responsive inventory chart regression corrected: product labels render horizontally above each bar, not in the obsolete 60px three-column CSS grid.
+- Dark mode contrast corrected for catalog/inventory KPIs, drawer search (light background remains), product ranks, inventory heading and goods receipt metrics.
+- The GitHub Actions V1 gate now runs web/API TypeScript, schema migration self-test, isolated real SQLite core tests, production build, 16 source UI regression checks, and Chromium browser testing with screenshot artifacts. Browser checks cover 390px navigation, visual overflow, KPI contrast, fold/unfold and search. Additional 320/430/768px and six-tab coverage are being integrated.
+- Product search, Size suggestions, stock filters and product charts use registered existing physical image counts. Ledger remains separate for history and reconciliation.
+- **Open safety gates:** power-loss recovery journal for mixed filesystem/DB goods receipts; genuine streaming progress; backup/restore of original images; end-to-end verification of all write flows on a disposable Windows warehouse; real iPhone acceptance. Existing full database snapshot/optimized-image backup is not a substitute for proving full restore.
+- Never point destructive or acceptance experiments at the customer's real D: inventory. Test on a copy with verifiable before/after manifests.
+
+---
 # PROJECT STATE — SHOP MECACAO WEB
 
 Updated: 2026-10-06
@@ -79,7 +92,7 @@ Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản ph�
 - [x] Isolated disposable test database runner.
 - [x] Store import commit/rollback self-test source.
 - [x] Backup creation self-test source.
-- [ ] Automated test gate runtime PASS (GitHub workflow status unavailable via connector).
+- [x] Automated test gate and 390px Chromium browser smoke PASS (run 37716663127, 2026-10-08).
 - [ ] User acceptance test.
 
 ## Internal Gate Evidence — 2026-10-06
@@ -107,7 +120,7 @@ Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản ph�
 - Danh mục sản phẩm = catalog/dashboard, not a duplicate inventory list.
 - Tồn kho = inventory dashboard + Windows-Explorer-style Product → Size → physical images.
 - Inventory dashboard: total physical stock, products, Size/SKU, out-of-stock, Top 5 high stock, Top 5 lowest positive stock, stock by Size, reconciliation warnings.
-- Inventory search must autocomplete existing Product / product code / SKU / Size; known values are selected, not retyped.
+- Inventory search autocompletes existing Product / product code / SKU / Size with physical counts; automatic browser scenarios cover core navigation, and further Windows validation is still required.
 - Physical stock rule: **1 existing canonical image in a Size = 1 physical item in stock**. Missing physical image reduces physical count; ledger/image mismatch is shown for reconciliation.
 - Images in Size gallery are selectable. Selection is V1 foundation for future send-to-customer, order, sale and closing-slip workflows; selection itself never performs SALE.
 - Nhập hàng UX must have 3 explicit flows: (1) completely new Product, (2) new Size for existing Product, (3) additional stock for existing Product+Size. Existing Product/Size/SKU values must be selectable/autofilled.
@@ -116,7 +129,7 @@ Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản ph�
 ## 2026-10-08 — V1 deep audit (work in progress)
 - Latest UI baseline: official logo/banner committed, feature drawer, responsive product cards, physical-stock dashboard; GitHub DEMO charts explicitly illustrative.
 - Goods receipt hardening commits: ec4f449 (reject SHA-256 duplicate images and self-import from canonical Size folder), 4392cbc (folder picker stale-state fix; remove misleading post-response progress replay).
-- Physical stock remains count of existing registered canonical image files; ledger is a separate audit balance. `inventoryRows` and product-list totals still use ledger and must be relabeled or migrated to physical-stock queries before acceptance.
+- Physical stock remains count of existing registered canonical image files; ledger is a separate audit balance. `inventoryRows` and product-list totals have since been migrated to physical-image counts; the former statement was the 08:00 audit finding and is superseded by the authoritative status above.
 - No-image goods receipt is **currently explicitly rejected**, not silently posted as physical stock. Separate ledger-only workflows remain distinct and need UX clarification.
 - Progress is **not live-streamed**; API currently returns phase events only after synchronous completion. UI must not imply live progress.
 - Crash-safe journaling/recovery and full restore testing remain **OPEN**.
