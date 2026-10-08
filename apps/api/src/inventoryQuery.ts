@@ -65,7 +65,8 @@ export function inventoryDashboard(){
 
 export function inventorySuggestions(search=''){
  const q='%'+search.trim()+'%'
- return db.prepare(`SELECT p.id AS product_id,p.product_code,p.name AS product_name,v.id AS variant_id,v.sku,v.size FROM product_variants v JOIN products p ON p.id=v.product_id WHERE p.status='active' AND v.status='active' AND (?='%%' OR p.name LIKE ? OR p.product_code LIKE ? OR v.sku LIKE ? OR v.size LIKE ?) ORDER BY p.name,v.size LIMIT 20`).all(q,q,q,q,q)
+ const rows=db.prepare(`SELECT p.id AS product_id,p.product_code,p.name AS product_name,v.id AS variant_id,v.sku,v.size FROM product_variants v JOIN products p ON p.id=v.product_id WHERE p.status='active' AND v.status='active' AND (?='%%' OR p.name LIKE ? OR p.product_code LIKE ? OR v.sku LIKE ? OR v.size LIKE ?) ORDER BY CASE WHEN p.name LIKE ? OR p.product_code LIKE ? THEN 0 ELSE 1 END,p.name,v.size LIMIT 20`).all(q,q,q,q,q,search.trim()+'%',search.trim()+'%') as Array<{product_id:number;product_code:string;product_name:string;variant_id:number;sku:string;size:string}>
+ return rows.map(row=>({...row,stock:physicalImageCount(row.variant_id,row.product_id)}))
 }
 
 export function inventoryHistory(limit=200){
