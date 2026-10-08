@@ -129,3 +129,16 @@ main{min-width:0;padding:14px}.hero{padding:18px 20px;border-radius:20px}.hero h
  .inventoryPage .overviewBarRow{grid-template-columns:53px minmax(0,1fr) 22px;gap:8px}
  .inventoryPage .inventoryMetrics article strong{font-variant-numeric:tabular-nums}
 }
+
+
+/* Stock-by-product chart: full product names and comparable physical quantities */
+.chartCaption{font-size:12px;color:#8d7883;line-height:1.5;margin:-4px 0 17px}
+.productStockBar{display:block;width:100%;min-width:0;margin:0 0 16px;padding:0;text-align:left;background:transparent;border:0;color:inherit}
+button.productStockBar{cursor:pointer}
+.productStockBarLabel{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px;min-width:0}
+.productStockBarLabel b{font-size:13px;font-weight:750;line-height:1.4;overflow-wrap:anywhere;min-width:0}
+.productStockBarLabel strong{font-size:13px;white-space:nowrap;color:#994c74;font-variant-numeric:tabular-nums}
+.productStockBar .overviewTrack{display:block;height:12px}
+.productStockBar>small{display:block;color:#99838d;font-size:11px;margin-top:5px}
+button.productStockBar:focus-visible{outline:2px solid #b44b81;outline-offset:4px;border-radius:4px}
+@media(max-width:650px){.productStockBarLabel b{font-size:13px}.productStockBarLabel strong{font-size:12px}.productStockBar{margin-bottom:17px}}
