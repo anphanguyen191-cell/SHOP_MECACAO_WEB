@@ -12,7 +12,7 @@ const dbPath=process.env.SHOP_DB_PATH?path.resolve(process.env.SHOP_DB_PATH):pat
 fs.mkdirSync(path.dirname(dbPath),{recursive:true})
 
 export const db=new DatabaseSync(dbPath)
-db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL;')
+db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;')
 try{
  bootstrapV100(db)
  db.prepare("INSERT INTO app_metadata(key,value,updated_at) VALUES('app_version','1.0.0-dev',datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=datetime('now')").run()
