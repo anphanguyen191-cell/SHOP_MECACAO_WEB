@@ -20,7 +20,7 @@ function assert(ok: unknown, message: string): asserts ok { if (!ok) throw new E
 const suffix=Date.now().toString(36).toUpperCase()
 const product=createProduct({name:'SELF TEST '+suffix,productCode:'T'+suffix,costPrice:10000,salePrice:20000,variants:[{size:'Size Test',sku:'SKU-'+suffix,openingStock:5}]})
 assert(product,'create product')
-const variant=(product.variants as Array<{id:number;stock:number}>)[0]
+const variant=(product.variants as Array<{id:number;stock:number;ledger_stock:number}>)[0]
 const suggestedBase=suggestSku('COLLIDE'+suffix,'Size X')
 const collision=createProduct({name:'COLLISION '+suffix,productCode:'C'+suffix,variants:[{size:'Size X',sku:suggestedBase}]})
 assert(collision,'collision fixture must be created')
