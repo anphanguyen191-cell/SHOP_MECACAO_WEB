@@ -23,6 +23,15 @@ jobs:
         run: npm audit --omit=dev --audit-level=critical
       - name: V1 internal gate
         run: npm run test:gate
+      - name: Mobile browser smoke (390px)
+        run: node scripts/mobile-browser-smoke.mjs
+      - name: Upload mobile screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-smoke-${{ github.sha }}
+          path: artifacts/mobile-smoke
+          if-no-files-found: ignore
   deploy:
     environment:
       name: github-pages
