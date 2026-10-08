@@ -125,6 +125,7 @@ assert((inventorySuggestions('Size 8') as any[]).some(x=>x.product_id===imported
 const merged=commitStoreImport({rootPath:importRoot,name:'IMPORT '+suffix,productCode:'I'+suffix,variants:[{size:'Size 8',sku:'ISKU-'+suffix,costPrice:13000,salePrice:23000,images:[goodImage]},{size:'Size 10',sku:'ISKU10-'+suffix,costPrice:14000,salePrice:24000,openingStock:2,images:[laterImage]}]})
 assert((merged!.variants as Array<{size:string;cost_price:number}>).some(v=>v.size==='Size 8'&&v.cost_price===13000),'existing size price editable')
 assert((merged!.variants as Array<{size:string;stock:number}>).some(v=>v.size==='Size 10'&&v.stock===1),'new size physical stock must equal one image')
+assert((listProducts('ISKU10-'+suffix) as Array<{id:number;variant_count:number;total_stock:number}>).some(p=>p.id===importedId&&p.variant_count===2&&p.total_stock===2),'SKU search must preserve full product Size count and physical total')
 assert((db.prepare('SELECT stock FROM inventory_stock WHERE variant_id=?').get((merged!.variants as Array<{size:string;id:number}>).find(v=>v.size==='Size 10')!.id) as {stock:number}).stock===2,'new size ledger opening stock persists')
 const importedImage=(db.prepare('SELECT id FROM product_images WHERE product_id=? ORDER BY id LIMIT 1').get(importedId) as {id:number})
 const imageRecord=getImageRecord(importedImage.id)
