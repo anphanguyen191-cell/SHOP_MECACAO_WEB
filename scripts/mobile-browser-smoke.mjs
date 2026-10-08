@@ -23,7 +23,9 @@ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve))
 const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium','/usr/bin/chromium-browser'].find(fs.existsSync)
 assert(chrome,'Chrome/Chromium not installed on test runner')
 const profile=fs.mkdtempSync(path.join(os.tmpdir(),'mecacao-cdp-'))
-const child=spawn(chrome,['--headless=new','--no-sandbox','--no-proxy-server','--disable-gpu','--disable-dev-shm-usage','--no-first-run','--remote-debugging-port=0','--window-size=390,844','--user-data-dir='+profile,'about:blank'],{stdio:'ignore'})
+const child=spawn(chrome,['--headless=new','--no-sandbox','--no-proxy-server','--disable-gpu','--disable-dev-shm-usage','--disable-background-networking','--no-first-run','--remote-debugging-port=0','--window-size=390,844','--user-data-dir='+profile,'about:blank'],{stdio:['ignore','ignore','pipe']})
+let chromeErrors=''
+child.stderr?.on('data',data=>{chromeErrors=(chromeErrors+data.toString()).slice(-5000)})
 let ws,seq=0
 const pending=new Map()
 async function command(method,params={}){
@@ -55,13 +57,13 @@ async function clickMenu(label){
 let failed
 try{
  let port
- for(let i=0;i<100;i++){
+ for(let i=0;i<300;i++){
   const file=path.join(profile,'DevToolsActivePort')
-  if(child.exitCode!==null)throw Error('Chrome exited before debugger opened')
+  if(child.exitCode!==null||child.signalCode)throw Error('Chrome exited before debugger opened: '+chromeErrors)
   if(fs.existsSync(file)){port=Number(fs.readFileSync(file,'utf8').split('\n')[0]);break}
   await sleep(150)
  }
- assert(port,'Chrome debugger port missing')
+ assert(port,'Chrome debugger port missing (45s): '+chromeErrors)
  const targets=await (await fetch('http://127.0.0.1:'+port+'/json/list')).json()
  const page=targets.find(x=>x.type==='page')
  assert(page,'Chrome page target unavailable')
