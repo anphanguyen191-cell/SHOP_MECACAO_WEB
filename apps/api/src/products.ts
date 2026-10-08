@@ -36,24 +36,39 @@ export function suggestSku(productCode: string, size: string) {
 
 function physicalStock(variantId:number){const images=db.prepare('SELECT file_path FROM product_images WHERE variant_id=?').all(variantId) as Array<{file_path:string}>;return images.filter(x=>fs.existsSync(x.file_path)).length}
 
-export function listProducts(search = '') {
+export type ProductListFilters={size?:string;stockState?:'all'|'in'|'out';sort?:'newest'|'name'|'stock_desc'|'stock_asc'}
+export function listProducts(search = '',filters:ProductListFilters={}) {
   const q = `%${search.trim()}%`
+  const selectedSize=(filters.size??'').trim()
+  const stockState=filters.stockState??'all'
+  const sort=filters.sort??'newest'
+  if(!['all','in','out'].includes(stockState))throw new Error('Bộ lọc tình trạng tồn không hợp lệ')
+  if(!['newest','name','stock_desc','stock_asc'].includes(sort))throw new Error('Kiểu sắp xếp không hợp lệ')
   const rows=db.prepare(`
     SELECT p.id, p.product_code, p.name, p.cost_price, p.sale_price, p.status,
            c.name AS category,
            (SELECT pi.id FROM product_images pi WHERE pi.product_id=p.id ORDER BY pi.is_primary DESC,pi.sort_order,pi.id LIMIT 1) AS image_id,
            COUNT(DISTINCT v.id) AS variant_count,
-           COALESCE(SUM(s.stock), 0) AS total_stock
+           COALESCE(SUM(s.stock), 0) AS ledger_stock
     FROM products p
     LEFT JOIN categories c ON c.id = p.category_id
     LEFT JOIN product_variants v ON v.product_id = p.id
     LEFT JOIN inventory_stock s ON s.variant_id = v.id
-    WHERE (? = '%%' OR p.name LIKE ? OR p.product_code LIKE ? OR v.sku LIKE ?)
+    WHERE (? = '%%' OR p.name LIKE ? OR p.product_code LIKE ? OR v.sku LIKE ? OR v.size LIKE ?)
     GROUP BY p.id
-    ORDER BY p.id DESC
-  `).all(q, q, q, q) as Array<any>
-  const byProduct=db.prepare('SELECT id FROM product_variants WHERE product_id=? AND status=\'active\'')
-  return rows.map(p=>({...p,ledger_stock:p.total_stock,total_stock:(byProduct.all(p.id) as Array<{id:number}>).reduce((n,v)=>n+physicalStock(v.id),0)}))
+  `).all(q,q,q,q,q) as Array<any>
+  const variants=db.prepare("SELECT id,size FROM product_variants WHERE product_id=? AND status='active'")
+  const result=rows.map(p=>{
+    const sizes=(variants.all(p.id) as Array<{id:number;size:string}>).map(v=>({size:v.size,stock:physicalStock(v.id)}))
+    const totalStock=sizes.reduce((n,v)=>n+v.stock,0)
+    const filteredStock=selectedSize?sizes.filter(v=>v.size===selectedSize).reduce((n,v)=>n+v.stock,0):totalStock
+    return {...p,variant_count:Number(p.variant_count),total_stock:totalStock,filtered_stock:filteredStock,sizes:sizes.map(v=>v.size),stock_by_size:sizes}
+  }).filter(p=>(!selectedSize||p.sizes.includes(selectedSize))&&(stockState==='all'||(stockState==='in'?p.filtered_stock>0:p.filtered_stock===0)))
+  if(sort==='stock_desc')result.sort((a,b)=>b.filtered_stock-a.filtered_stock||a.name.localeCompare(b.name,'vi'))
+  else if(sort==='stock_asc')result.sort((a,b)=>a.filtered_stock-b.filtered_stock||a.name.localeCompare(b.name,'vi'))
+  else if(sort==='name')result.sort((a,b)=>a.name.localeCompare(b.name,'vi'))
+  else result.sort((a,b)=>b.id-a.id)
+  return result
 }
 
 export function getProduct(id: number) {
