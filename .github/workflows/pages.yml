@@ -23,6 +23,8 @@ jobs:
         run: npm audit --omit=dev --audit-level=critical
       - name: V1 internal gate
         run: npm run test:gate
+      - name: Real local API end-to-end acceptance (disposable warehouse)
+        run: node scripts/api-e2e-smoke.mjs
       - name: Mobile browser smoke (390px)
         run: node scripts/mobile-browser-smoke.mjs
       - name: Upload mobile screenshots
