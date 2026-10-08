@@ -150,6 +150,14 @@ try{
  await run("document.querySelector('.receiptOverview .dashboardFoldToggle').click()")
  assert((await run("getComputedStyle(document.querySelector('.receiptStats article span')).color"))==='rgb(224, 198, 212)','Receipt KPI labels must remain readable in dark mode')
  await shot('receipt-dark.png')
+ await clickMenu('Import kho')
+ await until("Array.from(document.querySelectorAll('main h3')).some(x=>x.textContent.includes('Quét kho'))",'store scanner tab')
+ assert((await run("document.querySelector('main').textContent")).includes('Chỉ đọc folder'),'Import tab must explain preview-only scanning')
+ await shot('import-preview-dark.png')
+ await clickMenu('Cài đặt')
+ await until("document.querySelector('main h3')?.textContent.includes('Cài đặt')",'settings tab')
+ assert((await run("document.querySelector('main').textContent")).includes('DEMO không ghi cài đặt'),'Settings demo must not perform real writes')
+ await shot('settings-demo-dark.png')
  console.log('MOBILE_BROWSER_SMOKE PASS: 390px chart labels, mobile overflow, four dashboard folds, dark-mode contrast, drawer keyboard, route navigation')
 }catch(e){failed=e;console.error(e instanceof Error?e.stack:String(e));try{await shot('failure.png')}catch{}}
 finally{
