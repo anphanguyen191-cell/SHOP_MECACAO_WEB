@@ -240,7 +240,32 @@ assert(resume.status===0&&resume.stdout.includes('HARD_CRASH_RECOVERY PASS'),'fr
 assert(!fs.existsSync(hardDest)&&!fs.existsSync(path.join(receiptStore,hardName)),'hard-crash recovery must remove uncommitted image and empty folders')
 assert(digestTest(receiptImg)===beforeCrashSource,'hard-crash recovery must leave original incoming image byte-identical')
 assert(recoverPendingGoodsReceipts().journals===0,'crash recovery must leave no unresolved receipt journal')
-db.prepare('DELETE FROM product_images WHERE product_id=?').run(receipt.productId);db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(rv.id);db.prepare('DELETE FROM product_variants WHERE product_id=?').run(receipt.productId);db.prepare('DELETE FROM products WHERE id=?').run(receipt.productId);let failedReceipt=false;try{receiveGoods({storeRoot:receiptStore,name:'Rollback '+suffix,productCode:'RR'+suffix,sizes:[{size:'Size 9',quantity:1,costPrice:1,salePrice:2,images:[receiptImg]},{size:'Size 10',quantity:1,costPrice:1,salePrice:2,images:[path.join(receiptSource,'missing.jpg')]}]})}catch{failedReceipt=true}assert(failedReceipt,'receipt with missing image must fail');assert(!fs.existsSync(path.join(receiptStore,'Rollback '+suffix)),'failed receipt must not leave product folder');assert((db.prepare('SELECT COUNT(*) AS n FROM products WHERE product_code=?').get('RR'+suffix) as {n:number}).n===0,'failed receipt must not write product');let mismatchReceipt=false;try{receiveGoods({storeRoot:receiptStore,name:'Mismatch '+suffix,productCode:'RM'+suffix,sizes:[{size:'Size 7',quantity:2,costPrice:1,salePrice:2,images:[receiptImg]}]})}catch{mismatchReceipt=true}assert(mismatchReceipt,'receipt quantity must equal physical image count');assert(!fs.existsSync(path.join(receiptStore,'Mismatch '+suffix)),'mismatched receipt must fail before creating warehouse folder');fs.rmSync(receiptSource,{recursive:true,force:true});fs.rmSync(receiptStore,{recursive:true,force:true});
+const extraExisting=path.join(receiptSource,'extra-existing.jpg')
+await sharp({create:{width:100,height:100,channels:3,background:{r:245,g:30,b:75}}}).jpeg().toFile(extraExisting)
+const topup=receiveGoods({storeRoot:receiptStore,productId:receipt.productId,sizes:[{size:'Size 8',quantity:1,costPrice:12000,salePrice:21000,images:[extraExisting]}]})
+assert((topup.product?.variants as Array<{size:string;stock:number}>).find(x=>x.size==='Size 8')?.stock===2,'existing Size top-up must copy exactly one new physical image')
+assert(fs.existsSync(path.join(receiptStore,'Receipt '+suffix,'Size 8','002.jpg')),'second receipt must never overwrite first image')
+const newSizeSource=path.join(receiptSource,'new-size.jpg')
+await sharp({create:{width:100,height:100,channels:3,background:{r:15,g:190,b:240}}}).jpeg().toFile(newSizeSource)
+const withNewSize=receiveGoods({storeRoot:receiptStore,productId:receipt.productId,sizes:[{size:'Size 10',quantity:1,costPrice:11000,salePrice:22000,images:[newSizeSource]}]})
+assert((withNewSize.product?.variants as Array<{size:string;stock:number}>).find(x=>x.size==='Size 10')?.stock===1,'new Size within existing product must be persisted with a physical image')
+let repeatImageRejected=false
+try{receiveGoods({storeRoot:receiptStore,productId:receipt.productId,sizes:[{size:'Size 8',quantity:1,costPrice:1,salePrice:2,images:[receiptImg]}]})}catch(e){repeatImageRejected=e instanceof Error&&e.message.includes('trùng nội dung')}
+assert(repeatImageRejected,'reusing an already stocked image must be rejected by content hash')
+const failureName='Copy Failure '+suffix,failureCode='CF'+suffix
+let failureRecovered=false
+try{receiveGoods({storeRoot:receiptStore,name:failureName,productCode:failureCode,sizes:[
+ {size:'Size 8',quantity:1,costPrice:1,salePrice:2,images:[extraExisting]},
+ {size:'Size 10',quantity:1,costPrice:1,salePrice:2,images:[newSizeSource]}
+]},ev=>{if(ev.phase==='COPY')throw new Error('Simulated interruption during image copy')})}catch(e){failureRecovered=e instanceof Error&&e.message.includes('Simulated interruption')}
+assert(failureRecovered&&!fs.existsSync(path.join(receiptStore,failureName)),'failed copy callback must leave no orphan warehouse images')
+assert((db.prepare('SELECT COUNT(*) AS n FROM products WHERE product_code=?').get(failureCode) as {n:number}).n===0,'failed copied receipt must not leave product in SQLite')
+assert(digestTest(receiptImg)===beforeCrashSource,'all three receipt flows must leave original source untouched')
+const allReceiptIds=(db.prepare('SELECT id FROM product_variants WHERE product_id=?').all(receipt.productId) as Array<{id:number}>).map(x=>x.id)
+db.prepare('DELETE FROM product_images WHERE product_id=?').run(receipt.productId);
+for(const id of allReceiptIds)db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(id);
+db.prepare('DELETE FROM product_variants WHERE product_id=?').run(receipt.productId);
+db.prepare('DELETE FROM products WHERE id=?').run(receipt.productId);let failedReceipt=false;try{receiveGoods({storeRoot:receiptStore,name:'Rollback '+suffix,productCode:'RR'+suffix,sizes:[{size:'Size 9',quantity:1,costPrice:1,salePrice:2,images:[receiptImg]},{size:'Size 10',quantity:1,costPrice:1,salePrice:2,images:[path.join(receiptSource,'missing.jpg')]}]})}catch{failedReceipt=true}assert(failedReceipt,'receipt with missing image must fail');assert(!fs.existsSync(path.join(receiptStore,'Rollback '+suffix)),'failed receipt must not leave product folder');assert((db.prepare('SELECT COUNT(*) AS n FROM products WHERE product_code=?').get('RR'+suffix) as {n:number}).n===0,'failed receipt must not write product');let mismatchReceipt=false;try{receiveGoods({storeRoot:receiptStore,name:'Mismatch '+suffix,productCode:'RM'+suffix,sizes:[{size:'Size 7',quantity:2,costPrice:1,salePrice:2,images:[receiptImg]}]})}catch{mismatchReceipt=true}assert(mismatchReceipt,'receipt quantity must equal physical image count');assert(!fs.existsSync(path.join(receiptStore,'Mismatch '+suffix)),'mismatched receipt must fail before creating warehouse folder');fs.rmSync(receiptSource,{recursive:true,force:true});fs.rmSync(receiptStore,{recursive:true,force:true});
 fs.rmSync(importRoot,{recursive:true,force:true})
 db.prepare('DELETE FROM inventory_transactions WHERE variant_id=?').run(collisionVariant.id)
 db.prepare('DELETE FROM product_variants WHERE id=?').run(collisionVariant.id)
@@ -252,4 +277,4 @@ try{
  db.prepare('DELETE FROM products WHERE id=?').run((product.product as {id:number}).id)
  db.exec('COMMIT')
 }catch(e){db.exec('ROLLBACK');throw e}
-console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, persistence/integrity/foreign-key, store import rollback/rescan-idempotence, goods receipt copy/folder-inspect/rollback/progress, durable crash recovery/uncommitted/committed/mixed/corrupt safeguards plus hard-process-exit/restart simulation, DB backup, manual optimized image backup, lossless image+DB recovery bundle/corruption detection, cleanup')
+console.log('SELF_TEST_V1 PASS: product, validation rollback, opening, import, adjustments, negative guard, integer guard, history, batch rollback, settings/filter/history/inactive integration, path guard, image resolve/missing-file, persistence/integrity/foreign-key, store import rollback/rescan-idempotence, goods receipt copy/folder-inspect/rollback/progress, durable crash recovery/uncommitted/committed/mixed/corrupt safeguards plus hard-process-exit/restart simulation, 3 receipt flows, duplicate-content and copy-interruption rollback, DB backup, manual optimized image backup, lossless image+DB recovery bundle/corruption detection, cleanup')
