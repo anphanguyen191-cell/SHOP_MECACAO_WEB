@@ -5,8 +5,20 @@ import { getProduct, suggestSku } from './products.js'
 import { isPathInsideRoot } from './storeScanner.js'
 type ImportVariant={size:string;sku?:string;openingStock?:number;images?:string[];costPrice?:number;salePrice?:number}
 export type ApprovedStoreImport={rootPath:string;name:string;productCode:string;category?:string;costPrice?:number;salePrice?:number;variants:ImportVariant[]}
+const extensions=new Set(['.jpg','.jpeg','.png','.webp','.heic'])
 function validateImages(root:string,images:string[]){
- for(const file of images){if(!isPathInsideRoot(root,file))throw new Error('Ảnh nằm ngoài thư mục kho đã duyệt');const resolved=path.resolve(file);if(!fs.existsSync(resolved)||!fs.statSync(resolved).isFile())throw new Error('Không tìm thấy ảnh: '+file)}
+ const canonicalRoot=fs.realpathSync(root)
+ const known=new Set<string>()
+ for(const file of images){
+  if(!isPathInsideRoot(root,file))throw new Error('Ảnh nằm ngoài thư mục kho đã duyệt')
+  const resolved=path.resolve(file)
+  if(!fs.existsSync(resolved)||!fs.statSync(resolved).isFile())throw new Error('Không tìm thấy ảnh: '+file)
+  const canonicalFile=fs.realpathSync(resolved)
+  if(!isPathInsideRoot(canonicalRoot,canonicalFile))throw new Error('Ảnh tham chiếu qua liên kết ra ngoài kho')
+  if(!extensions.has(path.extname(canonicalFile).toLowerCase()))throw new Error('Định dạng ảnh kho không hợp lệ')
+  if(known.has(canonicalFile))throw new Error('Ảnh trùng đường dẫn trong cùng Size: '+file)
+  known.add(canonicalFile)
+ }
 }
 export function commitStoreImport(input:ApprovedStoreImport){
  if(!input.rootPath?.trim())throw new Error('Thiếu thư mục kho')
@@ -36,13 +48,33 @@ export function commitStoreImport(input:ApprovedStoreImport){
   for(const variant of input.variants){
    const size=variant.size.trim(),variantCost=variant.costPrice??input.costPrice??0,variantSale=variant.salePrice??input.salePrice??0
    if(!Number.isFinite(variantCost)||variantCost<0||!Number.isFinite(variantSale)||variantSale<0)throw new Error('Giá theo size không hợp lệ')
+   const images=variant.images??[]
+   validateImages(root,images)
    const existing=existingBySize.get(productId,size) as {id:number;sku:string}|undefined
-   if(existing){db.prepare("UPDATE product_variants SET cost_price=?,sale_price=?,updated_at=datetime('now') WHERE id=?").run(variantCost,variantSale,existing.id);continue}
+   // An existing Size may acquire newly photographed stock outside the app.
+   // Register only new paths: re-scanning the same warehouse is idempotent.
+   if(existing){
+    db.prepare("UPDATE product_variants SET cost_price=?,sale_price=?,updated_at=datetime('now') WHERE id=?").run(variantCost,variantSale,existing.id)
+    const already=db.prepare('SELECT variant_id FROM product_images WHERE file_path=? LIMIT 1')
+    const nextOrder=db.prepare('SELECT COALESCE(MAX(sort_order),-1)+1 AS n FROM product_images WHERE variant_id=?')
+    let order=(nextOrder.get(existing.id) as {n:number}).n
+    for(const file of images){
+     const resolved=path.resolve(file)
+     const row=already.get(resolved) as {variant_id:number|null}|undefined
+     if(row){if(row.variant_id!==existing.id)throw new Error('Ảnh đã thuộc Size khác: '+resolved);continue}
+     insertImage.run(productId,existing.id,resolved,order++,0)
+    }
+    continue
+   }
    const sku=(variant.sku?.trim()||suggestSku(code,size)).toUpperCase(),owner=skuOwner.get(sku) as {id:number;product_id:number}|undefined
    if(owner)throw new Error('SKU "'+sku+'" đã tồn tại ở sản phẩm khác')
-   validateImages(root,variant.images??[])
    const vr=insertVariant.run(productId,sku,size,variantCost,variantSale),variantId=Number(vr.lastInsertRowid)
-   ;(variant.images??[]).forEach((file,index)=>insertImage.run(productId,variantId,path.resolve(file),index,index===0?1:0))
+   const pathOwner=db.prepare('SELECT variant_id FROM product_images WHERE file_path=? LIMIT 1')
+   for(const [index,file] of images.entries()){
+    const resolved=path.resolve(file)
+    if(pathOwner.get(resolved))throw new Error('Ảnh đã được đăng ký vào kho: '+resolved)
+    insertImage.run(productId,variantId,resolved,index,index===0?1:0)
+   }
    const qty=variant.openingStock??0;if(!Number.isFinite(qty)||!Number.isInteger(qty)||qty<0)throw new Error('Tồn đầu phải là số nguyên không âm')
    if(qty>0)opening.run(variantId,qty,variantCost,'Tồn đầu từ kho hiện hữu')
   }
