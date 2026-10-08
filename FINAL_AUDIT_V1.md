@@ -61,3 +61,13 @@ Run this once on the real Windows machine before marking V1 STABLE.
 12. Acceptance is PASS only if there is no unexplained error, incorrect stock, missing committed data, broken image path, or startup failure.
 
 Do not begin V2 until this procedure passes.
+
+## 2026-10-08 — Reopened comprehensive acceptance gate
+This document's earlier READY FOR WINDOWS ACCEPTANCE headline is historical; **current status is NOT ACCEPTED / V1 IN PROGRESS**.
+- Source changes under test: duplicate incoming-image SHA-256 rejection, prevent importing from canonical destination, stale folder-picker fix, honest non-streaming progress UI.
+- Audit discovered that /api/inventory (ledger-based), /api/products (ledger total) and /api/inventory/explorer (physical registered-image total) are not yet unified. Must clearly label or reconcile every displayed number.
+- Audit discovered crash-window risk: files copied before SQLite commit, so forced process termination can leave orphan copied files. No persistent receipt journal yet.
+- Audit discovered that API progress events are buffered and returned at request completion; true real-time progress is not implemented.
+- Manual Windows D: verification remains REQUIRED: on a disposable copy of warehouse, exercise all three receipt flows, duplicate files, missing source, failed copy, original preservation, restart, backups, restore and inventory reconciliation. Real customer files must not be modified during testing.
+- Do not claim full Windows or iPhone acceptance based on CI.
+- CI status for latest patch: check GitHub Actions after run completes.
