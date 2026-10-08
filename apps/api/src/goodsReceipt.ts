@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { createHash } from 'node:crypto'
 import { db } from './db.js'
 import { suggestProductCode, suggestSku, getProduct } from './products.js'
 
@@ -14,6 +15,7 @@ function validateQty(v:number){if(!Number.isInteger(v)||v<=0)throw new Error('S�
 export function inspectImageFolder(sourcePath:string){const dir=path.resolve(sourcePath||'');if(!sourcePath||!fs.existsSync(dir)||!fs.statSync(dir).isDirectory())throw new Error('Folder ảnh nguồn không tồn tại');const images=fs.readdirSync(dir,{withFileTypes:true}).filter(x=>x.isFile()&&IMAGE_EXTENSIONS.has(path.extname(x.name).toLowerCase())).map(x=>path.join(dir,x.name));return {path:dir,count:images.length,images}}
 function imageFiles(xs:string[]=[],sourcePath?:string){const all=[...xs,...(sourcePath?inspectImageFolder(sourcePath).images:[])];return [...new Set(all.map(x=>path.resolve(x)))].filter(x=>IMAGE_EXTENSIONS.has(path.extname(x).toLowerCase()))}
 function nextTarget(dir:string,ext:string,reserved:Set<string>){let n=1;while(true){const name=String(n).padStart(3,'0')+ext.toLowerCase();const p=path.join(dir,name);if(!fs.existsSync(p)&&!reserved.has(p)){reserved.add(p);return p}n++}}
+function digest(file:string){const h=createHash('sha256');h.update(fs.readFileSync(file));return h.digest('hex')}
 function inside(root:string,target:string){const rel=path.relative(path.resolve(root),path.resolve(target));return rel!==''&&rel!=='..'&&!rel.startsWith('..'+path.sep)&&!path.isAbsolute(rel)}
 
 export function receiveGoods(input:ReceiveInput,onProgress?:(p:ReceiveProgress)=>void){
@@ -33,6 +35,7 @@ export function receiveGoods(input:ReceiveInput,onProgress?:(p:ReceiveProgress)=
  if(new Set(explicitSkus).size!==explicitSkus.length)throw new Error('SKU nhập bị trùng trong cùng phiếu')
  const sizes=input.sizes.map(s=>{validateQty(s.quantity);validateMoney(s.costPrice,'Giá nhập');validateMoney(s.salePrice,'Giá bán');const size=safeName(s.size);const images=imageFiles(s.images,s.sourcePath);for(const p of images){if(!fs.existsSync(p)||!fs.statSync(p).isFile())throw new Error('Không tìm thấy ảnh nguồn: '+p)}return {...s,size,images}})
  for(const s of sizes){
+  if(s.images.length===0)throw new Error('Size '+s.size+' chưa có ảnh. Nhập hàng vật lý yêu cầu ít nhất một ảnh; chỉ ghi sổ không tạo tồn thực tế.')
   if(s.quantity!==s.images.length)throw new Error('Tồn phải bám theo ảnh thực tế: Size '+s.size+' có '+s.images.length+' ảnh nhưng SL nhập là '+s.quantity)
   const existingSize=currentVariants.find(v=>String(v.size).toLowerCase()===s.size.toLowerCase())
   if(existingSize&&existingSize.status!=='active')throw new Error('Size '+s.size+' đã ngưng hoạt động')
@@ -43,7 +46,11 @@ export function receiveGoods(input:ReceiveInput,onProgress?:(p:ReceiveProgress)=
  const plans:{size:typeof sizes[number];dir:string;copies:{src:string;dest:string}[]}[]=[];const reserved=new Set<string>()
  try{
   if(!fs.existsSync(productDir)){fs.mkdirSync(productDir,{recursive:true});createdDirs.push(productDir)};emit({phase:'PREPARE',percent:5,copied:0,total})
-  for(const s of sizes){const dir=path.join(productDir,s.size);if(!inside(productDir,dir))throw new Error('Đường dẫn Size không an toàn');if(!fs.existsSync(dir)){fs.mkdirSync(dir,{recursive:true});createdDirs.push(dir)};const copies=s.images.map(src=>({src,dest:nextTarget(dir,path.extname(src),reserved)}));plans.push({size:s,dir,copies})}
+  for(const s of sizes){const dir=path.join(productDir,s.size);if(!inside(productDir,dir))throw new Error('Đường dẫn Size không an toàn');if(!fs.existsSync(dir)){fs.mkdirSync(dir,{recursive:true});createdDirs.push(dir)};const canonicalDir=fs.realpathSync(dir)
+   const hashes=new Set<string>()
+   for(const existingFile of fs.readdirSync(dir)){const candidate=path.join(dir,existingFile);if(IMAGE_EXTENSIONS.has(path.extname(existingFile).toLowerCase())&&fs.statSync(candidate).isFile())hashes.add(digest(candidate))}
+   for(const src of s.images){const source=fs.realpathSync(src);if(source===canonicalDir||inside(canonicalDir,source))throw new Error('Ảnh nguồn nằm trong chính thư mục kho đích: '+src);const hash=digest(source);if(hashes.has(hash))throw new Error('Ảnh trùng nội dung đã có trong kho hoặc trong phiếu: '+path.basename(src));hashes.add(hash)}
+   const copies=s.images.map(src=>({src,dest:nextTarget(dir,path.extname(src),reserved)}));plans.push({size:s,dir,copies})}
   let copied=0
   for(const plan of plans)for(const x of plan.copies){fs.copyFileSync(x.src,x.dest,fs.constants.COPYFILE_EXCL);created.push(x.dest);copied++;emit({phase:'COPY',percent:5+Math.round(70*copied/Math.max(total,1)),copied,total,current:path.basename(x.dest)})}
   emit({phase:'VERIFY',percent:78,copied,total});for(const p of created)if(!fs.existsSync(p)||fs.statSync(p).size<=0)throw new Error('Copy ảnh không toàn vẹn: '+p)
