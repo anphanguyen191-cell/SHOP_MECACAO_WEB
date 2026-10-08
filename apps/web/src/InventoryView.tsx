@@ -16,6 +16,7 @@ const DEMO_DASH:Dash={stock:19,products:2,productsInStock:2,skus:7,sizes:4,outOf
 export default function InventoryView({isDemo=false}:{isDemo?:boolean}){
  const [search,setSearch]=useState(''),[category,setCategory]=useState(''),[size,setSize]=useState(''),[products,setProducts]=useState<Product[]>(isDemo?DEMO_PRODUCTS:[]),[dashboard,setDashboard]=useState<Dash|null>(isDemo?DEMO_DASH:null),[categories,setCategories]=useState<string[]>([]),[sizes,setSizes]=useState<string[]>([]),[expandedProducts,setExpandedProducts]=useState<Set<number>>(new Set()),[expandedVariants,setExpandedVariants]=useState<Set<number>>(new Set()),[selectedImages,setSelectedImages]=useState<Set<number>>(new Set()),[suggestions,setSuggestions]=useState<Suggestion[]>([]),[detailProductId,setDetailProductId]=useState<number|null>(null)
  const [stockState,setStockState]=useState<'all'|'in'|'out'|'low'>('all'),[sort,setSort]=useState<'stock_desc'|'stock_asc'|'name'>('stock_desc'),[threshold,setThreshold]=useState(2),[loadError,setLoadError]=useState('')
+ const [dashboardExpanded,setDashboardExpanded]=useState(true)
  useEffect(()=>{
   if(isDemo){
    const q=search.trim().toLocaleLowerCase('vi')
@@ -72,14 +73,12 @@ export default function InventoryView({isDemo=false}:{isDemo?:boolean}){
  function chooseImage(id:number){toggle(selectedImages,id,setSelectedImages)}
  return <section className="inventoryPage">
   <div className="inventoryHeading"><div><p className="eyebrow">{isDemo?'DỮ LIỆU MINH HỌA · DEMO':'KHO HÀNG THỰC TẾ'}</p><h2>Tồn kho</h2><p>{isDemo?'Số liệu mẫu để kiểm tra giao diện, không phải tồn hàng của Shop. LOCAL mới kết nối kho ảnh.':'Tồn thực tế đếm ảnh hợp lệ theo từng Size. Chọn sản phẩm để xem ảnh và đối soát.'}</p></div>{isDemo?<span className="okPill">BẢN XEM THỬ</span>:dashboard?.mismatches?<span className="reconcileAlert">⚠ {dashboard.mismatches} Size lệch ledger/ảnh</span>:<span className="okPill">✓ Ảnh kho đã đối chiếu</span>}</div>
-  <div className="inventoryFilters">
-   <div className="smartSearch"><label htmlFor="inventory-search">Tìm sản phẩm / mã / Size / SKU</label><input id="inventory-search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Nhập tên, mã, Size hoặc SKU..." autoComplete="off"/>{suggestions.length>0&&<div className="suggestions" role="listbox" aria-label="Gợi ý tồn kho">{suggestions.map(s=><button type="button" key={s.variant_id} onClick={()=>chooseSuggestion(s)}><b>{s.product_name}</b><span>{s.product_code} · {s.size} · {s.sku} · {s.stock} bộ {isDemo?'minh họa':'tồn thực tế'}</span></button>)}</div>}</div>
-   <select value={category} onChange={e=>setCategory(e.target.value)}><option value="">Tất cả danh mục</option>{categories.map(x=><option key={x}>{x}</option>)}</select>
-   <select aria-label="Lọc theo Size" value={size} onChange={e=>setSize(e.target.value)}><option value="">Tất cả Size</option>{sizes.map(x=><option key={x}>{x}</option>)}</select>
-   <select aria-label="Lọc theo trạng thái tồn" value={stockState} onChange={e=>setStockState(e.target.value as 'all'|'in'|'out'|'low')}><option value="all">Tất cả tồn</option><option value="in">Còn hàng</option><option value="out">Hết hàng</option><option value="low">Tồn thấp (≤ {threshold})</option></select>
-   <select aria-label="Sắp xếp tồn kho" value={sort} onChange={e=>setSort(e.target.value as 'stock_desc'|'stock_asc'|'name')}><option value="stock_desc">Tồn nhiều nhất</option><option value="stock_asc">Tồn ít nhất</option><option value="name">Tên A–Z</option></select>
-   {(search||category||size||stockState!=='all'||sort!=='stock_desc')&&<button className="clearFilter" onClick={()=>{setSearch('');setCategory('');setSize('');setStockState('all');setSort('stock_desc');setSuggestions([])}}>XÓA LỌC</button>}
-  </div>
+  <section className="inventoryDashboardBlock" aria-label="Dashboard tồn kho">
+   <div className="dashboardFoldHeader">
+    <div><span className="dashboardFoldEyebrow">BÁO CÁO TỒN KHO</span><h3>Dashboard tồn kho</h3><p>{isDemo?'Chỉ số minh họa · không phải tồn kho thật':'Chỉ số tổng theo ảnh vật lý đã đăng ký'}</p></div>
+    <button type="button" className="dashboardFoldToggle" aria-expanded={dashboardExpanded} aria-controls="inventory-dashboard-body" onClick={()=>setDashboardExpanded(v=>!v)}>{dashboardExpanded?'Thu gọn':'Xem dashboard'} <span aria-hidden="true">{dashboardExpanded?'⌃':'⌄'}</span></button>
+   </div>
+   {dashboardExpanded&&<div id="inventory-dashboard-body" className="dashboardFoldBody">
   {loadError&&<p className="notice warning" role="alert">{loadError}</p>}<div className="inventoryMetrics">
    <article><span>{isDemo?'TỒN MINH HỌA':'TỔNG TỒN'}</span><strong>{dashboard?.stock??'—'}</strong><small>{isDemo?'Số mẫu, không phải kho thật':'Bộ theo ảnh vật lý thực tế'}</small></article>
    <article><span>SẢN PHẨM</span><strong>{dashboard?.products??'—'}</strong><small>{dashboard?.productsInStock??0} mẫu còn hàng</small></article>
@@ -89,8 +88,19 @@ export default function InventoryView({isDemo=false}:{isDemo?:boolean}){
   <div className="inventoryInsights">
    <article className="insightCard"><h3>Tồn nhiều nhất</h3>{dashboard?.topProducts?.map((x,i)=><button key={x.product_id} onClick={()=>{setSearch(x.product_name);setExpandedProducts(new Set([x.product_id]))}}><b>{i+1}. {x.product_name}</b><strong>{x.stock}</strong></button>)}</article>
    <article className="insightCard"><h3>Tồn thấp còn hàng</h3>{dashboard?.lowProducts?.map((x,i)=><button key={x.product_id} onClick={()=>{setSearch(x.product_name);setExpandedProducts(new Set([x.product_id]))}}><b>{i+1}. {x.product_name}</b><strong>{x.stock}</strong></button>)}</article>
-   <article className="insightCard sizesInsight"><h3>Tồn thực tế theo sản phẩm</h3><p className="chartCaption">Số ảnh vật lý còn tồn của mỗi mẫu, cộng tất cả Size.</p>{dashboard?.topProducts?.length?dashboard.topProducts.map(x=><button className="productStockBar" key={x.product_id} onClick={()=>{setSearch(x.product_name);setExpandedProducts(new Set([x.product_id]))}}><span className="productStockBarLabel"><b title={x.product_name}>{x.product_name}</b><strong>{x.stock} bộ</strong></span><span className="overviewTrack"><span style={{width:(x.stock/maxProduct*100)+'%'}}/></span></button>):<p className="overviewEmpty">Chưa có sản phẩm tồn ảnh vật lý để hiển thị biểu đồ.</p>}</article>
+   <article className="insightCard sizesInsight"><h3>Tồn thực tế theo sản phẩm</h3><p className="chartCaption">Số ảnh vật lý còn tồn của mỗi mẫu, cộng tất cả Size.</p>{dashboard?.topProducts?.length?dashboard.topProducts.map(x=><button type="button" className="productStockBar" key={x.product_id} title={'Xem tồn kho '+x.product_name} onClick={()=>{setSearch(x.product_name);setExpandedProducts(new Set([x.product_id]))}}><span className="productStockBarLabel"><b title={x.product_name}>{x.product_name}</b><strong>{x.stock} bộ</strong></span><span className="overviewTrack"><span style={{width:(x.stock/maxProduct*100)+'%'}}/></span></button>):<p className="overviewEmpty">Chưa có sản phẩm tồn ảnh vật lý để hiển thị biểu đồ.</p>}</article>
   </div>
+   </div>}
+  </section>
+  <div className="inventoryFilters">
+   <div className="smartSearch"><label htmlFor="inventory-search">Tìm sản phẩm / mã / Size / SKU</label><input id="inventory-search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Nhập tên, mã, Size hoặc SKU..." autoComplete="off"/>{suggestions.length>0&&<div className="suggestions" role="listbox" aria-label="Gợi ý tồn kho">{suggestions.map(s=><button type="button" key={s.variant_id} onClick={()=>chooseSuggestion(s)}><b>{s.product_name}</b><span>{s.product_code} · {s.size} · {s.sku} · {s.stock} bộ {isDemo?'minh họa':'tồn thực tế'}</span></button>)}</div>}</div>
+   <select value={category} onChange={e=>setCategory(e.target.value)}><option value="">Tất cả danh mục</option>{categories.map(x=><option key={x}>{x}</option>)}</select>
+   <select aria-label="Lọc theo Size" value={size} onChange={e=>setSize(e.target.value)}><option value="">Tất cả Size</option>{sizes.map(x=><option key={x}>{x}</option>)}</select>
+   <select aria-label="Lọc theo trạng thái tồn" value={stockState} onChange={e=>setStockState(e.target.value as 'all'|'in'|'out'|'low')}><option value="all">Tất cả tồn</option><option value="in">Còn hàng</option><option value="out">Hết hàng</option><option value="low">Tồn thấp (≤ {threshold})</option></select>
+   <select aria-label="Sắp xếp tồn kho" value={sort} onChange={e=>setSort(e.target.value as 'stock_desc'|'stock_asc'|'name')}><option value="stock_desc">Tồn nhiều nhất</option><option value="stock_asc">Tồn ít nhất</option><option value="name">Tên A–Z</option></select>
+   {(search||category||size||stockState!=='all'||sort!=='stock_desc')&&<button className="clearFilter" onClick={()=>{setSearch('');setCategory('');setSize('');setStockState('all');setSort('stock_desc');setSuggestions([])}}>XÓA LỌC</button>}
+  </div>
+
   <p className="inventoryResultCount">{visibleProducts.length} mẫu phù hợp bộ lọc{size?' · '+size:''}{isDemo?' · dữ liệu minh họa':''}</p>
   {selectedImages.size>0&&<div className="selectionBar"><b>Đã chọn {selectedImages.size} sản phẩm</b><span>Nền tảng cho gửi khách · đưa vào đơn · chốt đơn</span><button onClick={()=>setSelectedImages(new Set())}>BỎ CHỌN</button></div>}
   <div className="inventoryTree">{visibleProducts.map(p=>{const open=expandedProducts.has(p.product_id);return <article className="treeProduct" key={p.product_id}>
