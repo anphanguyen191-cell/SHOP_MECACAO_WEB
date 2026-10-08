@@ -98,6 +98,8 @@ assert(duplicateImportSkuBlocked,'duplicate warehouse SKU must be rejected clear
 const importedId=(imported!.product as {id:number}).id
 const importedVariant=(imported!.variants as Array<{id:number;stock:number}>)[0]
 assert(importedVariant.stock===1,'store import physical stock must match one registered image')
+assert((inventoryRows({state:'low',threshold:1}) as Array<{variant_id:number}>).some(r=>r.variant_id===importedVariant.id),'physical low-stock filter must include one-image SKU even when ledger says three')
+assert(!(inventoryRows({state:'ok',threshold:1}) as Array<{variant_id:number}>).some(r=>r.variant_id===importedVariant.id),'physical ok-stock filter must exclude one-image SKU regardless of ledger')
 assert((db.prepare('SELECT stock FROM inventory_stock WHERE variant_id=?').get(importedVariant.id) as {stock:number}).stock===3,'store import ledger opening stock must persist separately')
 const laterDir=path.join(productFolder,'Size 10');fs.mkdirSync(laterDir,{recursive:true})
 const laterImage=path.join(laterDir,'002.jpg');await sharp({create:{width:800,height:800,channels:3,background:{r:90,g:120,b:180}}}).jpeg().toFile(laterImage)
