@@ -21,7 +21,7 @@ must(inventory.includes('aria-controls="inventory-dashboard-body"')&&inventory.i
 must(app.includes('aria-controls="catalog-dashboard-body"')&&app.includes('aria-expanded={catalogExpanded}'),'Catalog dashboard must have accessible collapse toggle')
 must(receipt.includes('aria-controls="receipt-dashboard-body"')&&receipt.includes('aria-expanded={dashboardExpanded}'),'Receipt dashboard must have accessible collapse toggle')
 must(inventory.indexOf('className="inventoryDashboardBlock"')<inventory.indexOf('className="inventoryFilters"'),'Inventory dashboard must precede search filters')
-must(app.indexOf('className="dashboardFoldHeader"',app.indexOf("active==='Danh mục sản phẩm'&&"))<app.indexOf('className="catalogPanel"'),'Catalog summary must precede product search')
+must(app.indexOf('className="dashboardFoldHeader"',app.indexOf("active==='Danh mục sản phẩm'&&"))<app.indexOf('className="panel catalogPanel"'),'Catalog summary must precede product search')
 must(app.includes("<InventoryView isDemo={isDemo}/>"),'DEMO and LOCAL inventory must share the same implementation')
 must(app.includes('className="brandHeroCompact"'),'Brand banner must be compact beneath overview dashboard')
 must(/\.dashboardFoldToggle:focus-visible\s*\{[^}]*outline/.test(css),'Collapse buttons must expose a keyboard focus ring')
