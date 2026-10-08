@@ -7,7 +7,7 @@ import { createProduct, getProduct, listProducts, suggestProductCode, suggestSku
 import { addInventory, batchImport, history } from './inventory.js'
 import { scanStore } from './storeScanner.js'
 import { commitStoreImport } from './storeImport.js'
-import { createBackup, createOptimizedImageBackup } from './backup.js'
+import { createBackup, createOptimizedImageBackup, createLosslessBackup } from './backup.js'
 import { getLowStockThreshold, updateLowStockThreshold } from './settings.js'
 import { inventoryRows, inventoryHistory, inventoryFilterOptions, inventoryExplorer, inventoryDashboard, inventorySuggestions, catalogDashboard } from './inventoryQuery.js'
 import { getImageRecord, imageMime } from './images.js'
@@ -117,6 +117,10 @@ app.get('/api/inventory/history/:variantId', (req,res) => { try{res.json(history
 app.post('/api/backup', (_req, res) => {
   try { res.status(201).json({ ok:true, backup:createBackup() }) }
   catch(e){res.status(500).json({error:e instanceof Error?e.message:'Không thể backup database'})}
+})
+app.post('/api/backup/lossless', (_req,res) => {
+ try{res.status(201).json({ok:true,backup:createLosslessBackup()})}
+ catch(e){res.status(500).json({error:e instanceof Error?e.message:'Không thể tạo bản sao lưu đầy đủ'})}
 })
 app.post('/api/backup/images-optimized', async (_req,res) => {
  try{res.status(201).json({ok:true,backup:await createOptimizedImageBackup()})}
