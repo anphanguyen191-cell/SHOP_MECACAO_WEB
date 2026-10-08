@@ -13,6 +13,11 @@ import { inventoryRows, inventoryHistory, inventoryFilterOptions, inventoryExplo
 import { getImageRecord, imageMime } from './images.js'
 import { receiveGoods, goodsReceiptDashboard, inspectImageFolder } from './goodsReceipt.js'
 import { dashboardSummary } from './dashboard.js'
+import { recoverPendingGoodsReceipts } from './receiptRecovery.js'
+
+// Fail closed before accepting writes if an interrupted goods receipt is unresolved.
+const receiptRecovery=recoverPendingGoodsReceipts()
+if(receiptRecovery.journals)console.log('Receipt recovery:',JSON.stringify(receiptRecovery))
 
 const app = express()
 const PORT = Number(process.env.PORT ?? 3000)
