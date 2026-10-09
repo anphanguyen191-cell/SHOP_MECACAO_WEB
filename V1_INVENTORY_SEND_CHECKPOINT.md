@@ -4,7 +4,7 @@ Ngày: 2026-10-09. Chủ shop duyệt triển khai: chọn nhiều ảnh trực 
 
 ## Đã triển khai
 
-- Chọn/bỏ từng ảnh; chọn nhóm Size, toàn bộ Product kể cả khi đang lọc Size, kết quả lọc; Shift + click chọn dải trong cùng Size.
+- Chỉ chọn ảnh Product/Size active; Size đã ngưng vẫn hiển thị tồn vật lý nhưng khóa chọn/gửi. Chọn/bỏ từng ảnh; chọn nhóm Size, toàn bộ Product kể cả khi đang lọc Size, kết quả lọc; Shift + click chọn dải trong cùng Size.
 - Giữ lựa chọn trong tab khi đổi bộ lọc; đếm ảnh nằm ngoài kết quả hiện tại. Không giữ lựa chọn sau reload/chuyển module.
 - Viền và dấu chọn rõ; xem ảnh lớn bằng nút riêng, trước/sau, Escape, focus trong dialog.
 - Thanh cuối màn hình: số ảnh/bộ, số nhóm Product/Size, COPY X ẢNH hoặc chuẩn bị/chia sẻ, BỎ CHỌN, trạng thái. Có khoảng trống cuối trang; desktop/mobile, hai theme, Gọn/Thoải mái.

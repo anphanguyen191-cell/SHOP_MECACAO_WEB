@@ -17,7 +17,7 @@ export function clipboardCapabilities(){return {nativeFiles:process.platform==='
 export function selectedStockImages(input:unknown,allowed:(p:string)=>boolean=()=>true){
  if(!Array.isArray(input)||!input.length||input.length>MAX_SHARE_IMAGES||input.some(id=>!Number.isSafeInteger(id)||id<=0)||new Set(input).size!==input.length)throw Error('Chọn từ 1 đến '+MAX_SHARE_IMAGES+' ảnh riêng biệt, hợp lệ.')
  return input.map(id=>{
-  const row=db.prepare('SELECT p.status AS product_status,v.status AS variant_status,v.size,p.name FROM product_images i JOIN products p ON p.id=i.product_id JOIN product_variants v ON v.id=i.variant_id WHERE i.id=?').get(id) as {product_status:string;variant_status:string;size:string;name:string}|undefined
+  const row=db.prepare('SELECT p.status AS product_status,v.status AS variant_status,v.size,p.name FROM product_images i JOIN products p ON p.id=i.product_id JOIN product_variants v ON v.id=i.variant_id AND v.product_id=p.id WHERE i.id=?').get(id) as {product_status:string;variant_status:string;size:string;name:string}|undefined
   const image=getImageRecord(id)
   if(!row||row.product_status!=='active'||row.variant_status!=='active'||!image||image.missing||!['.jpg','.jpeg','.png','.webp','.heic'].includes(path.extname(image.file_path).toLowerCase()))throw Error('Ảnh #'+id+' không còn là hàng tồn hợp lệ. Làm mới tồn rồi chọn lại.')
   if(!allowed(image.file_path))throw Error('Ảnh #'+id+' nằm ngoài vùng được phép.')

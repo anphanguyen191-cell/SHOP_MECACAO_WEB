@@ -7,7 +7,7 @@ import {execFileSync} from 'node:child_process'
 import sharp from 'sharp'
 import {db,dbPath} from './db.js'
 import {commitStoreImport} from './storeImport.js'
-import {inventoryDashboard} from './inventoryQuery.js'
+import {inventoryDashboard,inventoryExplorer} from './inventoryQuery.js'
 import {selectedStockImages,sharedJpeg,buildClipboardBridge,clipboardCapabilities,copyStockImages} from './inventoryShare.js'
 if(path.basename(dbPath)!=='self-test.db')throw Error('Share tests require isolated database')
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'mecacao-share-'))
@@ -24,7 +24,7 @@ try{
  assert.throws(()=>selectedStockImages(ids,()=>false),/vùng/)
  const jpeg=await sharedJpeg(ids[0],()=>true);assert.equal((await sharp(jpeg).metadata()).format,'jpeg')
  fs.renameSync(files[1],files[1]+'.held');assert.throws(()=>selectedStockImages(ids),/không còn/);fs.renameSync(files[1]+'.held',files[1])
- db.prepare("UPDATE product_variants SET status='inactive'").run();assert.throws(()=>selectedStockImages(ids),/không còn/);db.prepare("UPDATE product_variants SET status='active'").run()
+ db.prepare("UPDATE product_variants SET status='inactive'").run();assert.throws(()=>selectedStockImages(ids),/không còn/);assert.equal(inventoryExplorer()[0].variants[0].variant_status,'inactive','Explorer must expose non-shareable Size status');db.prepare("UPDATE product_variants SET status='active'").run()
  assert.equal(state(),before,'share/read must not change metadata, ledger or physical inventory')
  assert.deepEqual(files.map(f=>createHash('sha256').update(fs.readFileSync(f)).digest('hex')),hashes,'original bytes unchanged')
  if(process.platform==='win32'){

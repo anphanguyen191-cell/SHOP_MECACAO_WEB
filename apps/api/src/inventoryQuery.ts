@@ -32,7 +32,7 @@ export function inventoryRows(filters:InventoryFilters={}){
 }
 
 type ExplorerImage={id:number;file_name:string;file_path:string;exists:boolean}
-type ExplorerVariant={variant_id:number;sku:string;size:string;cost_price:number;sale_price:number;ledger_stock:number;stock:number;images:ExplorerImage[]}
+type ExplorerVariant={variant_status:string;variant_id:number;sku:string;size:string;cost_price:number;sale_price:number;ledger_stock:number;stock:number;images:ExplorerImage[]}
 type ExplorerProduct={product_id:number;product_code:string;product_name:string;category:string|null;product_status:string;stock:number;variants:ExplorerVariant[]}
 
 export function inventoryExplorer(filters:Pick<InventoryFilters,'search'|'category'|'size'|'status'>={}){
@@ -45,7 +45,7 @@ export function inventoryExplorer(filters:Pick<InventoryFilters,'search'|'catego
   const stock=registered.length
   let product=products.get(r.product_id)
   if(!product){product={product_id:r.product_id,product_code:r.product_code,product_name:r.product_name,category:r.category??null,product_status:r.product_status,stock:0,variants:[]};products.set(r.product_id,product)}
-  product.variants.push({variant_id:r.variant_id,sku:r.sku,size:r.size,cost_price:Number(r.cost_price||0),sale_price:Number(r.sale_price||0),ledger_stock:Number(r.stock||0),stock,images:registered})
+  product.variants.push({variant_status:r.variant_status,variant_id:r.variant_id,sku:r.sku,size:r.size,cost_price:Number(r.cost_price||0),sale_price:Number(r.sale_price||0),ledger_stock:Number(r.stock||0),stock,images:registered})
   product.stock+=stock
  }
  return [...products.values()]

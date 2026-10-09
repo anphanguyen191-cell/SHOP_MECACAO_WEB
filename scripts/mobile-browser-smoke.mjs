@@ -14,8 +14,8 @@ const mime={'.html':'text/html','.js':'application/javascript','.css':'text/css'
 let catalogFailure=false,postedReceipt=null,receiptReads=0,receiptWrites=0,importWrites=0,renameWrites=0
 let warehouseNotices=[]
 let nativeClipboardEnabled=true,clipboardFailure=false,clipboardCopies=[]
-const stockImages=[501,502,503].map(id=>({id,file_name:id+'.jpg',file_path:'/sandbox/warehouse/'+id+'.jpg',exists:true}))
-const inventoryFixture={product_id:101,product_code:'LOCAL01',product_name:'Local pastel outfit',product_status:'active',stock:3,variants:[{variant_id:1011,sku:'LOCAL01-S1',size:'Size 1',stock:2,ledger_stock:2,images:stockImages.slice(0,2)},{variant_id:1012,sku:'LOCAL01-S2',size:'Size 2',stock:1,ledger_stock:1,images:stockImages.slice(2)}]}
+const stockImages=[501,502,503,504].map(id=>({id,file_name:id+'.jpg',file_path:'/sandbox/warehouse/'+id+'.jpg',exists:true}))
+const inventoryFixture={product_id:101,product_code:'LOCAL01',product_name:'Local pastel outfit',product_status:'active',stock:3,variants:[{variant_id:1011,sku:'LOCAL01-S1',size:'Size 1',stock:2,ledger_stock:2,images:stockImages.slice(0,2)},{variant_id:1012,sku:'LOCAL01-S2',size:'Size 2',stock:1,ledger_stock:1,images:stockImages.slice(2,3)},{variant_id:1013,sku:'LOCAL01-S3',size:'Size 3',variant_status:'inactive',stock:1,ledger_stock:1,images:stockImages.slice(3)}]}
 const renameFile={id:501,product:'Local pastel outfit',size:'Size 1',oldPath:'/sandbox/warehouse/Local pastel outfit/Size 1/001.jpg',newPath:'/sandbox/warehouse/Local pastel outfit/Size 1/ShopMeCaCao_Tole_Local_pastel_outfit_Size_1_0001.jpg',sha256:'fixture-checksum'}
 const watchConfig={rootPath:'/sandbox/warehouse',startup:false,periodic:false,intervalSeconds:300,popup:false,autoRename:false}
 const localProduct={id:101,product_code:'LOCAL01',name:'Local pastel outfit',variant_count:1,total_stock:1,sizes:['Size 1'],stock_by_size:[{size:'Size 1',stock:1}]}
@@ -344,10 +344,12 @@ try{
  await clickMenu('Tồn kho')
  await until("!!document.querySelector('.treeProductHead')",'LOCAL inventory for sharing')
  await run("document.querySelector('.treeProductHead').click()")
- await until("document.querySelectorAll('.treeVariantHead').length===2",'Size groups expanded')
+ await until("document.querySelectorAll('.treeVariantHead').length===3",'Size groups expanded')
  await run("document.querySelectorAll('.treeVariantHead')[0].click()")
  await run("document.querySelectorAll('.treeVariantHead')[1].click()")
- await until("document.querySelectorAll('.stockImageSelect').length===3",'physical stock image cards')
+ await run("document.querySelectorAll('.treeVariantHead')[2].click()")
+ await until("document.querySelectorAll('.stockImageSelect').length===4",'physical stock image cards')
+ assert.equal(await run("document.querySelectorAll('.stockImageSelect:not(:disabled)').length"),3,'Inactive Size must be visible but not selectable for sending')
  await run("document.querySelectorAll('.stockImageSelect')[0].click();document.querySelectorAll('.stockImageSelect')[1].dispatchEvent(new MouseEvent('click',{bubbles:true,shiftKey:true}))")
  assert((await run("document.querySelector('.imageSendSummary b').textContent")).includes('2 ảnh'),'Shift range must select both images')
  await run("document.querySelector('[aria-label=\"Lọc theo Size\"]').value='Size 2';document.querySelector('[aria-label=\"Lọc theo Size\"]').dispatchEvent(new Event('change',{bubbles:true}))")
