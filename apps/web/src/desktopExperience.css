@@ -1,0 +1,198 @@
+/* Presentation only. Desktop density never changes inventory or write flows. */
+.densitySwitch{display:inline-flex;gap:3px;padding:3px;border:1px solid #ead4df;border-radius:11px;background:#fff9fc;flex:none}
+.densitySwitch button{border:0;border-radius:8px;padding:7px 10px;background:transparent;color:#77566a;font-size:12px;font-weight:750;cursor:pointer;min-height:32px;white-space:nowrap}
+.densitySwitch button[aria-pressed=true]{background:#a54670;color:#fff;box-shadow:0 2px 7px #a5467025}
+.themeDark .densitySwitch{background:#242532;border-color:#655165}
+.themeDark .densitySwitch button{color:#e9d0df}
+.themeDark .densitySwitch button[aria-pressed=true]{background:#9d4870;color:#fff}
+.displayPreferences{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:18px;margin-bottom:16px;border:1px solid #edd7e2;border-radius:18px;background:#fff8fc}
+.displayPreferences h3{margin:0 0 5px;font-size:17px}
+.displayPreferences p{margin:0;max-width:650px;line-height:1.5;font-size:13px;color:#805f73}
+.themeDark .displayPreferences{background:#302c3c;border-color:#655165}
+.themeDark .displayPreferences p{color:#e0c6d4}
+.taskJump{padding:9px 13px;border:1px solid #dfbdd0;background:#fff8fc;color:#8c3c65;border-radius:11px;font-size:12px;font-weight:800;text-decoration:none;white-space:nowrap}
+.themeDark .taskJump{background:#393044;border-color:#725368;color:#fff5fa}
+#goods-receipt-form{scroll-margin-top:110px}
+.sourcePathLabel{grid-column:1/-1;font-size:12px;font-weight:700;color:#876a7d}
+.themeDark .sourcePathLabel{color:#dfc0d1}
+.themeDark :is(.overviewStat>span,.overviewStat small,.overviewRank small,.overviewAlert small,.chartCaption,.catalogInfo small,.receiptStats small){color:#d9c3d2}
+.shell.themeDark input::placeholder{color:#c7b9c7;opacity:1}
+.shell :is(button,a,input,select):focus-visible{outline:3px solid #c55688;outline-offset:3px}
+.shell :is(button,a){-webkit-tap-highlight-color:transparent}
+@media(max-width:760px){
+ .headerActions>.densitySwitch{display:none}
+ .displayPreferences{flex-wrap:wrap;padding:14px}
+ .displayPreferences .densitySwitch button{min-height:44px;padding:9px 14px}
+ .receiptIntro .taskJump{min-height:44px;display:inline-flex;align-items:center}
+}
+@media(min-width:1000px){
+ .densityCompact{font-size:14px;line-height:1.45}
+ .densityCompact .topbar{min-height:64px;padding:9px 24px}
+ .densityCompact .brandLogo,.densityCompact .brandMonogram{width:42px;height:42px;border-radius:11px}
+ .densityCompact .brandIdentity{gap:10px;min-width:0}
+ .densityCompact .topbar h1{font-size:21px;margin:0}
+ .densityCompact .topbar .eyebrow{font-size:9px;letter-spacing:.1em}
+ .densityCompact .headerActions{gap:8px}
+ .densityCompact .themeToggle{height:34px;min-width:34px;font-size:20px;border-radius:10px}
+ .densityCompact .warehouseNotifications>button{padding:7px 9px}
+ .densityCompact .badge{padding:6px 10px;font-size:11px}
+ .densityCompact .sandboxSafetyBanner{padding:7px 16px;font-size:11px;line-height:1.35}
+ .densityCompact .layout{grid-template-columns:196px minmax(0,1fr);min-height:calc(100vh - 64px)}
+ .densityCompact .sidebar{padding:18px 10px}
+ .densityCompact .sidebar button{padding:10px 12px;font-size:13px;border-radius:11px;margin-bottom:4px}
+ .densityCompact main{max-width:none;min-width:0;padding:18px 24px 30px}
+ .densityCompact .pageBreadcrumb{margin-bottom:10px;font-size:11px}
+ .densityCompact .pageBreadcrumb button{padding:3px 0}
+ .densityCompact .pageBreadcrumb strong{font-size:12px}
+ .densityCompact .dashboardFoldHeader{padding:10px 14px;margin:0 0 10px;border-radius:14px;gap:12px}
+ .densityCompact .dashboardFoldHeader h2,.densityCompact .dashboardFoldHeader h3{font-size:18px;margin:2px 0;line-height:1.3}
+ .densityCompact .dashboardFoldHeader p{font-size:11px;margin:2px 0;line-height:1.3}
+ .densityCompact .dashboardFoldEyebrow{display:block;font-size:9px;line-height:1.3}
+ .densityCompact .dashboardFoldToggle{min-height:32px;padding:6px 10px;border-radius:9px;font-size:11px}
+ .densityCompact .dashboardFoldBody{gap:10px}
+ .densityCompact .overview{gap:10px;margin-top:0}
+ .densityCompact .overviewWelcome{padding:0 2px;border:0;background:transparent;border-radius:0}
+ .densityCompact .overviewWelcome h2{font-size:19px;margin:3px 0}
+ .densityCompact .overviewWelcome p,.densityCompact .overviewKicker{display:none}
+ .densityCompact .overviewAction{padding:8px 12px;font-size:12px;border-radius:10px}
+ .densityCompact .overviewStats{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+ .densityCompact .overviewStat{padding:11px 13px;border-radius:14px;box-shadow:0 3px 12px #ac698c08}
+ .densityCompact .overviewStat strong{font-size:28px;margin:4px 0 2px;line-height:1.15}
+ .densityCompact .overviewStat>span{font-size:10px}
+ .densityCompact .overviewStat small{font-size:11px}
+ .densityCompact .overviewStatLink{padding-top:7px;font-size:11px}
+ .densityCompact .overviewPanels{grid-template-columns:minmax(0,1.2fr) repeat(2,minmax(0,1fr));gap:10px}
+ .densityCompact .overviewPanels>.overviewPanel:first-child{grid-column:auto}
+ .densityCompact :is(.overviewPanel,.overviewShortcuts,.insightCard){padding:13px;border-radius:15px}
+ .densityCompact .overviewPanelTitle{margin-bottom:10px}
+ .densityCompact :is(.overviewPanelTitle h3,.overviewShortcuts h3,.insightCard h3){font-size:14px;line-height:1.4}
+ .densityCompact .chartCaption{font-size:11px;margin:0 0 10px;line-height:1.45}
+ .densityCompact .overviewDemoLabel{font-size:9px;padding:4px 7px;margin:6px 0}
+ .densityCompact .productStockBar{margin-bottom:10px}
+ .densityCompact .overviewPanel .productStockBar{margin-bottom:12px}
+ .densityCompact .productStockBarLabel{margin-bottom:5px;gap:8px}
+ .densityCompact .productStockBarLabel :is(b,strong){font-size:12px}
+ .densityCompact .overviewTrack,.densityCompact .productStockBar .overviewTrack{height:8px}
+ .densityCompact .overviewRank{padding:7px 0;gap:8px}
+ .densityCompact .overviewAlert{padding:8px;margin-bottom:7px;gap:8px;border-radius:10px}
+ .densityCompact .overviewAlert>span{width:26px;height:26px}
+ .densityCompact .overviewTextAction{font-size:11px;padding:6px 0}
+ .densityCompact .overviewShortcuts>div{margin-top:8px;gap:8px}
+ .densityCompact .overviewShortcuts button{padding:9px 11px;border-radius:10px}
+ .densityCompact .brandHeroCompact .hero{padding:7px;margin-top:10px;border-radius:14px}
+ .densityCompact .brandHeroCompact .brandBanner{max-height:84px;object-fit:contain;background:#fff8fa;border-radius:9px}
+ .densityCompact :is(.panel,.approval,.receipt){padding:15px;border-radius:15px;margin-top:12px}
+ .densityCompact .panel>h3{margin:0 0 10px;font-size:17px}
+ .densityCompact :is(.catalogMetrics,.inventoryMetrics){gap:10px;margin:10px 0}
+ .densityCompact :is(.catalogMetrics article,.inventoryMetrics article){padding:11px 13px;border-radius:14px}
+ .densityCompact :is(.catalogMetrics strong,.inventoryMetrics strong){font-size:26px;margin-top:4px;line-height:1.2}
+ .densityCompact .catalogMetrics{grid-template-columns:repeat(5,minmax(0,1fr))}
+ .densityCompact .inventoryMetrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .densityCompact .catalogInsights{gap:16px;padding:12px}
+ .densityCompact .catalogInsights h3{font-size:14px;margin:0 0 6px}
+ .densityCompact .catalogInsights p{padding:5px 0;font-size:12px}
+ .densityCompact .catalogInsights>div{max-height:150px;overflow:auto;min-width:0;padding-right:4px}
+ .densityCompact .catalogPanelHeading p{margin-top:3px;font-size:11px}
+ .densityCompact .catalogSearchArea{grid-template-columns:minmax(220px,1fr) minmax(0,1.2fr);align-items:end;gap:12px;margin-top:12px}
+ .densityCompact .catalogFilterGrid{gap:8px}
+ .densityCompact .catalogFilterSummary{margin:9px 0;font-size:11px}
+ .densityCompact :is(.catalogSearch input,.catalogFilterGrid select,.inventoryFilters input,.inventoryFilters select){min-height:36px;padding:8px 10px;border-radius:9px;font-size:13px}
+ .densityCompact .productList{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+ .densityCompact .productList .product{display:grid;grid-template-columns:78px minmax(0,1fr);gap:7px 11px;padding:11px;min-height:0;border-radius:13px;align-items:start}
+ .densityCompact .catalogPhoto{grid-row:span 2;aspect-ratio:4/5;border-radius:9px}
+ .densityCompact .catalogInfo h3{font-size:14px;margin:3px 0;line-height:1.4}
+ .densityCompact .catalogInfo small{font-size:11px}
+ .densityCompact .productList .product>strong{grid-column:2;font-size:20px;line-height:1.2;justify-self:start;align-self:end}
+ .densityCompact .productList .product>strong small{font-size:10px;text-align:left;margin-top:2px}
+ .densityCompact .inventoryHeading{padding:12px 15px;border-radius:14px;margin-bottom:10px}
+ .densityCompact .inventoryHeading h2{font-size:21px;margin:2px 0}
+ .densityCompact .inventoryHeading p{font-size:12px;margin:3px 0}
+ .densityCompact .inventoryInsights{gap:10px;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .densityCompact .inventoryInsights>.insightCard{max-height:260px;overflow:auto}
+ .densityCompact .inventoryFilters{gap:8px;padding:10px;margin:12px 0;border-radius:13px}
+ .densityCompact .inventoryFilters .smartSearch{min-width:200px;flex:2 1 230px}
+ .densityCompact .inventoryFilters select{flex:1 1 110px;max-width:170px}
+ .densityCompact .inventoryFilters .clearFilter{min-height:36px;padding:7px 10px}
+ .densityCompact .inventoryResultCount{margin:6px 0 9px}
+ .densityCompact .treeProduct{border-radius:12px}
+ .densityCompact .treeProductHead{padding:10px 12px}
+ .densityCompact .treeProductHead>strong{font-size:19px}
+ .densityCompact .treeSizes{padding-left:25px}
+ .densityCompact .treeVariantHead{padding:9px}
+ .densityCompact .selectionBar{top:76px;padding:9px 12px;font-size:12px;border-radius:11px}
+ .densityCompact .selectableGallery{grid-template-columns:repeat(auto-fill,minmax(95px,1fr));gap:8px}
+ .densityCompact .productGallery{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:9px}
+ .densityCompact .receiptOverview{gap:10px;margin-top:0}
+ .densityCompact .receiptIntro{padding:10px 14px;border-radius:14px}
+ .densityCompact .receiptIntro h2{font-size:18px;margin:2px 0}
+ .densityCompact .receiptIntro p:last-child{font-size:11px}
+ .densityCompact .receiptStats{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+ .densityCompact .receiptStats article{padding:11px 13px;border-radius:14px}
+ .densityCompact .receiptStats strong{font-size:23px;margin:5px 0;line-height:1.25}
+ .densityCompact .receiptStats article:last-child strong{font-size:15px}
+ .densityCompact .receiptCharts{gap:10px}
+ .densityCompact .receiptCharts>.insightCard{max-height:190px;overflow:auto}
+ .densityCompact .receiptTop{padding:7px 0}
+ .densityCompact .receiptRecent{padding:8px 0;font-size:12px}
+ .densityCompact .receiptNote{padding:8px 11px;font-size:11px;margin:0;border-radius:10px}
+ .densityCompact .receiptHero h3{font-size:18px;margin:2px 0}
+ .densityCompact .receiptHero p{font-size:12px;margin:5px 0}
+ .densityCompact .receiptFields{gap:12px}
+ .densityCompact .flowTabs{gap:8px}
+ .densityCompact .flowTabs button{padding:10px 12px;border-radius:11px;min-height:52px}
+ .densityCompact .flowTabs button b{font-size:13px}
+ .densityCompact .flowTabs button span{font-size:11px;line-height:1.4}
+ .densityCompact .formGrid{gap:10px}
+ .densityCompact :is(.receipt input,.formGrid input,.formGrid select,.approval input){padding:8px 10px;min-height:35px;font-size:13px;border-radius:9px}
+ .densityCompact :is(.pickerInput button,.sourcePicker button){padding:7px 9px;font-size:11px;border-radius:9px}
+ .densityCompact .pickerResults{gap:8px;margin-top:9px}
+ .densityCompact .pickerResults button{padding:9px 11px;border-radius:10px}
+ .densityCompact .pickerResults button b{font-size:13px}
+ .densityCompact .pickerResults button span{font-size:11px}
+ .densityCompact .variantChooser{gap:8px}
+ .densityCompact .variantChooser button{padding:8px 11px;border-radius:10px}
+ .densityCompact .receiptRowV2{padding:11px;gap:9px;border-radius:12px}
+ .densityCompact .receiptRowV2 label{font-size:11px;gap:5px}
+ .densityCompact .receiptRule{font-size:11px}
+ .densityCompact .primary{padding:9px 13px;min-height:35px;font-size:12px;border-radius:10px}
+ .densityCompact .receipt .actions{gap:12px}
+ .densityCompact .warehouseWorkspace{gap:12px}
+ .densityCompact .warehouseMetrics{grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+ .densityCompact .warehouseMetrics>button,.densityCompact .warehouseMetrics>article{padding:10px 12px;border-radius:13px;gap:5px}
+ .densityCompact .warehouseMetrics span{font-size:10px;line-height:1.4}
+ .densityCompact .warehouseMetrics strong{font-size:24px;line-height:1.2}
+ .densityCompact :is(.warehouseConfig,.warehouseResults,.warehouseProduct,.warehouseConfirm,.renameWorkspace){padding:13px!important;border-radius:14px}
+ .densityCompact .warehouseWorkspace input:not([type=checkbox]),.densityCompact .warehouseWorkspace select{padding:8px 10px;font-size:13px;border-radius:9px;min-height:35px}
+ .densityCompact .warehouseWorkspace button:not(.warehouseThumb){padding:7px 11px;font-size:12px;border-radius:9px}
+ .densityCompact .warehouseWorkspace label{font-size:12px;gap:5px}
+ .densityCompact .watchOptions{gap:10px;margin-top:10px}
+ .densityCompact .watchOptions label{font-size:11px}
+ .densityCompact .warehouseToolbar,.densityCompact .warehouseBulk{gap:9px}
+ .densityCompact .warehouseProduct header{gap:8px;margin-bottom:10px}
+ .densityCompact .warehouseProduct h3{font-size:16px}
+ .densityCompact .warehouseTableWrap th{padding:7px;font-size:11px}
+ .densityCompact .warehouseTableWrap td{padding:7px;font-size:12px}
+ .densityCompact .warehouseThumb img{width:42px;height:54px}
+ .densityCompact .warehouseConfirm{position:static;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;box-shadow:none}
+ .densityCompact .warehouseConfirm>b{font-size:13px}
+ .densityCompact .warehouseConfirm>p{font-size:11px;margin:3px 0;flex:1 1 220px}
+ .densityCompact .warehouseConfirm:has(h4){display:block}
+ .densityCompact .renameWorkspace h3{font-size:16px;margin:0 0 8px}
+ .densityCompact .renameWorkspace p{font-size:12px;line-height:1.5}
+ .densityCompact .renameRows label{padding:10px;border-radius:10px}
+ .densityCompact .batchOutcome{padding:9px;font-size:12px}
+ .densityCompact .displayPreferences{padding:13px;border-radius:14px}
+ .densityCompact #goods-receipt-form{scroll-margin-top:78px}
+}
+@media(min-width:1280px){
+ .densityCompact .receiptRowV2{grid-template-columns:90px 140px minmax(250px,1fr) 95px 105px 105px;align-items:end}
+ .densityCompact .receiptRowV2 .sourcePicker{grid-column:auto;gap:5px;grid-template-columns:minmax(0,1fr) auto auto}
+ .densityCompact .receiptRowV2 .imageCountBadge{grid-column:auto;padding:8px;min-height:35px;gap:5px;font-size:10px;flex-wrap:wrap}
+}
+@media(min-width:1440px){
+ .densityCompact .formGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .densityCompact .receiptFields>.formGrid:first-of-type{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}
+}
+@media(prefers-reduced-motion:reduce){
+ .shell *,.shell *:before,.shell *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}

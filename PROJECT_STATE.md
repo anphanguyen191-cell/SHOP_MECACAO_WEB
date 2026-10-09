@@ -1,3 +1,8 @@
+# V1 desktop experience checkpoint — 2026-10-09
+
+User approved comprehensive compact UI optimization. Six modules now offer remembered Gọn / Thoải mái; desktop layouts reduce spacing and use horizontal KPIs/forms/cards, while mobile tap targets stay unchanged. Evidence/scope: `V1_DESKTOP_EXPERIENCE_CHECKPOINT.md`. Browser matrix covers both densities/themes at 1366×768 and 1920×1080 plus mobile and mocked LOCAL workflows. Check latest Actions for the delivered commit. User reported the preceding Windows build works; this UI revision and complete restart/rename/full restore still need shop acceptance. **V1 NOT STABLE; V2 blocked.** Historical statements below are not proof for this revision.
+
+---
 # Windows EPERM acceptance blocker — 2026-10-09
 
 User's Windows Node 24.21 setup failed in receiveGoods at fsync: copied images were opened read-only. The same defect affected physical rename. Both COPY targets now open r+ (writable, no truncation); flush failures still abort safely. Regression tests enforce Windows-like writable-flush rules, including rename crash workers. CI now runs isolated internal and real HTTP gates on Windows Node 22 and 24 before Pages deploy. Windows CI is not full shop acceptance / complete restore; V1 remains NOT STABLE. Check Actions for this fix's exact commit.

@@ -19,6 +19,9 @@ const localProduct={id:101,product_code:'LOCAL01',name:'Local pastel outfit',var
 const server=http.createServer(async (req,res)=>{
  const name=decodeURIComponent(new URL(req.url||'/', 'http://localhost').pathname)
  if(name.startsWith('/api/')){
+  if(name==='/api/warehouse/file'){
+   res.writeHead(200,{'Content-Type':'image/svg+xml'}).end('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="250" viewBox="0 0 200 250"><rect width="200" height="250" fill="#fff5eb"/><path d="M60 25 30 55 50 85 65 72V140H135V72L150 85 170 55 140 25 120 40H80Z" fill="#95d7bf"/><path d="M65 153H135L148 225H112L100 185 88 225H52Z" fill="#95d7bf"/><circle cx="90" cy="80" r="6" fill="#fff"/><circle cx="118" cy="108" r="6" fill="#fff"/></svg>');return
+  }
   const chunks=[];for await(const chunk of req)chunks.push(chunk)
   const body=chunks.length?JSON.parse(Buffer.concat(chunks).toString()):{}
   let data={},status=200
@@ -115,6 +118,42 @@ try{
  assert((await run('document.documentElement.scrollWidth'))<=392,'Overview horizontal scroll at 390px')
  assert((await run("document.querySelectorAll('.overviewStat').length"))===5,'Overview must have five KPI cards')
  await shot('overview.png')
+ // Desktop density: exercise every module in both themes/modes at 100% zoom.
+ const desktopModules=[['Tổng quan','.overviewStats','overview'],['Danh mục sản phẩm','.catalogPanel','catalog'],['Nhập hàng','.receiptOverview','receipt'],['Import kho','.warehouseWorkspace','warehouse'],['Tồn kho','.inventoryMetrics','inventory'],['Cài đặt','.displayPreferences','settings']]
+ const heights={}
+ for(const width of [1366,1920]){
+  const height=width===1366?768:1080
+  await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false})
+  for(const compact of [false,true]){
+   await run("document.querySelectorAll('.headerActions .densitySwitch button')["+(compact?0:1)+"].click()")
+   await until("document.querySelector('.shell').classList.contains("+JSON.stringify(compact?'densityCompact':'densityComfort')+")",'desktop density')
+   for(const dark of [false,true]){
+    if(await run("document.querySelector('.shell').classList.contains('themeDark')")!==dark)await run("document.querySelector('.themeToggle').click()")
+    for(const [label,selector,slug] of desktopModules){
+     await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==="+JSON.stringify(label)+").click()")
+     await until("!!document.querySelector("+JSON.stringify(selector)+")",'desktop '+label)
+     await run('window.scrollTo(0,0)');await sleep(100)
+     assert((await run('document.documentElement.scrollWidth'))<=width+2,'Desktop overflow: '+label+' '+width+' '+compact+' '+dark)
+     assert(await run("getComputedStyle(document.querySelector('.headerActions .densitySwitch')).display!=='none'"),'Desktop density control must be reachable')
+     const shape=await run("(()=>{const h=document.querySelector('.topbar').getBoundingClientRect(),c=document.querySelector('.headerActions').getBoundingClientRect(),b=document.querySelector('.brandIdentity').getBoundingClientRect();return {header:h.height,overlap:b.right>c.left,main:document.querySelector('main').getBoundingClientRect().width,content:document.querySelector('main').lastElementChild.getBoundingClientRect().bottom-document.querySelector('main').getBoundingClientRect().top}})()")
+     assert(!shape.overlap,'Desktop branding/actions overlap '+width)
+     if(compact){assert(shape.header<=72,'Compact header remains too tall');assert(shape.main>width-220,'Compact main must use available desktop space')}
+     if(!dark)heights[width+'-'+slug+'-'+compact]=shape.content
+     if(compact&&slug==='receipt')assert(await run("new Set(Array.from(document.querySelectorAll('.receiptStats article')).map(e=>Math.round(e.getBoundingClientRect().top))).size===1"),'Five receipt KPIs must share one desktop row')
+     await shot('desktop-'+width+'-'+slug+'-'+(dark?'dark':'light')+'-'+(compact?'compact':'comfort')+'.png')
+    }
+   }
+  }
+  for(const slug of ['overview','receipt','inventory','warehouse'])assert(heights[width+'-'+slug+'-true']<heights[width+'-'+slug+'-false']*.85,'Compact must materially reduce '+slug+' scrolling: '+JSON.stringify(heights))
+ }
+ // Preference survives reload; mobile controls keep their original tap targets.
+ await command('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/?demo=1'})
+ await until("!!document.querySelector('.overviewStats')",'density reload')
+ assert(await run("document.querySelector('.shell').classList.contains('densityCompact')"),'Density preference lost on reload')
+ await run("document.querySelector('.themeToggle').click()")
+ await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:3,mobile:true})
+ await until("getComputedStyle(document.querySelector('.headerActions .densitySwitch')).display==='none'",'mobile header density control hidden')
+ console.log('DESKTOP_DENSITY PASS: 1366x768 / 1920x1080, all six modules, light/dark, compact/comfort, >=15% less fixture content height, no overflow/overlap, preference persistence')
  await run("document.querySelector('.dashboardFoldToggle').click()")
  assert(await run("document.querySelector('#overview-dashboard-body')===null"),'Overview collapse failed')
  await run("document.querySelector('.dashboardFoldToggle').click()")
@@ -189,7 +228,7 @@ try{
  assert((await run("document.querySelector('main').textContent")).includes('Chỉ đọc folder'),'Import tab must explain preview-only scanning')
  await shot('import-preview-dark.png')
  await clickMenu('Cài đặt')
- await until("document.querySelector('main h3')?.textContent.includes('Cài đặt')",'settings tab')
+ await until("Array.from(document.querySelectorAll('main h3')).some(x=>x.textContent.includes('Cài đặt'))",'settings tab')
  assert((await run("document.querySelector('main').textContent")).includes('DEMO không ghi cài đặt'),'Settings demo must not perform real writes')
  await shot('settings-demo-dark.png')
  // Mocked LOCAL browser flow exercises async UI binding, not the real API.
@@ -199,6 +238,9 @@ try{
  assert(await run("document.querySelector('.shell').classList.contains('themeDark')"),'Theme preference must survive page reload')
  await clickMenu('Nhập hàng')
  await until("!!document.querySelector('.pickerResults button')",'LOCAL receipt product selector')
+ await run("document.querySelector('.taskJump').click()")
+ await sleep(100)
+ assert(await run("document.querySelector('#goods-receipt-form').getBoundingClientRect().top>=document.querySelector('.topbar').getBoundingClientRect().bottom-2"),'Jump-to-form must not hide heading under sticky header')
  await run("document.querySelector('.pickerResults button').click()")
  await until("!!document.querySelector('.variantChooser button')",'existing Size selection')
  assert(await run("getComputedStyle(document.querySelector('.flowTabs')).display==='grid'"),'LOCAL receipt workflows must be styled, not browser-default buttons')
@@ -231,6 +273,17 @@ try{
   assert((await run('document.documentElement.scrollWidth'))<=width+2,'LOCAL receipt overflow at '+width+'px')
  }
  await shot('receipt-local-after-commit.png')
+ await command('Emulation.setDeviceMetricsOverride',{width:1366,height:768,deviceScaleFactor:1,mobile:false})
+ for(const compact of [false,true]){
+  await run("document.querySelectorAll('.headerActions .densitySwitch button')["+(compact?0:1)+"].click()")
+  await run('window.scrollTo(0,0)');await sleep(100)
+  await run("document.querySelector('.taskJump').click()")
+  await sleep(120)
+  assert(await run("document.querySelector('#goods-receipt-form').getBoundingClientRect().top>=document.querySelector('.topbar').getBoundingClientRect().bottom-2"),'Desktop form anchor must clear sticky header in both densities')
+  assert((await run('document.documentElement.scrollWidth'))<=1368,'LOCAL desktop form overflow')
+  await shot('receipt-local-1366-'+(compact?'compact':'comfort')+'.png')
+ }
+ assert.equal(receiptWrites,1,'Changing display density must never post a transaction')
  await run("document.querySelector('.receiptFields').scrollIntoView({block:'start'})")
  await sleep(100)
  await shot('receipt-local-form-desktop.png')

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## V1 desktop experience — 2026-10-09
+- Remembered Gọn / Thoải mái, compact desktop header/sidebar/KPIs/charts/cards/forms and non-overlapping import confirmation; mobile keeps its tap sizes.
+- Clear receipt destination/source labels and jump-to-form action; improved dark muted-text contrast, focus visibility and reduced-motion support.
+- Six-module desktop browser matrix at 1366×768 and 1920×1080, both themes/densities, plus mobile and mocked LOCAL workflows; 31 source UI regressions.
+- Presentation only: no backend/schema or inventory-rule changes. Shop Windows UI acceptance and full restore pending; V1 NOT STABLE.
+
 ## Windows fsync setup blocker — 2026-10-09
 - Fix EPERM on copied goods-receipt / rename files: open COPY targets with r+ instead of read-only before fsync; preserve contents, checksums and fail-closed recovery.
 - Add writable-flush regression guards and native Windows Node 22/24 internal + HTTP gates. Deployment waits for Linux and Windows checks. Shop Windows acceptance and full restore remain pending.

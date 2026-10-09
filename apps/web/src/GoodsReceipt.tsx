@@ -62,14 +62,14 @@ export default function GoodsReceipt({onDone}:{onDone?:()=>void}){
   }catch(e){setProgress(null);setMsg(e instanceof Error?e.message:'Nhập hàng thất bại')}finally{submitLock.current=false;setBusy(false)}
  }
  const existingSizes=detail?.variants??[]
- return <section className="receipt receiptV2">
+ return <section id="goods-receipt-form" className="receipt receiptV2" tabIndex={-1}>
   <div className="receiptHero"><div><p className="eyebrow">NHẬP HÀNG</p><h3>Chọn đúng tình huống nhập kho</h3><p>Dữ liệu đã có thì chọn lại từ hệ thống; chỉ nhập tay khi tạo mới.</p></div></div>
   <fieldset className="receiptFields" disabled={busy||reading}><div className="flowTabs">
    <button className={flow==='NEW_PRODUCT'?'active':''} onClick={()=>switchFlow('NEW_PRODUCT')}><b>1. Mẫu mới hoàn toàn</b><span>Tạo Product + Size mới</span></button>
    <button className={flow==='NEW_SIZE'?'active':''} onClick={()=>switchFlow('NEW_SIZE')}><b>2. Thêm Size mới</b><span>Product đã có, Size chưa có</span></button>
    <button className={flow==='EXISTING_SIZE'?'active':''} onClick={()=>switchFlow('EXISTING_SIZE')}><b>3. Nhập thêm Size đã có</b><span>Product + Size đều có sẵn</span></button>
   </div>
-  <div className="formGrid"><label>Kho đích<div className="pickerInput"><input value={storeRoot} readOnly placeholder={'D:\\1-Me CaCao Store'}/><button onClick={()=>setPick({kind:'store'})}>CHỌN KHO</button></div></label><label>Ghi chú<input value={note} onChange={e=>setNote(e.target.value)} placeholder="Ví dụ: Hàng về đợt chiều"/></label></div>
+  <div className="formGrid"><label>Kho đích · chứa Product → Size<div className="pickerInput"><input value={storeRoot} readOnly placeholder={'D:\\1-Me CaCao Store'}/><button onClick={()=>setPick({kind:'store'})}>CHỌN KHO</button></div></label><label>Ghi chú<input value={note} onChange={e=>setNote(e.target.value)} placeholder="Ví dụ: Hàng về đợt chiều"/></label></div>
   {flow!=='NEW_PRODUCT'&&<div className="productPicker"><label>Tìm sản phẩm có sẵn<input value={productSearch} onChange={e=>setProductSearch(e.target.value)} placeholder="Gõ tên hoặc mã sản phẩm..."/></label><div className="pickerResults">{filteredProducts.slice(0,12).map(p=><button key={p.id} className={productId===p.id?'selected':''} onClick={()=>void chooseProduct(p.id)}><b>{p.name}</b><span>{p.product_code}</span></button>)}</div></div>}
   {flow==='NEW_PRODUCT'&&<div className="formGrid"><label>Tên sản phẩm mới<input value={name} onChange={e=>setName(e.target.value)}/></label><label>Mã sản phẩm<input value={code} onChange={e=>setCode(e.target.value)} placeholder="Để trống = tự đề xuất"/></label><label>Danh mục<input value={category} onChange={e=>setCategory(e.target.value)} placeholder="Danh mục mới hoặc hiện có"/></label></div>}
   {flow==='NEW_SIZE'&&detail&&<div className="existingContext"><b>{detail.product.name}</b><span>Size đang có: {existingSizes.map(v=>v.size).join(' · ')||'Chưa có'}</span></div>}
@@ -78,7 +78,7 @@ export default function GoodsReceipt({onDone}:{onDone?:()=>void}){
   {rows.map((x,i)=><div className="receiptRowV2" key={i}>
    <label>Size<input aria-label={'Size dòng '+(i+1)} value={x.size} disabled={flow==='EXISTING_SIZE'} onChange={e=>patch(i,'size',e.target.value)} placeholder="Size"/></label>
    <label>SKU<input value={x.sku} disabled={flow==='EXISTING_SIZE'} onChange={e=>patch(i,'sku',e.target.value)} placeholder="SKU tự động"/></label>
-   <div className="sourcePicker"><input value={x.sourcePath} readOnly placeholder="Folder ảnh nguồn"/><button onClick={()=>setPick({kind:'source',row:i})} disabled={busy}>CHỌN ẢNH</button><button onClick={()=>void inspect(i)} disabled={busy||!x.sourcePath}>QUÉT</button></div>
+   <div className="sourcePicker"><label className="sourcePathLabel" htmlFor={'receipt-source-'+i}>Ảnh hàng mới · ngoài kho đích</label><input id={'receipt-source-'+i} value={x.sourcePath} title={x.sourcePath} readOnly placeholder="Folder ảnh nguồn"/><button onClick={()=>setPick({kind:'source',row:i})} disabled={busy}>CHỌN ẢNH</button><button onClick={()=>void inspect(i)} disabled={busy||!x.sourcePath}>QUÉT</button></div>
    <div className="imageCountBadge"><b>{x.imageCount}</b><span>ảnh = tồn nhập</span></div>
    <label>Giá nhập (đ)<input type="number" min="0" step="1" value={x.costPrice} onChange={e=>patch(i,'costPrice',e.target.value)} placeholder="Giá nhập"/></label>
    <label>Giá bán (đ)<input type="number" min="0" step="1" value={x.salePrice} onChange={e=>patch(i,'salePrice',e.target.value)} placeholder="Giá bán"/></label>
