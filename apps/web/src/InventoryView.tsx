@@ -1,6 +1,7 @@
-import { useEffect,useMemo,useState } from 'react'
+import { useEffect,useMemo,useRef,useState } from 'react'
 import ProductDetail from './ProductDetail'
 import {useBooleanPreference} from './uiState'
+import InventorySharing,{InventoryImageViewer,type ChosenImage} from './InventorySharing'
 
 type Img={id:number;file_name:string;file_path:string;exists:boolean}
 type Variant={variant_id:number;sku:string;size:string;cost_price:number;sale_price:number;ledger_stock:number;stock:number;images:Img[]}
@@ -74,8 +75,29 @@ export default function InventoryView({isDemo=false}:{isDemo?:boolean}){
  },[products,stockState,sort,threshold])
  function toggle(set:Set<number>,id:number,setter:(v:Set<number>)=>void){const n=new Set(set);n.has(id)?n.delete(id):n.add(id);setter(n)}
  function chooseSuggestion(s:Suggestion){setSearch(s.product_name);setSize(s.size);setExpandedProducts(new Set([s.product_id]));setExpandedVariants(new Set([s.variant_id]));setSuggestions([])}
- function chooseImage(id:number){toggle(selectedImages,id,setSelectedImages)}
- return <section className="inventoryPage">
+ const chosen=useRef(new Map<number,ChosenImage>()),anchor=useRef<{variant:number;id:number}|null>(null)
+ const [sending,setSending]=useState(false),[selectionError,setSelectionError]=useState(''),[viewer,setViewer]=useState<{images:ChosenImage[];index:number}|null>(null)
+ const allVisible=visibleProducts.flatMap(p=>p.variants.flatMap(v=>v.images.filter(i=>i.exists).map(i=>({...i,product:p.product_name,size:v.size}))))
+ function selectGroup(images:ChosenImage[]){
+  const next=new Set(selectedImages);for(const image of images){next.add(image.id);chosen.current.set(image.id,image)}
+  if(next.size>100){setSelectionError('Một nhóm copy tối đa 100 ảnh. Chia nhỏ lựa chọn để xử lý ổn định.');return}
+  setSelectionError('');setSelectedImages(next)
+ }
+ function chooseImage(image:ChosenImage,variant:number,list:ChosenImage[],shift:boolean){
+  if(sending)return
+  if(shift&&anchor.current?.variant===variant){const start=list.findIndex(i=>i.id===anchor.current?.id),end=list.findIndex(i=>i.id===image.id);if(start>=0&&end>=0){selectGroup(list.slice(Math.min(start,end),Math.max(start,end)+1));return}}
+  anchor.current={variant,id:image.id};chosen.current.set(image.id,image)
+  if(!selectedImages.has(image.id)&&selectedImages.size>=100){setSelectionError('Một nhóm copy tối đa 100 ảnh.');return}
+  setSelectionError('');toggle(selectedImages,image.id,setSelectedImages)
+ }
+ async function selectProduct(p:Product){
+  if(sending)return;setSending(true);setSelectionError('')
+  try{let product=p
+   if(size||search){const r=await fetch('/api/inventory/explorer?'+new URLSearchParams({search:p.product_code,status:'active'}));const rows=await r.json();if(!r.ok)throw Error(rows.error||'Không đọc được ảnh của mẫu');product=rows.find((x:Product)=>x.product_id===p.product_id);if(!product)throw Error('Mẫu không còn tồn hợp lệ.')}
+   selectGroup(product.variants.flatMap(v=>v.images.filter(i=>i.exists).map(i=>({...i,product:product.product_name,size:v.size}))))
+  }catch(e){setSelectionError(e instanceof Error?e.message:'Không chọn được mẫu')}finally{setSending(false)}
+ }
+ return <section className={"inventoryPage"+(selectedImages.size?" hasImageSelection":"")}>
   <div className="inventoryHeading"><div><p className="eyebrow">{isDemo?'DỮ LIỆU MINH HỌA · DEMO':'KHO HÀNG THỰC TẾ'}</p><h2>Tồn kho</h2><p>{isDemo?'Số liệu mẫu để kiểm tra giao diện, không phải tồn hàng của Shop. LOCAL mới kết nối kho ảnh.':'Tồn thực tế đếm ảnh hợp lệ theo từng Size. Chọn sản phẩm để xem ảnh và đối soát.'}</p></div>{isDemo?<span className="okPill">BẢN XEM THỬ</span>:!dashboard?<span className="reconcileAlert">Đang tải / không có dữ liệu kho</span>:dashboard.mismatches?<span className="reconcileAlert">⚠ {dashboard.mismatches} Size lệch ledger/ảnh</span>:<span className="okPill">✓ Đã so sánh ảnh và sổ</span>}</div>
   {loadError&&<p className="notice warning" role="alert">{loadError} <button onClick={()=>setReload(x=>x+1)}>THỬ LẠI</button></p>}
   <section className="inventoryDashboardBlock" aria-label="Dashboard tồn kho">
@@ -107,13 +129,16 @@ export default function InventoryView({isDemo=false}:{isDemo?:boolean}){
   </div>
 
   <div className="inventoryToolbar"><button className="refreshInventory" disabled={loading&&!isDemo} onClick={()=>setReload(x=>x+1)}>↻ LÀM MỚI TỒN ẢNH</button></div><p className="inventoryResultCount">{loading&&!isDemo?'Đang đọc kho...':visibleProducts.length+' mẫu'} phù hợp bộ lọc{size?' · '+size:''}{isDemo?' · dữ liệu minh họa':''}</p>
-  {selectedImages.size>0&&<div className="selectionBar"><b>Đã chọn {selectedImages.size} sản phẩm</b><span>Nền tảng cho gửi khách · đưa vào đơn · chốt đơn</span><button onClick={()=>setSelectedImages(new Set())}>BỎ CHỌN</button></div>}
+  {!isDemo&&<div className="quickImageSelection"><button disabled={sending||loading||!allVisible.length} onClick={()=>selectGroup(allVisible)}>CHỌN KẾT QUẢ ĐANG LỌC ({allVisible.length} ảnh)</button><span>Chọn ảnh để gửi khách · chưa giữ hàng hay trừ tồn</span></div>}
+  {selectionError&&<p role="alert" className="notice warning">{selectionError}</p>}
+  <InventorySharing selectionBusy={sending} images={Array.from(selectedImages).map(id=>chosen.current.get(id)!)} hidden={Array.from(selectedImages).filter(id=>!allVisible.some(i=>i.id===id)).length} onBusy={setSending} onClear={()=>{setSelectedImages(new Set());anchor.current=null;setSelectionError('')}}/>
   <div className="inventoryTree">{visibleProducts.map(p=>{const open=expandedProducts.has(p.product_id);return <article className="treeProduct" key={p.product_id}>
    <button className="treeProductHead" onClick={()=>toggle(expandedProducts,p.product_id,setExpandedProducts)}><span className="chev">{open?'▼':'▶'}</span><span className="folderIcon">●</span><span className="treeName"><b>{p.product_name}</b><small>{p.product_code} · {p.category||'Chưa phân loại'} · {p.variants.length} Size</small></span><strong>{p.stock}<small> tồn</small></strong></button>
-   {open&&<div className="treeSizes">{p.variants.map(v=>{const vOpen=expandedVariants.has(v.variant_id);return <div className="treeVariant" key={v.variant_id}><button className="treeVariantHead" onClick={()=>toggle(expandedVariants,v.variant_id,setExpandedVariants)}><span className="chev">{vOpen?'▼':'▶'}</span><span className="sizeFolder">{v.size}</span><small>{v.sku}</small><span className={v.stock===0?'stockZero':'stockGood'}>{v.stock} sản phẩm</span></button>
-    {vOpen&&<div className="variantGallery"><div className="galleryMeta"><span><b>{v.stock}</b> {isDemo?'bộ minh họa':'ảnh hàng thực tế'}</span>{v.ledger_stock!==v.stock&&<span className="warning">Ledger {v.ledger_stock} · Ảnh {v.stock}</span>}<button onClick={()=>setDetailProductId(p.product_id)}>CHI TIẾT SẢN PHẨM</button></div><div className="selectableGallery">{v.images.filter(img=>img.exists).map(img=><button key={img.id} className={selectedImages.has(img.id)?'selected':''} onClick={()=>chooseImage(img.id)}><img loading="lazy" decoding="async" src={'/api/images/'+img.id} alt={p.product_name+' Size '+v.size}/><span className="imageCheck">{selectedImages.has(img.id)?'✓':''}</span><small>{img.file_name}</small></button>)}{(v.stock===0||isDemo)&&<div className="emptySize">{isDemo?'DEMO không có ảnh kho thật.':'Size này hiện không còn ảnh hàng trong kho.'}</div>}</div></div>}
+   {!isDemo&&<div className="productSelectRow"><button disabled={sending||loading} onClick={()=>void selectProduct(p)}>CHỌN TOÀN BỘ MẪU</button></div>}{open&&<div className="treeSizes">{p.variants.map(v=>{const vOpen=expandedVariants.has(v.variant_id);return <div className="treeVariant" key={v.variant_id}><button className="treeVariantHead" onClick={()=>toggle(expandedVariants,v.variant_id,setExpandedVariants)}><span className="chev">{vOpen?'▼':'▶'}</span><span className="sizeFolder">{v.size}</span><small>{v.sku}</small><span className={v.stock===0?'stockZero':'stockGood'}>{v.stock} sản phẩm</span></button>
+    {vOpen&&<div className="variantGallery"><div className="galleryMeta"><button className="selectSizeImages" disabled={sending||loading||!v.stock||isDemo} onClick={()=>selectGroup(v.images.filter(i=>i.exists).map(i=>({...i,product:p.product_name,size:v.size})))}>CHỌN NHÓM SIZE</button><span><b>{v.stock}</b> {isDemo?'bộ minh họa':'ảnh hàng thực tế'}</span>{v.ledger_stock!==v.stock&&<span className="warning">Ledger {v.ledger_stock} · Ảnh {v.stock}</span>}<button onClick={()=>setDetailProductId(p.product_id)}>CHI TIẾT SẢN PHẨM</button></div><div className="selectableGallery">{v.images.filter(img=>img.exists).map(img=><article key={img.id} className={'inventoryImage'+(selectedImages.has(img.id)?' selected':'')}><button className="stockImageSelect" type="button" disabled={sending} aria-pressed={selectedImages.has(img.id)} aria-label={'Chọn ảnh '+img.file_name} onClick={e=>chooseImage({...img,product:p.product_name,size:v.size},v.variant_id,v.images.filter(i=>i.exists).map(i=>({...i,product:p.product_name,size:v.size})),e.shiftKey)}><img loading="lazy" decoding="async" src={'/api/images/'+img.id} alt={p.product_name+' '+v.size}/><span className="imageCheck">{selectedImages.has(img.id)?'✓':''}</span><small title={img.file_name}>{img.file_name}</small></button><button type="button" className="viewStockImage" onClick={()=>setViewer({images:v.images.filter(i=>i.exists).map(i=>({...i,product:p.product_name,size:v.size})),index:v.images.filter(i=>i.exists).findIndex(i=>i.id===img.id)})}>XEM LỚN</button></article>)}{(v.stock===0||isDemo)&&<div className="emptySize">{isDemo?'DEMO không có ảnh kho thật.':'Size này hiện không còn ảnh hàng trong kho.'}</div>}</div></div>}
    </div>})}</div>}
   </article>})}{loading&&!isDemo&&<p className="loadingState" role="status">Đang kiểm tra ảnh vật lý...</p>}{!loading&&!loadError&&visibleProducts.length===0&&<div className="emptyTree">Không tìm thấy sản phẩm phù hợp bộ lọc.</div>}</div>
+  {viewer&&<InventoryImageViewer images={viewer.images} index={viewer.index} onIndex={index=>setViewer({...viewer,index})} onClose={()=>setViewer(null)}/> }
   {detailProductId&&<ProductDetail productId={detailProductId} onClose={()=>setDetailProductId(null)}/>}
  </section>
 }

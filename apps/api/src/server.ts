@@ -16,6 +16,7 @@ import { dashboardSummary } from './dashboard.js'
 import { recoverPendingGoodsReceipts } from './receiptRecovery.js'
 import {checkWarehouse,getWatchSettings,saveWatchSettings,getWarehouseNotices,markWarehouseNotice,startWarehouseWatcher} from './warehouseWatch.js'
 import {previewImageRename,commitImageRename,recoverImageRenames,getRenameLogs} from './imageRename.js'
+import {clipboardCapabilities,selectedStockImages,sharedJpeg,copyStockImages} from './inventoryShare.js'
 
 // Fail closed before accepting writes if an interrupted goods receipt is unresolved.
 const receiptRecovery=recoverPendingGoodsReceipts()
@@ -59,6 +60,21 @@ app.use('/api',(req,res,next)=>{
 app.get('/api/health', (_req, res) => res.json({
   ok: true, app: 'SHOP_MECACAO_WEB', version: '1.0.0-dev', schema: 110, database: path.basename(dbPath),sandbox:!!sandboxRoot
 }))
+
+app.get('/api/inventory/share/capabilities',(_req,res)=>res.json(clipboardCapabilities()))
+app.post('/api/inventory/share/prepare',(req,res)=>{
+ try{const images=selectedStockImages(req.body.ids,p=>sandboxPathAllowed(p));res.json({images:images.map(i=>({id:i.id,name:i.file_name,product:i.product,size:i.size,url:'/api/inventory/share/image/'+i.id}))})}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không kiểm tra được ảnh'})}
+})
+app.get('/api/inventory/share/image/:id',async(req,res)=>{
+ try{res.setHeader('Cache-Control','no-store');res.type('image/jpeg').send(await sharedJpeg(Number(req.params.id),p=>sandboxPathAllowed(p)))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không đọc được ảnh'})}
+})
+app.post('/api/inventory/share/copy',async(req,res)=>{
+ // Only the browser on this Windows machine may replace its clipboard.
+ const remote=req.socket.remoteAddress,origin=req.get('origin')
+ let sameOrigin=false;try{const u=new URL(origin||'');sameOrigin=u.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(u.hostname)&&Number(u.port||80)===PORT}catch{}
+ if(!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(remote||'')||!sameOrigin)return res.status(403).json({error:'Copy chỉ dùng từ trang Windows LOCAL trên cùng máy.'})
+ try{return res.json(await copyStockImages(req.body.ids,p=>sandboxPathAllowed(p)))}catch(e){return res.status(400).json({error:e instanceof Error?e.message:'Copy thất bại'})}
+})
 
 app.get('/api/images/:id', (req,res) => {
   try {

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## V1 stock-image copy/share — 2026-10-09
+- Size/Product/filter quick selection, Shift range, retained hidden selections, large viewer and bottom copy/share bar.
+- Same-machine Windows CF_HDROP clipboard bridge with complete C# source, COPY effect, ID-only validation and origin/sandbox guards; no PowerShell, Python or inventory mutation.
+- Capability-gated Web Share with individually prepared JPEGs in memory; request limits and explicit error/retry. Native paste into Zalo/Messenger and real mobile share still await shop acceptance.
+- Share integration plus HTTP/browser regressions; Windows CI checks native compilation/Unicode multi-file format. No schema change or V2.
+
 ## V1 desktop experience — 2026-10-09
 - Remembered Gọn / Thoải mái, compact desktop header/sidebar/KPIs/charts/cards/forms and non-overlapping import confirmation; mobile keeps its tap sizes.
 - Clear receipt destination/source labels and jump-to-form action; improved dark muted-text contrast, focus visibility and reduced-motion support.

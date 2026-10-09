@@ -79,6 +79,16 @@ try{
  check(imported.product.variants[0].stock===1,'initial canonical physical import')
  check((await api('/api/products?stockState=in')).some(x=>x.id===pid&&x.total_stock===1),'catalog physical count')
  check((await api('/api/inventory/explorer')).some(x=>x.product_id===pid&&x.stock===1),'inventory explorer synchronized')
+ const shareId=(await api('/api/inventory/explorer')).find(x=>x.product_id===pid).variants[0].images[0].id
+ const prepared=await api('/api/inventory/share/prepare',{method:'POST',body:{ids:[shareId]}})
+ check(prepared.images[0].id===shareId,'share validates registered stock IDs')
+ await api('/api/inventory/share/prepare',{method:'POST',body:{ids:[shareId,shareId]},expected:400})
+ await api('/api/inventory/share/prepare',{method:'POST',body:{ids:[shareId,999999]},expected:400})
+ const sharedImage=await fetch(base+prepared.images[0].url);check(sharedImage.ok&&sharedImage.headers.get('content-type').startsWith('image/jpeg'),'share derivative is a real JPEG')
+ await sharedImage.arrayBuffer()
+ await api('/api/inventory/share/copy',{method:'POST',body:{ids:[shareId]},expected:403})
+ const rejected=await fetch(base+'/api/inventory/share/copy',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://untrusted.example'},body:JSON.stringify({ids:[shareId]})});check(rejected.status===403,'cross-origin request cannot replace Windows clipboard')
+ check((await api('/api/inventory/dashboard')).stock===1&&hash(file1)===sources[0].sha256,'share leaves physical stock and image unchanged')
  check((await api('/api/inventory/suggestions?search=TEST01')).some(x=>x.stock===1),'SKU suggestions display physical quantities')
  const receiptBase={storeRoot,productId:pid,sizes:[{size:'Size 1',quantity:1,costPrice:14000,salePrice:26000,images:[file2]}]}
  await api('/api/goods-receipt',{method:'POST',body:{...receiptBase,sizes:[{...receiptBase.sizes[0],quantity:2}]},expected:400})

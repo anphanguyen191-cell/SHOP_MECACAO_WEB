@@ -13,23 +13,30 @@ fs.mkdirSync(artifacts,{recursive:true})
 const mime={'.html':'text/html','.js':'application/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.webmanifest':'application/manifest+json'}
 let catalogFailure=false,postedReceipt=null,receiptReads=0,receiptWrites=0,importWrites=0,renameWrites=0
 let warehouseNotices=[]
+let nativeClipboardEnabled=true,clipboardFailure=false,clipboardCopies=[]
+const stockImages=[501,502,503].map(id=>({id,file_name:id+'.jpg',file_path:'/sandbox/warehouse/'+id+'.jpg',exists:true}))
+const inventoryFixture={product_id:101,product_code:'LOCAL01',product_name:'Local pastel outfit',product_status:'active',stock:3,variants:[{variant_id:1011,sku:'LOCAL01-S1',size:'Size 1',stock:2,ledger_stock:2,images:stockImages.slice(0,2)},{variant_id:1012,sku:'LOCAL01-S2',size:'Size 2',stock:1,ledger_stock:1,images:stockImages.slice(2)}]}
 const renameFile={id:501,product:'Local pastel outfit',size:'Size 1',oldPath:'/sandbox/warehouse/Local pastel outfit/Size 1/001.jpg',newPath:'/sandbox/warehouse/Local pastel outfit/Size 1/ShopMeCaCao_Tole_Local_pastel_outfit_Size_1_0001.jpg',sha256:'fixture-checksum'}
 const watchConfig={rootPath:'/sandbox/warehouse',startup:false,periodic:false,intervalSeconds:300,popup:false,autoRename:false}
 const localProduct={id:101,product_code:'LOCAL01',name:'Local pastel outfit',variant_count:1,total_stock:1,sizes:['Size 1'],stock_by_size:[{size:'Size 1',stock:1}]}
 const server=http.createServer(async (req,res)=>{
  const name=decodeURIComponent(new URL(req.url||'/', 'http://localhost').pathname)
  if(name.startsWith('/api/')){
-  if(name==='/api/warehouse/file'){
+  if(name==='/api/warehouse/file'||name.startsWith('/api/images/')||name.startsWith('/api/inventory/share/image/')){
    res.writeHead(200,{'Content-Type':'image/svg+xml'}).end('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="250" viewBox="0 0 200 250"><rect width="200" height="250" fill="#fff5eb"/><path d="M60 25 30 55 50 85 65 72V140H135V72L150 85 170 55 140 25 120 40H80Z" fill="#95d7bf"/><path d="M65 153H135L148 225H112L100 185 88 225H52Z" fill="#95d7bf"/><circle cx="90" cy="80" r="6" fill="#fff"/><circle cx="118" cy="108" r="6" fill="#fff"/></svg>');return
   }
   const chunks=[];for await(const chunk of req)chunks.push(chunk)
   const body=chunks.length?JSON.parse(Buffer.concat(chunks).toString()):{}
   let data={},status=200
   if(name==='/api/health')data={ok:true,schema:110,sandbox:true,database:'browser-mock.db'}
+  else if(name==='/api/inventory/share/capabilities')data={nativeFiles:nativeClipboardEnabled,maxImages:100}
+  else if(name==='/api/inventory/share/prepare'){assert.deepEqual(req.headers['content-type'],'application/json');data={images:body.ids.map(id=>({id,name:id+'.jpg',url:'/api/inventory/share/image/'+id}))}}
+  else if(name==='/api/inventory/share/copy'){assert.deepEqual(req.headers['content-type'],'application/json');clipboardCopies.push(body.ids);if(clipboardFailure){status=400;data={error:'TEST — ảnh không còn tồn'}}else data={copied:body.ids.length,format:'CF_HDROP'}}
+  else if(name==='/api/inventory/explorer'){const q=new URL(req.url,'http://localhost').searchParams;const vs=inventoryFixture.variants.filter(v=>!q.get('size')||v.size===q.get('size'));data=[{...inventoryFixture,variants:vs,stock:vs.reduce((n,v)=>n+v.stock,0)}]}
   else if(name==='/api/products'){
    if(catalogFailure){status=503;data={error:'TEST — API tạm thời không sẵn sàng'}}else data=[localProduct]
   }else if(name==='/api/products/101')data={product:localProduct,variants:[{id:1011,size:'Size 1',sku:'LOCAL01-S1',cost_price:10000,sale_price:20000}],images:[]}
-  else if(name==='/api/inventory/filter-options')data={sizes:['Size 1'],categories:[]}
+  else if(name==='/api/inventory/filter-options')data={sizes:['Size 1','Size 2'],categories:[]}
   else if(name==='/api/inventory/dashboard')data={stock:1,products:1,skus:1,outOfStock:0,mismatches:0,topProducts:[],lowProducts:[]}
   else if(name==='/api/catalog/dashboard')data={products:1,skus:1,categories:0,missingImages:0,missingPrices:0}
   else if(name==='/api/goods-receipt/dashboard'){receiptReads++;data={transactions:postedReceipt?1:0,importedQuantity:postedReceipt?1:0,importedValue:10000,lastImport:null,top:[],recent:[]}}
@@ -334,6 +341,62 @@ try{
  await until("!!document.querySelector('.warehouseConfig')",'notification opens review workspace')
  assert.equal(warehouseNotices[0].state,'seen','Review must persist seen state')
  assert.equal(importWrites,1,'Reviewing a notification must not import automatically')
+ await clickMenu('Tồn kho')
+ await until("!!document.querySelector('.treeProductHead')",'LOCAL inventory for sharing')
+ await run("document.querySelector('.treeProductHead').click()")
+ await until("document.querySelectorAll('.treeVariantHead').length===2",'Size groups expanded')
+ await run("document.querySelectorAll('.treeVariantHead')[0].click()")
+ await run("document.querySelectorAll('.treeVariantHead')[1].click()")
+ await until("document.querySelectorAll('.stockImageSelect').length===3",'physical stock image cards')
+ await run("document.querySelectorAll('.stockImageSelect')[0].click();document.querySelectorAll('.stockImageSelect')[1].dispatchEvent(new MouseEvent('click',{bubbles:true,shiftKey:true}))")
+ assert((await run("document.querySelector('.imageSendSummary b').textContent")).includes('2 ảnh'),'Shift range must select both images')
+ await run("document.querySelector('[aria-label=\"Lọc theo Size\"]').value='Size 2';document.querySelector('[aria-label=\"Lọc theo Size\"]').dispatchEvent(new Event('change',{bubbles:true}))")
+ await until("document.querySelectorAll('.stockImageSelect').length===1",'Size filter')
+ assert((await run("document.querySelector('.imageSendSummary span').textContent")).includes('2 ảnh nằm ngoài'),'Filtered-out selections must remain visible in summary')
+ await run("document.querySelector('.productSelectRow button').click()")
+ await until("document.querySelector('.imageSendSummary b')?.textContent.includes('3 ảnh')",'select complete Product across filtered Size')
+ await run("document.querySelector('.viewStockImage').click()")
+ await until("!!document.querySelector('.stockViewer')",'large image viewer')
+ assert.equal(await run("document.activeElement.textContent"),'ĐÓNG ×','Viewer must receive keyboard focus')
+ await run("document.querySelector('.stockViewer').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))")
+ await until("!document.querySelector('.stockViewer')",'viewer Escape closes')
+ clipboardFailure=true
+ await run("document.querySelector('.copySelectedImages').click()")
+ await until("document.querySelector('.imageSendBar [role=status]')?.textContent.includes('TEST')",'copy failure must be explicit')
+ assert((await run("document.querySelector('.imageSendSummary b').textContent")).includes('3 ảnh'),'Copy error must retain selected images')
+ clipboardFailure=false
+ await run("document.querySelector('.copySelectedImages').click();document.querySelector('.copySelectedImages').click()")
+ await until("document.querySelector('.imageSendBar [role=status]')?.textContent.includes('Đã copy 3 ảnh')",'copy batch outcome')
+ assert.deepEqual(clipboardCopies,[[501,502,503],[501,502,503]],'Exactly one ordered batch per action, including explicit retry')
+ for(const width of [320,390,768,1366])for(const dark of [false,true]){
+  await command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<768})
+  if((await run("document.querySelector('.shell').classList.contains('themeDark')"))!==dark)await run("document.querySelector('.themeToggle').click()")
+  await run('window.scrollTo(0,document.body.scrollHeight)');await sleep(100)
+  assert((await run('document.documentElement.scrollWidth'))<=width+2,'Image sending overflow at '+width)
+  assert(await run("document.querySelector('.inventoryImage').getBoundingClientRect().bottom<=document.querySelector('.imageSendBar').getBoundingClientRect().top"),'Bottom send bar must not cover last stock image')
+  await shot('inventory-send-'+width+'-'+(dark?'dark':'light')+'.png')
+ }
+ await run("document.querySelector('.imageSendActions button:last-child').click()")
+ await until("!document.querySelector('.imageSendBar')",'clear before Size group')
+ await run("document.querySelector('.selectSizeImages').click()")
+ assert((await run("document.querySelector('.imageSendSummary b').textContent")).includes('1 ảnh'),'Size group must select filtered Size only')
+ await run("document.querySelector('.imageSendActions button:last-child').click()")
+ await until("!document.querySelector('.imageSendBar')",'clear before filtered group')
+ await run("document.querySelector('.quickImageSelection button').click()")
+ assert((await run("document.querySelector('.imageSendSummary b').textContent")).includes('1 ảnh'),'Select results must respect filters')
+ nativeClipboardEnabled=false
+ await clickMenu('Cài đặt');await clickMenu('Tồn kho')
+ await run("Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>true});Object.defineProperty(navigator,'share',{configurable:true,value:async d=>{window.sharedFiles=d.files.map(f=>f.name)}})")
+ await until("document.querySelector('.quickImageSelection button')?.disabled===false",'mobile sharing inventory loaded')
+ await run("document.querySelector('.quickImageSelection button').click()")
+ await until("document.querySelector('.copySelectedImages')?.disabled===false",'mobile share capabilities')
+ await run("document.querySelector('.copySelectedImages').click()")
+ await until("document.querySelector('.copySelectedImages')?.textContent==='CHIA SẺ 3 ẢNH'",'share files prepared for fresh gesture')
+ await run("document.querySelector('.copySelectedImages').click()")
+ await until("window.sharedFiles?.length===3",'Web Share receives individual files')
+ assert.deepEqual(await run('window.sharedFiles'),['MeCaCao_501.jpg','MeCaCao_502.jpg','MeCaCao_503.jpg'],'Share order and unique names')
+ assert.equal(receiptWrites,1);assert.equal(importWrites,1);assert.equal(renameWrites,1,'Sharing never causes inventory writes')
+ console.log('INVENTORY_SEND_UI PASS: range/group/filter selection, retained hidden selections, Product across Size filter, viewer focus/Escape, clipboard failure/retry/order/double-click, responsive bottom bar, Web Share individual files; native clipboard and external app paste require Windows acceptance')
  console.log('MOBILE_BROWSER_SMOKE PASS: DEMO and mocked LOCAL receipt/catalog/import; scan KPIs, batch review/result, rename confirmation, notice popup/review, responsive/dark, errors/retry and preferences')
 }catch(e){failed=e;console.error(e instanceof Error?e.stack:String(e));try{await shot('failure.png')}catch{}}
 finally{

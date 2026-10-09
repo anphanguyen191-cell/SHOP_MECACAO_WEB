@@ -1,0 +1,29 @@
+.quickImageSelection,.productSelectRow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0}
+.productSelectRow{padding:0 14px 8px;margin:0}
+.quickImageSelection span{font-size:12px;color:#765a6b}
+.quickImageSelection button,.productSelectRow button,.selectSizeImages,.viewStockImage{border:1px solid #dbb6ca;background:#fff4fa;color:#893d63;font-weight:750;padding:9px 12px;border-radius:10px;cursor:pointer}
+.galleryMeta{flex-wrap:wrap}.galleryMeta .selectSizeImages{margin-left:0}
+.inventoryImage{position:relative;min-width:0;border:2px solid #e9dce3;border-radius:13px;padding:5px;background:#fff;overflow:hidden}
+.inventoryImage.selected{border-color:#b7467a;box-shadow:0 0 0 2px #f3d4e3;background:#fff1f8}
+.stockImageSelect{position:relative;display:block;width:100%;padding:0;border:0;background:transparent;text-align:left;color:inherit;cursor:pointer}
+.inventoryImage.selected .imageCheck{background:#a54670;color:white;border-color:white}
+.viewStockImage{display:block;width:100%;padding:7px;margin-top:6px;font-size:11px;min-height:34px}
+.hasImageSelection{padding-bottom:180px}
+.imageSendBar{position:fixed;z-index:30;bottom:16px;left:calc(50% + 110px);transform:translateX(-50%);width:min(820px,calc(100vw - 280px));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:15px 18px;border-radius:18px;background:#302432;color:#fff;box-shadow:0 10px 35px #30243245;border:1px solid #71556b}
+.imageSendSummary{min-width:0;flex:1 1 220px;display:grid;gap:4px}.imageSendSummary b{font-size:17px}.imageSendSummary span{font-size:12px;color:#ead4e2;line-height:1.5}
+.imageSendActions{display:flex;gap:8px;flex:0 1 auto}.imageSendActions button{border:0;border-radius:11px;padding:11px 16px;min-height:42px;font-weight:800;cursor:pointer;color:#302432;background:#fff5fb}
+.imageSendActions .copySelectedImages{background:#a54670;color:#fff}.imageSendBar p{flex-basis:100%;font-size:12px;line-height:1.5;margin:0;color:#f4e4ed;overflow-wrap:anywhere}
+.imageSendBar button:disabled{opacity:.6;cursor:default}
+.stockViewerBackdrop{position:fixed;inset:0;z-index:100;background:#1e1527cc;display:grid;place-items:center;padding:16px}
+.stockViewer{width:min(880px,100%);max-height:calc(100dvh - 32px);background:#fff8fc;color:#47313f;border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 70px #0006}
+.stockViewer header,.stockViewer footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;flex-shrink:0}.stockViewer header>div{min-width:0}.stockViewer small{display:block;overflow-wrap:anywhere;font-size:12px;margin-top:4px}
+.stockViewer img{width:100%;min-height:0;flex:1;object-fit:contain;background:#fff;max-height:calc(100dvh - 190px)}
+.stockViewer button{border:1px solid #d8b3c7;border-radius:10px;min-height:42px;padding:9px 13px;background:#fce5f1;color:#793859;font-weight:800;cursor:pointer}
+.themeDark .inventoryImage{background:#302c3c;border-color:#675367}.themeDark .inventoryImage.selected{border-color:#f49dc4;background:#463042;box-shadow:0 0 0 2px #744662}
+.themeDark .quickImageSelection span{color:#e0c6d4}.themeDark :is(.quickImageSelection button,.productSelectRow button,.selectSizeImages,.viewStockImage){background:#443047;color:#ffe4f1;border-color:#8e6682}
+.themeDark :is(.treeName small,.treeVariantHead small,.sizeFolder,.galleryMeta){color:#dbc4d2}
+.themeDark .inventoryFilters input{background:#292534;color:#fff0f8;border-color:#755a6f}
+.themeDark .stockViewer{background:#292534;color:#fff0f8}
+@media(min-width:1000px){.densityCompact .imageSendBar{left:calc(50% + 98px);width:min(820px,calc(100vw - 245px))}}
+@media(max-width:999px){.imageSendBar{left:50%;width:calc(100vw - 32px)}}
+@media(max-width:600px){.imageSendBar{bottom:max(10px,env(safe-area-inset-bottom));padding:13px;width:calc(100vw - 24px);gap:10px}.imageSendSummary b{font-size:17px}.imageSendActions{width:100%}.imageSendActions button{min-height:44px;flex:1;padding:10px;font-size:12px}.viewStockImage,.selectSizeImages,.quickImageSelection button,.productSelectRow button{min-height:44px}.hasImageSelection{padding-bottom:230px}.stockViewerBackdrop{padding:10px}}

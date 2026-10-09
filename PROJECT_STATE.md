@@ -1,3 +1,8 @@
+# V1 inventory send checkpoint — 2026-10-09
+
+User approved stock-image selection and fast multi-image copy/share. Implemented Size/Product/filter groups, Shift range, large viewer, bottom action bar and Windows native CF_HDROP source bridge; mobile Web Share preparation is capability gated. Scope, proof and Windows paste checklist: `V1_INVENTORY_SEND_CHECKPOINT.md`. No inventory writes/schema migration; V1 NOT STABLE, V2 blocked. Windows bridge compilation/format and new-process native clipboard round-trip are checked by Windows CI; actual Ctrl+V into each Zalo/Messenger variant and real mobile share remain UNVERIFIED until shop acceptance. Check Actions for the exact delivered commit; old runs do not prove new changes.
+
+---
 # V1 desktop experience checkpoint — 2026-10-09
 
 User approved comprehensive compact UI optimization. Six modules now offer remembered Gọn / Thoải mái; desktop layouts reduce spacing and use horizontal KPIs/forms/cards, while mobile tap targets stay unchanged. Evidence/scope: `V1_DESKTOP_EXPERIENCE_CHECKPOINT.md`. Browser matrix covers both densities/themes at 1366×768 and 1920×1080 plus mobile and mocked LOCAL workflows. Check latest Actions for the delivered commit. User reported the preceding Windows build works; this UI revision and complete restart/rename/full restore still need shop acceptance. **V1 NOT STABLE; V2 blocked.** Historical statements below are not proof for this revision.
