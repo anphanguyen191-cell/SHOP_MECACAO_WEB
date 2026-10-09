@@ -65,7 +65,7 @@ export function receiveGoods(input:ReceiveInput,onProgress?:(p:ReceiveProgress)=
   // Journal MUST be persisted before creating any inventory image.
   journal=createReceiptJournal({storeRoot:root,files:plans.flatMap(p=>p.copies.map(x=>({dest:x.dest,sha256:x.sha256}))),createdDirs})
   let copied=0
-  for(const plan of plans)for(const x of plan.copies){created.push(x.dest);fs.copyFileSync(x.src,x.dest,fs.constants.COPYFILE_EXCL);const fd=fs.openSync(x.dest,'r');try{fs.fsyncSync(fd)}finally{fs.closeSync(fd)};copied++;emit({phase:'COPY',percent:5+Math.round(70*copied/Math.max(total,1)),copied,total,current:path.basename(x.dest)})}
+  for(const plan of plans)for(const x of plan.copies){created.push(x.dest);fs.copyFileSync(x.src,x.dest,fs.constants.COPYFILE_EXCL);const fd=fs.openSync(x.dest,'r+');try{fs.fsyncSync(fd)}finally{fs.closeSync(fd)};copied++;emit({phase:'COPY',percent:5+Math.round(70*copied/Math.max(total,1)),copied,total,current:path.basename(x.dest)})}
   emit({phase:'VERIFY',percent:78,copied,total});for(const plan of plans)for(const x of plan.copies)if(!fs.existsSync(x.dest)||fs.statSync(x.dest).size<=0||digest(x.dest)!==x.sha256)throw new Error('Copy ảnh không toàn vẹn: '+x.dest)
   emit({phase:'DB_COMMIT',percent:82,copied,total});db.exec('BEGIN IMMEDIATE')
   try{

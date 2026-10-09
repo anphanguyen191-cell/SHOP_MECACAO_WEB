@@ -15,6 +15,18 @@ import {getProduct} from './products.js'
 import {inventoryDashboard} from './inventoryQuery.js'
 
 if(path.basename(dbPath)!=='self-test.db')throw Error('Upgrade tests require isolated self-test.db')
+// Enforce Windows FlushFileBuffers access rules on every platform, including
+// crash workers. The old read-only COPY flush must fail this integration test.
+const actualOpen=fs.openSync,actualClose=fs.closeSync,actualSync=fs.fsyncSync
+const descriptors=new Map<number,string|number>();let writableImageFlushes=0
+;(fs as any).openSync=(file:any,flags:any,...args:any[])=>{const fd=(actualOpen as any)(file,flags,...args);descriptors.set(fd,flags);return fd}
+;(fs as any).closeSync=(fd:number)=>{try{return actualClose(fd)}finally{descriptors.delete(fd)}}
+;(fs as any).fsyncSync=(fd:number)=>{
+ const flags=descriptors.get(fd)
+ if(flags==='r')throw Object.assign(Error('Windows-like EPERM: fsync requires a writable handle'),{code:'EPERM'})
+ if(flags==='r+')writableImageFlushes++
+ return actualSync(fd)
+}
 if(process.argv[2]==='crash'){
  const plan=JSON.parse(process.env.SHOP_RENAME_TEST_PLAN!)
  commitImageRename(plan.rootPath,plan.ids,plan.token,true,phase=>{if(phase===plan.phase)process.exit(79)})
@@ -56,8 +68,10 @@ const newSource=path.join(source,'SOURCE.png');await sharp({create:{width:13,hei
 saveWatchSettings({...c,autoRename:true});const size=(product.variants as any[])[0].size
 const receipt=receiveGoods({storeRoot:root,productId:(product.product as any).id,sizes:[{size,quantity:1,costPrice:100,salePrice:200,images:[newSource]}]})
 assert.equal(receipt.copiedImages,1);assert.equal(digest(newSource),sourceHash);assert.ok((db.prepare('SELECT file_path FROM product_images WHERE id NOT IN (?,?)').all(ids[0],ids[1]) as any[]).some(r=>r.file_path.endsWith('.png')&&path.basename(r.file_path).startsWith('ShopMeCaCao_Tole_')))
+assert.ok(writableImageFlushes>0,'receipt COPY must flush through a writable, non-truncating handle')
 assert.equal(inventoryDashboard().stock,3)
 // Missing registered file creates a warning without changing ledger history.
 const last=(db.prepare('SELECT file_path FROM product_images ORDER BY id DESC LIMIT 1').get() as any).file_path;fs.renameSync(last,last+'.held');assert.equal(checkWarehouse(root).summary.missingImages,1);fs.renameSync(last+'.held',last)
+;(fs as any).openSync=actualOpen;(fs as any).closeSync=actualClose;(fs as any).fsyncSync=actualSync
 db.close();fs.rmSync(home,{recursive:true,force:true})
 console.log('WAREHOUSE_UPGRADE_SELF_TEST PASS: scan statistics, remembered config, duplicate/seen/resolved notices, denied reads, cover files, rename stale/collision guards, real hard-exit pre/post commit recovery, stable IDs/stock/checksums and COPY auto naming')

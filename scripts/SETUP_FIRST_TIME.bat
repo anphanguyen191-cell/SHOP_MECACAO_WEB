@@ -23,6 +23,8 @@ call npm run test:core
 if errorlevel 1 goto :fail
 call npm run test:performance
 if errorlevel 1 goto :fail
+call npm run test:warehouse
+if errorlevel 1 goto :fail
 echo [4/4] Build ban local...
 call npm run build
 if errorlevel 1 goto :fail

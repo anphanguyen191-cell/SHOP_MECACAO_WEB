@@ -3,6 +3,8 @@
 **Chỉ áp dụng cho giai đoạn nghiệm thu. Không ghi thử lên kho kinh doanh thật.**
 
 ## Chuẩn bị
+Nếu bản c530b998 dừng SETUP với `EPERM ... fsync` trong `goodsReceipt.ts`, đó là lỗi handle chỉ đọc của bản cũ. Tải bản sửa mới, giải nén vào thư mục mới, giữ sandbox cũ và chạy lại `.bat`. Không cần chạy Administrator, xóa database hay tắt bảo vệ Windows để xử lý lỗi này.
+
 1. Tải repository ZIP từ GitHub và giải nén trên Windows.
 2. Cài **Node.js 22.13 trở lên** nếu máy chưa có. Lần đầu cần Internet để tải dependencies đã khóa bằng package-lock.json.
 3. Nhấp đúp `RUN_WINDOWS_V1_SAFE_TEST.bat` ở thư mục gốc. Đợi dòng **TEST SANDBOX READY**.

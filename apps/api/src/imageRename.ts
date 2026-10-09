@@ -83,7 +83,7 @@ export function commitImageRename(rootPath:string,ids:number[],token:string,conf
  validateJournal(j);syncWrite(journal,j)
  try{
   // Keep old paths intact until SQLite commits, allowing safe rollback after a crash.
-  for(const f of plan.files){fs.copyFileSync(f.oldPath,f.newPath,fs.constants.COPYFILE_EXCL);const fd=fs.openSync(f.newPath,'r');try{fs.fsyncSync(fd)}finally{fs.closeSync(fd)}if(hash(f.newPath)!==f.sha256)throw Error('Copy rename không toàn vẹn');onPhase?.('COPIED')}
+  for(const f of plan.files){fs.copyFileSync(f.oldPath,f.newPath,fs.constants.COPYFILE_EXCL);const fd=fs.openSync(f.newPath,'r+');try{fs.fsyncSync(fd)}finally{fs.closeSync(fd)}if(hash(f.newPath)!==f.sha256)throw Error('Copy rename không toàn vẹn');onPhase?.('COPIED')}
   db.exec('BEGIN IMMEDIATE')
   try{for(const f of plan.files){if(hash(f.oldPath)!==f.sha256)throw Error('Ảnh nguồn kho thay đổi trong khi rename');const r=db.prepare('UPDATE product_images SET file_path=? WHERE id=? AND file_path=?').run(f.newPath,f.id,f.oldPath);if(Number(r.changes)!==1)throw Error('Metadata ảnh đã thay đổi');}db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}
   onPhase?.('COMMITTED');recoverImageRenames();return {renamed:plan.files.length,log:id,backup}

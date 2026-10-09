@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Windows fsync setup blocker — 2026-10-09
+- Fix EPERM on copied goods-receipt / rename files: open COPY targets with r+ instead of read-only before fsync; preserve contents, checksums and fail-closed recovery.
+- Add writable-flush regression guards and native Windows Node 22/24 internal + HTTP gates. Deployment waits for Linux and Windows checks. Shop Windows acceptance and full restore remain pending.
+
 ## V1 warehouse workflow upgrade — 2026-10-09
 Status: AUTOMATED LOCAL PASS / WINDOWS FULL ACCEPTANCE UNVERIFIED / NOT STABLE
 

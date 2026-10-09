@@ -1,3 +1,8 @@
+# Windows EPERM acceptance blocker — 2026-10-09
+
+User's Windows Node 24.21 setup failed in receiveGoods at fsync: copied images were opened read-only. The same defect affected physical rename. Both COPY targets now open r+ (writable, no truncation); flush failures still abort safely. Regression tests enforce Windows-like writable-flush rules, including rename crash workers. CI now runs isolated internal and real HTTP gates on Windows Node 22 and 24 before Pages deploy. Windows CI is not full shop acceptance / complete restore; V1 remains NOT STABLE. Check Actions for this fix's exact commit.
+
+---
 # V1 warehouse upgrade checkpoint — 2026-10-09
 
 User approved groups 1–9 and automatic-scan notifications. Local tests PASS: 45 HTTP assertions, warehouse crash/recovery tests, build/typecheck/core/performance and Chromium desktop/mobile. Details and limits: `V1_WAREHOUSE_UPGRADE_TEST_REPORT.md`; approval: `V1_WAREHOUSE_UPGRADE_SPEC.md`. User reported one successful Windows import scenario, not full acceptance. **V1 NOT STABLE; Windows full acceptance and full restore UNVERIFIED; V2 blocked.** Historical checkpoints below do not prove this revision. Verify Actions for the delivered commit.

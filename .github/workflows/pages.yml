@@ -34,12 +34,29 @@ jobs:
           name: mobile-smoke-${{ github.sha }}
           path: artifacts/mobile-smoke
           if-no-files-found: ignore
+  verify_windows:
+    name: Windows Node ${{ matrix.node }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci
+      - name: Windows internal gate (isolated fixtures)
+        run: npm run test:gate
+      - name: Windows real HTTP acceptance (disposable warehouse)
+        run: node scripts/api-e2e-smoke.mjs
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: verify
+    needs: [verify, verify_windows]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
