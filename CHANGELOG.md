@@ -45,3 +45,7 @@ Status: SUPERSEDED
 - Windows scripts.
 - GitHub Pages workflow.
 - Project governance documents.
+
+# Windows acceptance fix — 2026-10-09
+
+- Reject Product/Size folders passed as warehouse scan roots with an actionable message. Clear stale scan previews and block saving previews without any selected Size containing valid image paths. Regression tests cover wrong folder depth and the UI guard. No business data changed.

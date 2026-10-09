@@ -15,9 +15,14 @@ function safeChildren(dir: string) {
 export function scanStore(rootPath: string): ScannedProduct[] {
   const root = path.resolve(rootPath)
   if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) throw new Error('Không tìm thấy thư mục kho')
+  const rootChildren = safeChildren(root)
+  const hasDirectImages = (dir:string) => safeChildren(dir).some(e=>e.isFile()&&IMAGE_EXTENSIONS.has(path.extname(e.name).toLowerCase()))
+  if (hasDirectImages(root) || rootChildren.some(e=>e.isDirectory()&&hasDirectImages(path.join(root,e.name)))) {
+    throw new Error('Đang chọn thư mục Product hoặc Size. Hãy chọn thư mục kho gốc chứa các Product (ví dụ warehouse), theo cấu trúc Kho / Product / Size / ảnh. Chưa ghi dữ liệu.')
+  }
   const products: ScannedProduct[] = []
   const reservedCodes = new Set<string>()
-  for (const productDir of safeChildren(root).filter(e => e.isDirectory())) {
+  for (const productDir of rootChildren.filter(e => e.isDirectory())) {
     const productPath = path.join(root, productDir.name)
     let code = suggestProductCode(productDir.name)
     if (reservedCodes.has(code)) {

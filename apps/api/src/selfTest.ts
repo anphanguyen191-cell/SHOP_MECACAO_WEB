@@ -125,6 +125,10 @@ assert((db.prepare('SELECT stock FROM inventory_stock WHERE variant_id=?').get(i
 const laterDir=path.join(productFolder,'Size 10');fs.mkdirSync(laterDir,{recursive:true})
 const laterImage=path.join(laterDir,'002.jpg');await sharp({create:{width:800,height:800,channels:3,background:{r:90,g:120,b:180}}}).jpeg().toFile(laterImage)
 const scanAgain=scanStore(importRoot).find(x=>x.name==='IMPORT '+suffix)
+for(const wrongRoot of [productFolder,path.join(productFolder,'Size 8')]){
+ let rejected=false;try{scanStore(wrongRoot)}catch(e){rejected=e instanceof Error&&e.message.includes('kho gốc')}
+ assert(rejected,'scanner must reject Product/Size roots before showing an invalid import preview')
+}
 assert(scanAgain?.status==='PARTIAL','scan must identify partial product')
 assert(scanAgain?.sizes.some(x=>x.size==='Size 8'&&x.status==='EXISTING'),'existing size recognized')
 assert(scanAgain?.sizes.some(x=>x.size==='Size 10'&&x.status==='NEW'),'new size recognized')

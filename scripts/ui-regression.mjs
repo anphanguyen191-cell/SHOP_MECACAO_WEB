@@ -30,6 +30,7 @@ must(app.includes('catalogLoading')&&app.includes('catalogError')&&app.includes(
 must(app.includes('CHỌN THƯ MỤC')&&app.includes('<FolderPicker'),'Existing warehouse import must support folder browsing')
 must(app.includes('p.sizes.map')&&!app.includes("p.sizes.filter(s=>s.status!=='EXISTING')"),'Batch import must reconcile existing Size images idempotently, not skip them')
 const goods=read('apps/web/src/GoodsReceipt.tsx')
+must(app.includes('Không chọn riêng thư mục Product hoặc Size')&&app.includes('disabled={busy||!draft.variants.some(v=>v.selected&&v.images.length>0)}'),'Warehouse import must explain root depth and block a preview without selected image-bearing Sizes')
 must(goods.includes('row.sourcePath===p')&&goods.includes('requestVersion.current'),'Incoming image inspection must bind its result to the selected source')
 must(goods.includes('submitLock.current')&&goods.includes('onDone?.()'),'Receipt must block double submit and refresh dashboard after commit')
 must(read('apps/web/src/FolderPicker.tsx').includes('AbortController'),'Folder picker must reject stale/network-failed results')
