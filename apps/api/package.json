@@ -12,7 +12,8 @@
     "test:schema": "node --import tsx src/schemaSelfTest.ts",
     "test:performance": "node scripts/run-self-test.mjs src/performanceSelfTest.ts",
     "test:warehouse": "node scripts/run-self-test.mjs src/warehouseUpgradeSelfTest.ts",
-    "test:share": "node scripts/run-self-test.mjs src/inventoryShareSelfTest.ts"
+    "test:share": "node scripts/run-self-test.mjs src/inventoryShareSelfTest.ts",
+    "test:sales-drafts": "node --import tsx src/salesDraftsSelfTest.ts"
   },
   "dependencies": {
     "express": "^4.21.2",

@@ -1,6 +1,6 @@
 # V2 — Thứ tự triển khai và nghiệm thu
 
-Ngày: 2026-10-10. **Chỉ chuẩn bị, chưa có code bán hàng/migration V2.**
+Ngày: 2026-10-10. **Đợt nháp sandbox đã triển khai; chưa có xác nhận bán/xóa ảnh.** Xem `V2_DRAFT_CHECKPOINT.md`. Đợt 1/2 có nền schema120 + CRUD/UI nháp; đợt 0 full restore/STABLE vẫn là gate release, đợt 3–7 chưa hoàn tất.
 
 | Đợt | Công việc | Bằng chứng cần có |
 |---|---|---|

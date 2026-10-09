@@ -1,6 +1,6 @@
 # V2 — Đặc tả logic bán hàng / đơn hàng
 
-Ngày: 2026-10-10. Trạng thái: **PROPOSED — chuẩn bị theo yêu cầu chủ shop; chưa triển khai**.
+Ngày: 2026-10-10. Trạng thái: **Chủ shop đã cho tiếp tục triển khai; nền đơn nháp sandbox đã có, xác nhận bán/ảnh sau bán chưa triển khai**. Chi tiết đợt 1: `V2_DRAFT_CHECKPOINT.md`. Các cấu hình ảnh nhẹ vẫn cần preview chất lượng trước khi sử dụng thật.
 
 Nền: V1 source `f35375835757457bc7011f127a32f96d3856a060`, SQLite schema 110, Node/Express, React/TypeScript, tồn thực tế theo ảnh canonical đã đăng ký còn tồn tại. Kết quả Windows mới: `V1_ACCEPTANCE_CHECKPOINT_2026-10-10.md`.
 

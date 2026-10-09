@@ -25,6 +25,8 @@ jobs:
         run: npm run test:gate
       - name: Real local API end-to-end acceptance (disposable warehouse)
         run: node scripts/api-e2e-smoke.mjs
+      - name: V2 draft HTTP and real Chromium acceptance (sandbox only)
+        run: node scripts/v2-drafts-e2e.mjs
       - name: Mobile browser smoke (390px)
         run: node scripts/mobile-browser-smoke.mjs
       - name: Upload mobile screenshots
@@ -32,7 +34,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mobile-smoke-${{ github.sha }}
-          path: artifacts/mobile-smoke
+          path: |
+            artifacts/mobile-smoke
+            artifacts/v2-drafts
           if-no-files-found: ignore
   verify_windows:
     name: Windows Node ${{ matrix.node }}
@@ -51,6 +55,8 @@ jobs:
         run: npm run test:gate
       - name: Windows real HTTP acceptance (disposable warehouse)
         run: node scripts/api-e2e-smoke.mjs
+      - name: Windows V2 draft HTTP acceptance (sandbox only)
+        run: node scripts/v2-drafts-e2e.mjs
   deploy:
     environment:
       name: github-pages

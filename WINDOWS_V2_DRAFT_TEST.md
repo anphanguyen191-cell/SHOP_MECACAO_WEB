@@ -1,0 +1,16 @@
+# Thử V2 đơn nháp trên Windows — đợt 1
+
+Bản này chỉ chuẩn bị đơn nháp, chưa bán/trừ tồn/xóa ảnh. V1 đang dùng giữ DB và sandbox riêng. Cần Node 22.13+.
+
+1. Tải source commit mới, giải nén vào thư mục riêng. Chạy **RUN_WINDOWS_V2_DRAFT_TEST.bat**. Nếu chưa có dependencies, setup chạy trước; khi SETUP PASS bấm phím để tiếp tục. Đợi trang `http://127.0.0.1:3006` và nhãn TEST SANDBOX; tab Bán hàng phải xuất hiện.
+2. Vào Import kho → CHỌN THƯ MỤC → chọn `%LOCALAPPDATA%\ShopMeCaCao\V2DraftSandbox\warehouse`. Quét, chọn các mẫu/Size có ảnh và duyệt import. Không chọn `D:\1-Me CaCao Store` thật. Fixture có 3 ảnh ở 2 mẫu, 3 Size; quét lại không nhập trùng.
+3. Vào Tồn kho, mở mẫu → Size, chọn ảnh hoặc CHỌN NHÓM SIZE. Thanh dưới vẫn có COPY gửi khách và thêm **TẠO ĐƠN NHÁP**. Bấm tạo nháp → chuyển Bán hàng. Đối chiếu ảnh/Size/SKU, số bộ đúng số ảnh đã chọn; tồn và ledger giữ nguyên.
+4. Nhập giá bán từng bộ (ảnh mẫu mặc định có thể 0), giảm giá toàn đơn và ghi chú. Bấm Lưu thay đổi. Thử giảm giá lớn hơn tổng tiền, giá âm/thập phân: không lưu. Giá 0 có nhắc kiểm tra; đợt này chưa bán.
+5. Bấm **Thêm ảnh tồn** (lưu thay đổi trước nếu có). Chọn ảnh khác → THÊM VÀO ĐƠN NHÁP. Ảnh đã có trong đơn không thêm lần hai. Có thể Bỏ khỏi nháp rồi Lưu; số bộ/tổng tiền cập nhật.
+6. Tạo nháp thứ hai tham chiếu cùng ảnh: được phép vì nháp chưa giữ hàng. Copy/gửi ảnh không tạo thêm đơn hoặc trừ tồn.
+7. Mở cùng một nháp ở hai cửa sổ trình duyệt. Cửa sổ A sửa/lưu; B sửa/lưu phải báo đơn đã thay đổi. Bấm Mở lại đơn ở B để xem bản mới, không ghi đè A âm thầm.
+8. Restart: đóng cửa sổ server V2 (hoặc Ctrl+C → Y nếu được hỏi), chạy lại cùng BAT. Mở Bán hàng → chọn nháp; giá, ghi chú, ảnh và phiên bản vẫn có. Kiểm tra Tồn kho như trước.
+9. Hủy nháp → xác nhận → lọc Đã hủy nháp. Đơn còn lịch sử, không chỉnh trực tiếp, ảnh vẫn ở kho và tồn không đổi.
+10. Kiểm tra màn hình Windows ở chế độ Gọn/Thoải mái, sáng/tối; danh sách/form không tràn ngang. Báo bước bị lỗi và nội dung thông báo nếu có.
+
+Để quay về V1, đóng server V2 và chạy RUN_WINDOWS_V1_SAFE_TEST.bat hoặc launcher LOCAL V1 đã dùng. Không chép DB V2 đè V1; không cần xóa sandbox V2. File `.pre-v120-*.bak` chỉ chứa dữ liệu trước migration, không có nháp tạo sau đó.

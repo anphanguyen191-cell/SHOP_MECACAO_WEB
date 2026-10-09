@@ -1,3 +1,9 @@
+## 2026-10-10 — V2 draft sandbox foundation
+
+- Owner authorized continuation: isolated schema120 migration backup/rollback and draft CRUD with idempotent create, optimistic version, price validation and snapshots; no stock reservation/SALE/image mutation.
+- Sandbox-only Bán hàng UI linked to inventory selection; add/remove images, edit/cancel/reopen; separate Windows V2 launcher port3006 and acceptance steps.
+- Added service and real HTTP/browser acceptance to Linux/Windows CI; local service39/HTTP23 PASS. V1 release/full restore gate retained; no local browser claim or V2 STABLE claim.
+
 # CHANGELOG
 
 ## V1 owner Windows report / V2 specification — 2026-10-10

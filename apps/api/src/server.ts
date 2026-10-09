@@ -2,7 +2,9 @@ import express from 'express'
 import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { db,dbPath } from './db.js'
+import { db,dbPath,salesDraftsEnabled } from './db.js'
+import {readSchemaVersion} from './schema.js'
+import {salesDraftRouter} from './salesRoutes.js'
 import { createProduct, getProduct, listProducts, suggestProductCode, suggestSku, listCategories, setProductStatus, updateVariantPricing } from './products.js'
 import { addInventory, batchImport, history } from './inventory.js'
 import { scanStore } from './storeScanner.js'
@@ -58,8 +60,10 @@ app.use('/api',(req,res,next)=>{
 })
 
 app.get('/api/health', (_req, res) => res.json({
-  ok: true, app: 'SHOP_MECACAO_WEB', version: '1.0.0-dev', schema: 110, database: path.basename(dbPath),sandbox:!!sandboxRoot
+  ok: true, app: 'SHOP_MECACAO_WEB', version: salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot,salesDrafts:salesDraftsEnabled
 }))
+if(salesDraftsEnabled&&sandboxRoot)app.use('/api/sales/drafts',salesDraftRouter(db,sandboxRoot,PORT))
+else app.use('/api/sales/drafts',(_req,res)=>res.status(404).json({error:'V2 đơn nháp chưa bật; chỉ thử bằng sandbox V2 riêng.'}))
 
 app.get('/api/inventory/share/capabilities',(_req,res)=>res.json(clipboardCapabilities()))
 app.post('/api/inventory/share/prepare',(req,res)=>{

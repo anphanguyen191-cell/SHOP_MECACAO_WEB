@@ -1,9 +1,16 @@
 import {useEffect,useRef,useState} from 'react'
 import {apiJson} from './uiState'
 export type ChosenImage={id:number;file_name:string;product:string;size:string}
-export default function InventorySharing({images,hidden,onClear,onBusy,selectionBusy}:{images:ChosenImage[];hidden:number;onClear:()=>void;onBusy:(b:boolean)=>void;selectionBusy:boolean}){
+export default function InventorySharing({images,hidden,onClear,onBusy,selectionBusy,onDraft,draftLabel}:{onDraft?:(ids:number[],key:string)=>Promise<void>;draftLabel?:string;images:ChosenImage[];hidden:number;onClear:()=>void;onBusy:(b:boolean)=>void;selectionBusy:boolean}){
  const [native,setNative]=useState(false),[checked,setChecked]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[files,setFiles]=useState<File[]>([])
  const key=images.map(i=>i.id).join(','),current=useRef(key),preparedAt=useRef(0),lock=useRef(false);current.current=key
+ const draftKey=useRef({selection:'',key:''})
+ async function draft(){
+  if(lock.current||selectionBusy||!onDraft)return
+  lock.current=true;setBusy(true);onBusy(true);setMessage('Đang lưu đơn nháp…')
+  if(draftKey.current.selection!==key)draftKey.current={selection:key,key:crypto.randomUUID()}
+  try{await onDraft(images.map(i=>i.id),draftKey.current.key)}catch(e){setMessage(e instanceof Error?e.message:'Chưa xác minh được đơn; bấm lại để kiểm tra cùng yêu cầu.')}finally{lock.current=false;setBusy(false);onBusy(false)}
+ }
  const webShare=typeof navigator.share==='function'&&typeof navigator.canShare==='function'
  useEffect(()=>{let alive=true;apiJson('/api/inventory/share/capabilities').then(j=>{if(alive)setNative(!!j.nativeFiles&&['localhost','127.0.0.1','[::1]'].includes(location.hostname))}).catch(()=>{}).finally(()=>{if(alive)setChecked(true)});return()=>{alive=false}},[])
  useEffect(()=>{setFiles([]);setMessage('');preparedAt.current=0},[key])
@@ -32,7 +39,7 @@ export default function InventorySharing({images,hidden,onClear,onBusy,selection
   finally{lock.current=false;setBusy(false);onBusy(false)}
  }
  if(!images.length)return null
- return <aside className="imageSendBar" aria-label="Ảnh chọn gửi khách"><div className="imageSendSummary"><b>Đã chọn {images.length} ảnh / {images.length} bộ</b><span>{hidden?hidden+' ảnh nằm ngoài kết quả đang lọc · ':''}{new Set(images.map(i=>i.product+'\0'+i.size)).size} nhóm Product / Size · không thay đổi tồn</span></div><div className="imageSendActions"><button type="button" className="copySelectedImages" disabled={busy||selectionBusy||!checked||(!native&&!webShare)} onClick={()=>void act()}>{busy?'ĐANG XỬ LÝ…':native?'COPY '+images.length+' ẢNH':files.length?'CHIA SẺ '+images.length+' ẢNH':'CHUẨN BỊ CHIA SẺ'}</button><button type="button" disabled={busy||selectionBusy} onClick={onClear}>BỎ CHỌN</button></div><p role="status" aria-live="polite">{message||(!checked?'Đang kiểm tra clipboard…':!native&&!webShare?'Copy nhóm ảnh dùng Windows LOCAL; trình duyệt này chưa hỗ trợ chia sẻ file.':'Chọn thêm ảnh hoặc bỏ từng ảnh · chủ shop tự kiểm tra và gửi.')}</p></aside>
+ return <aside className="imageSendBar" aria-label="Ảnh chọn gửi khách"><div className="imageSendSummary"><b>Đã chọn {images.length} ảnh / {images.length} bộ</b><span>{hidden?hidden+' ảnh nằm ngoài kết quả đang lọc · ':''}{new Set(images.map(i=>i.product+'\0'+i.size)).size} nhóm Product / Size · không thay đổi tồn</span></div><div className="imageSendActions">{onDraft&&<button type="button" disabled={busy||selectionBusy} onClick={()=>void draft()}>{draftLabel||'TẠO ĐƠN NHÁP'}</button>}<button type="button" className="copySelectedImages" disabled={busy||selectionBusy||!checked||(!native&&!webShare)} onClick={()=>void act()}>{busy?'ĐANG XỬ LÝ…':native?'COPY '+images.length+' ẢNH':files.length?'CHIA SẺ '+images.length+' ẢNH':'CHUẨN BỊ CHIA SẺ'}</button><button type="button" disabled={busy||selectionBusy} onClick={onClear}>BỎ CHỌN</button></div><p role="status" aria-live="polite">{message||(!checked?'Đang kiểm tra clipboard…':!native&&!webShare?'Copy nhóm ảnh dùng Windows LOCAL; trình duyệt này chưa hỗ trợ chia sẻ file.':'Chọn thêm ảnh hoặc bỏ từng ảnh · chủ shop tự kiểm tra và gửi.')}</p></aside>
 }
 
 export function InventoryImageViewer({images,index,onIndex,onClose}:{images:ChosenImage[];index:number;onIndex:(i:number)=>void;onClose:()=>void}){

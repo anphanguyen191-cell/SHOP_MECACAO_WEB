@@ -1,3 +1,10 @@
+# V2 draft sandbox implementation — 2026-10-10
+
+Owner authorized “triển khai tiếp đi bro”. Phase 1/2 draft foundation implemented, **sandbox-only / not V2 sales release**: schema120 backup+transaction migration, idempotent create, optimistic update/cancel, snapshots, VND validation, no reservation or stock/ledger/file mutations, real API and inventory-to-draft UI. Scope/evidence/rollback: `V2_DRAFT_CHECKPOINT.md`. Windows steps: `WINDOWS_V2_DRAFT_TEST.md`, `RUN_WINDOWS_V2_DRAFT_TEST.bat` (isolated V2DraftSandbox/port3006).
+
+Default LOCAL remains V1 schema110; experimental flag requires sandbox, rejects absent sandbox before DB opening. No confirm/SALE/SOLD/archive/deletion yet. V1 full restore/STABLE remains a release gate; owner-reported Windows PASS retained. Check exact new Actions run for Windows CI/browser proof; local service39 and HTTP23 PASS, local Chromium unavailable. Remaining V2 phases: archive/journal/recovery, atomic sale, all-module eligibility and complete backup/restore.
+
+---
 # V1 Windows user acceptance / V2 logic preparation — 2026-10-10
 
 User reports “v1 mình đã test ổn rồi bro” and requests V2 logic preparation. Record **Windows V1 USER-REPORTED PASS**, not historical PRE-WINDOWS. Delivered baseline f35375835757457bc7011f127a32f96d3856a060; Actions 37945599496 SUCCESS verified again. Scope/evidence limits: `V1_ACCEPTANCE_CHECKPOINT_2026-10-10.md` (full operational restore proof still pending; no inferred per-app clipboard results).

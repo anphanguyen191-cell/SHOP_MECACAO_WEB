@@ -34,7 +34,7 @@ let child,logs=''
 function start(extraEnv={}){
  logs=''
  child=spawn(process.execPath,['apps/api/dist/server.js'],{
-  cwd:process.cwd(),env:{...process.env,SHOP_SANDBOX_ROOT:'',SHOP_DB_PATH:dbPath,PORT:String(port),SHOP_HOST:'127.0.0.1',...extraEnv},stdio:['ignore','pipe','pipe']
+  cwd:process.cwd(),env:{...process.env,SHOP_SANDBOX_ROOT:'',SHOP_ENABLE_V2_DRAFTS:'',SHOP_DB_PATH:dbPath,PORT:String(port),SHOP_HOST:'127.0.0.1',...extraEnv},stdio:['ignore','pipe','pipe']
  })
  child.stdout.on('data',d=>{logs+=d.toString()})
  child.stderr.on('data',d=>{logs+=d.toString()})

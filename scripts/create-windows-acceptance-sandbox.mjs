@@ -27,6 +27,6 @@ for(const [target,r,g,b] of images){
 console.log('\n=== SHOP MẸ CACAO — WINDOWS ACCEPTANCE SANDBOX ===')
 console.log('KHO GIẢ LẬP (SCAN): '+warehouse)
 console.log('ẢNH HÀNG MỚI (NHẬP): '+incoming)
-console.log('DATABASE RIÊNG: '+path.join(dbFolder,'shop-acceptance.db'))
+console.log('DATABASE RIÊNG: '+(process.env.SHOP_DB_PATH||path.join(dbFolder,'shop-acceptance.db')))
 console.log('KHÔNG xóa/ghi đè bất kỳ dữ liệu thật nào. Ảnh mới chỉ tạo khi chưa tồn tại.')
 console.log('KHÔNG chọn D:\\1-Me CaCao Store trong các thử nghiệm ghi dữ liệu.\n')

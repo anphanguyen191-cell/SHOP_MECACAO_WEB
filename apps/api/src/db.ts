@@ -3,6 +3,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DatabaseSync } from 'node:sqlite'
 import { bootstrapV100 } from './schema.js'
+import {bootstrapSalesDrafts} from './salesSchema.js'
+
+export const salesDraftsEnabled=process.env.SHOP_ENABLE_V2_DRAFTS==='1'
+if(salesDraftsEnabled&&!process.env.SHOP_SANDBOX_ROOT)throw new Error('V2 đơn nháp chỉ bật trong sandbox riêng; không được mở database thật')
 
 const here=path.dirname(fileURLToPath(import.meta.url))
 const projectRoot=path.resolve(here,'../../..')
@@ -20,8 +24,8 @@ if(process.env.SHOP_SANDBOX_ROOT){
 export const db=new DatabaseSync(dbPath)
 db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;')
 try{
- bootstrapV100(db)
- db.prepare("INSERT INTO app_metadata(key,value,updated_at) VALUES('app_version','1.0.0-dev',datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=datetime('now')").run()
+ if(salesDraftsEnabled)bootstrapSalesDrafts(db);else bootstrapV100(db)
+ db.prepare("INSERT INTO app_metadata(key,value,updated_at) VALUES('app_version',?,datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=datetime('now')").run(salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev')
  db.prepare("INSERT INTO app_settings(key,value,updated_at) VALUES('low_stock_threshold','2',datetime('now')) ON CONFLICT(key) DO NOTHING").run()
 }catch(error){
  try{db.close()}catch{}
