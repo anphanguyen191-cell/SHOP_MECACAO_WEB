@@ -1,3 +1,10 @@
+# V1 Windows user acceptance / V2 logic preparation — 2026-10-10
+
+User reports “v1 mình đã test ổn rồi bro” and requests V2 logic preparation. Record **Windows V1 USER-REPORTED PASS**, not historical PRE-WINDOWS. Delivered baseline f35375835757457bc7011f127a32f96d3856a060; Actions 37945599496 SUCCESS verified again. Scope/evidence limits: `V1_ACCEPTANCE_CHECKPOINT_2026-10-10.md` (full operational restore proof still pending; no inferred per-app clipboard results).
+
+V2 specification/checklist prepared: `V2_SALES_LOGIC_SPEC.md`, `V2_IMPLEMENTATION_CHECKLIST.md`. **PROPOSED / documentation only**, no V2 runtime, schema migration, image deletion or stock mutation. User preference for optimized sold-image retention is captured; draft/no-reservation, confirmed-order immutability, pricing and cleanup mechanics need approval before code. V1 STABLE checkpoint/full restore gate remains distinct from the user's successful Windows use report.
+
+---
 # V1 inventory send checkpoint — 2026-10-09
 
 User approved stock-image selection and fast multi-image copy/share. Implemented Size/Product/filter groups, Shift range, large viewer, bottom action bar and Windows native CF_HDROP source bridge; mobile Web Share preparation is capability gated. Scope, proof and Windows paste checklist: `V1_INVENTORY_SEND_CHECKPOINT.md`. No inventory writes/schema migration; V1 NOT STABLE, V2 blocked. Windows bridge compilation/format and new-process native clipboard round-trip are checked by Windows CI; actual Ctrl+V into each Zalo/Messenger variant and real mobile share remain UNVERIFIED until shop acceptance. Check Actions for the exact delivered commit; old runs do not prove new changes.

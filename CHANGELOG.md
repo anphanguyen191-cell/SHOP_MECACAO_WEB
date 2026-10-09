@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## V1 owner Windows report / V2 specification — 2026-10-10
+- Record owner-reported successful V1 Windows testing and verified baseline CI 37945599496; retain explicit full restore/release-checkpoint evidence limits.
+- Prepare V2 proposed sales logic and phased acceptance checklist: draft/confirm, image claims/idempotency, physical-stock removal, lightweight sold-image history, durable cleanup/recovery, migration and backup/restore contracts.
+- Documentation only; no V2 runtime/schema or image deletion. Business proposal and image cleanup settings require approval before implementation.
+
 ## V1 stock-image copy/share — 2026-10-09
 - Size/Product/filter quick selection, Shift range, retained hidden selections, large viewer and bottom copy/share bar.
 - Same-machine Windows CF_HDROP clipboard bridge with complete C# source, COPY effect, ID-only validation and origin/sandbox guards; no PowerShell, Python or inventory mutation.
