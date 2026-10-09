@@ -9,7 +9,7 @@ export type ScannedSize = { size:string;folderPath:string;images:string[];sugges
 export type ScannedProduct = { name:string;folderPath:string;suggestedProductCode:string;existingProductId?:number;status:'NEW'|'EXISTING'|'PARTIAL';sizes:ScannedSize[];warnings:string[] }
 
 function safeChildren(dir: string) {
-  try { return fs.readdirSync(dir, { withFileTypes: true }) } catch { return [] }
+  try { return fs.readdirSync(dir, { withFileTypes: true }) } catch(e) { throw new Error('Không đọc được thư mục kho: '+dir+' ('+(e as NodeJS.ErrnoException).code+'). Không thể kết luận kho trống.') }
 }
 
 export function scanStore(rootPath: string): ScannedProduct[] {
@@ -17,7 +17,9 @@ export function scanStore(rootPath: string): ScannedProduct[] {
   if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) throw new Error('Không tìm thấy thư mục kho')
   const rootChildren = safeChildren(root)
   const hasDirectImages = (dir:string) => safeChildren(dir).some(e=>e.isFile()&&IMAGE_EXTENSIONS.has(path.extname(e.name).toLowerCase()))
-  if (hasDirectImages(root) || rootChildren.some(e=>e.isDirectory()&&hasDirectImages(path.join(root,e.name)))) {
+  const folders=rootChildren.filter(e=>e.isDirectory())
+  const hasNestedSizes=folders.some(e=>safeChildren(path.join(root,e.name)).some(c=>c.isDirectory()))
+  if ((!folders.length&&hasDirectImages(root)) || (!hasNestedSizes&&folders.some(e=>hasDirectImages(path.join(root,e.name))))) {
     throw new Error('Đang chọn thư mục Product hoặc Size. Hãy chọn thư mục kho gốc chứa các Product (ví dụ warehouse), theo cấu trúc Kho / Product / Size / ảnh. Chưa ghi dữ liệu.')
   }
   const products: ScannedProduct[] = []

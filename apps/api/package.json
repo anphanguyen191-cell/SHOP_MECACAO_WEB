@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:core": "node scripts/run-self-test.mjs",
     "test:schema": "node --import tsx src/schemaSelfTest.ts",
-    "test:performance": "node scripts/run-self-test.mjs src/performanceSelfTest.ts"
+    "test:performance": "node scripts/run-self-test.mjs src/performanceSelfTest.ts",
+    "test:warehouse": "node scripts/run-self-test.mjs src/warehouseUpgradeSelfTest.ts"
   },
   "dependencies": {
     "express": "^4.21.2",

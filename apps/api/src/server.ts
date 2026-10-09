@@ -2,7 +2,7 @@ import express from 'express'
 import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { dbPath } from './db.js'
+import { db,dbPath } from './db.js'
 import { createProduct, getProduct, listProducts, suggestProductCode, suggestSku, listCategories, setProductStatus, updateVariantPricing } from './products.js'
 import { addInventory, batchImport, history } from './inventory.js'
 import { scanStore } from './storeScanner.js'
@@ -14,9 +14,12 @@ import { getImageRecord, imageMime } from './images.js'
 import { receiveGoods, goodsReceiptDashboard, inspectImageFolder } from './goodsReceipt.js'
 import { dashboardSummary } from './dashboard.js'
 import { recoverPendingGoodsReceipts } from './receiptRecovery.js'
+import {checkWarehouse,getWatchSettings,saveWatchSettings,getWarehouseNotices,markWarehouseNotice,startWarehouseWatcher} from './warehouseWatch.js'
+import {previewImageRename,commitImageRename,recoverImageRenames,getRenameLogs} from './imageRename.js'
 
 // Fail closed before accepting writes if an interrupted goods receipt is unresolved.
 const receiptRecovery=recoverPendingGoodsReceipts()
+recoverImageRenames()
 if(receiptRecovery.journals)console.log('Receipt recovery:',JSON.stringify(receiptRecovery))
 
 const app = express()
@@ -38,6 +41,8 @@ app.use('/api',(req,res,next)=>{
  const paths:unknown[]=[]
  if(req.path==='/fs/list')paths.push(req.query.path)
  if(req.path==='/store/scan')paths.push(req.body.rootPath)
+ if(req.path==='/warehouse/file')paths.push(req.query.rootPath,req.query.path)
+ if((req.path==='/warehouse/settings'&&req.method==='PUT')||req.path==='/warehouse/rename/preview'||req.path==='/warehouse/rename/commit')paths.push(req.body.rootPath)
  if(req.path==='/store/import'){
   paths.push(req.body.product?.rootPath)
   for(const v of req.body.product?.variants??[])paths.push(...(v.images??[]))
@@ -92,6 +97,14 @@ app.get('/api/products', (req,res)=>{
 })
 app.get('/api/categories', (_req,res) => res.json(listCategories()))
 app.get('/api/settings', (_req,res) => res.json({ lowStockThreshold:getLowStockThreshold() }))
+app.get('/api/warehouse/settings',(_req,res)=>res.json(getWatchSettings()))
+app.get('/api/warehouse/file',(req,res)=>{try{const root=fs.realpathSync(path.resolve(String(req.query.rootPath??''))),file=fs.realpathSync(path.resolve(String(req.query.path??''))),rel=path.relative(root,file);if(!rel||path.isAbsolute(rel)||rel==='..'||rel.startsWith('..'+path.sep)||!fs.statSync(file).isFile()||!['.jpg','.jpeg','.png','.webp','.heic'].includes(path.extname(file).toLowerCase()))throw Error('Ảnh xem trước không nằm trong kho hợp lệ');res.type(imageMime(file));res.setHeader('Cache-Control','no-store');res.sendFile(file)}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không đọc được ảnh'})}})
+app.put('/api/warehouse/settings',(req,res)=>{try{res.json(saveWatchSettings(req.body))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không lưu được cấu hình kho'})}})
+app.get('/api/warehouse/notices',(_req,res)=>{try{res.json(getWarehouseNotices())}catch(e){res.status(400).json({error:String(e)})}})
+app.patch('/api/warehouse/notices/:id',(req,res)=>{try{res.json(markWarehouseNotice(req.params.id,req.body.state))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không cập nhật được thông báo'})}})
+app.post('/api/warehouse/rename/preview',(req,res)=>{try{res.json(previewImageRename(req.body.rootPath,req.body.ids))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không xem trước được tên ảnh'})}})
+app.post('/api/warehouse/rename/commit',(req,res)=>{try{res.json(commitImageRename(req.body.rootPath,req.body.ids,req.body.token,req.body.confirmed))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Rename thất bại'})}})
+app.get('/api/warehouse/rename/logs',(_req,res)=>{try{res.json(getRenameLogs())}catch(e){res.status(400).json({error:String(e)})}})
 app.put('/api/settings/low-stock-threshold', (req,res) => {
   try { res.json({ lowStockThreshold:updateLowStockThreshold(Number(req.body.value)) }) }
   catch(e){ res.status(400).json({ error:e instanceof Error?e.message:'Không thể cập nhật cài đặt' }) }
@@ -160,13 +173,7 @@ app.post('/api/store/scan', (req, res) => {
   try {
     const rootPath = String(req.body.rootPath ?? '').trim()
     if (!rootPath) return res.status(400).json({ error: 'Cần chọn thư mục 1-Me CaCao Store' })
-    const products = scanStore(rootPath)
-    res.json({
-      mode: 'PREVIEW_ONLY',
-      rootPath: path.resolve(rootPath),
-      productCount: products.length,
-      products
-    })
+    res.json(checkWarehouse(rootPath))
   } catch (e) {
     res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể quét kho' })
   }
@@ -174,9 +181,11 @@ app.post('/api/store/scan', (req, res) => {
 
 app.post('/api/store/import', (req, res) => {
   try {
+    recoverPendingGoodsReceipts();recoverImageRenames()
     if (req.body.confirmed !== true) return res.status(400).json({ error: 'Import chưa được người dùng xác nhận' })
-    const product = commitStoreImport(req.body.product)
-    res.status(201).json({ ok: true, mode: 'COMMITTED', product })
+    const totals=()=>db.prepare('SELECT (SELECT COUNT(*) FROM products) AS products,(SELECT COUNT(*) FROM product_variants) AS sizes,(SELECT COUNT(*) FROM product_images) AS images').get() as {products:number;sizes:number;images:number}
+    const before=totals(),product = commitStoreImport(req.body.product),after=totals()
+    res.status(201).json({ ok: true, mode: 'COMMITTED', product,registration:{products:after.products-before.products,sizes:after.sizes-before.sizes,images:after.images-before.images} })
   } catch (e) {
     res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể import sản phẩm' })
   }
@@ -192,6 +201,7 @@ if (fs.existsSync(webDist)) {
 }
 
 app.listen(PORT, process.env.SHOP_HOST ?? '127.0.0.1', () => {
+  startWarehouseWatcher()
   console.log(`Shop Mẹ CaCao đang chạy: http://localhost:${PORT}`)
   console.log(`Database: ${dbPath}`)
 })

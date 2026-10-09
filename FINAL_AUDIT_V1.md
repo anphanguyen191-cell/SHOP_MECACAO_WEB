@@ -1,3 +1,8 @@
+# Warehouse upgrade audit — 2026-10-09
+
+Approved groups 1–9 plus scan notifications implemented. Local evidence: 45 real HTTP assertions, warehouse crash/recovery/checksum tests, 28 UI source checks, Chromium desktop/mobile and full internal gate PASS. Exact coverage/limits: `V1_WAREHOUSE_UPGRADE_TEST_REPORT.md`. Windows full acceptance / complete restore UNVERIFIED; **NOT STABLE, no V2**. Check Actions for the exact delivered commit, not an earlier revision.
+
+---
 # Current V1 audit — 2026-10-09
 
 **NOT STABLE.** Latest executed local gate, schema/core/crash tests, 30 HTTP business assertions, 23 UI source checks, Chromium UI and 1000-SKU/3000-image performance fixture PASS. Detailed scope/evidence: `V1_FINAL_PREFLIGHT_2026-10-09.md`. Windows and full restore remain UNVERIFIED; historical procedures mentioning writes to a real warehouse are superseded by the sandbox-only Windows guide. Latest GitHub Actions result must be checked for the current commit.

@@ -1,3 +1,8 @@
+# V1 warehouse upgrade checkpoint — 2026-10-09
+
+User approved groups 1–9 and automatic-scan notifications. Local tests PASS: 45 HTTP assertions, warehouse crash/recovery tests, build/typecheck/core/performance and Chromium desktop/mobile. Details and limits: `V1_WAREHOUSE_UPGRADE_TEST_REPORT.md`; approval: `V1_WAREHOUSE_UPGRADE_SPEC.md`. User reported one successful Windows import scenario, not full acceptance. **V1 NOT STABLE; Windows full acceptance and full restore UNVERIFIED; V2 blocked.** Historical checkpoints below do not prove this revision. Verify Actions for the delivered commit.
+
+---
 # Authoritative V1 checkpoint — 2026-10-09
 
 Status: **LOCAL AUTOMATED GATES PASS; Windows / full restore UNVERIFIED; V1 NOT STABLE.** See `V1_FINAL_PREFLIGHT_2026-10-09.md` for current source changes, executed evidence, scope and remaining gates. This supersedes every historical statement below. Check the latest Actions run independently; do not use an older run as proof for new code. V2 remains blocked.

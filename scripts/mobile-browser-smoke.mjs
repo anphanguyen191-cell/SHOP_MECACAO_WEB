@@ -11,7 +11,10 @@ assert(fs.existsSync(path.join(dist,'index.html')),'Build the frontend before vi
 const artifacts=path.resolve('artifacts/mobile-smoke')
 fs.mkdirSync(artifacts,{recursive:true})
 const mime={'.html':'text/html','.js':'application/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.webmanifest':'application/manifest+json'}
-let catalogFailure=false,postedReceipt=null,receiptReads=0,receiptWrites=0
+let catalogFailure=false,postedReceipt=null,receiptReads=0,receiptWrites=0,importWrites=0,renameWrites=0
+let warehouseNotices=[]
+const renameFile={id:501,product:'Local pastel outfit',size:'Size 1',oldPath:'/sandbox/warehouse/Local pastel outfit/Size 1/001.jpg',newPath:'/sandbox/warehouse/Local pastel outfit/Size 1/ShopMeCaCao_Tole_Local_pastel_outfit_Size_1_0001.jpg',sha256:'fixture-checksum'}
+const watchConfig={rootPath:'/sandbox/warehouse',startup:false,periodic:false,intervalSeconds:300,popup:false,autoRename:false}
 const localProduct={id:101,product_code:'LOCAL01',name:'Local pastel outfit',variant_count:1,total_stock:1,sizes:['Size 1'],stock_by_size:[{size:'Size 1',stock:1}]}
 const server=http.createServer(async (req,res)=>{
  const name=decodeURIComponent(new URL(req.url||'/', 'http://localhost').pathname)
@@ -32,6 +35,14 @@ const server=http.createServer(async (req,res)=>{
   else if(name==='/api/goods-receipt/inspect'){await sleep(80);data={count:1,images:['/sandbox/incoming/001.jpg']}}
   else if(name==='/api/goods-receipt'){receiptWrites++;postedReceipt=body;status=201;data={result:{totalQuantity:1,copiedImages:1},events:[{phase:'DONE',percent:100,copied:1,total:1}]}}
   else if(name==='/api/inventory/suggestions')data=[]
+  else if(name==='/api/warehouse/settings'){if(req.method==='PUT')Object.assign(watchConfig,body);data=watchConfig}
+  else if(name==='/api/warehouse/notices')data=warehouseNotices
+  else if(name.startsWith('/api/warehouse/notices/')){warehouseNotices=warehouseNotices.map(n=>({...n,state:body.state}));data=warehouseNotices}
+  else if(name==='/api/warehouse/rename/preview')data={token:'fixture-preview-token',summary:{registered:1,correct:0,pending:1,missing:0},missing:[],files:[renameFile]}
+  else if(name==='/api/warehouse/rename/commit'){assert.equal(body.confirmed,true);assert.deepEqual(body.ids,[501]);assert.equal(body.token,'fixture-preview-token');renameWrites++;data={renamed:1,log:'fixture-log.json'}}
+  else if(name==='/api/warehouse/rename/logs')data=[]
+  else if(name==='/api/store/scan')data={rootPath:watchConfig.rootPath,productCount:1,missing:[],scannedAt:new Date().toISOString(),summary:{newProducts:importWrites?0:1,newSizes:importWrites?0:1,products:1,sizes:1,images:1,registeredProducts:importWrites?1:0,registeredSizes:importWrites?1:0,registeredImages:importWrites?1:0,pendingImages:importWrites?0:1,missingImages:0},products:[{name:'Local pastel outfit',suggestedProductCode:'LOCAL01',existingProductId:importWrites?101:undefined,warnings:[],sizes:[{size:'Size 1',suggestedSku:'LOCAL01-S1',images:['/sandbox/warehouse/Local pastel outfit/Size 1/001.jpg'],pendingImages:importWrites?[]:['/sandbox/warehouse/Local pastel outfit/Size 1/001.jpg'],registeredImages:importWrites?['/sandbox/warehouse/Local pastel outfit/Size 1/001.jpg']:[],existingVariantId:importWrites?1011:undefined}]}]}
+  else if(name==='/api/store/import'){importWrites++;status=201;data={registration:{images:1,sizes:1,products:1}}}
   res.writeHead(status,{'Content-Type':'application/json'}).end(JSON.stringify(data));return
  }
  let file=path.resolve(dist,'.'+name)
@@ -174,7 +185,7 @@ try{
  assert((await run("getComputedStyle(document.querySelector('.receiptStats article span')).color"))==='rgb(224, 198, 212)','Receipt KPI labels must remain readable in dark mode')
  await shot('receipt-dark.png')
  await clickMenu('Import kho')
- await until("Array.from(document.querySelectorAll('main h3')).some(x=>x.textContent.includes('Quét kho'))",'store scanner tab')
+ await until("Array.from(document.querySelectorAll('main h2,main h3')).some(x=>x.textContent.includes('Quét kho'))",'store scanner tab')
  assert((await run("document.querySelector('main').textContent")).includes('Chỉ đọc folder'),'Import tab must explain preview-only scanning')
  await shot('import-preview-dark.png')
  await clickMenu('Cài đặt')
@@ -234,7 +245,43 @@ try{
  await run("document.querySelector('.catalogPanel').scrollIntoView({block:'start'})")
  await sleep(100)
  await shot('catalog-local-retry.png')
- console.log('MOBILE_BROWSER_SMOKE PASS: DEMO responsive/dark/folds/navigation plus mocked LOCAL source binding, receipt refresh, duplicate-submit prevention, explicit API errors/retry and theme persistence')
+ await clickMenu('Import kho')
+ await until("document.querySelector('.warehouseConfig input')?.value==='/sandbox/warehouse'",'remembered warehouse configuration')
+ await run("Array.from(document.querySelectorAll('.warehouseConfig button')).find(b=>b.textContent==='QUÉT KHO').click()")
+ await until("document.querySelectorAll('.warehouseMetrics button').length===10",'scan KPI dashboard')
+ assert((await run("document.querySelector('.warehouseConfirm').textContent")).includes('1 ảnh mới'),'Selected pending file must be counted separately')
+ for(const width of [320,390,768,1280]){await command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<768});await run('window.scrollTo(0,0)');await sleep(120);assert((await run('document.documentElement.scrollWidth'))<=width+2,'LOCAL warehouse overflow at '+width+'px');await shot('warehouse-local-'+width+'.png')}
+ await command('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true})
+ await run("document.querySelector('.warehouseProduct').scrollIntoView({block:'start'})")
+ await shot('warehouse-size-cards-mobile.png')
+ await run("Array.from(document.querySelectorAll('.warehouseConfirm button')).find(b=>b.textContent==='DUYỆT LÔ TRƯỚC KHI LƯU').click()")
+ await run("Array.from(document.querySelectorAll('.warehouseConfirm button')).find(b=>b.textContent==='XÁC NHẬN & LƯU HÀNG LOẠT').click()")
+ await until("document.querySelector('.warehouseResults')?.textContent.includes('ĐÃ LƯU')",'persistent per-product import outcome')
+ assert.equal(importWrites,1,'A reviewed batch should register only once')
+ assert((await run("document.querySelector('.warehouseResults').textContent")).includes('+1 ảnh'),'Outcome must show actual registered files')
+ await until("document.querySelector('.warehouseConfirm button')?.disabled===true",'saved batch selections cleared')
+ await shot('warehouse-local-after-save.png')
+ await run("Array.from(document.querySelectorAll('.renameWorkspace button')).find(b=>b.textContent==='KIỂM TRA TÊN FILE KHO').click()")
+ await until("document.querySelectorAll('.renameRows input').length===1",'physical rename preview')
+ await until("Array.from(document.querySelectorAll('.renameWorkspace button')).some(b=>b.textContent.includes('XEM TRƯỚC 1 ẢNH')&&!b.disabled)",'rename inspection finished')
+ assert.equal(renameWrites,0,'Inspection must not rename files')
+ await run("Array.from(document.querySelectorAll('.renameWorkspace button')).find(b=>b.textContent.includes('XEM TRƯỚC 1 ẢNH')).click()")
+ await until("!!document.querySelector('[aria-label=\"Xác nhận rename\"]')",'selected rename confirmation')
+ await until("Array.from(document.querySelectorAll('.renameWorkspace button')).some(b=>b.textContent==='XÁC NHẬN RENAME FILE ẢNH THẬT'&&!b.disabled)",'selected preview finished')
+ assert.equal(renameWrites,0,'Selected preview must not rename files')
+ await run("Array.from(document.querySelectorAll('.renameWorkspace button')).find(b=>b.textContent==='XÁC NHẬN RENAME FILE ẢNH THẬT').click()")
+ await until("document.querySelector('.renameWorkspace [role=status]')?.textContent.includes('Đã đổi tên 1 ảnh')",'rename outcome')
+ assert.equal(renameWrites,1,'Explicit confirmed rename should submit once')
+ watchConfig.popup=true
+ warehouseNotices=[{id:'browser-notice',kind:'changes',message:'1 ảnh chờ duyệt',createdAt:new Date().toISOString(),state:'unseen'}]
+ await command('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/'})
+ await until("!!document.querySelector('[aria-label=\"Kho ảnh có thay đổi\"]')",'opt-in scan notification popup')
+ assert((await run("document.querySelector('.warehouseNotifications [role=dialog]').textContent")).includes('1 ảnh chờ duyệt'),'Popup must identify pending stock')
+ await run("Array.from(document.querySelectorAll('.warehouseNotifications [role=dialog] button')).find(b=>b.textContent==='XEM & DUYỆT').click()")
+ await until("!!document.querySelector('.warehouseConfig')",'notification opens review workspace')
+ assert.equal(warehouseNotices[0].state,'seen','Review must persist seen state')
+ assert.equal(importWrites,1,'Reviewing a notification must not import automatically')
+ console.log('MOBILE_BROWSER_SMOKE PASS: DEMO and mocked LOCAL receipt/catalog/import; scan KPIs, batch review/result, rename confirmation, notice popup/review, responsive/dark, errors/retry and preferences')
 }catch(e){failed=e;console.error(e instanceof Error?e.stack:String(e));try{await shot('failure.png')}catch{}}
 finally{
  try{ws?.close()}catch{}

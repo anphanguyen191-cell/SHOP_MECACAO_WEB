@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## V1 warehouse workflow upgrade — 2026-10-09
+Status: AUTOMATED LOCAL PASS / WINDOWS FULL ACCEPTANCE UNVERIFIED / NOT STABLE
+
+- Ten scan KPIs, pending/registered separation, selected Size bulk pricing and reviewed per-Product batch registration with retained outcomes.
+- Remembered warehouse, opt-in startup/periodic read-only scanning, persistent notices, bell/toast and optional non-interrupting popup.
+- Registered physical-image rename with checksum-bound preview, stable IDs, DB backup, durable journal and mapping logs; source receipt images remain unchanged.
+- Opt-in canonical naming for newly copied receipt images, dashboard refresh, labelled responsive forms/cards and dark mode.
+- Extended API, crash/recovery and browser regressions. No schema migration, no cloud/LAN exposure, no V2; full Windows restore remains unverified.
+
 ## V1 pre-Windows hardening — 2026-10-09
 Status: AUTOMATED LOCAL PASS / WINDOWS UNVERIFIED / NOT STABLE
 

@@ -123,6 +123,37 @@ try{
  await api('/api/goods-receipt',{method:'POST',body:{storeRoot:os.tmpdir(),sizes:[]},expected:403})
  check((await api('/api/inventory/dashboard')).stock===4,'sandbox rejection must leave physical stock intact')
  check((await api('/api/store/scan',{method:'POST',body:{rootPath:storeRoot}})).productCount===2,'sandbox must still allow its test warehouse')
+ const config={rootPath:storeRoot,startup:true,periodic:false,intervalSeconds:60,popup:true,autoRename:false}
+ check((await api('/api/warehouse/settings',{method:'PUT',body:config})).startup===true,'remembered automatic scan configuration')
+ await api('/api/warehouse/settings',{method:'PUT',body:{...config,rootPath:os.tmpdir()},expected:403})
+ const currentScan=await api('/api/store/scan',{method:'POST',body:{rootPath:storeRoot}})
+ check(currentScan.summary.images===4&&currentScan.summary.registeredImages===4&&currentScan.summary.pendingImages===0,'scan dashboard physical/registered/pending separation')
+ const imageRes=await fetch(base+'/api/warehouse/file?'+new URLSearchParams({rootPath:storeRoot,path:file1}))
+ check(imageRes.status===200&&imageRes.headers.get('content-type').includes('image/'),'actual scanned file thumbnail endpoint')
+ await api('/api/warehouse/file?'+new URLSearchParams({rootPath:storeRoot,path:file2}),{expected:400})
+ const renamePreview=await api('/api/warehouse/rename/preview',{method:'POST',body:{rootPath:storeRoot}})
+ check(renamePreview.files.length===4,'registered physical rename preview')
+ await api('/api/warehouse/rename/commit',{method:'POST',body:{rootPath:storeRoot,ids:renamePreview.files.map(x=>x.id),token:renamePreview.token,confirmed:false},expected:400})
+ const renamed=await api('/api/warehouse/rename/commit',{method:'POST',body:{rootPath:storeRoot,ids:renamePreview.files.map(x=>x.id),token:renamePreview.token,confirmed:true}})
+ check(renamed.renamed===4&&(await api('/api/inventory/dashboard')).stock===4,'confirmed physical rename preserves stock')
+ for(const f of renamePreview.files)check(hash(f.newPath)===f.sha256&&!fs.existsSync(f.oldPath),'rename original bytes preserved at approved new path')
+ check((await api('/api/warehouse/rename/logs')).some(l=>l.outcome==='COMMITTED'),'rename audit endpoint')
+ await stop();start({SHOP_SANDBOX_ROOT:home});await waitReady()
+ check((await api('/api/warehouse/settings')).rootPath===fs.realpathSync(storeRoot),'warehouse root persisted across server restart')
+ check((await api('/api/inventory/dashboard')).stock===4,'renamed stock persisted across restart')
+ const pendingFile=path.join(sizeDir,'PENDING-STARTUP.png');fs.copyFileSync(file2,pendingFile)
+ await stop();start({SHOP_SANDBOX_ROOT:home});await waitReady()
+ let startupNotice=false
+ for(let i=0;i<20;i++){startupNotice=(await api('/api/warehouse/notices')).some(n=>n.kind==='changes'&&n.state==='unseen');if(startupNotice)break;await sleep(100)}
+ check(startupNotice,'startup scan emits a real pending-image notice without a manual scan')
+ const baselineNoticeCount=(await api('/api/warehouse/notices')).length
+ await api('/api/warehouse/settings',{method:'PUT',body:{...config,periodic:true}})
+ const periodicFile=path.join(sizeDir,'PENDING-PERIODIC.png');fs.copyFileSync(file3,periodicFile)
+ let periodicNotice=false;const deadline=Date.now()+75000
+ while(Date.now()<deadline){const notices=await api('/api/warehouse/notices');periodicNotice=notices.length>baselineNoticeCount&&notices.some(n=>n.state==='unseen'&&n.message.includes('2 ảnh chờ duyệt'));if(periodicNotice)break;await sleep(500)}
+ check(periodicNotice,'real periodic backend timer discovers a second pending image')
+ check((await api('/api/inventory/dashboard')).stock===4,'automatic scans never register pending physical files or change ledger stock')
+ fs.unlinkSync(pendingFile);fs.unlinkSync(periodicFile)
  console.log('HTTP_API_ACCEPTANCE PASS: '+checks+' assertions; 3 receipt flows, scan/import/idempotence, ledger isolation, SHA originals, lossless backup and restart')
 }catch(e){console.error(e instanceof Error?e.stack:String(e));console.error('Server logs:',logs.slice(-4000));process.exitCode=1}
 finally{

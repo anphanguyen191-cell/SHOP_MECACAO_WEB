@@ -15,6 +15,10 @@
 **Tuyệt đối không chọn `D:\1-Me CaCao Store` làm thư mục để thực hiện giao dịch thử.** Backend sandbox hiện từ chối đường dẫn nằm ngoài vùng thử, kể cả liên kết thư mục ra ngoài. File `.bat` build lại source trước khi chạy, kiểm tra đúng app/database/sandbox qua API và dừng nếu port 3005 đang có server cũ. Không xóa sandbox cũ: dữ liệu test được giữ để kiểm tra restart.
 
 ## Checklist nghiệm thu
+- [ ] **Quét/Import mới:** chọn `warehouse`, bấm QUÉT KHO; 10 KPI phân biệt mẫu/Size/ảnh phát hiện và đã đăng ký/chờ duyệt. Chọn từng Size, áp giá cho mục chọn, DUYỆT LÔ rồi XÁC NHẬN & LƯU HÀNG LOẠT. Kết quả +ảnh thực tế phải ở lại; chọn XEM TỒN KHO để đối chiếu. Nhãn tên mẫu/Size bám thư mục vật lý, không tự rename folder.
+- [ ] **Nhớ kho / tự quét:** bấm NHỚ KHO & CẤU HÌNH. Bật quét khi mở backend và/hoặc định kỳ (tối thiểu 60 giây). Tạo thêm một ảnh riêng trong thư mục Size của sandbox; chờ chu kỳ. Chuông/toast phải báo ảnh chờ duyệt nhưng chưa cộng vào tồn đăng ký. Xem & duyệt mở Import; quét lại không báo trùng. Popup là tùy chọn và không chen vào lúc nhập liệu/xử lý.
+- [ ] **Tên ảnh thật:** sau import, KIỂM TRA TÊN FILE KHO → chọn ảnh → XEM TRƯỚC → đối chiếu CSV → XÁC NHẬN RENAME FILE ẢNH THẬT. Tên đổi trên đĩa, nội dung ảnh và tổng tồn không đổi, thumbnail vẫn xem được; không đổi folder. Kiểm tra nhật ký và restart. Chỉ làm trên sandbox, không thử ngắt tiến trình trên kho thật.
+- [ ] **Auto rename nhập mới:** bật Tên chuẩn cho ảnh COPY nhập mới, nhớ cấu hình; nhập nguồn chưa từng dùng. File trong kho có prefix ShopMeCaCao_Tole, giữ đuôi ảnh; file nguồn vẫn nguyên tên/nội dung. Mặc định tính năng tắt.
 - [ ] **Tổng quan:** KPI đủ, thanh tồn theo từng sản phẩm hiển thị tên nằm ngang, nhấn KPI đi tới chức năng phù hợp; nút thu gọn/mở lại hoạt động.
 - [ ] **Danh mục:** ban đầu không có dữ liệu; sau import thấy sản phẩm + Size; tìm theo tên, mã, SKU; lọc còn hàng/hết hàng và sắp xếp tồn nhiều–ít; theme tối chữ dễ đọc.
 - [ ] **Import kho:** chọn `warehouse`, bấm quét; thấy hai mẫu ảnh giả lập và các Size; duyệt một mẫu rồi import; quét/import lại lần hai phải không nhân đôi số ảnh đã đăng ký.
