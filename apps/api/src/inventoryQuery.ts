@@ -1,9 +1,9 @@
-import fs from 'node:fs'
 import { db } from './db.js'
+import { physicalImagesByVariant } from './physicalInventory.js'
 
 export type InventoryFilters={search?:string;category?:string;size?:string;status?:'all'|'active'|'inactive';state?:'all'|'out'|'low'|'ok';threshold?:number}
 
-export function inventoryRows(filters:InventoryFilters={}){
+function inventoryMetadata(filters:InventoryFilters={}){
  const q='%'+(filters.search??'').trim()+'%',category=(filters.category??'').trim(),size=(filters.size??'').trim()
  const state=filters.state??'all',status=filters.status??'all'
  if(!['all','out','low','ok'].includes(state))throw new Error('Trạng thái tồn không hợp lệ')
@@ -21,7 +21,13 @@ export function inventoryRows(filters:InventoryFilters={}){
 
  ORDER BY p.name,v.id`
  const rows=db.prepare(sql).all(q,q,q,q,q,category,category,size,size,status,status) as Array<any>
- const actual=rows.map(r=>({...r,ledger_stock:Number(r.stock||0),stock:physicalImageCount(r.variant_id,r.product_id)}))
+ return {rows,state,threshold}
+}
+
+export function inventoryRows(filters:InventoryFilters={}){
+ const {rows,state,threshold}=inventoryMetadata(filters)
+ const images=physicalImagesByVariant(rows.map(r=>r.variant_id))
+ const actual=rows.map(r=>({...r,ledger_stock:Number(r.stock||0),stock:(images.get(r.variant_id)??[]).filter(x=>x.product_id===r.product_id&&x.exists).length}))
  return actual.filter(r=>state==='all'||(state==='out'&&r.stock===0)||(state==='low'&&r.stock>0&&r.stock<=threshold)||(state==='ok'&&r.stock>threshold))
 }
 
@@ -29,29 +35,23 @@ type ExplorerImage={id:number;file_name:string;file_path:string;exists:boolean}
 type ExplorerVariant={variant_id:number;sku:string;size:string;cost_price:number;sale_price:number;ledger_stock:number;stock:number;images:ExplorerImage[]}
 type ExplorerProduct={product_id:number;product_code:string;product_name:string;category:string|null;product_status:string;stock:number;variants:ExplorerVariant[]}
 
-function physicalImageCount(variantId:number,productId:number){return actualImages(variantId,productId).filter(x=>x.exists).length}
-function actualImages(variantId:number,productId:number):ExplorerImage[]{
- const rows=db.prepare(`SELECT id,file_path FROM product_images WHERE product_id=? AND variant_id=? ORDER BY sort_order,id`).all(productId,variantId) as Array<{id:number;file_path:string}>
- return rows.map(x=>({...x,file_name:x.file_path.split(/[\\/]/).pop()||x.file_path,exists:fs.existsSync(x.file_path)}))
-}
-
 export function inventoryExplorer(filters:Pick<InventoryFilters,'search'|'category'|'size'|'status'>={}){
- const rows=inventoryRows({...filters,state:'all'}) as Array<any>
+ const {rows}=inventoryMetadata({...filters,state:'all'})
+ const imageMap=physicalImagesByVariant(rows.map(r=>r.variant_id))
  const products=new Map<number,ExplorerProduct>()
  for(const r of rows){
-  const images=actualImages(r.variant_id,r.product_id)
+  const images=(imageMap.get(r.variant_id)??[]).filter(x=>x.product_id===r.product_id)
   const registered=images.filter(x=>x.exists)
   const stock=registered.length
   let product=products.get(r.product_id)
   if(!product){product={product_id:r.product_id,product_code:r.product_code,product_name:r.product_name,category:r.category??null,product_status:r.product_status,stock:0,variants:[]};products.set(r.product_id,product)}
-  product.variants.push({variant_id:r.variant_id,sku:r.sku,size:r.size,cost_price:Number(r.cost_price||0),sale_price:Number(r.sale_price||0),ledger_stock:Number(r.ledger_stock||0),stock,images:registered})
+  product.variants.push({variant_id:r.variant_id,sku:r.sku,size:r.size,cost_price:Number(r.cost_price||0),sale_price:Number(r.sale_price||0),ledger_stock:Number(r.stock||0),stock,images:registered})
   product.stock+=stock
  }
  return [...products.values()]
 }
 
-export function inventoryDashboard(){
- const products=inventoryExplorer({status:'active'})
+export function inventoryDashboard(products=inventoryExplorer({status:'active'})){
  const variants=products.flatMap(p=>p.variants)
  const positive=products.filter(p=>p.stock>0)
  const sizeMap=new Map<string,number>()
@@ -66,7 +66,8 @@ export function inventoryDashboard(){
 export function inventorySuggestions(search=''){
  const q='%'+search.trim()+'%'
  const rows=db.prepare(`SELECT p.id AS product_id,p.product_code,p.name AS product_name,v.id AS variant_id,v.sku,v.size FROM product_variants v JOIN products p ON p.id=v.product_id WHERE p.status='active' AND v.status='active' AND (?='%%' OR p.name LIKE ? OR p.product_code LIKE ? OR v.sku LIKE ? OR v.size LIKE ?) ORDER BY CASE WHEN p.name LIKE ? OR p.product_code LIKE ? THEN 0 ELSE 1 END,p.name,v.size LIMIT 20`).all(q,q,q,q,q,search.trim()+'%',search.trim()+'%') as Array<{product_id:number;product_code:string;product_name:string;variant_id:number;sku:string;size:string}>
- return rows.map(row=>({...row,stock:physicalImageCount(row.variant_id,row.product_id)}))
+ const images=physicalImagesByVariant(rows.map(row=>row.variant_id))
+ return rows.map(row=>({...row,stock:(images.get(row.variant_id)??[]).filter(x=>x.product_id===row.product_id&&x.exists).length}))
 }
 
 export function inventoryHistory(limit=200){

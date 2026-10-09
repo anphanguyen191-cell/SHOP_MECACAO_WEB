@@ -1,5 +1,6 @@
 import { useEffect,useMemo,useState } from 'react'
 import ProductDetail from './ProductDetail'
+import {useBooleanPreference} from './uiState'
 
 type Img={id:number;file_name:string;file_path:string;exists:boolean}
 type Variant={variant_id:number;sku:string;size:string;cost_price:number;sale_price:number;ledger_stock:number;stock:number;images:Img[]}
@@ -16,7 +17,8 @@ const DEMO_DASH:Dash={stock:19,products:2,productsInStock:2,skus:7,sizes:4,outOf
 export default function InventoryView({isDemo=false}:{isDemo?:boolean}){
  const [search,setSearch]=useState(''),[category,setCategory]=useState(''),[size,setSize]=useState(''),[products,setProducts]=useState<Product[]>(isDemo?DEMO_PRODUCTS:[]),[dashboard,setDashboard]=useState<Dash|null>(isDemo?DEMO_DASH:null),[categories,setCategories]=useState<string[]>([]),[sizes,setSizes]=useState<string[]>([]),[expandedProducts,setExpandedProducts]=useState<Set<number>>(new Set()),[expandedVariants,setExpandedVariants]=useState<Set<number>>(new Set()),[selectedImages,setSelectedImages]=useState<Set<number>>(new Set()),[suggestions,setSuggestions]=useState<Suggestion[]>([]),[detailProductId,setDetailProductId]=useState<number|null>(null)
  const [stockState,setStockState]=useState<'all'|'in'|'out'|'low'>('all'),[sort,setSort]=useState<'stock_desc'|'stock_asc'|'name'>('stock_desc'),[threshold,setThreshold]=useState(2),[loadError,setLoadError]=useState('')
- const [dashboardExpanded,setDashboardExpanded]=useState(true)
+ const [dashboardExpanded,setDashboardExpanded]=useBooleanPreference('inventory-expanded',true)
+ const [loading,setLoading]=useState(!isDemo),[reload,setReload]=useState(0)
  useEffect(()=>{
   if(isDemo){
    const q=search.trim().toLocaleLowerCase('vi')
@@ -30,15 +32,17 @@ export default function InventoryView({isDemo=false}:{isDemo?:boolean}){
    return
   }
   let cancelled=false
+  const controller=new AbortController()
+  setLoading(true);setLoadError('');setProducts([])
   const timer=setTimeout(()=>{
    const q=new URLSearchParams({search,category,size,status:'active'})
    Promise.all([
-    fetch('/api/inventory/explorer?'+q).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||'Không tải được tồn kho');return j}),
-    fetch('/api/inventory/dashboard').then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||'Không tải được thống kê');return j})
-   ]).then(([tree,dash])=>{if(!cancelled){setProducts(Array.isArray(tree)?tree:[]);setDashboard(dash);setLoadError('')}}).catch(e=>{if(!cancelled){setLoadError(e instanceof Error?e.message:'Không đọc được dữ liệu');setProducts([])}})
+    fetch('/api/inventory/explorer?'+q,{signal:controller.signal}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||'Không tải được tồn kho');return j}),
+    fetch('/api/inventory/dashboard',{signal:controller.signal}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||'Không tải được thống kê');return j})
+   ]).then(([tree,dash])=>{if(!cancelled){setProducts(Array.isArray(tree)?tree:[]);setDashboard(dash);setLoadError('')}}).catch(e=>{if(!cancelled){setLoadError(e instanceof Error?e.message:'Không đọc được dữ liệu');setProducts([]);setDashboard(null)}}).finally(()=>{if(!cancelled)setLoading(false)})
   },180)
-  return()=>{cancelled=true;clearTimeout(timer)}
- },[search,category,size,isDemo])
+  return()=>{cancelled=true;controller.abort();clearTimeout(timer)}
+ },[search,category,size,isDemo,reload])
  useEffect(()=>{
   if(isDemo){setCategories(['Đồ tole bé gái']);setSizes(['Size 1','Size 2','Size 3','Size 4']);return}
   let cancelled=false
@@ -73,7 +77,7 @@ export default function InventoryView({isDemo=false}:{isDemo?:boolean}){
  function chooseImage(id:number){toggle(selectedImages,id,setSelectedImages)}
  return <section className="inventoryPage">
   <div className="inventoryHeading"><div><p className="eyebrow">{isDemo?'DỮ LIỆU MINH HỌA · DEMO':'KHO HÀNG THỰC TẾ'}</p><h2>Tồn kho</h2><p>{isDemo?'Số liệu mẫu để kiểm tra giao diện, không phải tồn hàng của Shop. LOCAL mới kết nối kho ảnh.':'Tồn thực tế đếm ảnh hợp lệ theo từng Size. Chọn sản phẩm để xem ảnh và đối soát.'}</p></div>{isDemo?<span className="okPill">BẢN XEM THỬ</span>:!dashboard?<span className="reconcileAlert">Đang tải / không có dữ liệu kho</span>:dashboard.mismatches?<span className="reconcileAlert">⚠ {dashboard.mismatches} Size lệch ledger/ảnh</span>:<span className="okPill">✓ Đã so sánh ảnh và sổ</span>}</div>
-  {loadError&&<p className="notice warning" role="alert">{loadError}</p>}
+  {loadError&&<p className="notice warning" role="alert">{loadError} <button onClick={()=>setReload(x=>x+1)}>THỬ LẠI</button></p>}
   <section className="inventoryDashboardBlock" aria-label="Dashboard tồn kho">
    <div className="dashboardFoldHeader">
     <div><span className="dashboardFoldEyebrow">BÁO CÁO TỒN KHO</span><h3>Dashboard tồn kho</h3><p>{isDemo?'Chỉ số minh họa · không phải tồn kho thật':'Chỉ số tổng theo ảnh vật lý đã đăng ký'}</p></div>
@@ -102,14 +106,14 @@ export default function InventoryView({isDemo=false}:{isDemo?:boolean}){
    {(search||category||size||stockState!=='all'||sort!=='stock_desc')&&<button className="clearFilter" onClick={()=>{setSearch('');setCategory('');setSize('');setStockState('all');setSort('stock_desc');setSuggestions([])}}>XÓA LỌC</button>}
   </div>
 
-  <p className="inventoryResultCount">{visibleProducts.length} mẫu phù hợp bộ lọc{size?' · '+size:''}{isDemo?' · dữ liệu minh họa':''}</p>
+  <div className="inventoryToolbar"><button className="refreshInventory" disabled={loading&&!isDemo} onClick={()=>setReload(x=>x+1)}>↻ LÀM MỚI TỒN ẢNH</button></div><p className="inventoryResultCount">{loading&&!isDemo?'Đang đọc kho...':visibleProducts.length+' mẫu'} phù hợp bộ lọc{size?' · '+size:''}{isDemo?' · dữ liệu minh họa':''}</p>
   {selectedImages.size>0&&<div className="selectionBar"><b>Đã chọn {selectedImages.size} sản phẩm</b><span>Nền tảng cho gửi khách · đưa vào đơn · chốt đơn</span><button onClick={()=>setSelectedImages(new Set())}>BỎ CHỌN</button></div>}
   <div className="inventoryTree">{visibleProducts.map(p=>{const open=expandedProducts.has(p.product_id);return <article className="treeProduct" key={p.product_id}>
    <button className="treeProductHead" onClick={()=>toggle(expandedProducts,p.product_id,setExpandedProducts)}><span className="chev">{open?'▼':'▶'}</span><span className="folderIcon">●</span><span className="treeName"><b>{p.product_name}</b><small>{p.product_code} · {p.category||'Chưa phân loại'} · {p.variants.length} Size</small></span><strong>{p.stock}<small> tồn</small></strong></button>
-   {open&&<div className="treeSizes">{p.variants.map(v=>{const vOpen=expandedVariants.has(v.variant_id);return <div className="treeVariant" key={v.variant_id}><button className="treeVariantHead" onClick={()=>toggle(expandedVariants,v.variant_id,setExpandedVariants)}><span className="chev">{vOpen?'▼':'▶'}</span><span className="sizeFolder">Size {v.size}</span><small>{v.sku}</small><span className={v.stock===0?'stockZero':'stockGood'}>{v.stock} sản phẩm</span></button>
-    {vOpen&&<div className="variantGallery"><div className="galleryMeta"><span><b>{v.stock}</b> {isDemo?'bộ minh họa':'ảnh hàng thực tế'}</span>{v.ledger_stock!==v.stock&&<span className="warning">Ledger {v.ledger_stock} · Ảnh {v.stock}</span>}<button onClick={()=>setDetailProductId(p.product_id)}>CHI TIẾT SẢN PHẨM</button></div><div className="selectableGallery">{v.images.filter(img=>img.exists).map(img=><button key={img.id} className={selectedImages.has(img.id)?'selected':''} onClick={()=>chooseImage(img.id)}><img src={'/api/images/'+img.id} alt={p.product_name+' Size '+v.size}/><span className="imageCheck">{selectedImages.has(img.id)?'✓':''}</span><small>{img.file_name}</small></button>)}{(v.stock===0||isDemo)&&<div className="emptySize">{isDemo?'DEMO không có ảnh kho thật.':'Size này hiện không còn ảnh hàng trong kho.'}</div>}</div></div>}
+   {open&&<div className="treeSizes">{p.variants.map(v=>{const vOpen=expandedVariants.has(v.variant_id);return <div className="treeVariant" key={v.variant_id}><button className="treeVariantHead" onClick={()=>toggle(expandedVariants,v.variant_id,setExpandedVariants)}><span className="chev">{vOpen?'▼':'▶'}</span><span className="sizeFolder">{v.size}</span><small>{v.sku}</small><span className={v.stock===0?'stockZero':'stockGood'}>{v.stock} sản phẩm</span></button>
+    {vOpen&&<div className="variantGallery"><div className="galleryMeta"><span><b>{v.stock}</b> {isDemo?'bộ minh họa':'ảnh hàng thực tế'}</span>{v.ledger_stock!==v.stock&&<span className="warning">Ledger {v.ledger_stock} · Ảnh {v.stock}</span>}<button onClick={()=>setDetailProductId(p.product_id)}>CHI TIẾT SẢN PHẨM</button></div><div className="selectableGallery">{v.images.filter(img=>img.exists).map(img=><button key={img.id} className={selectedImages.has(img.id)?'selected':''} onClick={()=>chooseImage(img.id)}><img loading="lazy" decoding="async" src={'/api/images/'+img.id} alt={p.product_name+' Size '+v.size}/><span className="imageCheck">{selectedImages.has(img.id)?'✓':''}</span><small>{img.file_name}</small></button>)}{(v.stock===0||isDemo)&&<div className="emptySize">{isDemo?'DEMO không có ảnh kho thật.':'Size này hiện không còn ảnh hàng trong kho.'}</div>}</div></div>}
    </div>})}</div>}
-  </article>})}{visibleProducts.length===0&&<div className="emptyTree">Không tìm thấy sản phẩm phù hợp bộ lọc.</div>}</div>
+  </article>})}{loading&&!isDemo&&<p className="loadingState" role="status">Đang kiểm tra ảnh vật lý...</p>}{!loading&&!loadError&&visibleProducts.length===0&&<div className="emptyTree">Không tìm thấy sản phẩm phù hợp bộ lọc.</div>}</div>
   {detailProductId&&<ProductDetail productId={detailProductId} onClose={()=>setDetailProductId(null)}/>}
  </section>
 }

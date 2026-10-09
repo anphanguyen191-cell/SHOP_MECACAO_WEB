@@ -21,10 +21,38 @@ if(receiptRecovery.journals)console.log('Receipt recovery:',JSON.stringify(recei
 
 const app = express()
 const PORT = Number(process.env.PORT ?? 3000)
+const sandboxRoot=process.env.SHOP_SANDBOX_ROOT?fs.realpathSync(path.resolve(process.env.SHOP_SANDBOX_ROOT)):null
+function sandboxPathAllowed(value:unknown){
+ if(!sandboxRoot)return true
+ if(typeof value!=='string'||!value.trim())return false
+ try{
+  const real=fs.realpathSync(path.resolve(value))
+  const rel=path.relative(sandboxRoot,real)
+  return rel===''||(!path.isAbsolute(rel)&&rel!=='..'&&!rel.startsWith('..'+path.sep))
+ }catch{return false}
+}
 app.use(express.json({ limit: '2mb' }))
+// Test mode enforces isolation at the API, not merely via a yellow UI banner.
+app.use('/api',(req,res,next)=>{
+ if(!sandboxRoot)return next()
+ const paths:unknown[]=[]
+ if(req.path==='/fs/list')paths.push(req.query.path)
+ if(req.path==='/store/scan')paths.push(req.body.rootPath)
+ if(req.path==='/store/import'){
+  paths.push(req.body.product?.rootPath)
+  for(const v of req.body.product?.variants??[])paths.push(...(v.images??[]))
+ }
+ if(req.path==='/goods-receipt/inspect')paths.push(req.body.path)
+ if(req.path==='/goods-receipt'){
+  paths.push(req.body.storeRoot)
+  for(const v of req.body.sizes??[]){if(v.sourcePath)paths.push(v.sourcePath);paths.push(...(v.images??[]))}
+ }
+ if(paths.some(p=>!sandboxPathAllowed(p)))return res.status(403).json({error:'CHẾ ĐỘ THỬ WINDOWS: chỉ được dùng thư mục bên trong sandbox, không truy cập kho thật.'})
+ next()
+})
 
 app.get('/api/health', (_req, res) => res.json({
-  ok: true, app: 'SHOP_MECACAO_WEB', version: '1.0.0-dev', schema: 110, database: path.basename(dbPath)
+  ok: true, app: 'SHOP_MECACAO_WEB', version: '1.0.0-dev', schema: 110, database: path.basename(dbPath),sandbox:!!sandboxRoot
 }))
 
 app.get('/api/images/:id', (req,res) => {
@@ -40,6 +68,7 @@ app.get('/api/images/:id', (req,res) => {
 
 app.get('/api/fs/roots', (_req,res)=>{
  try{
+  if(sandboxRoot)return res.json([sandboxRoot])
   if(process.platform==='win32'){const roots:string[]=[];for(let code=65;code<=90;code++){const drive=String.fromCharCode(code)+':\\\\';try{if(fs.existsSync(drive)&&fs.statSync(drive).isDirectory())roots.push(drive)}catch{}}return res.json(roots)}
   return res.json([process.cwd()])
  }catch(e){return res.status(500).json({error:e instanceof Error?e.message:'Không thể đọc ổ đĩa'})}

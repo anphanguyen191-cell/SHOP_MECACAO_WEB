@@ -11,8 +11,29 @@ assert(fs.existsSync(path.join(dist,'index.html')),'Build the frontend before vi
 const artifacts=path.resolve('artifacts/mobile-smoke')
 fs.mkdirSync(artifacts,{recursive:true})
 const mime={'.html':'text/html','.js':'application/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.webmanifest':'application/manifest+json'}
-const server=http.createServer((req,res)=>{
+let catalogFailure=false,postedReceipt=null,receiptReads=0,receiptWrites=0
+const localProduct={id:101,product_code:'LOCAL01',name:'Local pastel outfit',variant_count:1,total_stock:1,sizes:['Size 1'],stock_by_size:[{size:'Size 1',stock:1}]}
+const server=http.createServer(async (req,res)=>{
  const name=decodeURIComponent(new URL(req.url||'/', 'http://localhost').pathname)
+ if(name.startsWith('/api/')){
+  const chunks=[];for await(const chunk of req)chunks.push(chunk)
+  const body=chunks.length?JSON.parse(Buffer.concat(chunks).toString()):{}
+  let data={},status=200
+  if(name==='/api/health')data={ok:true,schema:110,sandbox:true,database:'browser-mock.db'}
+  else if(name==='/api/products'){
+   if(catalogFailure){status=503;data={error:'TEST — API tạm thời không sẵn sàng'}}else data=[localProduct]
+  }else if(name==='/api/products/101')data={product:localProduct,variants:[{id:1011,size:'Size 1',sku:'LOCAL01-S1',cost_price:10000,sale_price:20000}],images:[]}
+  else if(name==='/api/inventory/filter-options')data={sizes:['Size 1'],categories:[]}
+  else if(name==='/api/inventory/dashboard')data={stock:1,products:1,skus:1,outOfStock:0,mismatches:0,topProducts:[],lowProducts:[]}
+  else if(name==='/api/catalog/dashboard')data={products:1,skus:1,categories:0,missingImages:0,missingPrices:0}
+  else if(name==='/api/goods-receipt/dashboard'){receiptReads++;data={transactions:postedReceipt?1:0,importedQuantity:postedReceipt?1:0,importedValue:10000,lastImport:null,top:[],recent:[]}}
+  else if(name==='/api/fs/roots')data=['/sandbox']
+  else if(name==='/api/fs/list')data={path:new URL(req.url,'http://localhost').searchParams.get('path'),parent:'/sandbox',directories:[]}
+  else if(name==='/api/goods-receipt/inspect'){await sleep(80);data={count:1,images:['/sandbox/incoming/001.jpg']}}
+  else if(name==='/api/goods-receipt'){receiptWrites++;postedReceipt=body;status=201;data={result:{totalQuantity:1,copiedImages:1},events:[{phase:'DONE',percent:100,copied:1,total:1}]}}
+  else if(name==='/api/inventory/suggestions')data=[]
+  res.writeHead(status,{'Content-Type':'application/json'}).end(JSON.stringify(data));return
+ }
  let file=path.resolve(dist,'.'+name)
  if(!file.startsWith(dist+path.sep)&&file!==dist){res.writeHead(403).end();return}
  if(!fs.existsSync(file)||!fs.statSync(file).isFile())file=path.join(dist,'index.html')
@@ -160,7 +181,60 @@ try{
  await until("document.querySelector('main h3')?.textContent.includes('Cài đặt')",'settings tab')
  assert((await run("document.querySelector('main').textContent")).includes('DEMO không ghi cài đặt'),'Settings demo must not perform real writes')
  await shot('settings-demo-dark.png')
- console.log('MOBILE_BROWSER_SMOKE PASS: 390px chart labels, mobile overflow, four dashboard folds, dark-mode contrast, drawer keyboard, route navigation')
+ // Mocked LOCAL browser flow exercises async UI binding, not the real API.
+ // Real copy/rollback business logic remains in api-e2e-smoke.mjs.
+ await command('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/'})
+ await until("!!document.querySelector('.sandboxSafetyBanner')",'backend sandbox identity')
+ assert(await run("document.querySelector('.shell').classList.contains('themeDark')"),'Theme preference must survive page reload')
+ await clickMenu('Nhập hàng')
+ await until("!!document.querySelector('.pickerResults button')",'LOCAL receipt product selector')
+ await run("document.querySelector('.pickerResults button').click()")
+ await until("!!document.querySelector('.variantChooser button')",'existing Size selection')
+ assert(await run("getComputedStyle(document.querySelector('.flowTabs')).display==='grid'"),'LOCAL receipt workflows must be styled, not browser-default buttons')
+ assert(await run("getComputedStyle(document.querySelector('.receipt')).backgroundColor==='rgb(36, 37, 50)'"),'Dark receipt form must not put white text on a white background')
+ async function pickFolder(trigger,pathValue){
+  await run("document.querySelector("+JSON.stringify(trigger)+").click()")
+  await until("!!document.querySelector('.driveGrid button')",'folder roots')
+  await run("document.querySelector('#folder-direct-path').focus()")
+  await command('Input.insertText',{text:pathValue})
+  await run("document.querySelector('.folderDirectPath button').click()")
+  await until("!!document.querySelector('.chooseFolder')",'folder loaded')
+  await run("document.querySelector('.chooseFolder').click()")
+ }
+ await pickFolder('.pickerInput button','/sandbox/warehouse')
+ await pickFolder('.sourcePicker button','/sandbox/incoming')
+ await until("document.querySelector('.imageCountBadge b')?.textContent==='1'",'source image count')
+ assert(await run("document.querySelector('.sourcePicker input').value==='/sandbox/incoming'"),'Source path lost after async inspect')
+ assert(await run("document.querySelector('.receipt .actions button').disabled===false"),'Scanned receipt should be submittable')
+ const beforeReads=receiptReads
+ await run("document.querySelector('.receipt .actions button').click();document.querySelector('.receipt .actions button').click()")
+ await until("document.querySelector('.receipt .notice')?.textContent.includes('Nhập thành công')",'receipt commit UI')
+ assert(postedReceipt?.sizes[0]?.sourcePath==='/sandbox/incoming'&&postedReceipt?.sizes[0]?.quantity===1,'Receipt payload must retain source path and physical count')
+ assert.equal(receiptWrites,1,'Double click must not post a second receipt')
+ await until("document.querySelector('.receipt .actions button').disabled===true",'prevent repeat receipt')
+ await sleep(250)
+ assert(receiptReads>beforeReads,'Receipt dashboard must refresh after successful commit')
+ for(const width of [320,390,768,1280]){
+  await command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<768})
+  await sleep(100)
+  assert((await run('document.documentElement.scrollWidth'))<=width+2,'LOCAL receipt overflow at '+width+'px')
+ }
+ await shot('receipt-local-after-commit.png')
+ await run("document.querySelector('.receiptFields').scrollIntoView({block:'start'})")
+ await sleep(100)
+ await shot('receipt-local-form-desktop.png')
+ await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true})
+ catalogFailure=true
+ await clickMenu('Danh mục sản phẩm')
+ await until("document.querySelector('.catalogPanel [role=alert]')?.textContent.includes('TEST')",'catalog explicit error')
+ assert(!(await run("document.querySelector('.catalogPanel').textContent.includes('Không tìm thấy sản phẩm phù hợp')")),'API failure must not masquerade as empty inventory')
+ catalogFailure=false
+ await run("document.querySelector('.catalogPanel [role=alert] button').click()")
+ await until("document.querySelector('.catalogPanel .product h3')?.textContent==='Local pastel outfit'",'catalog retry succeeds')
+ await run("document.querySelector('.catalogPanel').scrollIntoView({block:'start'})")
+ await sleep(100)
+ await shot('catalog-local-retry.png')
+ console.log('MOBILE_BROWSER_SMOKE PASS: DEMO responsive/dark/folds/navigation plus mocked LOCAL source binding, receipt refresh, duplicate-submit prevention, explicit API errors/retry and theme persistence')
 }catch(e){failed=e;console.error(e instanceof Error?e.stack:String(e));try{await shot('failure.png')}catch{}}
 finally{
  try{ws?.close()}catch{}

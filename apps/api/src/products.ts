@@ -1,5 +1,5 @@
-import fs from 'node:fs'
 import { db } from './db.js'
+import { physicalImagesByVariant } from './physicalInventory.js'
 
 export type VariantInput = { size: string; sku?: string; openingStock?: number; costPrice?: number; salePrice?: number }
 export type ProductInput = {
@@ -34,8 +34,6 @@ export function suggestSku(productCode: string, size: string) {
   return `${base}-${n}`
 }
 
-function physicalStock(variantId:number){const images=db.prepare('SELECT file_path FROM product_images WHERE variant_id=?').all(variantId) as Array<{file_path:string}>;return images.filter(x=>fs.existsSync(x.file_path)).length}
-
 export type ProductListFilters={size?:string;stockState?:'all'|'in'|'out';sort?:'newest'|'name'|'stock_desc'|'stock_asc'}
 export function listProducts(search = '',filters:ProductListFilters={}) {
   const q = `%${search.trim()}%`
@@ -57,12 +55,18 @@ export function listProducts(search = '',filters:ProductListFilters={}) {
     WHERE (? = '%%' OR p.name LIKE ? OR p.product_code LIKE ? OR v.sku LIKE ? OR v.size LIKE ?)
     GROUP BY p.id
   `).all(q,q,q,q,q) as Array<any>
-  const variants=db.prepare("SELECT id,size FROM product_variants WHERE product_id=?")
+  const variants=db.prepare('SELECT v.id,v.product_id,v.size,COALESCE(s.stock,0) AS ledger_stock FROM product_variants v LEFT JOIN inventory_stock s ON s.variant_id=v.id').all() as Array<{id:number;product_id:number;size:string;ledger_stock:number}>
+  const matchedIds=new Set(rows.map(p=>p.id))
+  const matchedVariants=variants.filter(v=>matchedIds.has(v.product_id))
+  const imageMap=physicalImagesByVariant(matchedVariants.map(v=>v.id))
+  const variantsByProduct=new Map<number,typeof matchedVariants>()
+  for(const v of matchedVariants){const group=variantsByProduct.get(v.product_id)??[];group.push(v);variantsByProduct.set(v.product_id,group)}
   const result=rows.map(p=>{
-    const sizes=(variants.all(p.id) as Array<{id:number;size:string}>).map(v=>({size:v.size,stock:physicalStock(v.id)}))
+    const productVariants=variantsByProduct.get(p.id)??[]
+    const sizes=productVariants.map(v=>({size:v.size,stock:(imageMap.get(v.id)??[]).filter(x=>x.product_id===p.id&&x.exists).length}))
     const totalStock=sizes.reduce((n,v)=>n+v.stock,0)
     const filteredStock=selectedSize?sizes.filter(v=>v.size===selectedSize).reduce((n,v)=>n+v.stock,0):totalStock
-    return {...p,variant_count:sizes.length,total_stock:totalStock,filtered_stock:filteredStock,sizes:sizes.map(v=>v.size),stock_by_size:sizes}
+    return {...p,ledger_stock:productVariants.reduce((n,v)=>n+Number(v.ledger_stock),0),variant_count:sizes.length,total_stock:totalStock,filtered_stock:filteredStock,sizes:sizes.map(v=>v.size),stock_by_size:sizes}
   }).filter(p=>(!selectedSize||p.sizes.includes(selectedSize))&&(stockState==='all'||(stockState==='in'?p.filtered_stock>0:p.filtered_stock===0)))
   if(sort==='stock_desc')result.sort((a,b)=>b.filtered_stock-a.filtered_stock||a.name.localeCompare(b.name,'vi'))
   else if(sort==='stock_asc')result.sort((a,b)=>a.filtered_stock-b.filtered_stock||a.name.localeCompare(b.name,'vi'))
@@ -84,7 +88,8 @@ export function getProduct(id: number) {
     LEFT JOIN inventory_stock s ON s.variant_id = v.id
     WHERE v.product_id = ? ORDER BY v.id
   `).all(id) as Array<any>
-  const physicalVariants=variants.map(v=>({...v,ledger_stock:v.stock,stock:physicalStock(v.id)}))
+  const imageMap=physicalImagesByVariant(variants.map(v=>v.id))
+  const physicalVariants=variants.map(v=>({...v,ledger_stock:v.stock,stock:(imageMap.get(v.id)??[]).filter(x=>x.product_id===id&&x.exists).length}))
   const images = db.prepare('SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order, id').all(id)
   return { product, variants:physicalVariants, images }
 }

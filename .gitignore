@@ -11,3 +11,5 @@ storage/images/*
 .DS_Store
 Thumbs.db
 *.log
+*.tsbuildinfo
+artifacts/

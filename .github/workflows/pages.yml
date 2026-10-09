@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+      - run: npm ci
       - name: Dependency security audit
         run: npm audit --omit=dev --audit-level=critical
       - name: V1 internal gate
@@ -45,7 +45,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+      - run: npm ci
       - run: npm --workspace apps/web run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

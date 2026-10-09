@@ -1,8 +1,8 @@
 import { useEffect,useState } from 'react'
 export default function SettingsView(){
  const [threshold,setThreshold]=useState(2),[msg,setMsg]=useState(''),[busy,setBusy]=useState(false)
- useEffect(()=>{fetch('/api/settings').then(r=>r.json()).then(j=>setThreshold(j.lowStockThreshold??2))},[])
- async function save(){const r=await fetch('/api/settings/low-stock-threshold',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:threshold})});const j=await r.json();setMsg(r.ok?'Đã lưu ngưỡng tồn thấp.':j.error||'Không thể lưu')}
+ useEffect(()=>{let alive=true;fetch('/api/settings').then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||'Không đọc được cài đặt');if(alive)setThreshold(j.lowStockThreshold??2)}).catch(e=>{if(alive)setMsg(e.message)});return()=>{alive=false}},[])
+ async function save(){if(busy)return;setBusy(true);try{const r=await fetch('/api/settings/low-stock-threshold',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:threshold})});const j=await r.json();if(!r.ok)throw Error(j.error||'Không thể lưu');setMsg('Đã lưu ngưỡng tồn thấp.')}catch(e){setMsg(e instanceof Error?e.message:'Không thể kết nối máy chủ')}finally{setBusy(false)}}
  async function backupDb(){if(busy)return;setBusy(true);try{const r=await fetch('/api/backup',{method:'POST'});const j=await r.json();setMsg(r.ok?'Đã sao lưu SQLite (KHÔNG gồm ảnh): '+j.backup.path:j.error||'Backup thất bại')}catch{setMsg('Backup thất bại')}finally{setBusy(false)}}
  async function backupFull(){
   if(busy)return;setBusy(true);setMsg('Đang sao lưu dữ liệu và ảnh gốc, không tắt ứng dụng...')

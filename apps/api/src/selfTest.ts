@@ -2,7 +2,7 @@ import { receiveGoods, inspectImageFolder } from './goodsReceipt.js'
 import { createReceiptJournal, recoverPendingGoodsReceipts, finishReceiptJournal } from './receiptRecovery.js'
 import {createHash} from 'node:crypto'
 import { db } from './db.js'
-import { createProduct, suggestProductCode, suggestSku, listProducts } from './products.js'
+import { createProduct, suggestProductCode, suggestSku, listProducts, getProduct } from './products.js'
 import { addInventory, batchImport, history } from './inventory.js'
 import { isPathInsideRoot, scanStore } from './storeScanner.js'
 import { createBackup, createOptimizedImageBackup, createLosslessBackup, verifyLosslessBackup } from './backup.js'
@@ -101,6 +101,16 @@ assert(duplicateImportSkuBlocked,'duplicate warehouse SKU must be rejected clear
 const importedId=(imported!.product as {id:number}).id
 const importedVariant=(imported!.variants as Array<{id:number;stock:number}>)[0]
 assert(importedVariant.stock===1,'store import physical stock must match one registered image')
+fs.renameSync(goodImage,goodImage+'.held')
+fs.mkdirSync(goodImage)
+assert(getProduct(importedId)!.variants[0].stock===0,'detail must not count a directory as image stock')
+assert((inventoryRows({search:'IMPORT '+suffix}) as any[])[0].stock===0,'inventory must not count a directory')
+assert((inventoryExplorer({search:'IMPORT '+suffix}) as any[])[0].stock===0,'explorer must not count a directory')
+assert((listProducts('IMPORT '+suffix) as any[])[0].total_stock===0,'catalog must not count a directory')
+assert((inventorySuggestions('ISKU-'+suffix) as any[])[0].stock===0,'suggestions must not count a directory')
+fs.rmdirSync(goodImage)
+fs.renameSync(goodImage+'.held',goodImage)
+assert(getProduct(importedId)!.variants[0].stock===1,'restored file must be visible on next read')
 const filteredCatalog=listProducts('IMPORT '+suffix,{size:'Size 8',stockState:'in',sort:'stock_desc'}) as Array<{id:number;filtered_stock:number;total_stock:number;sizes:string[]}>
 assert(filteredCatalog.some(p=>p.id===importedId&&p.filtered_stock===1&&p.total_stock===1&&p.sizes.includes('Size 8')),'catalog size search + in-stock filter must use physical registered images')
 assert(!(listProducts('IMPORT '+suffix,{size:'Size 8',stockState:'out'}) as Array<{id:number}>).some(p=>p.id===importedId),'catalog out-of-stock filter must exclude physical in-stock product')
@@ -129,6 +139,7 @@ const merged=commitStoreImport({rootPath:importRoot,name:'IMPORT '+suffix,produc
 assert((merged!.variants as Array<{size:string;cost_price:number}>).some(v=>v.size==='Size 8'&&v.cost_price===13000),'existing size price editable')
 assert((merged!.variants as Array<{size:string;stock:number}>).some(v=>v.size==='Size 10'&&v.stock===1),'new size physical stock must equal one image')
 assert((listProducts('ISKU10-'+suffix) as Array<{id:number;variant_count:number;total_stock:number}>).some(p=>p.id===importedId&&p.variant_count===2&&p.total_stock===2),'SKU search must preserve full product Size count and physical total')
+assert((listProducts('ISKU10-'+suffix) as any[]).find(p=>p.id===importedId)?.ledger_stock===5,'SKU search must preserve full product ledger total as well')
 assert((db.prepare('SELECT stock FROM inventory_stock WHERE variant_id=?').get((merged!.variants as Array<{size:string;id:number}>).find(v=>v.size==='Size 10')!.id) as {stock:number}).stock===2,'new size ledger opening stock persists')
 const foundNewImage=path.join(sizeDir,'003.jpg')
 await sharp({create:{width:480,height:480,channels:3,background:{r:41,g:139,b:229}}}).jpeg().toFile(foundNewImage)
@@ -177,6 +188,16 @@ assert(optimizedImage&&fs.existsSync(path.join(optimizedBackup.directory,optimiz
 assert(Math.max(optimizedImage.width??0,optimizedImage.height??0)<=1920,'optimized image must respect max dimension')
 const completeBackup=createLosslessBackup()
 assert(completeBackup.verified.ok&&completeBackup.verified.dbVerified&&completeBackup.verified.imagesVerified>=2,'byte-exact recovery bundle must verify database and every registered image')
+const fullManifestPath=path.join(completeBackup.directory,'lossless-manifest.json')
+const fullManifestBytes=fs.readFileSync(fullManifestPath,'utf8')
+const incompleteManifest=JSON.parse(fullManifestBytes)
+incompleteManifest.files.pop()
+fs.writeFileSync(fullManifestPath,JSON.stringify(incompleteManifest))
+let incompleteManifestBlocked=false
+try{verifyLosslessBackup(completeBackup.directory)}catch(e){incompleteManifestBlocked=e instanceof Error&&e.message.includes('bao phủ đầy đủ')}
+assert(incompleteManifestBlocked,'verified backup must cover ALL database image records, not just manifest-listed copies')
+fs.writeFileSync(fullManifestPath,fullManifestBytes)
+assert(verifyLosslessBackup(completeBackup.directory).ok,'restored manifest verifies again without modifying shop images')
 const bundleManifest=JSON.parse(fs.readFileSync(path.join(completeBackup.directory,'lossless-manifest.json'),'utf8')) as {files:Array<{source_path:string;backup_path:string;sha256:string}>}
 const backedImage=bundleManifest.files.find(x=>x.source_path===goodImage)!
 assert(backedImage,'byte-exact backup must include canonical source path')

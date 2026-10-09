@@ -14,7 +14,8 @@
     "test:core": "npm --workspace apps/api run test:core",
     "test:schema": "npm --workspace apps/api run test:schema",
     "test:ui": "node scripts/ui-regression.mjs",
-    "test:gate": "npm run typecheck && npm run test:schema && npm run test:core && npm run build && npm run test:ui"
+    "test:performance": "npm --workspace apps/api run test:performance",
+    "test:gate": "npm run typecheck && npm run test:schema && npm run test:core && npm run test:performance && npm run build && npm run test:ui"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

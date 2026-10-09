@@ -349,3 +349,56 @@ button.overviewStat:focus-visible{outline:3px solid #aa4d79;outline-offset:3px}
 .themeDark .sandboxSafetyBanner{background:#664315;border-color:#ffc15c;color:#fff4cb}
 .themeDark .badge.test{background:#ffe187;color:#74420a}
 @media(max-width:650px){.sandboxSafetyBanner{font-size:11px;padding:9px 12px}}
+/* Shared operational controls — presentation only, no inventory caching. */
+:where(button,input,select,textarea):focus-visible{outline:3px solid #b5457a;outline-offset:3px}
+button:disabled{cursor:not-allowed;opacity:.6}
+.loadingState{padding:16px;border-radius:12px;background:#fff4fa;color:#75445d;font-weight:600}
+.receiptFields{margin:0;padding:0;border:0;min-width:0}
+.receiptRowV2 label{display:grid;gap:6px;font-size:12px;font-weight:700;min-width:0}
+.receiptRowV2 label input{width:100%;min-width:0;box-sizing:border-box}
+.folderDirectPath{margin-top:16px}.folderDirectPath label{display:block;margin-bottom:7px;font-size:13px;color:#75646e}
+.folderDirectPath .row input{flex:1;min-width:0}
+.folderDirectPath button,.refreshInventory,.notice button{padding:10px 14px;border:1px solid #e8c7d7;border-radius:11px;background:#fff4fa;color:#87465f;font-weight:750;cursor:pointer}
+.inventoryToolbar{display:flex;justify-content:flex-end;margin-top:12px}
+.selectableGallery img{object-fit:contain;background:#fff}
+.treeName,.sizeFolder{min-width:0;overflow-wrap:anywhere}.treeVariantHead{flex-wrap:wrap}
+.themeDark select,.themeDark textarea{background:#32323f;color:#fff5fa;border-color:#59505e;color-scheme:dark}
+.themeDark .folderModal{background:#242532;color:#fff5fa}.themeDark .folderPath,.themeDark .folderList button,.themeDark .driveGrid button{background:#302c3c;color:#fff5fa;border-color:#59505e}
+.themeDark .receiptRowV2 label,.themeDark .folderDirectPath label{color:#e0c6d4}.themeDark .loadingState{background:#302c3c;color:#fff5fa}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Three real receipt workflows: desktop and mobile share the same form. */
+.receiptV2{border-color:#edd9e3;box-shadow:0 8px 28px #a26b8810;min-width:0}
+.receiptHero h3{margin:4px 0;font-size:22px}.receiptHero p{line-height:1.6}
+.receiptFields{display:grid;gap:18px}
+.receipt input{border:1px solid #dfd4dc;border-radius:11px;padding:11px 12px;font:inherit;min-width:0;box-sizing:border-box;background:#fff;color:#4c3545}
+.flowTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.flowTabs button{display:grid;gap:7px;align-content:start;text-align:left;padding:16px;border:1px solid #ead8e1;border-radius:15px;background:#fff8fb;color:#684456;cursor:pointer;min-width:0}
+.flowTabs button span{font-size:12px;color:#886b7a;line-height:1.5}
+.flowTabs button.active{background:#ffe4ef;border-color:#ca628d;box-shadow:0 0 0 2px #ffe4ef}
+.productPicker{display:grid;gap:10px}.productPicker>label{display:grid;gap:8px;font-size:13px;font-weight:700}
+.pickerResults{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pickerResults button{display:grid;gap:6px;border:1px solid #e7d9e0;border-radius:12px;padding:12px;text-align:left;background:#fff;color:#634153;min-width:0;cursor:pointer}
+.pickerResults button span{font-size:11px;color:#8c7281}.pickerResults button.selected{border-color:#c05281;background:#fff0f6}
+.variantChooser,.existingContext{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.variantChooser button{display:grid;gap:4px;border:1px solid #ead8e1;border-radius:11px;padding:10px 14px;background:#fff5fa;color:#79546b;cursor:pointer}
+.variantChooser button.active{background:#ffe4ef;border-color:#ca628d}.variantChooser small{font-size:10px}
+.existingContext{padding:12px;border-radius:12px;background:#f7f0fb;font-size:13px}
+.receiptFields h4{font-size:13px;margin:0;color:#876a7d}
+.receiptRowV2{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:end;gap:12px;padding:16px;border:1px solid #eadce3;background:#fffafb;border-radius:16px;min-width:0}
+.receiptRowV2 .sourcePicker{grid-column:span 2;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:end}
+.receiptRowV2 .imageCountBadge{grid-column:span 2;display:flex;gap:8px;align-items:center;padding:11px;background:#edf9f2;color:#2b6c4c;border-radius:11px;font-size:12px}
+.imageCountBadge b{font-size:22px}.receipt .actions{flex-wrap:wrap;margin-top:0}.receiptRule{font-size:12px;line-height:1.6;flex:1;min-width:180px}
+.receipt .primary{background:#b83c71}.receiptFields>.row>button{padding:10px 14px;border:1px solid #e1c9d5;border-radius:11px;background:#fff0f6;color:#8b4667;font-weight:700;cursor:pointer}
+.themeDark .receipt,.themeDark .approval{background:#242532;border-color:#514553;color:#fff5fa}
+.themeDark .receipt input{background:#32323f;color:#fff5fa;border-color:#655165}
+.themeDark .flowTabs button,.themeDark .pickerResults button,.themeDark .variantChooser button{background:#302c3c;border-color:#5c4558;color:#fff5fa}
+.themeDark .flowTabs button span,.themeDark .pickerResults button span,.themeDark .receiptFields h4{color:#dfc0d1}
+.themeDark .flowTabs button.active,.themeDark .pickerResults button.selected,.themeDark .variantChooser button.active{background:#563247;border-color:#c6789b;box-shadow:none}
+.themeDark .receiptRowV2,.themeDark .existingContext{background:#302c3c;border-color:#60465a;color:#fff5fa}
+.themeDark .receiptRowV2 .imageCountBadge{background:#263c35;color:#c8f1df}
+.themeDark .notice{background:#483a2d;color:#ffe1a5;border:1px solid #76604a}
+.themeDark .progressBox{background:#302c3c;border-color:#5b4657;color:#fff5fa}
+.themeDark .warning{color:#ffbcb1}
+@media(max-width:900px){.pickerResults{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.receiptV2{padding:14px}.flowTabs{grid-template-columns:1fr}.flowTabs button{padding:13px}.receiptRowV2{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px}.receiptRowV2 .sourcePicker{grid-template-columns:repeat(2,minmax(0,1fr))}.sourcePicker input{grid-column:1/-1}.receipt .actions>.primary{width:100%}.receiptFields>.row{flex-direction:row;flex-wrap:wrap}}

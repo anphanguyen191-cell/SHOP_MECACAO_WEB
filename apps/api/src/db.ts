@@ -10,6 +10,12 @@ const dataDir=path.join(projectRoot,'data')
 fs.mkdirSync(dataDir,{recursive:true})
 const dbPath=process.env.SHOP_DB_PATH?path.resolve(process.env.SHOP_DB_PATH):path.join(dataDir,'shop.db')
 fs.mkdirSync(path.dirname(dbPath),{recursive:true})
+if(process.env.SHOP_SANDBOX_ROOT){
+ const root=fs.realpathSync(path.resolve(process.env.SHOP_SANDBOX_ROOT))
+ const parent=fs.realpathSync(path.dirname(dbPath))
+ const rel=path.relative(root,parent)
+ if(path.isAbsolute(rel)||rel==='..'||rel.startsWith('..'+path.sep))throw new Error('Sandbox database phải nằm trong vùng thử riêng')
+}
 
 export const db=new DatabaseSync(dbPath)
 db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;')

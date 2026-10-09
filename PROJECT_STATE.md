@@ -1,3 +1,8 @@
+# Authoritative V1 checkpoint — 2026-10-09
+
+Status: **LOCAL AUTOMATED GATES PASS; Windows / full restore UNVERIFIED; V1 NOT STABLE.** See `V1_FINAL_PREFLIGHT_2026-10-09.md` for current source changes, executed evidence, scope and remaining gates. This supersedes every historical statement below. Check the latest Actions run independently; do not use an older run as proof for new code. V2 remains blocked.
+
+---
 # Latest V1 pre-Windows quality checkpoint — 2026-10-08
 
 **Status: AUTOMATED PRE-WINDOWS GATE PASS at GitHub Actions run 37729772120; real Windows test UNVERIFIED; V1 NOT STABLE.** This section supersedes historical progress statements below.

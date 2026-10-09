@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## V1 pre-Windows hardening — 2026-10-09
+Status: AUTOMATED LOCAL PASS / WINDOWS UNVERIFIED / NOT STABLE
+
+- Batched physical inventory reads; consistent file-only stock and complete ledger totals on SKU search.
+- Receipt/folder async state, double-submit prevention and automatic dashboard refresh.
+- Existing Size batch-import reconciliation, folder browsing/paste, retry/loading states, UI preferences, accessible labels/focus and non-cropped lazy galleries.
+- Backup manifest completeness verification against snapshot; sandbox API/db guards and fresh Windows source build.
+- Dependency lockfile + npm ci; expanded core, HTTP, browser and performance regressions.
+- No new schema, no V2 and no real inventory mutation. Full Windows restore remains unverified.
+
 ## V0.1.2 — Foundation Stable — 2026-10-06
 Status: DONE / STABLE
 

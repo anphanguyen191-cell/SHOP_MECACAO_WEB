@@ -31,10 +31,10 @@ async function freePort(){
 }
 const port=await freePort(),base='http://127.0.0.1:'+port
 let child,logs=''
-function start(){
+function start(extraEnv={}){
  logs=''
  child=spawn(process.execPath,['apps/api/dist/server.js'],{
-  cwd:process.cwd(),env:{...process.env,SHOP_DB_PATH:dbPath,PORT:String(port),SHOP_HOST:'127.0.0.1'},stdio:['ignore','pipe','pipe']
+  cwd:process.cwd(),env:{...process.env,SHOP_SANDBOX_ROOT:'',SHOP_DB_PATH:dbPath,PORT:String(port),SHOP_HOST:'127.0.0.1',...extraEnv},stdio:['ignore','pipe','pipe']
  })
  child.stdout.on('data',d=>{logs+=d.toString()})
  child.stderr.on('data',d=>{logs+=d.toString()})
@@ -113,6 +113,16 @@ try{
  const afterCatalog=await api('/api/products')
  check(afterCatalog.length===2&&afterCatalog.reduce((n,x)=>n+x.total_stock,0)===4,'catalog persistence after restart')
  check((await api('/api/health')).database==='test-shop.db','reopened same isolated SQLite database')
+ await stop()
+ start({SHOP_SANDBOX_ROOT:home})
+ check((await waitReady()).sandbox===true,'sandbox health must come from backend, not URL port')
+ check((await api('/api/fs/roots'))[0]===fs.realpathSync(home),'sandbox folder picker shows only test root')
+ await api('/api/fs/list?path='+encodeURIComponent(os.tmpdir()),{expected:403})
+ await api('/api/store/scan',{method:'POST',body:{rootPath:os.tmpdir()},expected:403})
+ await api('/api/goods-receipt/inspect',{method:'POST',body:{path:os.tmpdir()},expected:403})
+ await api('/api/goods-receipt',{method:'POST',body:{storeRoot:os.tmpdir(),sizes:[]},expected:403})
+ check((await api('/api/inventory/dashboard')).stock===4,'sandbox rejection must leave physical stock intact')
+ check((await api('/api/store/scan',{method:'POST',body:{rootPath:storeRoot}})).productCount===2,'sandbox must still allow its test warehouse')
  console.log('HTTP_API_ACCEPTANCE PASS: '+checks+' assertions; 3 receipt flows, scan/import/idempotence, ledger isolation, SHA originals, lossless backup and restart')
 }catch(e){console.error(e instanceof Error?e.stack:String(e));console.error('Server logs:',logs.slice(-4000));process.exitCode=1}
 finally{

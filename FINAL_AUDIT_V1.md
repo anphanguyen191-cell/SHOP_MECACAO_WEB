@@ -1,3 +1,8 @@
+# Current V1 audit — 2026-10-09
+
+**NOT STABLE.** Latest executed local gate, schema/core/crash tests, 30 HTTP business assertions, 23 UI source checks, Chromium UI and 1000-SKU/3000-image performance fixture PASS. Detailed scope/evidence: `V1_FINAL_PREFLIGHT_2026-10-09.md`. Windows and full restore remain UNVERIFIED; historical procedures mentioning writes to a real warehouse are superseded by the sandbox-only Windows guide. Latest GitHub Actions result must be checked for the current commit.
+
+---
 # Latest V1 quality gate — 2026-10-08 / pre-Windows handoff
 
 **Automated verification PASS (run 37729772120). Real Windows warehouse verification: NOT PERFORMED. Verdict: PRE-WINDOWS TEST CANDIDATE, NOT V1 STABLE.** Earlier paragraphs below are retained for history and must not override this conclusion.
