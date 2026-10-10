@@ -7,7 +7,7 @@ const dbPath=path.join(dir,'self-test.db')
 const result=spawnSync(process.execPath,['--import','tsx',process.argv[2]||'src/selfTest.ts'],{
  cwd:path.resolve('.'),
  // Windows launcher exports a sandbox root; tests use their own temp root.
- env:{...process.env,SHOP_DB_PATH:dbPath,SHOP_SANDBOX_ROOT:'',SHOP_ENABLE_V2_DRAFTS:'',SHOP_ENABLE_V2_SALES:''},
+ env:{...process.env,SHOP_DB_PATH:dbPath,SHOP_SANDBOX_ROOT:'',SHOP_ENABLE_V2_DRAFTS:'',SHOP_ENABLE_V2_SALES:'',SHOP_LOCAL_V2_CONFIG:'',SHOP_LOCAL_V2_RESTORE_READY:''},
  stdio:'inherit'
 })
 try{fs.rmSync(dir,{recursive:true,force:true})}catch{}

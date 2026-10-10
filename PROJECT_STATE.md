@@ -1,3 +1,7 @@
+# V2 LOCAL business activation implementation — 2026-10-10
+
+Owner explicitly requested real-warehouse readiness. Added explicit clean-package activation into a separate schema130 DB with existing direct Product/Size/photo layout, V1 source/current-photo equality checks, complete version4 backup/restore proof before an active marker, loopback/origin/path guards, single-server PID lock, legacy Web V1 marker guard, accurate business/restore UI, remembered Windows launcher and unchanged-data-only rollback retaining all files. No actual business warehouse accessed; owner copy review/cutover acceptance pending, not inferred from prior sandbox PASS. `WINDOWS_V2_BUSINESS_START.md` describes gates. Sold originals remain retained; no cleanup/LAN/V3. New exact CI required before delivery.
+
 # V2 LOCAL read-only release check — 2026-10-10
 
 Owner requested continuing after LOCAL copy delivery. Added advisory package/source/latest V1 validation, no-test-order gate and durable TXT/JSON reports; `CHECK_WINDOWS_V2_LOCAL_RELEASE.bat`, `V2_LOCAL_ACTIVATION_PLAN.md`, `V2_LOCAL_RELEASE_CHECKPOINT.md`. Owner copy-data review not yet reported; not inferred from “tiếp”. No live activation/schema/data change. e5d086d baseline exact CI38031750870 Linux/Windows22/24/deploy SUCCESS verified. New implementation requires exact CI; current LOCAL sandbox/path assumptions must be adapted and tested before any business cutover.

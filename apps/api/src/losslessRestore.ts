@@ -16,7 +16,7 @@ function copyVerified(source:string,target:string,expected:string){fs.mkdirSync(
 /** Restore only into a NEW directory. Never activates it or alters the running DB/warehouse. */
 export function restoreLosslessBackup(directory:string,targetRoot:string,oldWarehouseRoot:string,checkpoint:(point:string)=>void=()=>{}){
  const bundle=fs.realpathSync(directory),verified=verifyLosslessBackup(bundle),manifest=JSON.parse(fs.readFileSync(path.join(bundle,'lossless-manifest.json'),'utf8')) as Manifest
- if(manifest.version===3)return restoreSalesBackup(bundle,targetRoot,oldWarehouseRoot,checkpoint)
+ if(manifest.version===3||manifest.version===4)return restoreSalesBackup(bundle,targetRoot,oldWarehouseRoot,checkpoint)
  const target=path.resolve(targetRoot),parent=fs.realpathSync(path.dirname(target)),old=path.resolve(oldWarehouseRoot),warehouse=path.join(target,'warehouse'),database=path.join(target,'database','shop-restored.db')
  const overlaps=(base:string,p:string)=>{const rel=path.relative(base,p);return rel===''||(!path.isAbsolute(rel)&&rel!=='..'&&!rel.startsWith('..'+path.sep))}
  if(overlaps(bundle,target)||overlaps(old,target)||overlaps(target,old))throw Error('Kho restore phải tách khỏi backup và kho gốc')

@@ -1,5 +1,7 @@
 @echo off
 setlocal
+set "SHOP_LOCAL_V2_CONFIG="
+set "SHOP_LOCAL_V2_RESTORE_READY="
 cd /d "%~dp0"
 title Shop Me CaCao - Prepare V2 LOCAL copy
 set "SHOP_DB_PATH="

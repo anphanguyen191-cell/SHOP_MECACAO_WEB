@@ -1,5 +1,7 @@
 @echo off
 setlocal
+set "SHOP_LOCAL_V2_CONFIG="
+set "SHOP_LOCAL_V2_RESTORE_READY="
 cd /d "%~dp0"
 title Shop Me CaCao RESTORE SANDBOX - PORT 3016
 echo Mo kho restore READY moi nhat. Khong thay database dang dung.

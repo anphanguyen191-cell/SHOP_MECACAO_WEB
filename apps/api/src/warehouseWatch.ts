@@ -1,4 +1,5 @@
 import {salesActivity,SALES_AREA} from './salesExecution.js'
+import {localRuntime,ACTIVE_MARKER} from './localRuntime.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import {createHash} from 'node:crypto'
@@ -19,6 +20,7 @@ export function validateWarehouseRoot(value:string){
  if(!value?.trim())throw Error('Chọn kho gốc trước khi lưu cấu hình')
  const root=fs.realpathSync(path.resolve(value.trim()))
  if(!fs.statSync(root).isDirectory())throw Error('Kho gốc không phải thư mục')
+ if(localRuntime&&root!==localRuntime.warehouse)throw Error('Không đổi kho đích của LOCAL đã kích hoạt')
  const sandbox=process.env.SHOP_SANDBOX_ROOT
  if(sandbox){const base=fs.realpathSync(sandbox),rel=path.relative(base,root);if(path.isAbsolute(rel)||rel==='..'||rel.startsWith('..'+path.sep))throw Error('Kho phải nằm trong sandbox thử nghiệm')}
  return root
@@ -69,7 +71,7 @@ export function checkWarehouse(rootPath=getWatchSettings().rootPath){
 }
 export function startWarehouseWatcher(){
  let last=Date.now()
- const run=()=>{if(salesActivity.busy||salesActivity.readers||(process.env.SHOP_SANDBOX_ROOT&&fs.existsSync(path.join(process.env.SHOP_SANDBOX_ROOT,SALES_AREA+'-pending.json'))))return;const c=getWatchSettings();if(c.rootPath)try{checkWarehouse(c.rootPath)}catch(e){console.error('Warehouse scan:',e instanceof Error?e.message:e)}}
+ const run=()=>{if(salesActivity.busy||salesActivity.readers||(process.env.SHOP_SANDBOX_ROOT&&fs.existsSync(path.join(process.env.SHOP_SANDBOX_ROOT,SALES_AREA+'-pending.json'))))return;const c=getWatchSettings();if(!localRuntime&&c.rootPath&&fs.existsSync(path.join(c.rootPath,ACTIVE_MARKER)))return;if(c.rootPath)try{checkWarehouse(c.rootPath)}catch(e){console.error('Warehouse scan:',e instanceof Error?e.message:e)}}
  if(getWatchSettings().startup)setTimeout(run,0).unref()
  const timer=setInterval(()=>{const c=getWatchSettings();if(c.periodic&&Date.now()-last>=c.intervalSeconds*1000){last=Date.now();run()}},10000)
  timer.unref();return timer

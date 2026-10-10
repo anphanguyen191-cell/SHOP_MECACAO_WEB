@@ -1,5 +1,7 @@
 @echo off
 setlocal
+set "SHOP_LOCAL_V2_CONFIG="
+set "SHOP_LOCAL_V2_RESTORE_READY="
 cd /d "%~dp0"
 title Shop Me CaCao V1 - SANDBOX TEST
 color 0E

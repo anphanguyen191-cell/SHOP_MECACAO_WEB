@@ -10,7 +10,9 @@ Công cụ chỉ đọc database/ảnh. Kiểm tra backup nguồn110, bản sao1
 
 Báo cáo dễ đọc `.txt` và bản máy đọc `.json` được tạo mới trong `release-reports` của gói đã chọn. Không ghi đè báo cáo cũ, không sửa database/ảnh, không khởi chạy/chuyển ứng dụng. `TECHNICALLY_READY_FOR_REVIEW` chỉ nói các phép kiểm tra đã đạt tại thời điểm kiểm tra; `businessActivationAllowed=false` luôn giữ nguyên. `BLOCKED` nêu từng mục chưa đạt. Backup V1 được chọn có thể vẫn cũ; công cụ không khẳng định đã dừng ghi V1 hoặc đã lấy backup đúng thời điểm chuyển.
 
-## Kế hoạch kích hoạt LOCAL kinh doanh — chưa triển khai
+## Kế hoạch lịch sử trước triển khai
+
+Cập nhật: chủ shop đã yêu cầu hoàn thiện để chạy kho thật. Công cụ kích hoạt LOCAL đã được bổ sung; hướng dẫn có hiệu lực hiện tại là `WINDOWS_V2_BUSINESS_START.md`. Những mô tả "chưa triển khai" và giả định sandbox dưới đây phản ánh checkpoint trước đó, không phải bằng chứng nghiệm thu kho thật. Chưa ghi nhận chủ shop duyệt bản sao/cutover.
 
 1. Chủ shop đối chiếu và nghiệm thu mẫu/Size/SKU/giá/tồn của bản sao. Giữ riêng các đơn test, không đưa chúng vào đơn kinh doanh.
 2. Chốt đặc tả cấu hình LOCAL: tiếp tục React/Node/node:sqlite, loopback, giữ nguyên `1-Me CaCao Store / Product / Size / ảnh`, cho biết chính xác DB/kho/archive nào đang dùng. Không đổi tên/di chuyển kho gốc để thỏa cấu trúc sandbox. Mặc định V1 và scripts test cũ giữ độc lập; không auto-migration khi mở ứng dụng.

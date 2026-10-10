@@ -6,6 +6,8 @@ set "SHOP_DB_PATH="
 set "SHOP_SANDBOX_ROOT="
 set "SHOP_ENABLE_V2_DRAFTS="
 set "SHOP_ENABLE_V2_SALES="
+set "SHOP_LOCAL_V2_CONFIG="
+set "SHOP_LOCAL_V2_RESTORE_READY="
 cd /d "%~dp0.."
 title Shop Me CaCao - First Time Setup
 where node >nul 2>nul
