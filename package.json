@@ -17,7 +17,7 @@
     "test:performance": "npm --workspace apps/api run test:performance",
     "test:warehouse": "npm --workspace apps/api run test:warehouse",
     "test:share": "npm --workspace apps/api run test:share",
-    "test:gate": "npm run typecheck && npm run test:schema && npm run test:core && npm run test:performance && npm run test:warehouse && npm run test:share && npm run test:sales-drafts && npm run test:sales-preflight && npm run test:sales-preview && npm run test:sales-archive && npm run test:sales-staging && npm run test:sales-commit-lab && npm run test:sales-confirm-trial && npm run test:sales-execution && npm run test:restore && npm --workspace apps/api run test:tasks && npm run test:stage2 && npm run test:stage3 && npm run test:stage4 && npm run build && npm run test:ui",
+    "test:gate": "npm run typecheck && npm run test:schema && npm run test:core && npm run test:performance && npm run test:warehouse && npm run test:share && npm run test:sales-drafts && npm run test:sales-preflight && npm run test:sales-preview && npm run test:sales-archive && npm run test:sales-staging && npm run test:sales-commit-lab && npm run test:sales-confirm-trial && npm run test:sales-execution && npm run test:restore && npm --workspace apps/api run test:tasks && npm run test:stage2 && npm run test:stage3 && npm run test:stage4 && npm run test:stage5 && npm run build && npm run test:ui",
     "test:sales-drafts": "npm --workspace apps/api run test:sales-drafts",
     "test:sales-preview": "npm --workspace apps/api run test:sales-preview",
     "test:sales-archive": "npm --workspace apps/api run test:sales-archive",
@@ -29,7 +29,8 @@
     "test:sales-execution": "npm --workspace apps/api run test:sales-execution",
     "test:stage2": "node --import tsx apps/api/src/stage2SelfTest.ts",
     "test:stage3": "node --import tsx apps/api/src/stage3SelfTest.ts",
-    "test:stage4": "node --import tsx apps/api/src/stage4SelfTest.ts"
+    "test:stage4": "node --import tsx apps/api/src/stage4SelfTest.ts",
+    "test:stage5": "node --import tsx apps/api/src/stage5SelfTest.ts"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

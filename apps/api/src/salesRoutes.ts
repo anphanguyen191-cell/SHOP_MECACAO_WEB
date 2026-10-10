@@ -1,3 +1,4 @@
+import {soldRetentionService} from './soldRetention.js'
 import {businessReports,csvText} from './businessReports.js'
 import {bootstrapStocktake,stocktakeService} from './stocktake.js'
 import {financeService} from './orderFinance.js'
@@ -14,6 +15,7 @@ import {DatabaseSync} from 'node:sqlite'
 import {SalesError,salesDraftService} from './salesDrafts.js'
 
 export function salesDraftRouter(db:DatabaseSync,root:string,port:number){
+ const retention=readSchemaVersion(db)===130?soldRetentionService(db,root):null
  const router=Router(),service=salesDraftService(db,root),preview=salesPreviewService(db,root),archive=salesArchiveService(db,root),preflight=salesPreflightService(db,root),trial=readSchemaVersion(db)===120?salesConfirmTrialService(db,root):null,sales=readSchemaVersion(db)===130?salesExecutionService(db,root):null
  router.use((req,res,next)=>{
   if(!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress||''))return res.status(403).json({error:'V2 thử nghiệm chỉ truy cập trên cùng máy.'})
@@ -26,6 +28,8 @@ export function salesDraftRouter(db:DatabaseSync,root:string,port:number){
  function execute(res:any,action:()=>unknown,status=200){try{res.status(status).json(action())}catch(e){res.status(e instanceof SalesError?e.status:500).json({error:e instanceof Error?e.message:'Không xử lý được đơn nháp',...(e instanceof SalesError?e.details:{})})}}
  async function previewRequest(res:any,action:()=>Promise<unknown>,image=false){try{const result=await action();res.set('Cache-Control','no-store');if(image)res.type('jpeg').send(result);else res.json(result)}catch(e){res.status(e instanceof SalesError?e.status:500).json({error:e instanceof Error?e.message:'Không tạo được ảnh xem trước'})}}
  if(sales){
+ router.get('/sold-retention',(req,res)=>execute(res,()=>retention!.list(req.query.offset)))
+ router.get('/sold-retention/:imageId/verify',(req,res)=>void previewRequest(res,()=>retention!.verify(req.params.imageId)))
  bootstrapStocktake(db)
  const reports=businessReports(db),stocktake=stocktakeService(db,root)
  router.get('/reports/summary',(req,res)=>execute(res,()=>reports.summary(req.query.from,req.query.to)))

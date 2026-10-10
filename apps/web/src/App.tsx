@@ -1,3 +1,4 @@
+import SoldRetentionView from './SoldRetentionView'
 import BusinessReports from './BusinessReports'
 import StocktakeView from './StocktakeView'
 import {DebtsView} from './OrderFinance'
@@ -30,7 +31,7 @@ const baseNav=['Tổng quan','Danh mục sản phẩm','Nhập hàng','Import kh
 export default function App(){
  const isDemo=useMemo(()=>location.hostname.endsWith('github.io')||new URLSearchParams(location.search).get('demo')==='1',[])
  const [health,setHealth]=useState<Health|null>(null),[active,setActive]=useState('Tổng quan')
- const nav=health?.salesDrafts&&!isDemo?[...baseNav.slice(0,-1),'Khách hàng','Bán hàng','Công nợ',...(health?.salesExecution?['Báo cáo','Kiểm kê']:[]),'Cài đặt']:baseNav
+ const nav=health?.salesDrafts&&!isDemo?[...baseNav.slice(0,-1),'Khách hàng','Bán hàng','Công nợ',...(health?.salesExecution?['Báo cáo','Kiểm kê','Ảnh SOLD']:[]),'Cài đặt']:baseNav
  const conflictChoice=useDraftConflictChoice()
  const [salesId,setSalesId]=useState<string|null>(null),[addToDraft,setAddToDraft]=useState<string|null>(null)
  const [menuOpen,setMenuOpen]=useState(false),[menuSearch,setMenuSearch]=useState('')
@@ -121,7 +122,7 @@ export default function App(){
   {health?.localV2Business&&<div className="sandboxSafetyBanner businessSafetyBanner" role="status"><b>LOCAL V2 · KHO KINH DOANH</b><br/>Kho: {health.warehouse}<br/>DB: {health.databasePath}<br/>Ảnh nhập mới: {health.incoming} · Không mở V1/Python cũ đồng thời.</div>}
   {health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">BẢN PHỤC HỒI THỬ · Không phải kho kinh doanh.</div>}
   {isWindowsSandbox&&!health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">{health?.localV2Review?'LOCAL V2 — BẢN SAO ĐỂ DUYỆT. Dữ liệu lấy từ backup V1; thao tác chỉ thay bản sao, chưa kích hoạt kho thật.':'CHẾ ĐỘ THỬ WINDOWS — Database và kho giả lập riêng. KHÔNG thao tác ghi lên D:\\1-Me CaCao Store.'}</div>}
-  {menuOpen&&<div className="drawerBackdrop" onClick={()=>setMenuOpen(false)}><aside className="featureDrawer" role="dialog" aria-modal="true" aria-label="Danh mục chức năng" onClick={e=>e.stopPropagation()}><div className="drawerHead"><img src={`${import.meta.env.BASE_URL}brand/logo.jpg`} alt="" /><div><b>Shop Mẹ CaCao</b><small>Danh mục chức năng</small></div><button type="button" aria-label="Đóng danh mục" onClick={()=>setMenuOpen(false)}>×</button></div><div className="drawerSearch"><span>⌕</span><input value={menuSearch} onChange={e=>setMenuSearch(e.target.value)} placeholder="Tìm chức năng..." /></div><p className="drawerSection">QUẢN LÝ CỬA HÀNG · {menuItems.length} CHỨC NĂNG</p><div className="drawerLinks">{menuItems.map((n,i)=><button type="button" key={n} className={active===n?"selected":""} onClick={()=>goTo(n)}><span className="drawerIcon">{({ "Tổng quan":"⌂","Danh mục sản phẩm":"▦","Nhập hàng":"＋","Import kho":"⇩","Tồn kho":"▤","Bán hàng":"▧","Công nợ":"₫","Báo cáo":"▥","Kiểm kê":"✓","Khách hàng":"♧","Cài đặt":"⚙"} as Record<string,string>)[n]}</span><span>{n}</span><span className="drawerArrow">›</span></button>)}{menuItems.length===0&&<p>Không tìm thấy chức năng phù hợp.</p>}</div><div className="drawerFoot"><span className="drawerDot"/> {mode} · Since 2023</div></aside></div>}
+  {menuOpen&&<div className="drawerBackdrop" onClick={()=>setMenuOpen(false)}><aside className="featureDrawer" role="dialog" aria-modal="true" aria-label="Danh mục chức năng" onClick={e=>e.stopPropagation()}><div className="drawerHead"><img src={`${import.meta.env.BASE_URL}brand/logo.jpg`} alt="" /><div><b>Shop Mẹ CaCao</b><small>Danh mục chức năng</small></div><button type="button" aria-label="Đóng danh mục" onClick={()=>setMenuOpen(false)}>×</button></div><div className="drawerSearch"><span>⌕</span><input value={menuSearch} onChange={e=>setMenuSearch(e.target.value)} placeholder="Tìm chức năng..." /></div><p className="drawerSection">QUẢN LÝ CỬA HÀNG · {menuItems.length} CHỨC NĂNG</p><div className="drawerLinks">{menuItems.map((n,i)=><button type="button" key={n} className={active===n?"selected":""} onClick={()=>goTo(n)}><span className="drawerIcon">{({ "Tổng quan":"⌂","Danh mục sản phẩm":"▦","Nhập hàng":"＋","Import kho":"⇩","Tồn kho":"▤","Bán hàng":"▧","Công nợ":"₫","Báo cáo":"▥","Kiểm kê":"✓","Ảnh SOLD":"▧","Khách hàng":"♧","Cài đặt":"⚙"} as Record<string,string>)[n]}</span><span>{n}</span><span className="drawerArrow">›</span></button>)}{menuItems.length===0&&<p>Không tìm thấy chức năng phù hợp.</p>}</div><div className="drawerFoot"><span className="drawerDot"/> {mode} · Since 2023</div></aside></div>}
   <div className="layout"><nav className="sidebar">{nav.map(n=><button key={n} className={active===n?'active':''} onClick={()=>goTo(n)}><strong>{n}</strong></button>)}</nav>
   <main><nav className="pageBreadcrumb" aria-label="Vị trí hiện tại">{active==='Tổng quan'?<strong>Trang chủ · Tổng quan</strong>:<><button onClick={()=>goTo('Tổng quan')}>Tổng quan</button><span>›</span><strong>{active}</strong></>}{isDemo&&<small>DEMO · Dữ liệu minh họa</small>}</nav>
   {active==='Tổng quan'&&<div className="overview">
@@ -147,6 +148,7 @@ export default function App(){
   {active==='Tồn kho'&&<InventoryView isDemo={isDemo} onDraft={health?.salesDrafts?chooseForDraft:undefined} draftLabel={addToDraft?'THÊM VÀO ĐƠN NHÁP':'TẠO ĐƠN NHÁP'}/>}
   {active==='Báo cáo'&&health?.salesExecution&&<BusinessReports onOrder={id=>{setSalesId(id);goTo('Bán hàng')}}/>}
   {active==='Kiểm kê'&&health?.salesExecution&&<StocktakeView/>}
+  {active==='Ảnh SOLD'&&health?.salesExecution&&<SoldRetentionView/>}
   {active==='Công nợ'&&health?.salesDrafts&&<DebtsView onOrder={id=>{setSalesId(id);goTo('Bán hàng')}}/>}
   {active==='Khách hàng'&&health?.salesDrafts&&<CustomersView/>}
   {active==='Bán hàng'&&health?.salesDrafts&&<SalesDraftView business={!!health?.localV2Business||!!health?.freshDevelopment} execute={!!health?.salesExecution} onStockChanged={()=>setProductReload(n=>n+1)} openId={salesId} onOpen={setSalesId} onSelectImages={id=>{setAddToDraft(id);goTo('Tồn kho')}}/>}
