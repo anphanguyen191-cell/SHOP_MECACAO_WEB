@@ -26,7 +26,15 @@ must(!!locked.attempt('owner','test-password-567890'),'Can sign in after cooldow
 for(const p of ['/api/fs/roots','/api/backup/restore-test','/api/local/warehouse','/api/tasks/123','/api/store/import','/api/sales/drafts/recover','/api/inventory/share/copy','/api/sales/drafts/id/archives']){
  for(const role of ['owner','cashier','inventory','viewer'] as const)must(!lanApiAllowed(role,'GET',p)&&!lanApiAllowed(role,'POST',p),'High-risk path denied '+p)
 }
-must(lanApiAllowed('viewer','GET','/api/sales/drafts/reports/summary'),'Read report')
+must(!lanApiAllowed('viewer','GET','/api/sales/drafts/reports/summary'),'Viewer cannot access reports')
+must(!lanApiAllowed('viewer','GET','/api/sales/drafts/customers'),'Viewer cannot access customer PII')
+must(!lanApiAllowed('inventory','GET','/api/sales/drafts/finance/debts'),'Inventory cannot access receivables')
+must(!lanApiAllowed('cashier','GET','/api/sales/drafts/stocktakes'),'Cashier cannot access stocktake')
+must(lanApiAllowed('owner','GET','/api/sales/drafts/sold-retention'),'Owner may review SOLD archive')
+must(!lanApiAllowed('cashier','GET','/api/sales/drafts/sold-retention'),'Cashier cannot see retention')
+must(lanApiAllowed('inventory','GET','/api/sales/drafts/stocktakes'),'Inventory may read stocktake')
+must(lanApiAllowed('viewer','GET','/api/inventory/explorer'),'Viewer may read available stock')
+must(lanApiAllowed('cashier','GET','/api/sales/drafts/finance/debts'),'Cashier may read receivables')
 must(!lanApiAllowed('viewer','POST','/api/sales/drafts'),'Viewer no write')
 must(lanApiAllowed('cashier','POST','/api/sales/drafts'),'Cashier may draft')
 must(lanApiAllowed('cashier','POST','/api/sales/drafts/order-1/confirm'),'Cashier can confirm')
