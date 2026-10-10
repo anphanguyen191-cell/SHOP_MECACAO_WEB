@@ -16,7 +16,7 @@ try{
  CREATE TABLE sales_confirmations(order_id TEXT PRIMARY KEY,operation_id TEXT NOT NULL,created_at TEXT NOT NULL);
  CREATE TABLE sales_units(image_id INTEGER PRIMARY KEY,order_id TEXT NOT NULL,snapshot TEXT NOT NULL,source_hash TEXT NOT NULL,archive_path TEXT NOT NULL,archive_hash TEXT NOT NULL);`)
  const photo=await sharp({create:{width:8,height:8,channels:3,background:'#ffcad9'}}).jpeg().toBuffer()
- const original='.mecacao-v2-sales/op1/staged/11.jpg',preview='.mecacao-v2-sales/op1/archive/11.jpg'
+ const original=path.join('.mecacao-v2-sales','op1','staged','11.jpg'),preview=path.join('.mecacao-v2-sales','op1','archive','11.jpg')
  for(const f of [original,preview]){const absolute=path.join(root,f);fs.mkdirSync(path.dirname(absolute),{recursive:true});fs.writeFileSync(absolute,photo)}
  const payload=JSON.stringify({format:1,units:[{imageId:11,staged:original,archive:preview,sourceHash:hash(photo),archiveHash:hash(photo)}]})
  db.prepare('INSERT INTO sales_operations VALUES(?,?,?,?)').run('op1',payload,hash(payload),'SOLD')
