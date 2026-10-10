@@ -43,6 +43,8 @@ export function salesPreviewService(db:DatabaseSync,root:string){
  }
  async function exclusive<T>(fn:()=>Promise<T>){if(busy)throw new SalesError('Đang chuẩn bị ảnh xem trước. Đợi hoàn tất rồi thử lại.',429);busy=true;try{return await fn()}finally{busy=false}}
  return {
+  slipImage:(id:string,version:number,imageId:number)=>exclusive(()=>encoded(id,version,imageId)),
+  verifySlipSources:(id:string,version:number,items:Array<{imageId:number;sourceHash:string}>)=>{current(id,version);for(const i of items)if(digest(source(i.imageId))!==i.sourceHash)throw new SalesError('Ảnh đã thay đổi trong lúc xuất phiếu. Tạo lại PNG.',409)},
   derivative:(id:string,version:number,imageId:number,hash:string)=>exclusive(async()=>{const out=await encoded(id,version,imageId);if(out.summary.sourceHash!==hash)throw new SalesError('Ảnh đã đổi sau lần xem trước. Xem trước lại.',409);return out}),
   preview:(id:string,version:number)=>exclusive(async()=>{
    const d=current(id,version),items=[]

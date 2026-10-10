@@ -1,3 +1,7 @@
+# Chặng 2 — bản phát triển đầy đủ, dữ liệu mới — 2026-10-10
+
+Giữ chức năng chặng 1; thêm danh mục khách, cảnh báo điện thoại trùng, snapshot giao hàng, phí ship/miễn ship, phiếu PNG có ảnh hàng và nhiều trang. START_SHOP_CHANG_2.bat mở bản LOCAL dùng dữ liệu mới của thư mục cài, nhập ảnh từ UI bằng COPY. Cập nhật README, checkpoint và CI Linux/Windows/browser. Chưa bổ sung nghiệp vụ chặng 3.
+
 # Restore result regression fix — 2026-10-10
 
 Review for owner Windows instructions found schema130 restore result missing counts consumed by UI. Return verified row counts, make UI resilient, show correct V2 sales restore launcher, and add real Chromium full-backup→restore READY result coverage. Tests and exact CI must be checked on new commit. This supersedes b001faf for owner download.

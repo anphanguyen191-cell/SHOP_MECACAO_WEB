@@ -1,3 +1,4 @@
+import {bootstrapCustomers,contactInput} from './customers.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import {createHash,randomUUID} from 'node:crypto'
@@ -27,6 +28,7 @@ function validate(raw:any):Input{
 
 /** Drafts have no filesystem writes, inventory transactions, image claims or reservations. */
 export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
+ bootstrapCustomers(db)
  const root=fs.realpathSync(sandboxRoot),sales=!!db.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_confirmations'").get()
  const sold=(id:number)=>sales&&!!db.prepare('SELECT 1 FROM sales_units WHERE image_id=?').get(id)
  const select=db.prepare(`SELECT i.id image_id,i.product_id,i.variant_id,i.file_path,p.name product_name,p.product_code,v.size,v.sku,v.cost_price unit_cost,p.status product_status,v.status variant_status FROM product_images i JOIN products p ON p.id=i.product_id JOIN product_variants v ON v.id=i.variant_id AND v.product_id=p.id WHERE i.id=?`)
@@ -62,7 +64,16 @@ export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
   const saved=(row.status==='SOLD'?db.prepare('SELECT snapshot FROM sales_units WHERE order_id=? ORDER BY image_id').all(id).map(u=>JSON.parse(String(u.snapshot))):db.prepare('SELECT * FROM sales_order_images WHERE order_id=? ORDER BY position').all(id)) as Saved[]
   const items=saved.map(item=>({...item,unavailable:row.status==='SOLD'?'Bộ hàng đã bán':unavailable(stock(item.image_id))}))
   const subtotal=items.reduce((n,i)=>n+i.unit_price,0)
-  return {id:row.id,status:row.status,version:row.version,discount:row.discount,note:row.note,created_at:row.created_at,updated_at:row.updated_at,items,quantity:items.length,subtotal,total:subtotal-row.discount,available:items.every(i=>!i.unavailable),reservesStock:false,...conflicts(items.map(i=>i.image_id),id)}
+  const c=db.prepare('SELECT * FROM order_contacts WHERE order_id=?').get(id)
+  const contact={customerId:c?.customer_id??null,recipientName:String(c?.recipient_name??''),phone:String(c?.phone??''),address:String(c?.address??''),shippingFee:Number(c?.shipping_fee??0)}
+  return {id:row.id,status:row.status,version:row.version,discount:row.discount,note:row.note,created_at:row.created_at,updated_at:row.updated_at,items,quantity:items.length,subtotal,total:subtotal-row.discount,payableTotal:subtotal-row.discount+contact.shippingFee,contact,available:items.every(i=>!i.unavailable),reservesStock:false,...conflicts(items.map(i=>i.image_id),id)}
+ }
+ function saveContact(id:string,raw:any,input:Input){
+  const old=db.prepare('SELECT shipping_fee FROM order_contacts WHERE order_id=?').get(id)
+  const c=raw.contact===undefined?null:contactInput(db,raw.contact),total=input.items.reduce((n,i)=>n+i.unitPrice,0)-input.discount+(c?.shippingFee??Number(old?.shipping_fee??0))
+  if(!Number.isSafeInteger(total))throw new SalesError('Tổng thanh toán vượt giới hạn an toàn')
+  if(!c)return
+  db.prepare(`INSERT INTO order_contacts(order_id,customer_id,recipient_name,phone,address,shipping_fee) VALUES(?,?,?,?,?,?) ON CONFLICT(order_id) DO UPDATE SET customer_id=excluded.customer_id,recipient_name=excluded.recipient_name,phone=excluded.phone,address=excluded.address,shipping_fee=excluded.shipping_fee`).run(id,c.customerId,c.recipientName,c.phone,c.address,c.shippingFee)
  }
  function saveItems(id:string,input:Input){
   const rows=input.items.map(item=>{const row=stock(item.imageId),reason=unavailable(row);if(reason)throw new SalesError('Ảnh #'+item.imageId+': '+reason,409);return {row:row!,price:item.unitPrice}})
@@ -74,17 +85,18 @@ export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
   get,
   list(status='DRAFT'){
    if(!['DRAFT','CANCELLED_DRAFT','SOLD','all'].includes(status))throw new SalesError('Trạng thái đơn không hợp lệ')
-   return db.prepare(`SELECT o.id,${sales?"CASE WHEN EXISTS(SELECT 1 FROM sales_confirmations c WHERE c.order_id=o.id) THEN 'SOLD' ELSE o.status END":'o.status'} status,o.version,o.discount,o.note,o.created_at,o.updated_at,COUNT(i.image_id) quantity,COALESCE(SUM(i.unit_price),0) subtotal,COALESCE(SUM(i.unit_price),0)-o.discount total FROM sales_orders o LEFT JOIN sales_order_images i ON i.order_id=o.id WHERE (?='all' OR ${sales?"CASE WHEN EXISTS(SELECT 1 FROM sales_confirmations c WHERE c.order_id=o.id) THEN 'SOLD' ELSE o.status END":'o.status'}=?) GROUP BY o.id ORDER BY o.created_at DESC,o.id LIMIT 200`).all(status,status)
+   const rows=db.prepare(`SELECT o.id,${sales?"CASE WHEN EXISTS(SELECT 1 FROM sales_confirmations c WHERE c.order_id=o.id) THEN 'SOLD' ELSE o.status END":'o.status'} status,o.version,o.discount,o.note,o.created_at,o.updated_at,COUNT(i.image_id) quantity,COALESCE(SUM(i.unit_price),0) subtotal,COALESCE(SUM(i.unit_price),0)-o.discount total FROM sales_orders o LEFT JOIN sales_order_images i ON i.order_id=o.id WHERE (?='all' OR ${sales?"CASE WHEN EXISTS(SELECT 1 FROM sales_confirmations c WHERE c.order_id=o.id) THEN 'SOLD' ELSE o.status END":'o.status'}=?) GROUP BY o.id ORDER BY o.created_at DESC,o.id LIMIT 200`).all(status,status)
+   return rows.map(r=>{const c=db.prepare('SELECT recipient_name,shipping_fee FROM order_contacts WHERE order_id=?').get(r.id!);return {...r,recipientName:c?.recipient_name??'',payableTotal:Number(r.total)+Number(c?.shipping_fee??0)}})
   },
   create(raw:any,key:unknown){
    if(typeof key!=='string'||! /^[A-Za-z0-9_-]{16,100}$/.test(key))throw new SalesError('Thiếu mã yêu cầu tạo đơn hợp lệ')
-   const input=validate(raw),hash=createHash('sha256').update(JSON.stringify(input)).digest('hex')
+   const input=validate(raw),hash=createHash('sha256').update(JSON.stringify({...input,...(raw.contact!==undefined?{contact:contactInput(db,raw.contact)}:{})})).digest('hex')
    const id=transaction(()=>{
     const previous=db.prepare('SELECT id,request_hash FROM sales_orders WHERE request_key=?').get(key) as {id:string;request_hash:string}|undefined
     if(previous){if(previous.request_hash!==hash)throw new SalesError('Mã yêu cầu đã dùng với nội dung khác',409);return previous.id}
     requireConflictChoice(input.items.map(i=>i.imageId),'',raw.conflictToken)
     const id=randomUUID();db.prepare('INSERT INTO sales_orders(id,request_key,request_hash,discount,note) VALUES(?,?,?,?,?)').run(id,key,hash,input.discount,input.note)
-    saveItems(id,input);return id
+    saveItems(id,input);saveContact(id,raw,input);return id
    })
    return get(id)
   },
@@ -96,7 +108,7 @@ export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
     if(row.status!=='DRAFT'||row.version!==raw.version)throw new SalesError('Đơn đã thay đổi hoặc đã hủy. Mở lại trước khi sửa.',409)
     const existing=new Set((db.prepare('SELECT image_id FROM sales_order_images WHERE order_id=?').all(id) as Array<{image_id:number}>).map(i=>i.image_id))
     requireConflictChoice(input.items.filter(i=>!existing.has(i.imageId)).map(i=>i.imageId),id,raw.conflictToken)
-    saveItems(id,input)
+    saveItems(id,input);saveContact(id,raw,input)
     db.prepare("UPDATE sales_orders SET discount=?,note=?,version=version+1,updated_at=datetime('now') WHERE id=?").run(input.discount,input.note,id)
    })
    return get(id)

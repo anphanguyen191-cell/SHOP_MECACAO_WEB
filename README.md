@@ -1,34 +1,21 @@
-## Chuẩn bị LOCAL V2 từ backup V1
+# SHOP MẸ CACAO WEB — bản mới nhất trên main
 
-Sau khi chuẩn bị: `CHECK_WINDOWS_V2_LOCAL_RELEASE.bat` kiểm tra gói sạch, đối chiếu backup V1 cuối, tạo báo cáo từng mục; không kích hoạt kho thật. Xem [V2_LOCAL_ACTIVATION_PLAN.md](V2_LOCAL_ACTIVATION_PLAN.md).
+## Chặng 2: Khách hàng, phí ship và phiếu chốt đơn PNG
 
-`PREPARE_WINDOWS_V2_LOCAL_COPY.bat` tạo bản sao chuyển110→130, kiểm chứng dữ liệu/ảnh, backup/restore V2 và bản quay lui V1. `RUN_WINDOWS_V2_LOCAL_REVIEW.bat` mở bản sao để duyệt ở3017. Không kích hoạt kho thật. Hướng dẫn: [WINDOWS_V2_LOCAL_PREPARATION.md](WINDOWS_V2_LOCAL_PREPARATION.md).
+Bản đầy đủ kế thừa chức năng kho/nhập/chọn ảnh/bán hàng/backup/restore và tiến độ tác vụ chặng 1, bổ sung khách hàng, thông tin giao hàng, phí ship/miễn ship và phiếu PNG thương hiệu từ đơn đã lưu.
 
-## Test Windows V2 bán hàng trọn luồng
+**Cách chạy Windows:** giải nén vào thư mục mới → chạy **START_SHOP_CHANG_2.bat** → giao diện tự mở tại http://127.0.0.1:3000. Máy cần Node.js 22.13+ hoặc 24; lần đầu cần mạng để cài thư viện.
 
-Chạy `RUN_WINDOWS_V2_SALES_TEST.bat` (3007, V2SalesSandbox riêng). Có confirm bán trong kho test, lịch sử ảnh nhẹ, restart và full backup/restore130. Xem [WINDOWS_V2_SALES_TEST.md](WINDOWS_V2_SALES_TEST.md). Gốc giữ staging, chưa xóa/chưa bật kho thật/STABLE.
+**Dữ liệu mới:** mỗi thư mục cài mới có kho rỗng riêng. Vào **Nhập hàng** để chọn ảnh nguồn trên giao diện; kho đích đã chọn sẵn. Ảnh được COPY, không MOVE. Mở lại cùng bản cài giữ dữ liệu đã nhập.
 
-# SHOP MECACAO WEB
+Không yêu cầu DB V1, backup V1 hoặc các launcher PREPARE/ACTIVATE để chạy bản phát triển này. Các tài liệu chuyển kho cũ là lịch sử và công cụ tương thích tùy chọn.
 
-Greenfield local-first web app cho Shop Mẹ CaCao.
+- [Bắt đầu chặng 2](BAT_DAU_CHANG_2.txt)
+- [Chức năng, kiến trúc và quy tắc chặng 2](STAGE2_CUSTOMERS_PNG.md)
+- [Bằng chứng kiểm thử và giới hạn](STAGE2_TEST_REPORT.md)
+- [CI của đúng bản main](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/workflows/pages.yml)
 
-## Stable baseline
-**V0.1.2 — Foundation Stable**
-
-- Frontend: React + TypeScript + Vite + PWA
-- Local API: Node.js + Express
-- Database: SQLite via built-in `node:sqlite`
-- Local production: `http://localhost:3000`
-- GitHub Pages: DEMO/PREVIEW
-- Windows acceptance test: PASS
-- Không yêu cầu Visual Studio Build Tools
-
-## Windows
-1. Node.js 22+.
-2. Chạy `scripts/SETUP_FIRST_TIME.bat` lần đầu.
-3. Chạy `START_SHOP.bat`.
-4. Local app: `http://localhost:3000`.
-5. Dữ liệu local: `data/shop.db`.
+Ứng dụng nghiệp vụ chạy LOCAL trên máy. GitHub Pages là DEMO/PREVIEW; không kết nối DB/kho của shop. COD/thu tiền/công nợ/hậu mãi, V4, LAN và cloud chưa thuộc chặng 2.
 
 ## Project governance
 - `DEVELOPMENT_PRINCIPLES.md`: nguyên tắc bắt buộc về an toàn dữ liệu và hoàn thiện chức năng/giao diện cùng nhau.

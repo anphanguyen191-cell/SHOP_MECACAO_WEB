@@ -1,3 +1,9 @@
+# Quy tắc cập nhật do chủ shop duyệt — 2026-10-10
+
+Trong giai đoạn phát triển, mỗi phiên bản là bộ phần mềm đầy đủ kế thừa chức năng/mã nguồn, nhưng khởi tạo dữ liệu mới trong thư mục cài mới. Dữ liệu thử trước đó không cần migration/kế thừa; nhập dữ liệu cần dùng qua giao diện. Không xóa hoặc ghi đè kho/thư mục cũ. Kiểm thử dùng dữ liệu giả lập. Một launcher là luồng khởi chạy chính; không bắt chọn DB V1 hoặc gói chuyển kho. Restart cùng bản cài không reset dữ liệu. Quy tắc này thay thế yêu cầu chuyển dữ liệu bắt buộc của các checkpoint lịch sử trong giai đoạn hiện tại.
+
+Chủ shop đã cho phép đưa toàn bộ chặng 2 lên main của anphanguyen191-cell/SHOP_MECACAO_WEB và chạy CI Windows, Linux, browser. Ý tưởng mới ngoài phạm vi đã duyệt vẫn phải đề xuất riêng.
+
 # Nguyên tắc phát triển Shop Mẹ CaCao Web
 
 Bổ sung theo yêu cầu chủ shop ngày 2026-10-10. Áp dụng cho mọi chức năng mới và các thay đổi tiếp theo; đọc cùng PROJECT_STATE.md, ROADMAP.md và đặc tả nghiệp vụ hiện hành.

@@ -1,3 +1,4 @@
+import {freshDevelopment,freshWarehouse} from './freshDevelopment.js'
 import {taskManager} from './tasks.js'
 import {taskActivity} from './taskActivity.js'
 import {salesActivity,SALES_AREA} from './salesExecution.js'
@@ -48,7 +49,7 @@ function sandboxPathAllowed(value:unknown){
 }
 app.use(express.json({ limit: '2mb' }))
 app.use('/api',(req,res,next)=>{
- if(localRuntime){
+ if(localRuntime||freshDevelopment){
   if(!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress||''))return res.status(403).json({error:'LOCAL chỉ truy cập trên máy Windows này'})
   if(req.method!=='GET'&&req.method!=='HEAD'){let same=false;try{const u=new URL(req.get('origin')||'');same=u.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(u.hostname)&&Number(u.port||80)===PORT}catch{}if(!same)return res.status(403).json({error:'Thao tác LOCAL phải từ giao diện cùng máy/cùng cổng'})}
  }else if(req.path!=='/health'&&legacyWarehouseActive(db))return res.status(409).json({error:'Kho đã chuyển LOCAL V2; dừng V1 và mở START_SHOP_V2_LOCAL.bat.'})
@@ -69,6 +70,19 @@ app.use('/api',(req,res,next)=>{
 // Test mode enforces isolation at the API, not merely via a yellow UI banner.
 app.use('/api',(req,res,next)=>{
  if(!sandboxRoot)return next()
+ if(freshDevelopment){
+  const target=(v:unknown)=>typeof v==='string'&&path.resolve(v)===freshWarehouse&&sandboxPathAllowed(v)
+  const source=(v:unknown)=>{try{if(typeof v!=='string')return false;const real=fs.realpathSync(path.resolve(v));return real===path.resolve(v)&&!isInternalWarehousePath(real)}catch{return false}}
+  let ok=true
+  if(req.path==='/store/scan'||req.path.startsWith('/warehouse/rename/')||(req.path==='/warehouse/settings'&&req.method==='PUT'))ok=target(req.body.rootPath)
+  if(req.path==='/warehouse/file')ok=target(req.query.rootPath)&&sandboxPathAllowed(req.query.path)
+  if(req.path==='/store/import')ok=target(req.body.product?.rootPath)&&(req.body.product?.variants??[]).every((v:any)=>(v.images??[]).every(sandboxPathAllowed))
+  if(req.path==='/store/import-batch-task')ok=Array.isArray(req.body.products)&&req.body.products.every((p:any)=>target(p.rootPath)&&(p.variants??[]).every((v:any)=>(v.images??[]).every(sandboxPathAllowed)))
+  if(req.path==='/goods-receipt/inspect')ok=source(req.body.path)
+  if(req.path==='/goods-receipt')ok=target(req.body.storeRoot)&&(req.body.sizes??[]).every((v:any)=>(!v.sourcePath||source(v.sourcePath))&&(v.images??[]).every(source))
+  if(!ok)return res.status(403).json({error:'Bản mới chỉ ghi vào kho riêng. Dùng Nhập hàng để COPY ảnh từ thư mục của shop.'})
+  return next()
+ }
  if(localRuntime){
   const context=localRuntime
   const target=(v:unknown)=>typeof v==='string'&&path.resolve(v)===context.warehouse&&sandboxPathAllowed(v)
@@ -124,7 +138,7 @@ app.post('/api/tasks/:id/acknowledge',(req,res)=>{if(!taskOrigin(req)||req.body.
 app.post('/api/store/import-batch-task',(req,res)=>{if(req.body.confirmed!==true||!Array.isArray(req.body.products)||!req.body.products.length||req.body.products.length>500)return res.status(400).json({error:'Cần duyệt lô từ 1–500 Product'});return asyncTask(req,res,'REGISTER_BATCH',req.body)})
 
 app.get('/api/health', (_req, res) => res.json({
-  ok: true, app: 'SHOP_MECACAO_WEB', version: localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:localRuntime?.warehouse,incoming:localRuntime?.incoming,databasePath:localRuntime?.database,localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
+  ok: true, app: 'SHOP_MECACAO_WEB', freshDevelopment,version: freshDevelopment?'3.0.0-stage2':localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:freshDevelopment?freshWarehouse:localRuntime?.warehouse,incoming:localRuntime?.incoming,databasePath:localRuntime?.database,localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
 }))
 if(salesDraftsEnabled&&sandboxRoot)app.use('/api/sales/drafts',salesDraftRouter(db,sandboxRoot,PORT))
 else app.use('/api/sales/drafts',(_req,res)=>res.status(404).json({error:'V2 đơn nháp chưa bật; chỉ thử bằng sandbox V2 riêng.'}))
@@ -161,7 +175,7 @@ app.get('/api/images/:id', (req,res) => {
 app.get('/api/fs/roots', (_req,res)=>{
  try{
   if(localRuntime)return res.json([localRuntime.warehouse,localRuntime.incoming])
-  if(sandboxRoot)return res.json([sandboxRoot])
+  if(sandboxRoot&&!freshDevelopment)return res.json([sandboxRoot])
   if(process.platform==='win32'){const roots:string[]=[];for(let code=65;code<=90;code++){const drive=String.fromCharCode(code)+':\\\\';try{if(fs.existsSync(drive)&&fs.statSync(drive).isDirectory())roots.push(drive)}catch{}}return res.json(roots)}
   return res.json([process.cwd()])
  }catch(e){return res.status(500).json({error:e instanceof Error?e.message:'Không thể đọc ổ đĩa'})}

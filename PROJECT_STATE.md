@@ -1,3 +1,11 @@
+# Checkpoint hiện tại — chặng 2, phát hành đầy đủ trên main — 2026-10-10
+
+Chủ shop duyệt đưa toàn bộ chức năng đến hiện tại vào main. Baseline chặng 1 giữ nguyên; bổ sung khách hàng, snapshot giao hàng, phí ship/miễn ship, tổng thanh toán và phiếu PNG phân trang từ đơn đã lưu. Source + UI + test + launcher + tài liệu cùng một bản.
+
+Quy trình phát triển đã được chủ shop điều chỉnh: mỗi bản cài mới có dữ liệu riêng, không bắt kế thừa dữ liệu thử của các bản trước. Chạy START_SHOP_CHANG_2.bat; nhập ảnh trên UI vào kho đích tự tạo bằng COPY. Restart cùng bản cài giữ dữ liệu. Chưa truy cập kho thật của chủ shop. Những checkpoint chuyển V1→V2 phía dưới là lịch sử, không phải điều kiện mở bản chặng 2.
+
+Kiểm thử local đã PASS; CI Linux/Windows Node 22/24 + browser kiểm chứng đúng commit main. Xem STAGE2_CUSTOMERS_PNG.md và STAGE2_TEST_REPORT.md. Chặng 3 (thu tiền/công nợ/hậu mãi) chưa triển khai; không tự suy ra LOCAL STABLE từ CI.
+
 # Stage 1 durable live operation progress — 2026-10-10
 
 Owner explicitly approved completing stage1. Added separate IPC worker/SSE plus polling, durable task keys/results, scoped async scan/receipt/batch registration/full backup, restart/replay guards, active-worker fencing and fail-closed interrupted task review. Background scans retain compact summary; foreground results remain reopenable. UI uses live progress, persistent same-key retry and a shared history/review panel. No schema migration, cloud/V3 or forced cancellation. `STAGE1_TASK_PROGRESS.md` contains scope, limits and Windows copy test. Actual business cutover/STABLE acceptance still not inferred from sandbox PASS. New exact CI required.

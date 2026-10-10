@@ -13,3 +13,5 @@ Thumbs.db
 *.log
 *.tsbuildinfo
 artifacts/
+
+data/stage2/

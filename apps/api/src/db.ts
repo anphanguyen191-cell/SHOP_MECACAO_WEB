@@ -1,3 +1,4 @@
+import {freshDevelopment,freshWarehouse,freshRoot} from './freshDevelopment.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -27,12 +28,15 @@ if(process.env.SHOP_SANDBOX_ROOT&&!localRuntime){
 
 if(process.env.SHOP_SANDBOX_ROOT&&fs.existsSync(dbPath)&&(fs.realpathSync(dbPath)!==dbPath||!fs.lstatSync(dbPath).isFile()))throw Error('Sandbox DB không được là symlink hoặc file ngoài vùng thử')
 if(fs.existsSync(dbPath)&&!localRuntime){const precheck=new DatabaseSync(dbPath,{readOnly:true});try{if(legacyWarehouseActive(precheck))throw Error('Kho đã kích hoạt LOCAL V2. Không mở V1/sandbox trên cùng kho. Dùng START_SHOP_V2_LOCAL.bat.')}finally{precheck.close()}}
-if(localRuntime&&!(process.env.SHOP_TASK_WORKER==='1'&&process.send))claimRuntime(localRuntime)
+if((localRuntime||freshDevelopment)&&!(process.env.SHOP_TASK_WORKER==='1'&&process.send))claimRuntime(localRuntime??{format:1,mode:'LOCAL_V2_BUSINESS',dataRoot:freshRoot,warehouse:freshRoot,incoming:'',database:dbPath,sourceV1Database:'',sourceBackup:'',baselineHash:'',imageHashes:[],activatedAt:'',configPath:'',configSha:'stage2-fresh',review:true})
 export const db=new DatabaseSync(dbPath)
 db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;')
 try{
  if(localRuntime){if(readSchemaVersion(db)!==130)throw Error('LOCAL không tự migration DB')}else if(salesExecutionEnabled){if(readSchemaVersion(db)!==130)bootstrapSalesDrafts(db);bootstrapSalesExecution(db,process.env.SHOP_SANDBOX_ROOT!)}else if(salesDraftsEnabled)bootstrapSalesDrafts(db);else bootstrapV100(db)
- db.prepare("INSERT INTO app_metadata(key,value,updated_at) VALUES('app_version',?,datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=datetime('now')").run(localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev')
+ if(freshDevelopment){
+  db.prepare("INSERT INTO app_settings(key,value) VALUES('warehouse-watch',?) ON CONFLICT(key) DO NOTHING").run(JSON.stringify({rootPath:freshWarehouse,startup:false,periodic:false,intervalMinutes:5,autoRename:false,popup:true}))
+ }
+ db.prepare("INSERT INTO app_metadata(key,value,updated_at) VALUES('app_version',?,datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=datetime('now')").run(freshDevelopment?'3.0.0-stage2':localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev')
  db.prepare("INSERT INTO app_settings(key,value,updated_at) VALUES('low_stock_threshold','2',datetime('now')) ON CONFLICT(key) DO NOTHING").run()
 }catch(error){
  try{db.close()}catch{}

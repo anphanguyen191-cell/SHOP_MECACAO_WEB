@@ -1,3 +1,5 @@
+import {customerService} from './customers.js'
+import {orderSlipService} from './orderSlip.js'
 import {salesExecutionService} from './salesExecution.js'
 import {readSchemaVersion} from './schema.js'
 import {salesConfirmTrialService} from './salesConfirmTrial.js'
@@ -20,6 +22,12 @@ export function salesDraftRouter(db:DatabaseSync,root:string,port:number){
  })
  function execute(res:any,action:()=>unknown,status=200){try{res.status(status).json(action())}catch(e){res.status(e instanceof SalesError?e.status:500).json({error:e instanceof Error?e.message:'Không xử lý được đơn nháp',...(e instanceof SalesError?e.details:{})})}}
  async function previewRequest(res:any,action:()=>Promise<unknown>,image=false){try{const result=await action();res.set('Cache-Control','no-store');if(image)res.type('jpeg').send(result);else res.json(result)}catch(e){res.status(e instanceof SalesError?e.status:500).json({error:e instanceof Error?e.message:'Không tạo được ảnh xem trước'})}}
+ const customers=customerService(db),slips=orderSlipService(db,root)
+ router.get('/customers',(req,res)=>execute(res,()=>customers.list(String(req.query.q??''))))
+ router.post('/customers',(req,res)=>execute(res,()=>customers.save(req.body),201))
+ router.put('/customers/:customerId',(req,res)=>execute(res,()=>customers.save(req.body,req.params.customerId)))
+ router.get('/:id/slip',(req,res)=>execute(res,()=>slips.summary(req.params.id,Number(req.query.version))))
+ router.get('/:id/slip.png',(req,res)=>{void (async()=>{try{const data=await slips.png(req.params.id,Number(req.query.version),Number(req.query.page??1));res.set('Cache-Control','no-store').type('png').send(data)}catch(e){res.status(e instanceof SalesError?e.status:500).json({error:e instanceof Error?e.message:'Không tạo được phiếu PNG'})}})()})
  if(sales){
  router.post('/:id/confirm',(req,res)=>void previewRequest(res,()=>sales.confirm(req.params.id,req.body,req.get('Idempotency-Key'))))
  router.get('/operations/:requestKey',(req,res)=>void previewRequest(res,()=>sales.status(req.params.requestKey)))

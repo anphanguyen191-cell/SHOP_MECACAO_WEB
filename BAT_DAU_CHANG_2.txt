@@ -1,0 +1,16 @@
+SHOP MẸ CACAO — CHẶNG 2
+
+1. Giải nén vào một thư mục mới.
+2. Chạy START_SHOP_CHANG_2.bat.
+3. Giao diện tự mở tại http://127.0.0.1:3000.
+4. Vào NHẬP HÀNG để chọn ảnh nguồn của shop. Kho đích đã có sẵn.
+5. Vào KHÁCH HÀNG để thêm/tìm/sửa khách.
+6. Vào TỒN KHO, chọn ảnh → tạo đơn nháp.
+7. Trong BÁN HÀNG: chọn khách, giá, giảm giá, phí ship → lưu → tạo PNG.
+
+Máy cần Node.js 22.13+ hoặc 24. Lần đầu cần mạng để cài thư viện.
+Giữ cửa sổ server khi sử dụng; đóng cửa sổ để dừng.
+Không cần chọn DB V1 hoặc chạy các file PREPARE/ACTIVATE cũ.
+Mỗi thư mục cài mới có dữ liệu mới. Mở lại cùng bản cài giữ dữ liệu đã nhập.
+Ảnh nguồn được COPY, không bị di chuyển hoặc ghi đè.
+Hướng dẫn và trạng thái chi tiết: STAGE2_CUSTOMERS_PNG.md, STAGE2_TEST_REPORT.md.

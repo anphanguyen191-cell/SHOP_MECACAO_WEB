@@ -23,6 +23,8 @@ jobs:
         run: npm audit --omit=dev --audit-level=critical
       - name: V1 internal gate
         run: npm run test:gate
+      - name: Stage 2 fresh release HTTP and PNG acceptance
+        run: node scripts/stage2-e2e.mjs
       - name: First-time setup inherited V2 environment regression
         run: node scripts/setup-environment-regression.mjs
       - name: V1 backup to LOCAL V2 copy migration and rollback proof
@@ -63,6 +65,8 @@ jobs:
       - run: npm ci
       - name: Windows internal gate (isolated fixtures)
         run: npm run test:gate
+      - name: Windows Stage 2 fresh release HTTP and PNG acceptance
+        run: node scripts/stage2-e2e.mjs
       - name: Windows first-time setup inherited V2 environment regression
         run: node scripts/setup-environment-regression.mjs
       - name: Windows V1 backup to LOCAL V2 copy migration and rollback proof

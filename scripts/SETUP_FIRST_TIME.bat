@@ -2,6 +2,7 @@
 setlocal
 rem Setup tests must not inherit the caller's operational database or V2 mode.
 rem SETLOCAL restores these values when returning to the sandbox launcher.
+set "SHOP_FRESH_DEVELOPMENT="
 set "SHOP_DB_PATH="
 set "SHOP_SANDBOX_ROOT="
 set "SHOP_ENABLE_V2_DRAFTS="

@@ -69,7 +69,15 @@ async function browserTest(base,id){
   await until("!!document.querySelector('.salesOrderRow')")
   await run("Array.from(document.querySelectorAll('.salesOrderRow')).find(b=>b.textContent.includes("+JSON.stringify(id.slice(0,8).toUpperCase())+")).click()")
   await until("!!document.querySelector('.preflightCheck')")
-  await run("document.querySelector('.preflightCheck').click()")
+
+  await run("(()=>{const inputs=document.querySelectorAll('.contactGrid input');const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;set.call(inputs[0],'Mẹ test PNG');inputs[0].dispatchEvent(new Event('input',{bubbles:true}));set.call(inputs[2],'15000');inputs[2].dispatchEvent(new Event('input',{bubbles:true}))})()")
+  await until("Array.from(document.querySelectorAll('.salesButtons button')).some(b=>b.textContent==='Lưu thay đổi'&&!b.disabled)")
+  await run("Array.from(document.querySelectorAll('.salesButtons button')).find(b=>b.textContent==='Lưu thay đổi').click()")
+  await until("!document.querySelector('.preflightCheck').disabled")
+  await run("document.querySelector('.orderSlip button').click()")
+  await until("document.querySelector('.orderSlip img')?.naturalWidth===1080")
+  assert(await run("document.querySelector('.orderSlip a').download.endsWith('.png')"));checks++
+    await run("document.querySelector('.preflightCheck').click()")
   await until("!!document.querySelector('.saleAgree')")
   assert(await run("document.querySelector('.saleConfirm').disabled"));checks++
   await run("document.querySelector('.saleAgree').click()")

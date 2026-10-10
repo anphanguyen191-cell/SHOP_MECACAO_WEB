@@ -1,3 +1,4 @@
+import CustomersView from './CustomersView'
 import { useEffect, useMemo, useState } from 'react'
 import InventoryOps from './InventoryOps'
 import AddProduct from './AddProduct'
@@ -13,7 +14,7 @@ import SalesDraftView from './SalesDraftView'
 import {useDraftConflictChoice} from './DraftConflictChoice'
 import {apiJson,useBooleanPreference} from './uiState'
 
-type Health={ok:boolean;version:string;schema:number;database:string;sandbox?:boolean;localV2Review?:boolean;localV2Business?:boolean;localV2RestoreReview?:boolean;warehouse?:string;databasePath?:string;incoming?:string;salesDrafts?:boolean;salesExecution?:boolean}
+type Health={ok:boolean;version:string;schema:number;database:string;freshDevelopment?:boolean;sandbox?:boolean;localV2Review?:boolean;localV2Business?:boolean;localV2RestoreReview?:boolean;warehouse?:string;databasePath?:string;incoming?:string;salesDrafts?:boolean;salesExecution?:boolean}
 type ProductRow={id:number;product_code:string;name:string;category?:string;variant_count:number;total_stock:number;image_id?:number|null;filtered_stock?:number;sizes?:string[];stock_by_size?:Array<{size:string;stock:number}>}
 type CatalogSuggestion={product_id:number;product_code:string;product_name:string;variant_id:number;sku:string;size:string;stock:number}
 const demo:ProductRow[]=[
@@ -25,7 +26,7 @@ const baseNav=['Tổng quan','Danh mục sản phẩm','Nhập hàng','Import kh
 export default function App(){
  const isDemo=useMemo(()=>location.hostname.endsWith('github.io')||new URLSearchParams(location.search).get('demo')==='1',[])
  const [health,setHealth]=useState<Health|null>(null),[active,setActive]=useState('Tổng quan')
- const nav=health?.salesDrafts&&!isDemo?[...baseNav.slice(0,-1),'Bán hàng','Cài đặt']:baseNav
+ const nav=health?.salesDrafts&&!isDemo?[...baseNav.slice(0,-1),'Khách hàng','Bán hàng','Cài đặt']:baseNav
  const conflictChoice=useDraftConflictChoice()
  const [salesId,setSalesId]=useState<string|null>(null),[addToDraft,setAddToDraft]=useState<string|null>(null)
  const [menuOpen,setMenuOpen]=useState(false),[menuSearch,setMenuSearch]=useState('')
@@ -85,8 +86,8 @@ export default function App(){
   return rows
  },[products,isDemo,search,catalogSize,catalogStock,catalogSort])
  function chooseCatalogSuggestion(s:CatalogSuggestion){setSearch(s.product_name);setCatalogSize(s.size);setCatalogSuggestions([])}
- const isWindowsSandbox=!!health?.sandbox&&!isDemo
- const mode=isDemo?'DEMO':health?.ok?(health?.localV2Business?'LOCAL V2 · KHO KINH DOANH':isWindowsSandbox?'TEST SANDBOX':'LOCAL'):'LOCAL / API OFFLINE'
+ const isWindowsSandbox=!!health?.sandbox&&!health?.freshDevelopment&&!isDemo
+ const mode=isDemo?'DEMO':health?.ok?(health?.freshDevelopment?'CHẶNG 2 · DỮ LIỆU MỚI':health?.localV2Business?'LOCAL V2 · KHO KINH DOANH':isWindowsSandbox?'TEST SANDBOX':'LOCAL'):'LOCAL / API OFFLINE'
  const catalogDisplay=isDemo?{
   categoryBreakdown:[{category:'Đồ tole bé gái',count:2}],
   sizeBreakdown:[{size:'Size 1',count:2},{size:'Size 2',count:2},{size:'Size 3',count:2},{size:'Size 4',count:1}],
@@ -112,6 +113,7 @@ export default function App(){
   {conflictChoice.dialog}
   <header className="topbar"><div className="brandIdentity"><button type="button" className="menuToggle" aria-label="Mở danh mục chức năng" aria-expanded={menuOpen} onClick={()=>setMenuOpen(true)}>☰</button><img className="brandLogo" src={`${import.meta.env.BASE_URL}brand/logo.jpg`} alt="Logo Shop Mẹ CaCao" onError={e=>{e.currentTarget.style.display="none"}}/><span className="brandMonogram">MC</span><div><p className="eyebrow">SHOP MẸ CACAO · SINCE 2023</p><h1>Quản lý kho</h1></div></div><div className="headerActions"><DisplayDensity compact={compact} onChange={setCompact}/><WarehouseNotifications isDemo={isDemo} onReview={()=>goTo('Import kho')}/><button type="button" className="themeToggle" onClick={()=>setDarkMode(v=>!v)} aria-label={darkMode?"Bật giao diện sáng":"Bật giao diện tối"}>{darkMode?"☀":"☾"}</button><span className={'badge '+(mode==='LOCAL'?'local':mode==='DEMO'?'demo':mode==='TEST SANDBOX'?'test':'offline')}>{mode}</span></div></header>
   {!isDemo&&health?.ok&&<TaskProgress/>}
+  {health?.freshDevelopment&&<div className="sandboxSafetyBanner businessSafetyBanner"><b>CHẶNG 2 · BẢN PHÁT TRIỂN MỚI</b><br/>Dữ liệu riêng cho bản cài này. Vào Nhập hàng để chọn ảnh của shop; ảnh nguồn được copy.<br/>Kho: {health.warehouse}</div>}
   {health?.localV2Business&&<div className="sandboxSafetyBanner businessSafetyBanner" role="status"><b>LOCAL V2 · KHO KINH DOANH</b><br/>Kho: {health.warehouse}<br/>DB: {health.databasePath}<br/>Ảnh nhập mới: {health.incoming} · Không mở V1/Python cũ đồng thời.</div>}
   {health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">BẢN PHỤC HỒI THỬ · Không phải kho kinh doanh.</div>}
   {isWindowsSandbox&&!health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">{health?.localV2Review?'LOCAL V2 — BẢN SAO ĐỂ DUYỆT. Dữ liệu lấy từ backup V1; thao tác chỉ thay bản sao, chưa kích hoạt kho thật.':'CHẾ ĐỘ THỬ WINDOWS — Database và kho giả lập riêng. KHÔNG thao tác ghi lên D:\\1-Me CaCao Store.'}</div>}
@@ -139,7 +141,8 @@ export default function App(){
  </div>}
   {active==='Nhập hàng'&&<ReceiptDashboard isDemo={isDemo} onChanged={()=>setProductReload(x=>x+1)}/>}
   {active==='Tồn kho'&&<InventoryView isDemo={isDemo} onDraft={health?.salesDrafts?chooseForDraft:undefined} draftLabel={addToDraft?'THÊM VÀO ĐƠN NHÁP':'TẠO ĐƠN NHÁP'}/>}
-  {active==='Bán hàng'&&health?.salesDrafts&&<SalesDraftView business={!!health?.localV2Business} execute={!!health?.salesExecution} onStockChanged={()=>setProductReload(n=>n+1)} openId={salesId} onOpen={setSalesId} onSelectImages={id=>{setAddToDraft(id);goTo('Tồn kho')}}/>}
+  {active==='Khách hàng'&&health?.salesDrafts&&<CustomersView/>}
+  {active==='Bán hàng'&&health?.salesDrafts&&<SalesDraftView business={!!health?.localV2Business||!!health?.freshDevelopment} execute={!!health?.salesExecution} onStockChanged={()=>setProductReload(n=>n+1)} openId={salesId} onOpen={setSalesId} onSelectImages={id=>{setAddToDraft(id);goTo('Tồn kho')}}/>}
   {active==='Cài đặt'&&<section className="displayPreferences"><div><h3>Không gian làm việc</h3><p>Chọn độ gọn cho màn hình máy tính. Lựa chọn được nhớ trên trình duyệt; điện thoại giữ kích thước dễ chạm.</p></div><DisplayDensity compact={compact} onChange={setCompact}/></section>}
   {active==='Cài đặt'&&(isDemo?<section className="panel"><h3>Cài đặt & Backup</h3><p>DEMO không ghi cài đặt hoặc tạo backup. Các chức năng này chỉ hoạt động ở LOCAL.</p></section>:<SettingsView sandbox={!!health?.sandbox||!!health?.localV2Business}/>)}
   {active==='Danh mục sản phẩm'&&<><div className="dashboardFoldHeader"><div><span className="dashboardFoldEyebrow">BÁO CÁO DANH MỤC</span><h2>Dashboard sản phẩm</h2><p>Tổng hợp sản phẩm, Size và mức độ hoàn chỉnh dữ liệu</p></div><button type="button" className="dashboardFoldToggle" aria-expanded={catalogExpanded} aria-controls="catalog-dashboard-body" onClick={()=>setCatalogExpanded(v=>!v)}>{catalogExpanded?'Thu gọn':'Xem dashboard'} <span aria-hidden="true">{catalogExpanded?'⌃':'⌄'}</span></button></div>{catalogExpanded&&<div id="catalog-dashboard-body" className="dashboardFoldBody"><section className="catalogMetrics"><article><span>MẪU SẢN PHẨM</span><strong>{isDemo?2:catalog?.products??'—'}</strong></article><article><span>SIZE / SKU</span><strong>{isDemo?7:catalog?.skus??'—'}</strong></article><article><span>DANH MỤC</span><strong>{isDemo?1:catalog?.categories??'—'}</strong></article><article><span>SIZE THIẾU ẢNH</span><strong>{isDemo?0:catalog?.missingImages??'—'}</strong></article><article><span>SIZE THIẾU GIÁ</span><strong>{isDemo?0:catalog?.missingPrices??'—'}</strong></article></section><section className="panel catalogInsights"><div><h3>Cơ cấu danh mục</h3>{catalogDisplay?.categoryBreakdown?.map((x:any)=><p key={x.category}><span>{x.category}</span><b>{x.count}</b></p>)}</div><div><h3>Size phổ biến</h3>{catalogDisplay?.sizeBreakdown?.slice(0,8).map((x:any)=><p key={x.size}><span>{x.size}</span><b>{x.count} mẫu</b></p>)}</div><div><h3>Mẫu có nhiều Size</h3>{catalogDisplay?.mostVariants?.map((x:any)=><p key={x.product_id}><span>{x.product_name}</span><b>{x.count} Size</b></p>)}</div></section></div>}<section className="panel catalogPanel"><div className="catalogPanelHeading"><div><h3>Tra cứu sản phẩm</h3><p>Tìm nhanh theo tên, mã, SKU hoặc Size · tồn theo ảnh vật lý</p></div>{!isDemo&&<button className="primary" onClick={()=>setShowAdd(!showAdd)}>+ SẢN PHẨM</button>}</div>
