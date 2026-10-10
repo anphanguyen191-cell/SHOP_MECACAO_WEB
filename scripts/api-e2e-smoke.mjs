@@ -151,6 +151,7 @@ try{
  await stop();start({SHOP_SANDBOX_ROOT:home});await waitReady()
  check((await api('/api/warehouse/settings')).rootPath===fs.realpathSync(storeRoot),'warehouse root persisted across server restart')
  check((await api('/api/inventory/dashboard')).stock===4,'renamed stock persisted across restart')
+ for(let i=0;i<200;i++){const tasks=await api('/api/tasks');if(!tasks.some(t=>['QUEUED','RUNNING'].includes(t.status)))break;await sleep(50)}
  const pendingFile=path.join(sizeDir,'PENDING-STARTUP.png');fs.copyFileSync(file2,pendingFile)
  await stop();start({SHOP_SANDBOX_ROOT:home});await waitReady()
  let startupNotice=false
@@ -163,6 +164,7 @@ try{
  let periodicNotice=false;const deadline=Date.now()+75000
  while(Date.now()<deadline){const notices=await api('/api/warehouse/notices');periodicNotice=notices.length>baselineNoticeCount&&notices.some(n=>n.state==='unseen'&&n.message.includes('2 ảnh chờ duyệt'));if(periodicNotice)break;await sleep(500)}
  check(periodicNotice,'real periodic backend timer discovers a second pending image')
+ for(let i=0;i<200;i++){const tasks=await api('/api/tasks');if(!tasks.some(t=>['QUEUED','RUNNING'].includes(t.status)))break;await sleep(50)}
  check((await api('/api/inventory/dashboard')).stock===4,'automatic scans never register pending physical files or change ledger stock')
  fs.unlinkSync(pendingFile);fs.unlinkSync(periodicFile)
  console.log('HTTP_API_ACCEPTANCE PASS: '+checks+' assertions; 3 receipt flows, scan/import/idempotence, ledger isolation, SHA originals, lossless backup and restart')
