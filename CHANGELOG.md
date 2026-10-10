@@ -1,3 +1,6 @@
+## WIP — Stage 5A + UI Refresh + Stage 6 LAN Preview (nhánh riêng, chưa main) — 2026-10-10
+- SOLD retention read-only, Global UI tokens, HTTPS LAN opt-in/auth/RBAC/audit và test dual-client; chờ CI cuối + Windows/iPhone nghiệm thu; không xóa ảnh, không dùng kho thật.
+
 ## 3.2.0-stage4 — 2026-10-10
 - Báo cáo ngày VN: SOLD/doanh số/ship/sản phẩm, thu/hoàn/giảm, công nợ hiện tại, lãi gộp snapshot/thiếu vốn và xuất CSV an toàn.
 - Phiên kiểm kê theo Size: snapshot tồn ảnh/sổ/thiếu/SOLD, đếm/chênh/lý do, version/hash/kho thay đổi, chốt/hủy bất biến và CSV. Không tự điều chỉnh tồn.

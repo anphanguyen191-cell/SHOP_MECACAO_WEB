@@ -1,3 +1,5 @@
+> **Checkpoint phát triển 10/10/2026:** Stage 5A (kiểm chứng ảnh SOLD), Global UI Refresh và Stage 6 Mobile LAN HTTPS đang nằm trong PR #1, **chưa tích hợp main / chưa STABLE**. Chi tiết [PREVIEW_CHECKPOINT_STAGE5_STAGE6_2026-10-10.md](PREVIEW_CHECKPOINT_STAGE5_STAGE6_2026-10-10.md). Không dùng kho thật trong nhánh thử nghiệm.
+
 # SHOP MẸ CACAO WEB — bản mới nhất trên main
 
 ## Bản 3.2.0-stage4: Báo cáo và kiểm kê

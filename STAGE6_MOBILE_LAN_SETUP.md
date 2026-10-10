@@ -48,3 +48,10 @@ Thay `192.168.1.100` bằng **IP thật trên Windows**. Cài chứng chỉ CA v
 - Kiểm thử chứng chỉ và firewall theo cấu hình Windows thực tế.
 
 **CI PASS không đồng nghĩa Windows PASS hoặc STABLE. Mặc định START_SHOP.bat vẫn không mở LAN; chỉ bật qua biến môi trường opt-in và config TLS/credentials.**
+
+## Quản trị tài khoản và audit (cập nhật checkpoint)
+- Mở `SETUP_LAN_USERS.bat` trên Windows. Nếu đã có chủ shop, chọn **1 — Thêm**, **2 — Đổi mật khẩu**, hoặc **3 — Khóa tài khoản**. Phải xác thực bằng tên và mật khẩu owner hiện hành. Không cho khóa owner cuối cùng.
+- **Luôn dừng và mở lại `START_SHOP_LAN.bat`** sau khi thêm/đổi/khóa tài khoản, vì server nạp tài khoản khi khởi động; restart cũng thu hồi toàn bộ phiên đăng nhập đã cấp.
+- Nhật ký kiểm toán nằm ở `data/stage4/lan/audit.jsonl` (hash-chain, không có mật khẩu/token hoặc nội dung request). Đừng xóa/sửa tay; nếu lỗi integrity, server sẽ từ chối bật LAN cho đến khi đối soát. Chưa có xoay vòng archive được xác nhận.
+- Vai trò viewer xem thông tin tồn chung; cashier xem và ghi đơn/tiền/khách, không kiểm kê; inventory quản lý phiên kiểm kê, không bán; owner truy cập các tác vụ nghiệp vụ trên LAN **trừ những tác vụ bắt buộc Windows như backup/FS/recovery**.
+- Dữ liệu stage4/lan thuộc thư mục ứng dụng thử riêng. Không đưa key.pem, users.json hoặc audit.jsonl lên GitHub.
