@@ -40,7 +40,7 @@ export function createPhonePhotoInbox(inboxRoot:string,approvedRoot:string,rejec
   if(!fs.existsSync(file)||fs.lstatSync(file).isSymbolicLink()||fs.realpathSync(file)!==file)throw new PhonePhotoError('Không có ảnh trong hộp chờ',404)
   let record:PhonePhoto
   try{record=JSON.parse(fs.readFileSync(file,'utf8'))}catch{throw new PhonePhotoError('Metadata ảnh bị hỏng; dừng xử lý',409)}
-  if(record?.id!==id||!allowed[record.mime]||!/^[a-f0-9]{64}$/.test(record.sha256)||!['PENDING_REVIEW','REVIEWED_NOT_REGISTERED'].includes(record.status))throw new PhonePhotoError('Metadata ảnh không hợp lệ; dừng xử lý',409)
+  if(record?.id!==id||!Object.prototype.hasOwnProperty.call(allowed,record.mime)||!/^[a-f0-9]{64}$/.test(record.sha256)||!['PENDING_REVIEW','REVIEWED_NOT_REGISTERED'].includes(record.status))throw new PhonePhotoError('Metadata ảnh không hợp lệ; dừng xử lý',409)
   return record
  }
  function list(){
@@ -65,10 +65,11 @@ export function createPhonePhotoInbox(inboxRoot:string,approvedRoot:string,rejec
    fs.renameSync(temp,target)
   }
  }
+ let stageQueue:Promise<unknown>=Promise.resolve()
  async function stage(body:unknown,actor:string){
   if(!body||typeof body!=='object')throw new PhonePhotoError('Thiếu ảnh gửi từ điện thoại')
   const b=body as {filename?:unknown;mime?:unknown;base64?:unknown}
-  if(typeof b.mime!=='string'||!(b.mime in allowed))throw new PhonePhotoError('Chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP. Ảnh HEIC cần chuyển sang JPEG trước khi tải lên.')
+  if(typeof b.mime!=='string'||!Object.prototype.hasOwnProperty.call(allowed,b.mime))throw new PhonePhotoError('Chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP. Ảnh HEIC cần chuyển sang JPEG trước khi tải lên.')
   const mime=b.mime as PhotoMime
   if(typeof b.base64!=='string'||!b.base64.length||b.base64.length>Math.ceil(PHONE_PHOTO_MAX_BYTES*4/3)+4||!/^[a-zA-Z0-9+/]+={0,2}$/.test(b.base64))throw new PhonePhotoError('Nội dung ảnh hoặc dung lượng không hợp lệ (tối đa 4 MB)')
   const bytes=Buffer.from(b.base64,'base64')
@@ -78,6 +79,7 @@ export function createPhonePhotoInbox(inboxRoot:string,approvedRoot:string,rejec
   // Full pixel decode catches truncated/invalid compressed payloads before persistent write.
   const preview=await sharp(bytes,{limitInputPixels:32_000_000}).rotate().resize({width:720,height:720,fit:'inside',withoutEnlargement:true}).jpeg({quality:78}).toBuffer().catch(()=>{throw new PhonePhotoError('Ảnh giải mã không hoàn chỉnh')})
   const hash=sha(bytes)
+  const commit=()=>{
   for(const r of list())if(r.sha256===hash)throw new PhonePhotoError('Ảnh trùng trong hộp chờ ('+r.id.slice(0,8)+'). Không tạo bản sao.',409)
   rejectKnownHash?.(hash,bytes.length)
   const current=list()
@@ -99,6 +101,11 @@ export function createPhonePhotoInbox(inboxRoot:string,approvedRoot:string,rejec
    if(!fs.existsSync(metaFile(id))){for(const file of [original,thumb])try{fs.unlinkSync(file)}catch{}}
    throw e
   }
+  }
+  // Serialize publication after decoding so concurrent identical uploads cannot bypass SHA dedupe.
+  const job=stageQueue.then(commit,commit)
+  stageQueue=job.then(()=>undefined,()=>undefined)
+  return await job
  }
  function preview(id:string){
   const record=get(id),original=sourcePath(record)

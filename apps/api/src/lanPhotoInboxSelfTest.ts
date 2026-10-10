@@ -26,6 +26,13 @@ try{
  check(fs.existsSync(path.join(reviewed.intakeFolder,'source.jpg')),'Approved copy available to Windows receipt')
  check(fs.existsSync(path.join(root,'inbox',first.id+'.jpg')),'Immutable staged source retained')
  check(inbox.review(first.id,first.sha256,true).registeredStock===false,'Review retry idempotent')
+ const bytes2=await sharp({create:{width:500,height:500,channels:3,background:'#d3e1f3'}}).jpeg().toBuffer()
+ const concur={filename:'second.jpg',mime:'image/jpeg',base64:bytes2.toString('base64')}
+ const concurrent=await Promise.allSettled([inbox.stage(concur,'inventory1'),inbox.stage(concur,'inventory1')])
+ check(concurrent.filter(r=>r.status==='fulfilled').length===1,'Concurrent duplicate upload permits exactly one record')
+ check(concurrent.filter(r=>r.status==='rejected').length===1,'Concurrent duplicate is rejected')
+ check(inbox.list().length===2,'Only two unique photos staged')
+
  check(fs.readdirSync(reviewed.intakeFolder).length===1,'One approved physical image')
  const sold=createPhonePhotoInbox(path.join(root,'sold-inbox'),path.join(root,'sold-approved'),()=>{throw Error('Ảnh SOLD')})
  await assert.rejects(sold.stage(b,'inventory1'),/SOLD/);n++
