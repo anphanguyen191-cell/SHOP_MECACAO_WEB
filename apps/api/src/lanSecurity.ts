@@ -86,6 +86,8 @@ export function lanApiAllowed(role:LanRole,rawMethod:string,rawPath:string){
  /^\/api\/sales\/drafts\/operations\/[A-Za-z0-9_-]+$/,
  /^\/api\/sales\/drafts\/[^/]+(?:\/(?:finance|slip|slip\.png|sold|sold-image\/\d+|preview\/\d+))?$/
  ].some(re=>re.test(p))
+ // Preparing JPEG shares reads verified stock but must never call native Windows clipboard.
+ if(method==='POST'&&p==='/api/inventory/share/prepare')return true
  if(role==='viewer')return false
  // Cashier can sell, serve customers, receive payments and open aftercare; all via existing transactional services.
  if(role==='cashier'||role==='owner'){
