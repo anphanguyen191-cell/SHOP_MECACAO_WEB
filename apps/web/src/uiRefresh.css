@@ -104,3 +104,13 @@
 .shell .lanSafetyBanner span{font-size:13px}
 .shell.themeDark .lanSafetyBanner{background:#443625;border-color:#af8f55;color:#ffe8c9}
 @media(max-width:760px){.shell .lanSafetyBanner{margin:10px 12px 0;width:calc(100% - 24px);padding:12px}}
+
+/* Confirmed desktop/mobile change indicator */
+.shell .shopSyncStatus{display:flex;flex-wrap:wrap;gap:10px;align-items:center;width:min(1080px,calc(100% - 32px));margin:12px auto 0;border:1px solid var(--mc-border,#d7ceda);border-radius:var(--mc-radius-md,20px);padding:11px 15px;background:var(--mc-surface,#fff);color:var(--mc-ink,#29202e);font-size:13px;line-height:1.5}
+.shell .shopSyncStatus>span:not(.shopSyncDot){flex:1;min-width:170px}
+.shell .shopSyncDot{flex:none;width:9px;height:9px;border-radius:50%;background:#21844c;box-shadow:0 0 0 4px #21844c17}
+.shell .shopSyncStatus.offline{border-color:#bd684f;background:#fff6f3;color:#783622}
+.shell.themeDark .shopSyncStatus.offline{background:#3f302e;color:#ffe0d6;border-color:#bd8d78}
+.shell .shopSyncStatus.offline .shopSyncDot{background:#bd684f;box-shadow:0 0 0 4px #bd684f22}
+.shell .shopSyncStatus button{border-radius:12px;background:transparent;color:inherit;border:1px solid currentColor;font:inherit;font-weight:700;padding:7px 12px;cursor:pointer}
+@media(max-width:760px){.shell .shopSyncStatus{margin:10px 12px 0;width:calc(100% - 24px);padding:11px 13px}}

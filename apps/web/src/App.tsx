@@ -1,3 +1,4 @@
+import ShopSyncStatus from './ShopSyncStatus'
 import LanLogin from './LanLogin'
 import SoldRetentionView from './SoldRetentionView'
 import BusinessReports from './BusinessReports'
@@ -53,6 +54,7 @@ export default function App(){
  const [detailProductId,setDetailProductId]=useState<number|null>(null),[dashboard,setDashboard]=useState<any>(null),[catalog,setCatalog]=useState<any>(null)
  const [catalogLoading,setCatalogLoading]=useState(false),[catalogError,setCatalogError]=useState(''),[dashboardError,setDashboardError]=useState('')
  useEffect(()=>{if(isDemo)return;fetch('/api/health').then(async r=>{if(r.status===401){setLanLoginRequired(true);setHealth(null);return}if(!r.ok)throw Error('Server unavailable');setHealth(await r.json());setLanLoginRequired(false)}).catch(()=>setHealth(null))},[isDemo,healthReload])
+ useEffect(()=>{const changed=()=>setProductReload(n=>n+1);window.addEventListener('mecacao-server-change',changed);return()=>window.removeEventListener('mecacao-server-change',changed)},[])
  useEffect(()=>{const expired=()=>{if(!isDemo){setLanLoginRequired(true);setHealth(null)}};window.addEventListener('mecacao-lan-expired',expired);return()=>window.removeEventListener('mecacao-lan-expired',expired)},[isDemo])
  useEffect(()=>{if(isDemo||active!=='Tổng quan')return;const controller=new AbortController();setDashboardError('');apiJson('/api/inventory/dashboard',{signal:controller.signal}).then(setDashboard).catch(e=>{if(!controller.signal.aborted){setDashboard(null);setDashboardError(e.message)}});return()=>controller.abort()},[active,isDemo,productReload])
  useEffect(()=>{
@@ -128,6 +130,7 @@ export default function App(){
   {conflictChoice.dialog}
   <header className="topbar"><div className="brandIdentity"><button type="button" className="menuToggle" aria-label="Mở danh mục chức năng" aria-expanded={menuOpen} onClick={()=>setMenuOpen(true)}>☰</button><img className="brandLogo" src={`${import.meta.env.BASE_URL}brand/logo.jpg`} alt="Logo Shop Mẹ CaCao" onError={e=>{e.currentTarget.style.display="none"}}/><span className="brandMonogram">MC</span><div><p className="eyebrow">SHOP MẸ CACAO · SINCE 2023</p><h1>Quản lý kho</h1></div></div><div className="headerActions"><DisplayDensity compact={compact} onChange={setCompact}/>{!health?.lanClient&&<WarehouseNotifications isDemo={isDemo} onReview={()=>goTo('Import kho')}/>}<button type="button" className="themeToggle" onClick={()=>setDarkMode(v=>!v)} aria-label={darkMode?"Bật giao diện sáng":"Bật giao diện tối"}>{darkMode?"☀":"☾"}</button>{health?.lanClient&&<button type="button" className="lanLogout" onClick={()=>{void fetch('/api/lan/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).finally(()=>{setHealth(null);setLanLoginRequired(true)})}}>Đăng xuất</button>}<span className={'badge '+(mode==='LOCAL'?'local':mode==='DEMO'?'demo':mode==='TEST SANDBOX'?'test':'offline')}>{mode}</span></div></header>
   {!isDemo&&health?.ok&&!health?.lanClient&&<TaskProgress/>}
+  <ShopSyncStatus enabled={!isDemo&&!!health?.ok}/>
   {health?.lanClient&&<div className="lanSafetyBanner" role="status"><b>LAN NỘI BỘ · BẢN THỬ NGHIỆM</b><span>Tài khoản {health.lanRole??'chưa xác định'} · Chỉ thao tác với kho giả lập; Windows xác nhận mọi giao dịch. Chưa nghiệm thu vận hành thật.</span></div>}
   {(health?.freshDevelopment||isDemo)&&<ReleaseStatus version={health?.version??'3.2.0-stage4'} release={health?.release} warehouse={health?.lanClient?undefined:health?.warehouse} custom={health?.customWarehouse} onImport={()=>goTo('Import kho')}/>}
   {health?.localV2Business&&<div className="sandboxSafetyBanner businessSafetyBanner" role="status"><b>LOCAL V2 · KHO KINH DOANH</b><br/>Kho: {health.warehouse}<br/>DB: {health.databasePath}<br/>Ảnh nhập mới: {health.incoming} · Không mở V1/Python cũ đồng thời.</div>}

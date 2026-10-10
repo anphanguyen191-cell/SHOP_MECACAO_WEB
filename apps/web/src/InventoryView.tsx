@@ -19,6 +19,7 @@ export default function InventoryView({isDemo=false,onDraft,draftLabel}:{isDemo?
  const [search,setSearch]=useState(''),[category,setCategory]=useState(''),[size,setSize]=useState(''),[products,setProducts]=useState<Product[]>(isDemo?DEMO_PRODUCTS:[]),[dashboard,setDashboard]=useState<Dash|null>(isDemo?DEMO_DASH:null),[categories,setCategories]=useState<string[]>([]),[sizes,setSizes]=useState<string[]>([]),[expandedProducts,setExpandedProducts]=useState<Set<number>>(new Set()),[expandedVariants,setExpandedVariants]=useState<Set<number>>(new Set()),[selectedImages,setSelectedImages]=useState<Set<number>>(new Set()),[suggestions,setSuggestions]=useState<Suggestion[]>([]),[detailProductId,setDetailProductId]=useState<number|null>(null)
  const [stockState,setStockState]=useState<'all'|'in'|'out'|'low'>('all'),[sort,setSort]=useState<'stock_desc'|'stock_asc'|'name'>('stock_desc'),[threshold,setThreshold]=useState(2),[loadError,setLoadError]=useState('')
  const [dashboardExpanded,setDashboardExpanded]=useBooleanPreference('inventory-expanded',true)
+ useEffect(()=>{const changed=()=>setReload(n=>n+1);window.addEventListener('mecacao-server-change',changed);return()=>window.removeEventListener('mecacao-server-change',changed)},[])
  const [loading,setLoading]=useState(!isDemo),[reload,setReload]=useState(0)
  useEffect(()=>{
   if(isDemo){

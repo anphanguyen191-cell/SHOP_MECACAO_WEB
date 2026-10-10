@@ -55,3 +55,11 @@ Thay `192.168.1.100` bằng **IP thật trên Windows**. Cài chứng chỉ CA v
 - Nhật ký kiểm toán nằm ở `data/stage4/lan/audit.jsonl` (hash-chain, không có mật khẩu/token hoặc nội dung request). Đừng xóa/sửa tay; nếu lỗi integrity, server sẽ từ chối bật LAN cho đến khi đối soát. Chưa có xoay vòng archive được xác nhận.
 - Vai trò viewer xem thông tin tồn chung; cashier xem và ghi đơn/tiền/khách, không kiểm kê; inventory quản lý phiên kiểm kê, không bán; owner truy cập các tác vụ nghiệp vụ trên LAN **trừ những tác vụ bắt buộc Windows như backup/FS/recovery**.
 - Dữ liệu stage4/lan thuộc thư mục ứng dụng thử riêng. Không đưa key.pem, users.json hoặc audit.jsonl lên GitHub.
+
+## Checkpoint 6D — Server-confirmed live refresh (bản phát triển)
+- Windows/iPhone dùng `GET /api/lan/changes`; LAN yêu cầu session. Không trả dữ liệu khách hàng, chỉ có `epoch/revision/changedAt`.
+- Revision tăng sau khi API ghi trả 2xx; không tăng do 409, 4xx/5xx hoặc login/logout. Epoch đổi sau restart.
+- Trình duyệt kiểm tra mỗi 3,5 giây, khi online hoặc quay lại tab. Đây là polling gần thời gian thực, không phải push tức thời.
+- Dashboard, Danh mục, Tồn, Đơn hàng, Khách hàng, Công nợ, Báo cáo và Ảnh SOLD tự đọc lại. Đơn/kiểm kê chưa lưu được giữ, báo cảnh báo đối chiếu.
+- Không coi tín hiệu phiên bản là xác nhận giao dịch. Khi mất Wi-Fi thông báo mất kết nối; không có offline queue ghi.
+- Chưa chứng minh đủ thay đổi ngoài API (watcher) hay hoạt động trên Safari thực tế. Không gọi STABLE.

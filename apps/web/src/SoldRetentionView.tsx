@@ -12,6 +12,7 @@ const bytes=(n:number)=>n>=1024*1024?(n/1024/1024).toFixed(2)+' MB':(n/1024).toF
 export default function SoldRetentionView(){
  const [data,setData]=useState<Listing|null>(null),[offset,setOffset]=useState(0),[reload,setReload]=useState(0)
  const [busy,setBusy]=useState<number|null>(null),[error,setError]=useState(''),[verified,setVerified]=useState<Record<number,string>>({})
+ useEffect(()=>{const changed=()=>{setVerified({});setReload(n=>n+1)};window.addEventListener('mecacao-server-change',changed);return()=>window.removeEventListener('mecacao-server-change',changed)},[])
  useEffect(()=>{
   const ctrl=new AbortController()
   setError('')
