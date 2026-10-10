@@ -1,3 +1,15 @@
+# Checkpoint hiện tại — Chặng 3 — 3.1.0-stage3
+
+Chủ shop đã yêu cầu triển khai chặng tiếp. Main mới kế thừa đầy đủ chặng 1/2 và thêm thu/cọc/hoàn/điều chỉnh, COD/chuyển khoản/tiền mặt, giao hàng/vận đơn, Công nợ theo khách/đơn, hậu mãi và số đã thu/còn lại trên PNG. Xem [STAGE3_PAYMENTS_AFTERCARE.md](STAGE3_PAYMENTS_AFTERCARE.md) và [STAGE3_TEST_REPORT.md](STAGE3_TEST_REPORT.md).
+
+`START_SHOP.bat` vẫn là launcher chính. Bản mới dùng DB phát triển riêng `data/stage3/database/shop-stage3.db`, không tự nối dữ liệu stage2. Chọn kho trước khi có dữ liệu qua UI; mở lại cùng bản giữ dữ liệu. Không thao tác kho thật khi kiểm thử.
+
+SOLD và chứng từ tiền bất biến. Thu/giao/bán độc lập; hậu mãi lưu yêu cầu/kết quả, điều chỉnh/hoàn qua chứng từ riêng. Hàng trả thực nhận cần ảnh mới/nhập có duyệt, hàng đổi xuất qua đơn mới; không tự nhập lại ảnh SOLD. Local service/HTTP/gate PASS; CI Windows/Linux/browser theo đúng commit mới cần đối chiếu Actions. Chưa có nghiệm thu bản 3.1.0-stage3 trên máy chủ shop, chưa gắn STABLE.
+
+Bước tiếp sau nghiệm thu: đề xuất báo cáo/kiểm kê. Không tự triển khai LAN/cloud hoặc chuyển khoản/ngân hàng tự động. Checkpoint chặng 2 bên dưới là baseline lịch sử, không phải trạng thái hiện tại.
+
+---
+
 # Trạng thái hiện tại — Shop Mẹ CaCao Web
 
 Checkpoint 10/10/2026: **main đã tích hợp đầy đủ chặng 1 + chặng 2, runtime 3.0.1-stage2**. Windows dùng cùng mã main qua `START_SHOP.bat`; alias chặng 2 gọi cùng launcher. Không có bước chọn DB V1 hoặc migration dữ liệu thử cũ bắt buộc.

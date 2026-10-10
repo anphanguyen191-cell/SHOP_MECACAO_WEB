@@ -1,4 +1,4 @@
-SHOP MẸ CACAO — MAIN — v3.0.1-stage2
+SHOP MẸ CACAO — MAIN — v3.1.0-stage3
 
 1. Tải main: https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip
 2. Giải nén vào một thư mục mới, chạy START_SHOP.bat.
@@ -11,7 +11,10 @@ SHOP MẸ CACAO — MAIN — v3.0.1-stage2
 7. BÁN HÀNG: chọn khách, giá, giảm giá, phí ship → lưu → tạo PNG hoặc xác nhận bán.
 
 Đây là đầy đủ chức năng LOCAL của mã main, cùng launcher dùng cho kiểm thử và sử dụng.
-Thanh phiên bản hiển thị bản hiện tại, chặng 2 và chặng 3 chưa triển khai.
+Thanh phiên bản hiển thị bản hiện tại và chặng 3.
+BÁN HÀNG có Thanh toán & giao hàng: ghi cọc/thu/hoàn/điều chỉnh, hậu mãi.
+CÔNG NỢ: xem đơn đã bán còn phải thu/cần hoàn.
+PNG gồm đã thu/còn lại. Chi tiết: STAGE3_PAYMENTS_AFTERCARE.md.
 Máy cần Node.js 22.13+ hoặc 24. Lần đầu cần mạng để cài thư viện.
 Giữ cửa sổ server khi sử dụng; đóng cửa sổ để dừng.
 Không cần chọn DB V1 hoặc chạy các file PREPARE/ACTIVATE cũ.

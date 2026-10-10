@@ -1,6 +1,13 @@
 # SHOP MẸ CACAO WEB — bản mới nhất trên main
 
-## Chặng 2: Khách hàng, phí ship và phiếu chốt đơn PNG
+## Bản 3.1.0-stage3: Thu tiền, công nợ, giao hàng và hậu mãi
+
+Giữ đầy đủ chặng 1/2; thêm COD/chuyển khoản/tiền mặt, tiền cọc và thu nhiều lần, hoàn/điều chỉnh, đã thu/còn lại trên PNG, trạng thái giao/vận đơn, Công nợ theo khách và yêu cầu hậu mãi. Hàng trả được duyệt nhập bằng ảnh mới, hàng đổi xuất bằng đơn mới; không tự mở lại ảnh SOLD.
+
+- [Chức năng và cách dùng chặng 3](STAGE3_PAYMENTS_AFTERCARE.md)
+- [Kiểm thử chặng 3](STAGE3_TEST_REPORT.md)
+
+### Nền tảng chặng 2: Khách hàng, phí ship và phiếu chốt đơn PNG
 
 Bản đầy đủ kế thừa chức năng kho/nhập/chọn ảnh/bán hàng/backup/restore và tiến độ tác vụ chặng 1, bổ sung khách hàng, thông tin giao hàng, phí ship/miễn ship và phiếu PNG thương hiệu từ đơn đã lưu.
 
@@ -8,7 +15,7 @@ Bản đầy đủ kế thừa chức năng kho/nhập/chọn ảnh/bán hàng/b
 
 **Dữ liệu mới:** mỗi thư mục cài mới có DB mới, không tự nối dữ liệu thử cũ. Bấm **CHỌN KHO TRÊN MÁY** trước khi nhập dữ liệu để chọn kho mình tạo (`Kho/Mẫu/Size/ảnh`), rồi **QUÉT / IMPORT KHO** để duyệt và đăng ký. Hoặc giữ kho mặc định và dùng **Nhập hàng** COPY ảnh từ thư mục nguồn. Mở lại cùng bản cài giữ dữ liệu.
 
-**v3.0.1-stage2:** giao diện sáng phân biệt nhóm chức năng bằng màu/viền rõ, chữ đậm. Thanh phiên bản hiển thị main, chặng 2 hiện tại và chặng 3 chưa triển khai. Windows dùng cùng mã main và đầy đủ chức năng LOCAL; `START_SHOP_CHANG_2.bat` gọi cùng launcher chính.
+**v3.1.0-stage3:** giao diện sáng phân biệt nhóm chức năng bằng màu/viền rõ, chữ đậm. Thanh phiên bản hiển thị main, chặng 3 hiện tại và báo cáo/kiểm kê chưa triển khai. Windows dùng cùng mã main và đầy đủ chức năng LOCAL; `START_SHOP_CHANG_2.bat` gọi cùng launcher chính.
 
 [Tải mã main mới nhất cho Windows](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip) — giải nén vào thư mục mới, không tải đè bản cũ.
 
@@ -20,7 +27,7 @@ Không yêu cầu DB V1, backup V1 hoặc các launcher PREPARE/ACTIVATE để c
 - [Bằng chứng kiểm thử và giới hạn](STAGE2_TEST_REPORT.md)
 - [CI của đúng bản main](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/workflows/pages.yml)
 
-Ứng dụng nghiệp vụ chạy LOCAL trên máy. GitHub Pages là DEMO/PREVIEW; không kết nối DB/kho của shop. COD/thu tiền/công nợ/hậu mãi, V4, LAN và cloud chưa thuộc chặng 2.
+Ứng dụng nghiệp vụ chạy LOCAL trên máy. GitHub Pages là DEMO/PREVIEW; không kết nối DB/kho của shop. Báo cáo đầy đủ/kiểm kê, ngân hàng/vận chuyển tự động, LAN và cloud chưa triển khai.
 
 ## Project governance
 - `DEVELOPMENT_PRINCIPLES.md`: nguyên tắc bắt buộc về an toàn dữ liệu và hoàn thiện chức năng/giao diện cùng nhau.

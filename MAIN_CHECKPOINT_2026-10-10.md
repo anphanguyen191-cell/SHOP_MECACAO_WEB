@@ -1,3 +1,5 @@
+> Checkpoint dưới đây lưu baseline chặng 2. Bản mới 3.1.0-stage3 đã triển khai theo yêu cầu tiếp của chủ shop; trạng thái hiện tại đọc PROJECT_STATE.md và STAGE3_PAYMENTS_AFTERCARE.md. Các dòng “chặng 3 chưa triển khai” bên dưới chỉ đúng tại baseline 099386a.
+
 # Nền tảng main — Shop Mẹ CaCao Web — 10/10/2026
 
 Bản hiện tại: **3.0.1-stage2**. Chặng 1 và chặng 2 đã được tích hợp trên `main`, gồm source, UI, API, launcher, kiểm thử và tài liệu. Đây là bản phát triển đầy đủ chức năng đã triển khai đến hiện tại; chặng 3 trở đi chưa được coi là hoàn thành.

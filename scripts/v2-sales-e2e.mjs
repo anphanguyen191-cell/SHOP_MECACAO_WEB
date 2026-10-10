@@ -80,6 +80,15 @@ async function browserTest(base,id){
   await run("document.querySelector('.orderSlip button').click()")
   await until("document.querySelector('.orderSlip img')?.naturalWidth===1080")
   assert(await run("document.querySelector('.orderSlip a').download.endsWith('.png')"));checks++
+  // Stage3: record a real deposit in the UI before selling; the order still remains DRAFT.
+  await until("!!document.querySelector('.financeMetrics')")
+  for(const [label,value] of [['Số tiền chứng từ','10000'],['Nội dung chứng từ','Cọc qua giao diện']]){
+   await run("(()=>{const i=document.querySelector("+JSON.stringify('input[aria-label="'+label+'"]')+");Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,"+JSON.stringify(value)+");i.dispatchEvent(new Event('input',{bubbles:true}))})()")
+  }
+  await until("Array.from(document.querySelectorAll('.financePanel button')).some(b=>b.textContent==='Ghi chứng từ'&&!b.disabled)")
+  await run("Array.from(document.querySelectorAll('.financePanel button')).find(b=>b.textContent==='Ghi chứng từ').click()")
+  await until("document.querySelector('.financeHistory')?.textContent.includes('Cọc qua giao diện')")
+  const deposit=await api('/api/sales/drafts/'+id+'/finance');assert(deposit.netCollected===10000&&deposit.due===55000&&deposit.orderStatus==='DRAFT');checks++
     await run("document.querySelector('.preflightCheck').click()")
   await until("!!document.querySelector('.saleAgree')")
   assert(await run("document.querySelector('.saleConfirm').disabled"));checks++
@@ -90,6 +99,14 @@ async function browserTest(base,id){
   assert((await api('/api/inventory/dashboard')).stock===0);checks++
   await until("document.querySelector('.salesItem img')?.complete&&document.querySelector('.salesItem img').naturalWidth>0")
   assert(await run("document.querySelector('.salesEditor fieldset').disabled&&!document.querySelector('.salesActionRemove')"));checks++
+  // Aftercare case through the UI; payment and delivery remain separate from SOLD.
+  await until("!!document.querySelector('.aftercarePanel')")
+  await run("document.querySelector('.aftercarePanel').open=true")
+  await run("(()=>{const i=document.querySelector('.aftercarePanel input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'Khách cần hỗ trợ size');i.dispatchEvent(new Event('input',{bubbles:true}))})()")
+  await until("Array.from(document.querySelectorAll('.aftercarePanel button')).some(b=>b.textContent==='Tạo yêu cầu hậu mãi'&&!b.disabled)")
+  await run("Array.from(document.querySelectorAll('.aftercarePanel button')).find(b=>b.textContent==='Tạo yêu cầu hậu mãi').click()")
+  await until("document.querySelector('.aftercarePanel')?.textContent.includes('Khách cần hỗ trợ size')")
+  assert((await api('/api/sales/drafts/'+id+'/finance')).cases.length===1);checks++
   const artifact=path.resolve('artifacts/v2-sales');fs.mkdirSync(artifact,{recursive:true})
   for(const width of [1366,390])for(const dark of [false,true]){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:768,deviceScaleFactor:1,mobile:width===390})
@@ -98,8 +115,14 @@ async function browserTest(base,id){
    if(!dark){assert(await run("new Set(Array.from(document.querySelectorAll('.salesKpis>*')).map(e=>getComputedStyle(e).backgroundColor)).size===3"));checks++}
    if(dark){assert(await run("getComputedStyle(document.querySelector('.salesFold')).color==='rgb(255, 245, 250)'"));checks++}
    assert(await run("document.documentElement.scrollWidth<=innerWidth+2"));checks++
+   await run("document.querySelector('.financePanel').scrollIntoView({block:'start'})");await sleep(100)
+   const financePic=await cmd('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(artifact,width+'-'+(dark?'dark':'light')+'-finance.png'),Buffer.from(financePic.data,'base64'))
+   await run('window.scrollTo(0,0)')
    const pic=await cmd('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(artifact,width+'-'+(dark?'dark':'light')+'.png'),Buffer.from(pic.data,'base64'))
   }
+  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Công nợ').click()")
+  await until("Array.from(document.querySelectorAll('.debtOrder')).some(b=>b.textContent.includes("+JSON.stringify(id.slice(0,8).toUpperCase())+"))")
+  assert(await run("Array.from(document.querySelectorAll('.debtOrder')).find(b=>b.textContent.includes("+JSON.stringify(id.slice(0,8).toUpperCase())+")).textContent.includes('55.000')"));checks++
   await cmd('Page.reload');await until("Array.from(document.querySelectorAll('.sidebar button')).some(b=>b.textContent==='Bán hàng')")
   await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Bán hàng').click()")
   await until("!!document.querySelector('.salesListHead select')")
@@ -118,6 +141,6 @@ async function browserTest(base,id){
   await run("document.querySelector('.restorePrimary').click()")
   await until("document.querySelector('.restoreResult')?.textContent.includes('READY')")
   assert(await run("document.querySelector('.restoreResult').textContent.includes('schema 130')&&document.querySelector('.restoreResult').textContent.includes('3 đơn và lịch sử')&&document.querySelector('.restoreResult').textContent.includes('RUN_WINDOWS_RESTORED_V2_SALES_TEST.bat')"));checks++
-  console.log('V2_SALES_BROWSER PASS: preflight checkbox -> actual sandbox sale -> locked history JPEG -> reload SOLD filter; 1366/390px light/dark, schema130 restore READY UI')
+  console.log('V2_SALES_BROWSER PASS: preflight checkbox -> actual sandbox sale -> locked history JPEG -> reload SOLD filter; 1366/390px light/dark, schema130 restore READY UI; Stage3 deposit/aftercare/debt UI')
  }finally{ws?.close();c.kill();await sleep(300);fs.rmSync(profile,{recursive:true,force:true})}
 }

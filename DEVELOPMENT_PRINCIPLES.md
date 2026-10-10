@@ -34,3 +34,7 @@ Giữ tồn thực tế theo ảnh đã đăng ký còn hiện hữu; ledger ch�
 ## Baseline để tiếp tục
 
 Đọc `PROJECT_STATE.md` và `MAIN_CHECKPOINT_2026-10-10.md` trước checkpoint lịch sử. `START_SHOP.bat` là launcher chính. Quyền đưa phần đã duyệt lên main và chạy CI đã có; ý tưởng mới ngoài phạm vi cần đề xuất riêng. Không phát triển tự động chặng 3 chỉ từ yêu cầu tổng hợp nền tảng.
+
+## Chủ shop duyệt chặng 3 — 10/10/2026
+
+Yêu cầu “triển khai chặng tiếp theo” đã cấp quyền triển khai thu tiền/công nợ/hậu mãi trên nền main chặng 2 và tích hợp bản mới đầy đủ lên main. Giữ số nghĩa `total`/`payableTotal`, SOLD/contact/SALE ledger bất biến; chứng từ thu/hoàn/giảm riêng; không đồng nhất bán, giao và thu. Đổi trả vật lý không tự hoàn nguyên ảnh SOLD. Những backlog ngoài phạm vi vẫn đề xuất riêng.

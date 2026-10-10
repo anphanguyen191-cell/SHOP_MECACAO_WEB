@@ -19,7 +19,7 @@ async function stop(child){if(child.exitCode!==null)return;await new Promise(res
 try{
  server=start();let h=await ready();eq(h.freshDevelopment,true);eq((await request('/api/products')).data.length,0)
  const second=start();await new Promise(r=>second.once('exit',r));eq(second.exitCode!==0,true)
- eq(h.release.version,'3.0.1-stage2');eq(h.release.stage,2)
+ eq(h.release.version,'3.1.0-stage3');eq(h.release.stage,3)
  eq((await request('/api/local/warehouse','POST',{warehouse:path.parse(base).root})).status,409)
  const own=path.join(base,'my-warehouse'),size=path.join(own,'Bộ tự tạo','Size 1');fs.mkdirSync(size,{recursive:true});const ownPhoto=path.join(size,'001.png');fs.copyFileSync(photo,ownPhoto)
  const selection=await request('/api/local/warehouse','POST',{warehouse:own});eq(selection.status,200)
@@ -44,9 +44,28 @@ try{
  const checked=(await request('/api/sales/drafts/'+draft.id+'/preflight','POST',{version:1})).data
  const sold=await request('/api/sales/drafts/'+draft.id+'/confirm','POST',{version:1,token:checked.token,confirmed:true,acknowledgeZeroPrice:false},'stage2-http-sale-001');eq(sold.status,200);eq(sold.data.status,'SOLD')
  eq((await request('/api/sales/drafts/'+draft.id)).data.payableTotal,60000)
+ // Stage3 HTTP acceptance runs against the same fresh main release on Linux and Windows.
+ let f=(await request('/api/sales/drafts/'+draft.id+'/finance')).data
+ eq(f.due,60000)
+ const receiptBody={version:f.version,orderVersion:1,kind:'RECEIPT',amount:20000,method:'TRANSFER',note:'Cọc/thu lần 1'}
+ const receiptMoney=await request('/api/sales/drafts/'+draft.id+'/finance/entries','POST',receiptBody,'stage3-http-payment-001');eq(receiptMoney.status,201);eq(receiptMoney.data.due,40000)
+ eq((await request('/api/sales/drafts/'+draft.id+'/finance/entries','POST',receiptBody,'stage3-http-payment-001')).data.replayed,true)
+ eq((await request('/api/sales/drafts/'+draft.id+'/finance/entries','POST',receiptBody,'stage3-http-stale-001')).status,409)
+ eq((await request('/api/sales/drafts/finance/debts')).data[0].due,40000)
+ f=receiptMoney.data
+ const aftercare=await request('/api/sales/drafts/'+draft.id+'/aftercare','POST',{version:f.version,orderVersion:1,kind:'SUPPORT',note:'Hỗ trợ sau giao'},'stage3-http-case-001');eq(aftercare.status,201)
+ f=aftercare.data;const caseId=f.cases[0].id
+ const closed=await request('/api/sales/drafts/'+draft.id+'/aftercare/'+caseId,'PUT',{version:f.version,orderVersion:1,caseVersion:1,resolution:'Đã gọi khách và xử lý'});eq(closed.status,200);eq(closed.data.cases[0].status,'RESOLVED')
+ f=closed.data
+ const paidPng=await fetch(url+'/api/sales/drafts/'+draft.id+'/slip.png?version=1&financeVersion='+f.version);eq(paidPng.status,200)
+ const stalePng=await fetch(url+'/api/sales/drafts/'+draft.id+'/slip.png?version=1&financeVersion=0');eq(stalePng.status,409)
+ // A new physical receipt must not reuse a removed SOLD canonical filename.
+ const beforeSoldFile=explorer[0].variants[0].images[0].file_path
+ const freshPhoto=path.join(source,'new.png');await sharp({create:{width:200,height:240,channels:3,background:'#137baf'}}).png().toFile(freshPhoto)
+ const restock=await request('/api/goods-receipt','POST',{storeRoot:h.warehouse,productId:explorer[0].product_id,sizes:[{size:'Size 1',quantity:1,costPrice:20000,salePrice:50000,images:[freshPhoto]}]});eq(restock.status,201);eq(fs.existsSync(beforeSoldFile),false)
  const backup=await request('/api/backup/lossless','POST',{});eq(backup.status,201)
  eq(JSON.parse(fs.readFileSync(path.join(backup.data.backup.directory,'lossless-manifest.json'),'utf8')).version,4)
- const restored=await request('/api/backup/restore-test','POST',{directory:backup.data.backup.directory,warehouseRoot:h.warehouse,confirmed:true});assert.equal(restored.status,200,JSON.stringify(restored.data));checks++;eq(restored.data.status,'READY')
+ const restored=await request('/api/backup/restore-test','POST',{directory:backup.data.backup.directory,warehouseRoot:h.warehouse,confirmed:true});assert.equal(restored.status,200,JSON.stringify(restored.data));checks++;eq(restored.data.status,'READY');eq(restored.data.counts.finance_entries,1);eq(restored.data.counts.aftercare_cases,1)
  const soldPng=await fetch(url+'/api/sales/drafts/'+draft.id+'/slip.png?version=1');eq(soldPng.status,200)
  console.log('STAGE2_HTTP PASS: '+checks+' checks; fresh empty database, main release metadata, UI-selected own warehouse, scan/import, one server, external source COPY, customer/order/PNG, origin guard, restart')
 }finally{if(server)await stop(server);fs.rmSync(base,{recursive:true,force:true})}

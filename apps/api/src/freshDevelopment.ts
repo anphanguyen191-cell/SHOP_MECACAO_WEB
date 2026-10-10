@@ -2,8 +2,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 export const freshDevelopment=process.env.SHOP_FRESH_DEVELOPMENT==='1'
-export const release={version:'3.0.1-stage2',channel:'main',stage:2,status:'Chặng 2: khách hàng, giao hàng, phí ship và phiếu PNG',next:'Chặng 3: thu tiền, công nợ và hậu mãi — chưa triển khai'}
-export const freshRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../../data/stage2')
+export const release={version:'3.1.0-stage3',channel:'main',stage:3,status:'Chặng 3: thu tiền, công nợ, giao hàng và hậu mãi',next:'Tiếp theo: báo cáo và kiểm kê — chưa triển khai'}
+export const freshRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../../data/stage3')
 export const warehouseConfig=path.join(freshRoot,'warehouse-config.json')
 function contains(a:string,b:string){const r=path.relative(a,b);return r===''||(!path.isAbsolute(r)&&r!=='..'&&!r.startsWith('..'+path.sep))}
 export function validateNewWarehouse(value:unknown){
@@ -26,7 +26,7 @@ if(freshDevelopment){
   selected=path.resolve(c.warehouse)
   if(!path.isAbsolute(c.warehouse)||fs.realpathSync(selected)!==selected||!fs.lstatSync(selected).isDirectory()||selected===path.parse(selected).root||contains(selected,freshRoot)||contains(freshRoot,selected)||fs.existsSync(path.join(selected,'.mecacao-local-active.json')))throw Error('Kho đã chọn không còn hợp lệ; giữ nguyên cấu hình để kiểm tra')
  }
- process.env.SHOP_SANDBOX_ROOT=selected??freshRoot;process.env.SHOP_DB_PATH=path.join(freshRoot,'database','shop-stage2.db')
+ process.env.SHOP_SANDBOX_ROOT=selected??freshRoot;process.env.SHOP_DB_PATH=path.join(freshRoot,'database','shop-stage3.db')
  process.env.SHOP_ENABLE_V2_DRAFTS='1';process.env.SHOP_ENABLE_V2_SALES='1';process.env.SHOP_HOST='127.0.0.1'
 }
 export const customWarehouse=selected!==null

@@ -52,7 +52,7 @@ export function receiveGoods(input:ReceiveInput,onProgress?:(p:ReceiveProgress)=
  recoverImageRenames()
  const total=sizes.reduce((n,s)=>n+s.images.length,0),created:string[]=[],createdDirs:string[]=[]
  const productDir=path.join(root,productName);if(!inside(root,productDir))throw new Error('Đường dẫn Product không an toàn')
- const plans:{size:typeof sizes[number];dir:string;copies:{src:string;dest:string;sha256:string}[]}[]=[];const reserved=new Set<string>()
+ const plans:{size:typeof sizes[number];dir:string;copies:{src:string;dest:string;sha256:string}[]}[]=[];const reserved=new Set<string>(db.prepare('SELECT file_path FROM product_images').all().flatMap(r=>[path.resolve(String(r.file_path)),path.resolve(String(r.file_path)).toLowerCase()]))
  let journal:string|undefined,committed=false
  try{
   if(!fs.existsSync(productDir)){fs.mkdirSync(productDir,{recursive:true});createdDirs.push(productDir)};emit({phase:'PREPARE',percent:5,copied:0,total})

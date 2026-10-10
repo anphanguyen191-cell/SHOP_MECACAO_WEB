@@ -1,3 +1,4 @@
+import {bootstrapFinance,assertFinanceEdit} from './orderFinance.js'
 import {bootstrapCustomers,contactInput} from './customers.js'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -28,7 +29,7 @@ function validate(raw:any):Input{
 
 /** Drafts have no filesystem writes, inventory transactions, image claims or reservations. */
 export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
- bootstrapCustomers(db)
+ bootstrapCustomers(db);bootstrapFinance(db)
  const root=fs.realpathSync(sandboxRoot),sales=!!db.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_confirmations'").get()
  const sold=(id:number)=>sales&&!!db.prepare('SELECT 1 FROM sales_units WHERE image_id=?').get(id)
  const select=db.prepare(`SELECT i.id image_id,i.product_id,i.variant_id,i.file_path,p.name product_name,p.product_code,v.size,v.sku,v.cost_price unit_cost,p.status product_status,v.status variant_status FROM product_images i JOIN products p ON p.id=i.product_id JOIN product_variants v ON v.id=i.variant_id AND v.product_id=p.id WHERE i.id=?`)
@@ -72,6 +73,7 @@ export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
   const old=db.prepare('SELECT shipping_fee FROM order_contacts WHERE order_id=?').get(id)
   const c=raw.contact===undefined?null:contactInput(db,raw.contact),total=input.items.reduce((n,i)=>n+i.unitPrice,0)-input.discount+(c?.shippingFee??Number(old?.shipping_fee??0))
   if(!Number.isSafeInteger(total))throw new SalesError('Tổng thanh toán vượt giới hạn an toàn')
+  assertFinanceEdit(db,id,total)
   if(!c)return
   db.prepare(`INSERT INTO order_contacts(order_id,customer_id,recipient_name,phone,address,shipping_fee) VALUES(?,?,?,?,?,?) ON CONFLICT(order_id) DO UPDATE SET customer_id=excluded.customer_id,recipient_name=excluded.recipient_name,phone=excluded.phone,address=excluded.address,shipping_fee=excluded.shipping_fee`).run(id,c.customerId,c.recipientName,c.phone,c.address,c.shippingFee)
  }
@@ -115,7 +117,7 @@ export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
   },
   cancel(id:string,version:unknown){
    if(!Number.isSafeInteger(version)||Number(version)<1)throw new SalesError('Thiếu phiên bản đơn')
-   transaction(()=>{const row=order(id);if(row.status!=='DRAFT'||row.version!==version)throw new SalesError('Đơn đã thay đổi hoặc đã hủy. Mở lại trước khi hủy.',409);db.prepare("UPDATE sales_orders SET status='CANCELLED_DRAFT',version=version+1,updated_at=datetime('now') WHERE id=?").run(id)})
+   transaction(()=>{const row=order(id);assertFinanceEdit(db,id,0,true);if(row.status!=='DRAFT'||row.version!==version)throw new SalesError('Đơn đã thay đổi hoặc đã hủy. Mở lại trước khi hủy.',409);db.prepare("UPDATE sales_orders SET status='CANCELLED_DRAFT',version=version+1,updated_at=datetime('now') WHERE id=?").run(id)})
    return get(id)
   }
  }
