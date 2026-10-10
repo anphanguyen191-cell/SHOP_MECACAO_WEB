@@ -17,9 +17,11 @@
     "test:performance": "npm --workspace apps/api run test:performance",
     "test:warehouse": "npm --workspace apps/api run test:warehouse",
     "test:share": "npm --workspace apps/api run test:share",
-    "test:gate": "npm run typecheck && npm run test:schema && npm run test:core && npm run test:performance && npm run test:warehouse && npm run test:share && npm run test:sales-drafts && npm run test:sales-preview && npm run build && npm run test:ui",
+    "test:gate": "npm run typecheck && npm run test:schema && npm run test:core && npm run test:performance && npm run test:warehouse && npm run test:share && npm run test:sales-drafts && npm run test:sales-preview && npm run test:sales-archive && npm run test:sales-staging && npm run build && npm run test:ui",
     "test:sales-drafts": "npm --workspace apps/api run test:sales-drafts",
-    "test:sales-preview": "npm --workspace apps/api run test:sales-preview"
+    "test:sales-preview": "npm --workspace apps/api run test:sales-preview",
+    "test:sales-archive": "npm --workspace apps/api run test:sales-archive",
+    "test:sales-staging": "npm --workspace apps/api run test:sales-staging"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

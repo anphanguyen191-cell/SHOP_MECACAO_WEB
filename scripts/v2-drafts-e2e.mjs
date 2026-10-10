@@ -46,6 +46,14 @@ try{
  const light=await fetch(base+'/api/sales/drafts/'+d.id+'/preview/'+id+'?version=2&hash='+preview.items[0].sourceHash);assert(light.ok&&light.headers.get('content-type').includes('image/jpeg')&&light.headers.get('cache-control')==='no-store');checks++
  await api('/api/sales/drafts/'+d.id+'/preview','POST',{version:1},409)
  await api('/api/sales/drafts/'+d.id+'/preview','POST',{version:2},403,{Origin:'https://untrusted.example'})
+ const archiveInput={version:2,images:preview.items.map(i=>({imageId:i.imageId,sourceHash:i.sourceHash}))}
+ const saved=await api('/api/sales/drafts/'+d.id+'/archives','POST',archiveInput,200,{'Idempotency-Key':'http-archive-request-0001'})
+ assert(saved.status==='READY'&&saved.originalsRetained&&!saved.sold);checks++
+ assert((await api('/api/sales/drafts/'+d.id+'/archives','POST',archiveInput,200,{'Idempotency-Key':'http-archive-request-0001'})).archiveId===saved.archiveId);checks++
+ await api('/api/sales/drafts/'+d.id+'/archives/'+saved.archiveId+'/verify','POST',{})
+ assert((await api('/api/sales/drafts/'+d.id+'/archives')).length===1);checks++
+ await api('/api/sales/drafts/'+d.id+'/archives','POST',archiveInput,403,{Origin:'https://untrusted.example','Idempotency-Key':'http-untrusted-archive-key'})
+ await api('/api/store/scan','POST',{rootPath:path.join(root,'.mecacao-v2-archive')},403)
  const stock=await api('/api/inventory/dashboard');assert(stock.stock===1&&hash()===original);checks++
  const ledger=await api('/api/inventory/history');assert(ledger.length===1&&ledger[0].transaction_type==='OPENING');checks++
  await stop();await start();assert((await api('/api/sales/drafts/'+d.id)).version===2);checks++
@@ -106,6 +114,13 @@ async function browserTest(base,id){
   await until("!!document.querySelector('.salesPreviewCompare')")
   await until("document.querySelector('.salesPreviewCompare figure:nth-child(2) img').naturalWidth>0")
   assert(await run("document.querySelector('.salesPreviewStats').textContent.includes('bộ')"));checks++
+  await until("!document.querySelector('.salesArchivePanel .salesPreviewHeading button').disabled")
+  await run("document.querySelector('.salesArchivePanel .salesPreviewHeading button').click()")
+  await until("!!document.querySelector('.salesArchiveList article') && !document.querySelector('.salesArchiveList button').disabled")
+  assert(await run("document.querySelector('.salesArchiveList').textContent.includes('Đã lưu · kiểm chứng lúc lưu')"));checks++
+  await run("document.querySelector('.salesArchiveList button').click()")
+  await until("document.querySelector('.salesArchivePanel').textContent.includes('Checksum và giải mã ảnh lưu thử đạt')")
+
   for(const width of [1366,390]){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:768,deviceScaleFactor:1,mobile:width===390})
    assert(await run('document.documentElement.scrollWidth')<=width+2,'preview overflow');checks++

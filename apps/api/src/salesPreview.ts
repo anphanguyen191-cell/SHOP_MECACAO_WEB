@@ -43,6 +43,7 @@ export function salesPreviewService(db:DatabaseSync,root:string){
  }
  async function exclusive<T>(fn:()=>Promise<T>){if(busy)throw new SalesError('Đang chuẩn bị ảnh xem trước. Đợi hoàn tất rồi thử lại.',429);busy=true;try{return await fn()}finally{busy=false}}
  return {
+  derivative:(id:string,version:number,imageId:number,hash:string)=>exclusive(async()=>{const out=await encoded(id,version,imageId);if(out.summary.sourceHash!==hash)throw new SalesError('Ảnh đã đổi sau lần xem trước. Xem trước lại.',409);return out}),
   preview:(id:string,version:number)=>exclusive(async()=>{
    const d=current(id,version),items=[]
    for(const i of d.items)items.push((await encoded(id,version,i.image_id)).summary)

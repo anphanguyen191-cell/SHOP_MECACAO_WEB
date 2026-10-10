@@ -1,3 +1,8 @@
+# V2 durable archive / recovery prototype — 2026-10-10
+
+Owner authorized continuing V2. Added sandbox save/verify/recover derivative sets with durable plan/ready journals, source and output SHA validation, idempotent retry, retained originals, responsive UI and protected archive exclusion from stock imports/scans. Added isolated cloned-file staging lab with no-overwrite same-volume movement and all-file fail-closed recovery. Scope/evidence: `V2_ARCHIVE_RECOVERY_CHECKPOINT.md`. Local archive52/staging47 + V1 gate/HTTP43 PASS; check CI on this commit for Windows/browser. No actual SALE/confirm/SOLD/deletion/schema change. Full restore and release gates remain open.
+
+---
 # V2 read-only image preview checkpoint — 2026-10-10
 
 Implemented sandbox draft preview: original/optimized JPEG comparison, actual sizes, source checksums/version validation, zero-price/duplicate warnings, responsive themed UI. No sale/archive/staging/deletion/schema change. Local gate + preview16 + HTTP34 PASS; exact Windows/browser CI must be checked on the new commit. Scope, quality approval and remaining gates: `V2_IMAGE_PREVIEW_CHECKPOINT.md`. V1 restore/STABLE and V2 confirm remain pending.

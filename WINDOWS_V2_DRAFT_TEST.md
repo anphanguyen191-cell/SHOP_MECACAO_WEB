@@ -18,3 +18,7 @@ Bản này chỉ chuẩn bị đơn nháp, chưa bán/trừ tồn/xóa ảnh. V1
 ## Xem trước ảnh nhẹ (đợt tiếp theo)
 
 Mở nháp đã lưu → Xem trước ảnh nhẹ → so sánh gốc/bản nhẹ và tổng dung lượng → đổi ảnh bằng danh sách. Thử cả sáng/tối, Gọn/Thoải mái. Ảnh gốc không thay đổi; bản nhẹ chưa được lưu lịch sử, chưa bán. Cấu hình 1280px/quality82 là đề xuất để duyệt bằng mắt, không tự coi là chính sách xóa gốc đã được duyệt. Ảnh hỏng, đơn sửa, file đổi/mất phải báo lỗi; xem trước lại sau khi sửa nguyên nhân.
+
+## Lưu thử / restart / kiểm chứng
+
+Sau Xem trước ảnh nhẹ → Lưu bộ ảnh thử → Kiểm chứng lại. Restart server bằng Ctrl+C rồi chạy lại .bat; mở cùng nháp để kiểm chứng bộ thử còn hiện hữu. Sửa nháp và lưu: bộ cũ có phiên bản cũ, không tự áp dụng cho phiên bản mới. Nếu có INCOMPLETE journal hợp lệ, dùng Phục hồi bộ thử; nếu REVIEW_REQUIRED phải giữ file để kiểm tra, không xóa/đổi thủ công. Chưa xác nhận bán/xóa gốc. Phạm vi và 99 kiểm tra archive/staging: V2_ARCHIVE_RECOVERY_CHECKPOINT.md.

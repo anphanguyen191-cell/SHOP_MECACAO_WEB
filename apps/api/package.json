@@ -14,7 +14,9 @@
     "test:warehouse": "node scripts/run-self-test.mjs src/warehouseUpgradeSelfTest.ts",
     "test:share": "node scripts/run-self-test.mjs src/inventoryShareSelfTest.ts",
     "test:sales-drafts": "node --import tsx src/salesDraftsSelfTest.ts",
-    "test:sales-preview": "node --import tsx src/salesPreviewSelfTest.ts"
+    "test:sales-preview": "node --import tsx src/salesPreviewSelfTest.ts",
+    "test:sales-archive": "node --import tsx src/salesArchiveSelfTest.ts",
+    "test:sales-staging": "node --import tsx src/salesStagingLabSelfTest.ts"
   },
   "dependencies": {
     "express": "^4.21.2",

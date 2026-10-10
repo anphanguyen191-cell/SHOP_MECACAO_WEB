@@ -1,3 +1,4 @@
+import {ARCHIVE_FOLDER} from './salesArchive.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import { db } from './db.js'
@@ -12,8 +13,10 @@ function validateImages(root:string,images:string[]){
  for(const file of images){
   if(!isPathInsideRoot(root,file))throw new Error('Ảnh nằm ngoài thư mục kho đã duyệt')
   const resolved=path.resolve(file)
+  if(resolved.split(path.sep).includes(ARCHIVE_FOLDER))throw new Error('Ảnh lưu thử không được đăng ký như hàng tồn')
   if(!fs.existsSync(resolved)||!fs.statSync(resolved).isFile())throw new Error('Không tìm thấy ảnh: '+file)
   const canonicalFile=fs.realpathSync(resolved)
+  if(canonicalFile.split(path.sep).includes(ARCHIVE_FOLDER))throw new Error('Ảnh lưu thử không được đăng ký như hàng tồn')
   if(!isPathInsideRoot(canonicalRoot,canonicalFile))throw new Error('Ảnh tham chiếu qua liên kết ra ngoài kho')
   if(!extensions.has(path.extname(canonicalFile).toLowerCase()))throw new Error('Định dạng ảnh kho không hợp lệ')
   if(known.has(canonicalFile))throw new Error('Ảnh trùng đường dẫn trong cùng Size: '+file)

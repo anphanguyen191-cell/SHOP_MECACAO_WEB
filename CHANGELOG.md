@@ -1,3 +1,7 @@
+# 2026-10-10 — V2 lưu thử / phục hồi
+
+Durable derivative save/verify/recover, SHA/version guards, idempotent retained trial sets and pastel UI. Scanner/import exclude trial archive. Isolated cloned-file staging lab checks nine hard-exit points; no real sale/cleanup/schema changes. See V2_ARCHIVE_RECOVERY_CHECKPOINT.md.
+
 # 2026-10-10 — V2 ảnh nhẹ xem trước
 
 Sandbox nháp: so sánh ảnh gốc/JPEG 1280 quality82, dung lượng thật, guards version/hash/decode, UI pastel sáng/tối/mobile. Chỉ đọc, không bán/xóa/đổi tồn/schema. Chi tiết: V2_IMAGE_PREVIEW_CHECKPOINT.md.
