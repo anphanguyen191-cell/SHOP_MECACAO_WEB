@@ -2,6 +2,8 @@ name: Deploy GitHub Pages Preview
 on:
   push:
     branches: ["main"]
+  pull_request:
+    branches: ["main"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -83,6 +85,7 @@ jobs:
       - name: Windows V2 sales sandbox HTTP acceptance
         run: node scripts/v2-sales-e2e.mjs
   deploy:
+    if: github.event_name == 'push'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
