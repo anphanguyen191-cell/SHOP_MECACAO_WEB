@@ -7,7 +7,7 @@
 | Typecheck + production build | PASS |
 | Full regression gate | PASS, gồm chặng 1/2/3 và các lớp recovery/restore/tasks |
 | Service chặng 3 | PASS 53 kiểm tra |
-| HTTP bản main mới | PASS 50 kiểm tra, gồm chọn kho, tiền, công nợ, hậu mãi, PNG, nhập sau bán và restore |
+| HTTP bản main mới | PASS 56 kiểm tra, gồm chọn kho, tiền, công nợ, hậu mãi, PNG, nhập sau bán và restore |
 | Hồi quy kho sau sửa reserved path | Core và warehouse được chạy lại; xem CI main để đối chiếu đúng bản |
 | Browser / Windows | Do CI main chạy; xem [Actions](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/workflows/pages.yml) của commit 3.1.0-stage3 |
 

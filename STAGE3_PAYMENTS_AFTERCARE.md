@@ -47,7 +47,7 @@ Schema nghiệp vụ giữ 130; các bảng chặng 3 được bootstrap idempot
 ## Kiểm thử và phạm vi
 
 - `npm run test:stage3`: 53 kiểm tra tiền cọc/thu nhiều lần/hoàn/giảm, công nợ, version/tab cũ, replay, chứng từ/SOLD/hậu mãi bất biến, PNG revision, restart và full restore.
-- `scripts/stage2-e2e.mjs`: mở bản main mới trong thư mục tạm; 50 kiểm tra HTTP, gồm thu tiền/replay/stale request, công nợ, hậu mãi, PNG tiền, đường dẫn ảnh SOLD không được tái sử dụng, backup/restore các bảng mới. Tên script giữ để chạy hồi quy chặng 2 cùng chặng 3.
+- `scripts/stage2-e2e.mjs`: mở bản main mới trong thư mục tạm; 56 kiểm tra HTTP, gồm thu tiền/replay/stale request, công nợ, hậu mãi, PNG tiền, đường dẫn ảnh SOLD không được tái sử dụng khi nhập hoặc đổi tên, backup/restore các bảng mới. Tên script giữ để chạy hồi quy chặng 2 cùng chặng 3.
 - Full gate gồm chặng 3; CI Windows Node 22/24 + Linux. Chromium chạy luồng ghi cọc/nháp/bán/hậu mãi/công nợ/restore và screenshot panel tài chính 1366/390px sáng/tối.
 - Kết quả CI của đúng commit: [Actions main](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/workflows/pages.yml). Chỉ ghi PASS khi job đó hoàn thành; chủ shop nghiệm thu Windows tách riêng.
 

@@ -31,7 +31,10 @@ try{
  const denied=await request('/api/goods-receipt','POST',{storeRoot:source,name:'Không ghi vào nguồn',sizes:[]});eq(denied.status,403)
  eq((await request('/api/goods-receipt/inspect','POST',{path:source})).data.count,1)
  const receipt=await request('/api/goods-receipt','POST',{storeRoot:h.warehouse,name:'Bộ hàng mới',sizes:[{size:'Size 1',quantity:1,costPrice:20000,salePrice:50000,sourcePath:source}]});eq(receipt.status,201);eq(fs.readFileSync(photo),bytes)
- const explorer=(await request('/api/inventory/explorer')).data;const imageId=explorer[0].variants[0].images[0].id
+ let explorer=(await request('/api/inventory/explorer')).data;const imageId=explorer[0].variants[0].images[0].id
+ const renameBefore=await request('/api/warehouse/rename/preview','POST',{rootPath:h.warehouse});eq(renameBefore.status,200)
+ const renameFirst=await request('/api/warehouse/rename/commit','POST',{rootPath:h.warehouse,ids:renameBefore.data.files.map(f=>f.id),token:renameBefore.data.token,confirmed:true});eq(renameFirst.status,200)
+ explorer=(await request('/api/inventory/explorer')).data
  const customer=(await request('/api/sales/drafts/customers','POST',{name:'Mẹ Cacao',phone:'0901234567',address:'Bạc Liêu',note:''})).data
  const input={items:[{imageId,unitPrice:50000}],discount:5000,note:'Giao chiều',contact:{customerId:customer.id,recipientName:customer.name,phone:customer.phone,address:customer.address,shippingFee:15000}}
  const draft=(await request('/api/sales/drafts','POST',input,'stage2-http-create-001')).data;eq(draft.payableTotal,60000)
@@ -63,6 +66,8 @@ try{
  const beforeSoldFile=explorer[0].variants[0].images[0].file_path
  const freshPhoto=path.join(source,'new.png');await sharp({create:{width:200,height:240,channels:3,background:'#137baf'}}).png().toFile(freshPhoto)
  const restock=await request('/api/goods-receipt','POST',{storeRoot:h.warehouse,productId:explorer[0].product_id,sizes:[{size:'Size 1',quantity:1,costPrice:20000,salePrice:50000,images:[freshPhoto]}]});eq(restock.status,201);eq(fs.existsSync(beforeSoldFile),false)
+ const renameAfter=await request('/api/warehouse/rename/preview','POST',{rootPath:h.warehouse});eq(renameAfter.status,200);eq(renameAfter.data.files.every(f=>f.newPath!==beforeSoldFile),true)
+ const renamedAfter=await request('/api/warehouse/rename/commit','POST',{rootPath:h.warehouse,ids:[...renameAfter.data.files.map(f=>f.id),...renameAfter.data.unchanged],token:renameAfter.data.token,confirmed:true});eq(renamedAfter.status,200);eq(fs.existsSync(beforeSoldFile),false)
  const backup=await request('/api/backup/lossless','POST',{});eq(backup.status,201)
  eq(JSON.parse(fs.readFileSync(path.join(backup.data.backup.directory,'lossless-manifest.json'),'utf8')).version,4)
  const restored=await request('/api/backup/restore-test','POST',{directory:backup.data.backup.directory,warehouseRoot:h.warehouse,confirmed:true});assert.equal(restored.status,200,JSON.stringify(restored.data));checks++;eq(restored.data.status,'READY');eq(restored.data.counts.finance_entries,1);eq(restored.data.counts.aftercare_cases,1)

@@ -5,7 +5,7 @@
 - PNG có hình thức/đã thu/còn lại/cần hoàn, bảo vệ revision thanh toán; backup/restore giữ sổ tiền và hậu mãi.
 - Nhập hàng không tái sử dụng đường dẫn của ảnh đã đăng ký/bán.
 - Một launcher main, dữ liệu phát triển stage3 mới; giữ toàn bộ chức năng chặng 1/2.
-- Service53, HTTP50, toàn bộ gate, CI Windows/Linux/browser cho mã mới. Chi tiết và giới hạn: STAGE3_PAYMENTS_AFTERCARE.md.
+- Service53, HTTP56, toàn bộ gate, CI Windows/Linux/browser cho mã mới. Chi tiết và giới hạn: STAGE3_PAYMENTS_AFTERCARE.md.
 
 ## Checkpoint main đầy đủ — 2026-10-10
 - Xác nhận runtime 3.0.1-stage2 trên main (`099386a`), Actions 38042560022: Linux, Windows 22/24, browser và deploy SUCCESS.

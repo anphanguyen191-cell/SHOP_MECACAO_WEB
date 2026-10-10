@@ -22,6 +22,7 @@ export function previewImageRename(inputRoot:string,selectedIds?:number[]){
  if(selectedIds&&(!Array.isArray(selectedIds)||!selectedIds.length||selectedIds.some(id=>!Number.isSafeInteger(id)||id<=0)))throw Error('Chọn ảnh hợp lệ trước khi rename')
  const selected=selectedIds?new Set(selectedIds):null,reserved=new Set<string>(),files:RenameFile[]=[],unchanged:number[]=[],missing:number[]=[]
  const rows=db.prepare('SELECT i.id,i.file_path,p.name,v.size FROM product_images i JOIN products p ON p.id=i.product_id JOIN product_variants v ON v.id=i.variant_id ORDER BY i.id').all() as {id:number;file_path:string;name:string;size:string}[]
+ for(const row of rows)reserved.add(path.resolve(row.file_path).toLowerCase())
  const found=new Set<number>()
  for(const row of rows){
   if(db.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_units'").get()&&db.prepare('SELECT 1 FROM sales_units WHERE image_id=?').get(row.id))continue

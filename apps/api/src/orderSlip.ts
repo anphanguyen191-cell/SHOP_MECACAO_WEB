@@ -39,7 +39,7 @@ export function orderSlipService(db:DatabaseSync,root:string){
  }
  if(page===pages){
  y+=20;for(const [label,value] of [['Tiền hàng',money(d.subtotal)],['Giảm giá','− '+money(d.discount)],['Phí ship',d.contact.shippingFee?money(d.contact.shippingFee):'Miễn phí'],['TỔNG THANH TOÁN',money(d.payableTotal)]]){text(45,y,label,29,label.startsWith('TỔNG')?'bold':'normal');text(1035,y,value,29,'bold','#403746','end');y+=48}
- for(const [label,value] of [['Hình thức',({COD:'COD',TRANSFER:'Chuyển khoản',CASH:'Tiền mặt'} as Record<string,string>)[payment.method]],['Điều chỉnh hậu mãi','− '+money(payment.credit)],['Giá trị sau điều chỉnh',money(payment.adjustedTotal)],['Đã thu (sau hoàn)',money(payment.netCollected)],['Còn phải thu',money(payment.due)],['Cần hoàn khách',money(payment.refundDue)]]){text(45,y,label,27);text(1035,y,value,27,'bold','#403746','end');y+=44}
+ for(const [label,value] of [['Hình thức dự kiến',({COD:'COD',TRANSFER:'Chuyển khoản',CASH:'Tiền mặt'} as Record<string,string>)[payment.method]],['Điều chỉnh hậu mãi','− '+money(payment.credit)],['Giá trị sau điều chỉnh',money(payment.adjustedTotal)],['Đã thu (sau hoàn)',money(payment.netCollected)],['Còn phải thu',money(payment.due)],['Cần hoàn khách',money(payment.refundDue)]]){text(45,y,label,27);text(1035,y,value,27,'bold','#403746','end');y+=44}
  for(const line of wrap(d.note?'Ghi chú: '+d.note:'',56)){text(45,y,line,23);y+=34}
  }
  y+=30;text(45,y,'Cảm ơn ba mẹ đã ủng hộ Shop Mẹ CaCao!',24);y+=40;text(45,y,payment.due?'Phiếu chốt đơn · Còn phải thu':payment.refundDue?'Phiếu chốt đơn · Cần hoàn khách':'Phiếu chốt đơn · Đã thanh toán',21)
