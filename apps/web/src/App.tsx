@@ -1,3 +1,4 @@
+import PhonePhotoInboxView from './PhonePhotoInboxView'
 import ShopSyncStatus from './ShopSyncStatus'
 import LanLogin from './LanLogin'
 import SoldRetentionView from './SoldRetentionView'
@@ -39,8 +40,9 @@ export default function App(){
  const canCount=!health?.lanClient||lanRole==='owner'||lanRole==='inventory'
  const canReport=!health?.lanClient||lanRole==='owner'
  const canAuditSold=!health?.lanClient||lanRole==='owner'
+ const canPhoneInbox=!isDemo&&!!health?.freshDevelopment&&(!health?.lanClient||lanRole==='owner'||lanRole==='inventory')
  const baseAccess=health?.lanClient?baseNav.filter(n=>!['Nhập hàng','Import kho','Cài đặt'].includes(n)):baseNav
- const nav=health?.salesDrafts&&!isDemo?[...baseAccess.filter(n=>n!=='Cài đặt'),...(canSell?['Khách hàng','Bán hàng','Công nợ']:[]),...(health?.salesExecution?[...(canReport?['Báo cáo']:[]),...(canCount?['Kiểm kê']:[]),...(canAuditSold?['Ảnh SOLD']:[])]:[]),...(health?.lanClient?[]:['Cài đặt'])]:baseAccess
+ const nav=health?.salesDrafts&&!isDemo?[...baseAccess.filter(n=>n!=='Cài đặt'),...(canSell?['Khách hàng','Bán hàng','Công nợ']:[]),...(health?.salesExecution?[...(canReport?['Báo cáo']:[]),...(canCount?['Kiểm kê']:[]),...(canAuditSold?['Ảnh SOLD']:[])]:[]),...(canPhoneInbox?['Ảnh iPhone']:[]),...(health?.lanClient?[]:['Cài đặt'])]:baseAccess
  const conflictChoice=useDraftConflictChoice()
  const [salesId,setSalesId]=useState<string|null>(null),[addToDraft,setAddToDraft]=useState<string|null>(null)
  const [menuOpen,setMenuOpen]=useState(false),[menuSearch,setMenuSearch]=useState('')
@@ -136,7 +138,7 @@ export default function App(){
   {health?.localV2Business&&<div className="sandboxSafetyBanner businessSafetyBanner" role="status"><b>LOCAL V2 · KHO KINH DOANH</b><br/>Kho: {health.warehouse}<br/>DB: {health.databasePath}<br/>Ảnh nhập mới: {health.incoming} · Không mở V1/Python cũ đồng thời.</div>}
   {health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">BẢN PHỤC HỒI THỬ · Không phải kho kinh doanh.</div>}
   {isWindowsSandbox&&!health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">{health?.localV2Review?'LOCAL V2 — BẢN SAO ĐỂ DUYỆT. Dữ liệu lấy từ backup V1; thao tác chỉ thay bản sao, chưa kích hoạt kho thật.':'CHẾ ĐỘ THỬ WINDOWS — Database và kho giả lập riêng. KHÔNG thao tác ghi lên D:\\1-Me CaCao Store.'}</div>}
-  {menuOpen&&<div className="drawerBackdrop" onClick={()=>setMenuOpen(false)}><aside className="featureDrawer" role="dialog" aria-modal="true" aria-label="Danh mục chức năng" onClick={e=>e.stopPropagation()}><div className="drawerHead"><img src={`${import.meta.env.BASE_URL}brand/logo.jpg`} alt="" /><div><b>Shop Mẹ CaCao</b><small>Danh mục chức năng</small></div><button type="button" aria-label="Đóng danh mục" onClick={()=>setMenuOpen(false)}>×</button></div><div className="drawerSearch"><span>⌕</span><input value={menuSearch} onChange={e=>setMenuSearch(e.target.value)} placeholder="Tìm chức năng..." /></div><p className="drawerSection">QUẢN LÝ CỬA HÀNG · {menuItems.length} CHỨC NĂNG</p><div className="drawerLinks">{menuItems.map((n,i)=><button type="button" key={n} className={active===n?"selected":""} onClick={()=>goTo(n)}><span className="drawerIcon">{({ "Tổng quan":"⌂","Danh mục sản phẩm":"▦","Nhập hàng":"＋","Import kho":"⇩","Tồn kho":"▤","Bán hàng":"▧","Công nợ":"₫","Báo cáo":"▥","Kiểm kê":"✓","Ảnh SOLD":"▧","Khách hàng":"♧","Cài đặt":"⚙"} as Record<string,string>)[n]}</span><span>{n}</span><span className="drawerArrow">›</span></button>)}{menuItems.length===0&&<p>Không tìm thấy chức năng phù hợp.</p>}</div><div className="drawerFoot"><span className="drawerDot"/> {mode} · Since 2023</div></aside></div>}
+  {menuOpen&&<div className="drawerBackdrop" onClick={()=>setMenuOpen(false)}><aside className="featureDrawer" role="dialog" aria-modal="true" aria-label="Danh mục chức năng" onClick={e=>e.stopPropagation()}><div className="drawerHead"><img src={`${import.meta.env.BASE_URL}brand/logo.jpg`} alt="" /><div><b>Shop Mẹ CaCao</b><small>Danh mục chức năng</small></div><button type="button" aria-label="Đóng danh mục" onClick={()=>setMenuOpen(false)}>×</button></div><div className="drawerSearch"><span>⌕</span><input value={menuSearch} onChange={e=>setMenuSearch(e.target.value)} placeholder="Tìm chức năng..." /></div><p className="drawerSection">QUẢN LÝ CỬA HÀNG · {menuItems.length} CHỨC NĂNG</p><div className="drawerLinks">{menuItems.map((n,i)=><button type="button" key={n} className={active===n?"selected":""} onClick={()=>goTo(n)}><span className="drawerIcon">{({ "Tổng quan":"⌂","Danh mục sản phẩm":"▦","Nhập hàng":"＋","Import kho":"⇩","Tồn kho":"▤","Bán hàng":"▧","Công nợ":"₫","Báo cáo":"▥","Kiểm kê":"✓","Ảnh SOLD":"▧","Khách hàng":"♧","Ảnh iPhone":"▧","Cài đặt":"⚙"} as Record<string,string>)[n]}</span><span>{n}</span><span className="drawerArrow">›</span></button>)}{menuItems.length===0&&<p>Không tìm thấy chức năng phù hợp.</p>}</div><div className="drawerFoot"><span className="drawerDot"/> {mode} · Since 2023</div></aside></div>}
   <div className="layout"><nav className="sidebar">{nav.map(n=><button key={n} className={active===n?'active':''} onClick={()=>goTo(n)}><strong>{n}</strong></button>)}</nav>
   <main><nav className="pageBreadcrumb" aria-label="Vị trí hiện tại">{active==='Tổng quan'?<strong>Trang chủ · Tổng quan</strong>:<><button onClick={()=>goTo('Tổng quan')}>Tổng quan</button><span>›</span><strong>{active}</strong></>}{isDemo&&<small>DEMO · Dữ liệu minh họa</small>}</nav>
   {active==='Tổng quan'&&<div className="overview">
@@ -159,6 +161,7 @@ export default function App(){
  <div className="brandHeroCompact"><section className="hero"><img className="brandBanner" src={`${import.meta.env.BASE_URL}brand/banner.jpg`} alt="Banner Shop Mẹ CaCao" onError={e=>{e.currentTarget.style.display="none"}}/><p className="eyebrow">SHOP MẸ CACAO · SINCE 2023</p><h2>{active}</h2><p>Quản lý sản phẩm, Size và tồn kho theo ảnh vật lý. {isDemo?'Dữ liệu trên trang này là minh họa.':'Xem dữ liệu kho thật tại LOCAL.'}</p></section></div>
  </div>}
   {active==='Nhập hàng'&&<ReceiptDashboard isDemo={isDemo} onChanged={()=>setProductReload(x=>x+1)}/>}
+  {active==='Ảnh iPhone'&&canPhoneInbox&&<PhonePhotoInboxView mobile={!!health?.lanClient} onChanged={()=>setProductReload(n=>n+1)}/>}
   {active==='Tồn kho'&&<InventoryView isDemo={isDemo} onDraft={health?.salesDrafts&&canSell?chooseForDraft:undefined} draftLabel={addToDraft?'THÊM VÀO ĐƠN NHÁP':'TẠO ĐƠN NHÁP'}/>}
   {active==='Báo cáo'&&health?.salesExecution&&canReport&&<BusinessReports onOrder={id=>{setSalesId(id);goTo('Bán hàng')}}/>}
   {active==='Kiểm kê'&&health?.salesExecution&&canCount&&<StocktakeView/>}
@@ -180,8 +183,8 @@ export default function App(){
 
   </main></div>
   {!isDemo&&health?.ok&&<nav className="mobileQuickNav" aria-label="Thao tác chính trên điện thoại">
-    {['Tổng quan','Tồn kho','Bán hàng','Công nợ','Khách hàng','Kiểm kê'].filter(n=>nav.includes(n)).map(n=><button key={n} type="button" className={active===n?'selected':''} aria-current={active===n?'page':undefined} onClick={()=>goTo(n)}>
-      <span aria-hidden="true">{({'Tổng quan':'⌂','Tồn kho':'▤','Bán hàng':'▧','Công nợ':'₫','Khách hàng':'♧','Kiểm kê':'✓'} as Record<string,string>)[n]}</span><small>{n}</small></button>)}
+    {['Tổng quan','Tồn kho','Bán hàng','Công nợ','Ảnh iPhone','Khách hàng','Kiểm kê'].filter(n=>nav.includes(n)).map(n=><button key={n} type="button" className={active===n?'selected':''} aria-current={active===n?'page':undefined} onClick={()=>goTo(n)}>
+      <span aria-hidden="true">{({'Tổng quan':'⌂','Tồn kho':'▤','Bán hàng':'▧','Công nợ':'₫','Khách hàng':'♧','Kiểm kê':'✓','Ảnh iPhone':'▧'} as Record<string,string>)[n]}</span><small>{n}</small></button>)}
   </nav>}
  </div>
 }
