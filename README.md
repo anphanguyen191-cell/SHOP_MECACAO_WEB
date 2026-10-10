@@ -1,4 +1,5 @@
-> **MAIN TEST 3.3.0-stage6-main-test — CHƯA STABLE:** mã Stage 5A + Stage 6 Mobile LAN sẵn sàng để kiểm thử trên Windows/iPhone với dữ liệu riêng `data/stage6-main-test`. Không sử dụng kho kinh doanh hoặc chạy đè bản đang bán hàng. Xem [HƯỚNG DẪN MAIN TEST](MAIN_TEST_STAGE6_RELEASE.md). Các checkpoint Stage 4 bên dưới là lịch sử.
+> **MAIN TEST 3.3.1-stage6-main-test — CHƯA STABLE:** giữ đầy đủ chặng 1–4 + Stage5A/Stage6. Theo yêu cầu mới, chọn kho tự tạo trên laptop qua giao diện, không cần marker hoặc script tạo kho. Dữ liệu bản cài mới riêng; mở lại cùng bản giữ dữ liệu. Xem [hướng dẫn hiện tại](MAIN_TEST_STAGE6_RELEASE.md). Phần checkpoint chặng4 bên dưới là lịch sử.
+
 
 # SHOP MẸ CACAO WEB — bản mới nhất trên main
 

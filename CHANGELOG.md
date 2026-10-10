@@ -1,3 +1,8 @@
+## 3.3.1-stage6-main-test — 2026-10-11
+- Theo yêu cầu chủ shop: chọn kho tự tạo trên laptop qua UI, không cần marker/CREATE_MAIN_TEST_WAREHOUSE.bat; dùng đầy đủ nhập/scan/import/rename/bán/tiền/backup như LOCAL.
+- Giữ fresh DB bản cài, chọn kho trước khi có dữ liệu, tự restart và mở lại giữ kho. Giữ chặn root/app-data/symlink/kho bản cài khác, transaction/recovery và quyền LAN.
+- HTTP/launcher browser acceptance dùng kho tạm không marker; kiểm thử tự động vẫn chỉ giả lập. Chưa nghiệm thu thiết bị thật/STABLE.
+
 ## MAIN TEST — 3.3.0-stage6-main-test (chưa STABLE) — 2026-10-11
 - Stage 5A kiểm chứng và giữ nguyên ảnh SOLD; Stage 6C/6D HTTPS LAN, xác thực vai trò, kiểm toán, đồng bộ và ảnh chờ từ iPhone được chuẩn bị tích hợp MAIN TEST.
 - Database riêng `data/stage6-main-test/database/shop-stage6-main-test.db`. Windows launcher chỉ cho chọn kho thử có marker; `CREATE_MAIN_TEST_WAREHOUSE.bat` tạo ảnh fixture. Không tự chuyển `data/stage4` hoặc cộng ảnh iPhone vào tồn.

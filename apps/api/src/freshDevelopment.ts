@@ -2,17 +2,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 export const freshDevelopment=process.env.SHOP_FRESH_DEVELOPMENT==='1'
-export const release={version:'3.3.0-stage6-main-test',channel:'main-test',stage:6,status:'MAIN TEST — Stage 5A + Stage 6C/6D; chưa STABLE',next:'Kiểm thử Windows và iPhone với kho giả lập; không dùng kho kinh doanh.'}
+export const release={version:'3.3.1-stage6-main-test',channel:'main-test',stage:6,status:'MAIN TEST — Stage 5A + Stage 6C/6D; chưa STABLE',next:'Chọn kho tự tạo trên máy để thử đầy đủ nghiệp vụ Windows/iPhone; chưa STABLE.'}
 export const freshRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../../data/stage6-main-test')
 export const warehouseConfig=path.join(freshRoot,'warehouse-config.json')
-export const PREVIEW_MARKER='.mecacao-stage6-main-test.json'
-export function requirePreviewWarehouseMarker(root:string){
- const f=path.join(root,PREVIEW_MARKER)
- if(!fs.existsSync(f)||fs.lstatSync(f).isSymbolicLink()||fs.realpathSync(f)!==f||!fs.lstatSync(f).isFile())throw Error('MAIN TEST chỉ cho phép kho giả lập được tạo bởi CREATE_MAIN_TEST_WAREHOUSE.bat')
- let d:{format?:number;purpose?:string}
- try{d=JSON.parse(fs.readFileSync(f,'utf8'))}catch{throw Error('Marker kho thử nghiệm không đọc được')}
- if(d.format!==1||d.purpose!=='SHOP_MECACAO_STAGE6_MAIN_TEST_ONLY')throw Error('Kho không có marker thử nghiệm hợp lệ')
-}
 function contains(a:string,b:string){const r=path.relative(a,b);return r===''||(!path.isAbsolute(r)&&r!=='..'&&!r.startsWith('..'+path.sep))}
 export function validateNewWarehouse(value:unknown){
  if(typeof value!=='string'||!path.isAbsolute(value))throw Error('Chọn thư mục kho có sẵn trên máy')
@@ -20,7 +12,6 @@ export function validateNewWarehouse(value:unknown){
  if(fs.realpathSync(root)!==root||!fs.lstatSync(root).isDirectory()||fs.lstatSync(root).isSymbolicLink())throw Error('Kho phải là thư mục vật lý, không dùng liên kết')
  if(root===path.parse(root).root||contains(root,freshRoot)||contains(freshRoot,root))throw Error('Chọn thư mục kho riêng, không chọn cả ổ đĩa hoặc thư mục dữ liệu ứng dụng')
  if(fs.existsSync(path.join(root,'.mecacao-local-active.json'))||fs.existsSync(path.join(root,'.mecacao-local-runtime.lock')))throw Error('Kho đang thuộc bản cài khác; chọn kho thử riêng')
- requirePreviewWarehouseMarker(root)
  return root
 }
 let selected:string|null=null
@@ -34,7 +25,6 @@ if(freshDevelopment){
   // Runtime lock is checked separately against this installation's database.
   selected=path.resolve(c.warehouse)
   if(!path.isAbsolute(c.warehouse)||fs.realpathSync(selected)!==selected||!fs.lstatSync(selected).isDirectory()||selected===path.parse(selected).root||contains(selected,freshRoot)||contains(freshRoot,selected)||fs.existsSync(path.join(selected,'.mecacao-local-active.json')))throw Error('Kho đã chọn không còn hợp lệ; giữ nguyên cấu hình để kiểm tra')
-  requirePreviewWarehouseMarker(selected)
  }
  process.env.SHOP_SANDBOX_ROOT=selected??freshRoot;process.env.SHOP_DB_PATH=path.join(freshRoot,'database','shop-stage6-main-test.db')
  process.env.SHOP_ENABLE_V2_DRAFTS='1';process.env.SHOP_ENABLE_V2_SALES='1';process.env.SHOP_HOST='127.0.0.1'

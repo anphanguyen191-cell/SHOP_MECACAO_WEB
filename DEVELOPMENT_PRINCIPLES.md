@@ -42,3 +42,7 @@ Yêu cầu “triển khai chặng tiếp theo” đã cấp quyền triển kha
 ## Chủ shop duyệt chặng4 — 10/10/2026
 
 Sau khi hoàn tất chặng3, chủ shop yêu cầu “Triển khai chặng tiếp theo đi bro”: triển khai báo cáo/kiểm kê và đưa bản đầy đủ lên main. Báo cáo tách doanh số với dòng tiền; thiếu vốn không giả định0. Kiểm kê lưu đếm/chênh/lý do, không tự sửa tồn ảnh. Checkpoint hiện tại là MAIN_CHECKPOINT_STAGE4_2026-10-10.md. Ngoài phạm vi này vẫn đề xuất riêng.
+
+## Cập nhật quyền chọn kho — 11/10/2026
+
+Chủ shop yêu cầu “Mình muốn test kho mình tự tạo trên lap luôn nhé, để thao tác như kho thật luôn”. Bỏ ràng buộc marker fixture khi chọn kho trên main. Chủ shop chọn thư mục vật lý của mình trong UI trước khi có dữ liệu và sử dụng nghiệp vụ bình thường. Không yêu cầu script tạo kho/DB hay nối dữ liệu cũ. Codex/CI vẫn chỉ kiểm thử ảnh/SQLite giả lập; API/transaction/recovery/backup và kiểm soát LAN giữ nguyên. Đây là MAIN TEST chưa STABLE, không mở tự xóa ảnh SOLD hoặc cloud.

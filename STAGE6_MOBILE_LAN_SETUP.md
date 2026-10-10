@@ -2,7 +2,7 @@
 
 **Phạm vi phê duyệt:** cùng Wi-Fi, iPhone dùng chung React/Express/SQLite với Windows. Không cloud, không NAT/port forwarding, không mở Internet. Windows LOCAL tiếp tục ở `http://127.0.0.1:3000`; listener LAN, khi chủ shop tự bật, chạy tại `https://IP-WINDOWS:3443`.
 
-**TRẠNG THÁI:** mã có cổng HTTPS opt-in, tài khoản, session, chính sách quyền và giao diện đăng nhập. Chưa nghiệm thu iPhone vật lý; các bài E2E LAN giả lập đã có CI. CHỈ dùng kho giả lập; không nhập kho kinh doanh vào bản thử LAN. MAIN TEST chỉ sử dụng dữ liệu và kho ảnh giả lập do chương trình tạo; không bật với dữ liệu kinh doanh.
+**TRẠNG THÁI:** mã có cổng HTTPS opt-in, tài khoản, session, chính sách quyền và giao diện đăng nhập. Chưa nghiệm thu iPhone vật lý; các bài E2E LAN giả lập đã có CI. Bản 3.3.1 cho chủ shop chọn kho tự tạo trên laptop qua giao diện, không cần marker. Codex/CI vẫn chỉ kiểm thử trên dữ liệu giả lập; chưa nghiệm thu thiết bị thật.
 
 ## Điều kiện bắt buộc trước khi có thể bật LAN
 1. Windows cài Node.js 22.13+ hoặc Node.js 24, máy và điện thoại chung Wi-Fi tin cậy; Windows không có cổng chuyển tiếp (port forwarding) ra Internet.
@@ -12,7 +12,7 @@
 5. Tạo tài khoản bằng `SETUP_LAN_USERS.bat`. Lần đầu cấp quyền `owner`; các lần sau có thể thêm `cashier`, `inventory`, `viewer`. Mật khẩu phải có ít nhất 14 ký tự, chữ và số; script hỏi không hiện mật khẩu, chỉ ghi salt + password hash.
 6. Chỉ khi đủ các điều kiện trên mới mở `START_SHOP_LAN.bat`, nhập IP Windows đã đăng ký certificate. Script gọi cùng `START_SHOP.bat`; không tạo server/database thứ hai.
 
-## Cấu hình chứng chỉ (thử nghiệm, KHÔNG dùng kho thật)
+## Cấu hình chứng chỉ cho bản phát triển
 Có thể dùng tiện ích `mkcert` do chủ shop tự cài từ nguồn tin cậy trên Windows. Tạo và tin cậy CA theo hướng dẫn của mkcert; sau đó trong thư mục `data/stage6-main-test/lan`, tạo cặp cert/key riêng cho IP Windows:
 
 ```text

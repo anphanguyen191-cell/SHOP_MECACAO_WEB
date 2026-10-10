@@ -16,7 +16,7 @@ if not exist node_modules (
 )
 call npm run build
 if errorlevel 1 goto :fail
-echo MAIN TEST / PREVIEW - Chi dung kho gia lap, khong chon kho kinh doanh.
+echo MAIN TEST / PREVIEW - Chon kho tu tao tren giao dien. Ban dang phat trien, chua STABLE.
 node scripts\start-stage2.mjs
 if errorlevel 1 goto :fail
 exit /b 0
