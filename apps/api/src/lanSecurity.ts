@@ -130,3 +130,33 @@ export function lanApiAllowed(role:LanRole,rawMethod:string,rawPath:string){
  }
  return false
 }
+
+/** Only an existing owner can provision, reset or disable other LAN accounts. */
+export function changeLanAccount(
+ existing:readonly LanCredential[],actor:string,ownerPassword:string,
+ request:{action:'add'|'reset'|'disable';username:string;role?:LanRole;password?:string}
+):LanCredential[]{
+ if(!existing.length||existing.length>100)throw Error('Cấu hình tài khoản hiện tại không hợp lệ')
+ const manager=createLanSessionManager(existing)
+ // Validate the existing credential, without creating a persistent session.
+ void manager
+ const auth=existing.find(x=>x.username===actor.trim().toLowerCase()&&x.role==='owner')
+ if(!auth||!checkLanCredential(auth,ownerPassword))throw Error('Cần xác thực chủ shop')
+ const name=request.username.trim().toLowerCase(),target=existing.find(x=>x.username===name)
+ if(!usernamePattern.test(name))throw Error('Tên tài khoản không hợp lệ')
+ if(request.action==='add'){
+  if(target)throw Error('Tài khoản đã tồn tại')
+  if(!request.role||!request.password)throw Error('Thiếu quyền hoặc mật khẩu mới')
+  return [...existing,makeLanCredential(name,request.password,request.role)]
+ }
+ if(!target)throw Error('Không tìm thấy tài khoản')
+ if(request.action==='reset'){
+  if(!request.password)throw Error('Thiếu mật khẩu mới')
+  return existing.map(x=>x.username===name?makeLanCredential(name,request.password,x.role):x)
+ }
+ if(request.action==='disable'){
+  if(target.role==='owner'&&existing.filter(x=>x.role==='owner').length<=1)throw Error('Không được khóa chủ shop cuối cùng')
+  return existing.filter(x=>x.username!==name)
+ }
+ throw Error('Thao tác tài khoản không hợp lệ')
+}
