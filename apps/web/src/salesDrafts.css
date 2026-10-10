@@ -26,3 +26,5 @@
 .customerForm{padding:15px;background:#f8eef4;border-radius:12px}.orderSlip img{display:block;width:100%;max-width:540px;height:auto;margin:15px auto}.orderSlip article{margin:18px 0}.contactCard button{padding:9px 12px;border-radius:10px;cursor:pointer}
 .themeDark .contactCard,.themeDark .orderSlip,.themeDark .customerForm{background:#302c3c;color:#fff5fa}.themeDark .contactCard input,.themeDark .contactCard textarea{background:#25222e;color:#fff5fa}
 @media(max-width:640px){.contactGrid{grid-template-columns:1fr}.contactCard,.orderSlip{padding:12px}.customerResults>div{flex-wrap:wrap}}
+
+.themeDark .salesFold{color:#fff5fa}
