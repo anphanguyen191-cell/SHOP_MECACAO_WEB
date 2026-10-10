@@ -1,3 +1,7 @@
+## Chuẩn bị LOCAL V2 từ backup V1
+
+`PREPARE_WINDOWS_V2_LOCAL_COPY.bat` tạo bản sao chuyển110→130, kiểm chứng dữ liệu/ảnh, backup/restore V2 và bản quay lui V1. `RUN_WINDOWS_V2_LOCAL_REVIEW.bat` mở bản sao để duyệt ở3017. Không kích hoạt kho thật. Hướng dẫn: [WINDOWS_V2_LOCAL_PREPARATION.md](WINDOWS_V2_LOCAL_PREPARATION.md).
+
 ## Test Windows V2 bán hàng trọn luồng
 
 Chạy `RUN_WINDOWS_V2_SALES_TEST.bat` (3007, V2SalesSandbox riêng). Có confirm bán trong kho test, lịch sử ảnh nhẹ, restart và full backup/restore130. Xem [WINDOWS_V2_SALES_TEST.md](WINDOWS_V2_SALES_TEST.md). Gốc giữ staging, chưa xóa/chưa bật kho thật/STABLE.

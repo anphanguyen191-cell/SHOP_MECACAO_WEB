@@ -25,6 +25,10 @@ jobs:
         run: npm run test:gate
       - name: First-time setup inherited V2 environment regression
         run: node scripts/setup-environment-regression.mjs
+      - name: V1 backup to LOCAL V2 copy migration and rollback proof
+        run: npm --workspace apps/api run test:local-v2-preparation
+      - name: LOCAL V2 copy interactive launcher and HTTP acceptance
+        run: node scripts/local-v2-preparation-e2e.mjs
       - name: Real local API end-to-end acceptance (disposable warehouse)
         run: node scripts/api-e2e-smoke.mjs
       - name: V2 draft HTTP and real Chromium acceptance (sandbox only)
@@ -42,6 +46,7 @@ jobs:
             artifacts/mobile-smoke
             artifacts/v2-drafts
             artifacts/v2-sales
+            artifacts/local-v2-review
           if-no-files-found: ignore
   verify_windows:
     name: Windows Node ${{ matrix.node }}
@@ -60,6 +65,10 @@ jobs:
         run: npm run test:gate
       - name: Windows first-time setup inherited V2 environment regression
         run: node scripts/setup-environment-regression.mjs
+      - name: Windows V1 backup to LOCAL V2 copy migration and rollback proof
+        run: npm --workspace apps/api run test:local-v2-preparation
+      - name: Windows LOCAL V2 copy interactive launcher and HTTP acceptance
+        run: node scripts/local-v2-preparation-e2e.mjs
       - name: Windows real HTTP acceptance (disposable warehouse)
         run: node scripts/api-e2e-smoke.mjs
       - name: Windows V2 draft HTTP acceptance (sandbox only)

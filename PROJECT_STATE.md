@@ -1,3 +1,7 @@
+# V2 LOCAL preparation on verified V1 backup copy — 2026-10-10
+
+Owner authorized steps1–2 after Windows sandbox PASS. Added backup-only110→130 new-copy preparation with complete row/ID/sequence/price/history comparison, image decode/SHA, checked V2 backup/restore and separate V1 rollback proof; new Windows interactive preparation/review launchers3017 and copy-review banner. `V2_LOCAL_PREPARATION_CHECKPOINT.md`, `WINDOWS_V2_LOCAL_PREPARATION.md`. No business DB migration/activation/sold-original cleanup; sandbox guards remain. New tests plus full gate/exact CI required on this implementation commit. Owner copy-data review remains pending; ten-step sandbox Windows PASS remains accepted.
+
 # V2 Windows sandbox accepted by owner — 2026-10-10
 
 Owner reports all ten conversational Windows steps PASS after setup fix, including restart, AVAILABLE rename and full restore/backup again. Runtime source c6f73eae7c8bf02e44f611cee8c1cad7e41d9647; exact Actions38029511584 Linux/Windows22/Windows24/deploy all SUCCESS independently verified. Scope/evidence and remaining release gates: `V2_WINDOWS_ACCEPTANCE_2026-10-10.md`. V2 sandbox Windows acceptance complete; business activation/migration and sold-original cleanup remain unapproved/unimplemented release work. Historical pending-Windows statements below are superseded for this sandbox flow only.

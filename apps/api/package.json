@@ -21,7 +21,8 @@
     "test:sales-preflight": "node --import tsx src/salesPreflightSelfTest.ts",
     "test:sales-commit-lab": "node --import tsx src/salesCommitLabSelfTest.ts",
     "test:sales-confirm-trial": "node --import tsx src/salesConfirmTrialSelfTest.ts",
-    "test:sales-execution": "node --import tsx src/salesExecutionSelfTest.ts"
+    "test:sales-execution": "node --import tsx src/salesExecutionSelfTest.ts",
+    "test:local-v2-preparation": "node --import tsx src/localV2PreparationSelfTest.ts"
   },
   "dependencies": {
     "express": "^4.21.2",

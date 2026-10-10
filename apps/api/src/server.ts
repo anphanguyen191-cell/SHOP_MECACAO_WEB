@@ -70,7 +70,7 @@ app.use('/api',(req,res,next)=>{
 })
 
 app.get('/api/health', (_req, res) => res.json({
-  ok: true, app: 'SHOP_MECACAO_WEB', version: salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot,salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
+  ok: true, app: 'SHOP_MECACAO_WEB', version: salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot,localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
 }))
 if(salesDraftsEnabled&&sandboxRoot)app.use('/api/sales/drafts',salesDraftRouter(db,sandboxRoot,PORT))
 else app.use('/api/sales/drafts',(_req,res)=>res.status(404).json({error:'V2 đơn nháp chưa bật; chỉ thử bằng sandbox V2 riêng.'}))
