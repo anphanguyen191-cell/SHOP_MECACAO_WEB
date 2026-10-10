@@ -1,5 +1,7 @@
 # V2 — Bán hàng trọn luồng trong sandbox (10/10/2026)
 
+**Cập nhật nghiệm thu:** chủ shop báo PASS đủ10 bước hướng dẫn Windows trong chat trên source c6f73ea; CI38029511584 Linux/Windows22/24/deploy SUCCESS. `V2_WINDOWS_ACCEPTANCE_2026-10-10.md` thay thế trạng thái chờ owner Windows bên dưới cho luồng này. Chưa nghiệm thu riêng chất lượng ảnh nhẹ/chính sách xóa gốc, chưa kích hoạt DB kinh doanh hay khóa bản LOCAL STABLE.
+
 Chủ shop yêu cầu tiếp tục hoàn thiện để test Windows. Đợt này có **xác nhận bán thật trong kho test riêng**, không còn chỉ rehearsal theo từng đơn. Default LOCAL vẫn110, launcher nháp cũ vẫn120; launcher mới opt-in schema130. Không mở kho kinh doanh, LAN/cloud, hoàn/hủy đơn đã bán hoặc xóa gốc. Chưa khóa V2 STABLE.
 
 ## Luồng đã triển khai

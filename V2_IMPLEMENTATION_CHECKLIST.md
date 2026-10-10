@@ -1,5 +1,7 @@
 # Checkpoint mới — sandbox130
 
+2026-10-10: owner USER-REPORTED PASS đủ10 bước Windows trong chat, bao gồm restart/rename/full restore. Source c6f73ea, Actions38029511584 all SUCCESS. Xem `V2_WINDOWS_ACCEPTANCE_2026-10-10.md`; không suy diễn các ca fault-injection/manual crash chưa được báo. Còn chuẩn bị release LOCAL/migration DB V1/rollback và duyệt ảnh nhẹ/cleanup; chưa V2 business STABLE. Các ghi chú chờ owner Windows bên dưới là lịch sử.
+
 Bán toàn đơn và lịch sử, khóa xuyên API/watcher, backup/restore các vai trò đã nối trong sandbox riêng. `V2_SALES_SANDBOX_CHECKPOINT.md` và `WINDOWS_V2_SALES_TEST.md` thay trạng thái cũ cho scope này. Không đánh dấu owner Windows/kho thật/cleanup/STABLE PASS.
 
 # V2 — Thứ tự triển khai và nghiệm thu

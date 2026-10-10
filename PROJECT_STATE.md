@@ -1,3 +1,7 @@
+# V2 Windows sandbox accepted by owner — 2026-10-10
+
+Owner reports all ten conversational Windows steps PASS after setup fix, including restart, AVAILABLE rename and full restore/backup again. Runtime source c6f73eae7c8bf02e44f611cee8c1cad7e41d9647; exact Actions38029511584 Linux/Windows22/Windows24/deploy all SUCCESS independently verified. Scope/evidence and remaining release gates: `V2_WINDOWS_ACCEPTANCE_2026-10-10.md`. V2 sandbox Windows acceptance complete; business activation/migration and sold-original cleanup remain unapproved/unimplemented release work. Historical pending-Windows statements below are superseded for this sandbox flow only.
+
 # Windows first-time V2 setup environment fix — 2026-10-10
 
 Owner screenshot shows test:core stopped by the sales sandbox guard: run-self-test cleared drafts/root but inherited SHOP_ENABLE_V2_SALES=1. Clear both flags in isolated runners and clear operational DB/root/flags inside SETUP_FIRST_TIME's SETLOCAL (caller values restored on return). Add Linux/Windows Node22/24 regression running all three setup runners with V2 flags and a protected sentinel caller DB/root. No business data/schema changes. Exact new CI required; owner first-time launch still needs retest.
