@@ -12,6 +12,7 @@ const artifacts=path.resolve('artifacts/mobile-smoke')
 fs.mkdirSync(artifacts,{recursive:true})
 const mime={'.html':'text/html','.js':'application/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.webmanifest':'application/manifest+json'}
 let catalogFailure=false,postedReceipt=null,receiptReads=0,receiptWrites=0,importWrites=0,renameWrites=0
+const mockTasks=new Map(),mockKeys=new Map()
 let warehouseNotices=[]
 let nativeClipboardEnabled=true,clipboardFailure=false,clipboardCopies=[]
 const stockImages=[501,502,503,504].map(id=>({id,file_name:id+'.jpg',file_path:'/sandbox/warehouse/'+id+'.jpg',exists:true}))
@@ -22,6 +23,9 @@ const localProduct={id:101,product_code:'LOCAL01',name:'Local pastel outfit',var
 const server=http.createServer(async (req,res)=>{
  const name=decodeURIComponent(new URL(req.url||'/', 'http://localhost').pathname)
  if(name.startsWith('/api/')){
+  if(name.startsWith('/api/tasks/')){const id=name.split('/')[3],t=mockTasks.get(id);if(name.endsWith('/events')){res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache'}).end('data: '+JSON.stringify(t)+'\\n\\n');return}res.writeHead(t?200:404,{'Content-Type':'application/json'}).end(JSON.stringify(t||{error:'Missing task'}));return}
+  if(name==='/api/tasks'){res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify([...mockTasks.values()].map(({result,...t})=>t)));return}
+
   if(name==='/api/warehouse/file'||name.startsWith('/api/images/')||name.startsWith('/api/inventory/share/image/')){
    res.writeHead(200,{'Content-Type':'image/svg+xml'}).end('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="250" viewBox="0 0 200 250"><rect width="200" height="250" fill="#fff5eb"/><path d="M60 25 30 55 50 85 65 72V140H135V72L150 85 170 55 140 25 120 40H80Z" fill="#95d7bf"/><path d="M65 153H135L148 225H112L100 185 88 225H52Z" fill="#95d7bf"/><circle cx="90" cy="80" r="6" fill="#fff"/><circle cx="118" cy="108" r="6" fill="#fff"/></svg>');return
   }
@@ -52,7 +56,13 @@ const server=http.createServer(async (req,res)=>{
   else if(name==='/api/warehouse/rename/commit'){assert.equal(body.confirmed,true);assert.deepEqual(body.ids,[501]);assert.equal(body.token,'fixture-preview-token');renameWrites++;data={renamed:1,log:'fixture-log.json'}}
   else if(name==='/api/warehouse/rename/logs')data=[]
   else if(name==='/api/store/scan')data={rootPath:watchConfig.rootPath,productCount:1,missing:[],scannedAt:new Date().toISOString(),summary:{newProducts:importWrites?0:1,newSizes:importWrites?0:1,products:1,sizes:1,images:1,registeredProducts:importWrites?1:0,registeredSizes:importWrites?1:0,registeredImages:importWrites?1:0,pendingImages:importWrites?0:1,missingImages:0},products:[{name:'Local pastel outfit',suggestedProductCode:'LOCAL01',existingProductId:importWrites?101:undefined,warnings:[],sizes:[{size:'Size 1',suggestedSku:'LOCAL01-S1',images:['/sandbox/warehouse/Local pastel outfit/Size 1/001.jpg'],pendingImages:importWrites?[]:['/sandbox/warehouse/Local pastel outfit/Size 1/001.jpg'],registeredImages:importWrites?['/sandbox/warehouse/Local pastel outfit/Size 1/001.jpg']:[],existingVariantId:importWrites?1011:undefined}]}]}
+  else if(name==='/api/store/import-batch-task'){importWrites++;data={outcomes:body.products.map(p=>({name:p.name,status:'SAVED',images:1,sizes:1,message:'Đã đăng ký'}))}}
   else if(name==='/api/store/import'){importWrites++;status=201;data={registration:{images:1,sizes:1,products:1}}}
+  if(req.headers.prefer==='respond-async'&&['/api/store/scan','/api/goods-receipt','/api/store/import-batch-task'].includes(name)){
+   const key=req.headers['idempotency-key'];let t=mockKeys.get(key)
+   if(!t){const id='mock-task-'+mockTasks.size,kind=name.includes('goods-receipt')?'RECEIPT':name.includes('batch')?'REGISTER_BATCH':'SCAN';t={id,key,kind,status:'SUCCEEDED',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),progress:{phase:'DONE',percent:100},result:name.includes('goods-receipt')?data.result:data};mockTasks.set(id,t);mockKeys.set(key,t)}
+   status=202;data={task:t}
+  }
   res.writeHead(status,{'Content-Type':'application/json'}).end(JSON.stringify(data));return
  }
  let file=path.resolve(dist,'.'+name)

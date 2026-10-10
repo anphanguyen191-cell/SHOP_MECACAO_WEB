@@ -1,3 +1,5 @@
+import {taskManager} from './tasks.js'
+import {taskActivity} from './taskActivity.js'
 import {salesActivity,SALES_AREA} from './salesExecution.js'
 import {localRuntime,inside,legacyWarehouseActive} from './localRuntime.js'
 import {isInternalWarehousePath} from './warehouseAreas.js'
@@ -5,6 +7,7 @@ import {restoreTestRouter} from './restoreRoutes.js'
 import express from 'express'
 import path from 'node:path'
 import fs from 'node:fs'
+import {randomUUID} from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { db,dbPath,salesDraftsEnabled,salesExecutionEnabled } from './db.js'
 import {readSchemaVersion} from './schema.js'
@@ -25,6 +28,7 @@ import {previewImageRename,commitImageRename,recoverImageRenames,getRenameLogs} 
 import {clipboardCapabilities,selectedStockImages,sharedJpeg,copyStockImages} from './inventoryShare.js'
 
 // Fail closed before accepting writes if an interrupted goods receipt is unresolved.
+const tasks=taskManager(dbPath)
 const receiptRecovery=recoverPendingGoodsReceipts()
 recoverImageRenames()
 if(receiptRecovery.journals)console.log('Receipt recovery:',JSON.stringify(receiptRecovery))
@@ -50,9 +54,15 @@ app.use('/api',(req,res,next)=>{
  }else if(req.path!=='/health'&&legacyWarehouseActive(db))return res.status(409).json({error:'Kho đã chuyển LOCAL V2; dừng V1 và mở START_SHOP_V2_LOCAL.bat.'})
  next()
 })
+// Tasks run in a separate process; fence stock reads/mutations during any task.
+app.use('/api',(req,res,next)=>{
+ if(req.path==='/health'||req.path.startsWith('/tasks')||req.path==='/store/import-batch-task'||(req.get('Prefer')==='respond-async'&&['/store/scan','/goods-receipt','/backup/lossless'].includes(req.path)))return next()
+ if(taskActivity.busy||(tasks.pendingReview()&&!['GET','HEAD'].includes(req.method)))return res.status(409).json({error:'Có tác vụ đang chạy hoặc cần đối soát. Mở Tiến độ tác vụ để kiểm tra.',code:'TASK_BUSY_OR_REVIEW'})
+ next()
+})
 // Coordinate all HTTP reads/writes while async sale preparation/staging runs.
 app.use('/api',(req,res,next)=>{
- if(!salesExecutionEnabled||!sandboxRoot||req.path==='/health'||req.path==='/sales/drafts/recover'||/^\/sales\/drafts\/operations\//.test(req.path)||/\/confirm$/.test(req.path))return next()
+ if(!salesExecutionEnabled||!sandboxRoot||req.path==='/health'||req.path.startsWith('/tasks')||req.path==='/sales/drafts/recover'||/^\/sales\/drafts\/operations\//.test(req.path)||/\/confirm$/.test(req.path))return next()
  if(salesActivity.busy||fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json'))||db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get())return res.status(409).json({error:'Giao dịch bán đang xử lý hoặc cần phục hồi. Vào Bán hàng kiểm tra trạng thái.',code:'SALE_RECOVERY_REQUIRED'})
  salesActivity.readers++;let done=false;const release=()=>{if(!done){done=true;salesActivity.readers--}};res.once('finish',release);res.once('close',release);next()
 })
@@ -67,6 +77,7 @@ app.use('/api',(req,res,next)=>{
   if(req.path==='/fs/list')ok=sandboxPathAllowed(req.query.path)||source(req.query.path)
   if(req.path==='/store/scan'||req.path==='/warehouse/rename/preview'||req.path==='/warehouse/rename/commit'||(req.path==='/warehouse/settings'&&req.method==='PUT'))ok=target(req.body.rootPath)
   if(req.path==='/warehouse/file')ok=target(req.query.rootPath)&&sandboxPathAllowed(req.query.path)
+  if(req.path==='/store/import-batch-task')ok=Array.isArray(req.body.products)&&req.body.products.every((p:any)=>target(p.rootPath)&&(p.variants??[]).every((v:any)=>(v.images??[]).every(sandboxPathAllowed)))
   if(req.path==='/store/import')ok=target(req.body.product?.rootPath)&&(req.body.product?.variants??[]).every((v:any)=>(v.images??[]).every(sandboxPathAllowed))
   if(req.path==='/goods-receipt/inspect')ok=source(req.body.path)
   if(req.path==='/goods-receipt')ok=target(req.body.storeRoot)&&(req.body.sizes??[]).every((v:any)=>(!v.sourcePath||source(v.sourcePath))&&(v.images??[]).every(source))
@@ -78,6 +89,7 @@ app.use('/api',(req,res,next)=>{
  if(req.path==='/store/scan')paths.push(req.body.rootPath)
  if(req.path==='/warehouse/file')paths.push(req.query.rootPath,req.query.path)
  if((req.path==='/warehouse/settings'&&req.method==='PUT')||req.path==='/warehouse/rename/preview'||req.path==='/warehouse/rename/commit')paths.push(req.body.rootPath)
+ if(req.path==='/store/import-batch-task')for(const p of req.body.products??[]){paths.push(p.rootPath);for(const v of p.variants??[])paths.push(...(v.images??[]))}
  if(req.path==='/store/import'){
   paths.push(req.body.product?.rootPath)
   for(const v of req.body.product?.variants??[])paths.push(...(v.images??[]))
@@ -90,6 +102,26 @@ app.use('/api',(req,res,next)=>{
  if(paths.some(p=>!sandboxPathAllowed(p)))return res.status(403).json({error:'CHẾ ĐỘ THỬ WINDOWS: chỉ được dùng thư mục bên trong sandbox, không truy cập kho thật.'})
  next()
 })
+
+
+function taskOrigin(req:express.Request){let ok=false;try{const u=new URL(req.get('origin')||'');ok=u.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(u.hostname)&&Number(u.port||80)===PORT}catch{}return ok&&['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress||'')}
+function asyncTask(req:express.Request,res:express.Response,kind:'SCAN'|'RECEIPT'|'BACKUP'|'REGISTER_BATCH',payload:unknown){
+ if(!taskOrigin(req))return res.status(403).json({error:'Tác vụ chỉ tạo từ giao diện cùng máy/cùng cổng'})
+ try{return res.status(202).json({task:tasks.start(kind,payload,req.get('Idempotency-Key')||'')})}catch(e){return res.status(409).json({error:e instanceof Error?e.message:String(e)})}
+}
+app.get('/api/tasks',(_req,res)=>res.json(tasks.list().slice(0,30)))
+app.get('/api/tasks/:id',(req,res)=>{try{res.json(tasks.read(req.params.id))}catch(e){res.status(404).json({error:String(e)})}})
+app.get('/api/tasks/:id/events',(req,res)=>{
+ try{tasks.read(req.params.id)}catch(e){res.status(404).json({error:String(e)});return}
+ res.setHeader('Content-Type','text/event-stream');res.setHeader('Cache-Control','no-cache');res.setHeader('Connection','keep-alive');res.flushHeaders()
+ const send=(t:any)=>res.write('data: '+JSON.stringify(t)+'\n\n');send(tasks.read(req.params.id))
+ tasks.events.on(req.params.id,send);const timer=setInterval(()=>res.write(': keepalive\n\n'),15000)
+ req.on('close',()=>{clearInterval(timer);tasks.events.off(req.params.id,send)})
+})
+app.post('/api/tasks/:id/acknowledge',(req,res)=>{if(!taskOrigin(req)||req.body.confirmed!==true)return res.status(403).json({error:'Cần xác nhận đã kiểm tra kho và nhật ký'})
+ try{recoverPendingGoodsReceipts();recoverImageRenames();res.json(tasks.acknowledge(req.params.id))}catch(e){res.status(409).json({error:String(e)})}
+})
+app.post('/api/store/import-batch-task',(req,res)=>{if(req.body.confirmed!==true||!Array.isArray(req.body.products)||!req.body.products.length||req.body.products.length>500)return res.status(400).json({error:'Cần duyệt lô từ 1–500 Product'});return asyncTask(req,res,'REGISTER_BATCH',req.body)})
 
 app.get('/api/health', (_req, res) => res.json({
   ok: true, app: 'SHOP_MECACAO_WEB', version: localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:localRuntime?.warehouse,incoming:localRuntime?.incoming,databasePath:localRuntime?.database,localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
@@ -193,7 +225,7 @@ app.post('/api/products', (req, res) => {
 })
 app.get('/api/goods-receipt/dashboard',(_req,res)=>{try{res.json(goodsReceiptDashboard())}catch(e){res.status(500).json({error:e instanceof Error?e.message:'Không thể tổng hợp nhập hàng'})}})
 app.post('/api/goods-receipt/inspect',(req,res)=>{try{res.json(inspectImageFolder(String(req.body.path??'')))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể đọc folder ảnh'})}})
-app.post('/api/goods-receipt', (req,res)=>{try{const events:any[]=[];const result=receiveGoods(req.body,p=>events.push(p));res.status(201).json({result,events})}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể nhập hàng'})}})
+app.post('/api/goods-receipt', (req,res)=>{if(req.get('Prefer')==='respond-async')return asyncTask(req,res,'RECEIPT',req.body);try{const events:any[]=[];const result=receiveGoods(req.body,p=>events.push(p));res.status(201).json({result,events})}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể nhập hàng'})}})
 app.post('/api/inventory/import', (req, res) => {
   try { const r = addInventory(Number(req.body.variantId), 'IMPORT', Number(req.body.quantity), req.body.unitCost, req.body.note); res.status(201).json({ ok: true, id: Number(r.lastInsertRowid) }) }
   catch (e) { res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể nhập kho' }) }
@@ -217,6 +249,7 @@ app.post('/api/backup', (_req, res) => {
   catch(e){res.status(500).json({error:e instanceof Error?e.message:'Không thể backup database'})}
 })
 app.post('/api/backup/lossless', (_req,res) => {
+ if(_req.get('Prefer')==='respond-async')return asyncTask(_req,res,'BACKUP',{})
  try{res.status(201).json({ok:true,backup:createLosslessBackup()})}
  catch(e){res.status(500).json({error:e instanceof Error?e.message:'Không thể tạo bản sao lưu đầy đủ'})}
 })
@@ -226,6 +259,7 @@ app.post('/api/backup/images-optimized', async (_req,res) => {
 })
 
 app.post('/api/store/scan', (req, res) => {
+  if(req.get('Prefer')==='respond-async')return asyncTask(req,res,'SCAN',req.body)
   try {
     const rootPath = String(req.body.rootPath ?? '').trim()
     if (!rootPath) return res.status(400).json({ error: 'Cần chọn thư mục 1-Me CaCao Store' })
@@ -257,7 +291,7 @@ if (fs.existsSync(webDist)) {
 }
 
 app.listen(PORT, process.env.SHOP_HOST ?? '127.0.0.1', () => {
-  startWarehouseWatcher()
+  startWarehouseWatcher(rootPath=>{if(!tasks.pendingReview())tasks.start('SCAN',{rootPath,background:true},'watch-'+randomUUID())})
   console.log(`Shop Mẹ CaCao đang chạy: http://localhost:${PORT}`)
   console.log(`Database: ${dbPath}`)
 })

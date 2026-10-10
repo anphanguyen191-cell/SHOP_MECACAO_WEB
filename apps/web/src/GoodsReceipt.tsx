@@ -1,4 +1,6 @@
 import { useEffect,useMemo,useRef,useState } from 'react'
+import {runTask,type OperationTask} from './taskClient'
+import {TaskMeter} from './TaskProgress'
 import FolderPicker from './FolderPicker'
 import {apiJson} from './uiState'
 
@@ -15,7 +17,7 @@ export default function GoodsReceipt({onDone}:{onDone?:()=>void}){
  const [products,setProducts]=useState<Product[]>([]),[flow,setFlow]=useState<Flow>('EXISTING_SIZE'),[productId,setProductId]=useState(0),[detail,setDetail]=useState<ProductDetail|null>(null)
  const [name,setName]=useState(''),[code,setCode]=useState(''),[category,setCategory]=useState(''),[storeRoot,setStoreRoot]=useState(''),[rows,setRows]=useState<SizeRow[]>([blank()]),[note,setNote]=useState('')
  const [busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[progress,setProgress]=useState<Progress|null>(null),[productSearch,setProductSearch]=useState(''),[pick,setPick]=useState<{kind:'store'|'source';row?:number}|null>(null)
- const [reading,setReading]=useState(false)
+ const [reading,setReading]=useState(false),[task,setTask]=useState<OperationTask|null>(null)
  const requestVersion=useRef(0),submitLock=useRef(false)
  useEffect(()=>{let alive=true;apiJson<Product[]>('/api/products').then(j=>{if(alive)setProducts(j)}).catch(e=>{if(alive)setMsg(e.message)});return()=>{alive=false;requestVersion.current++}},[])
  const filteredProducts=useMemo(()=>{const q=productSearch.trim().toLowerCase();return q?products.filter(p=>p.name.toLowerCase().includes(q)||p.product_code.toLowerCase().includes(q)):products},[products,productSearch])
@@ -52,9 +54,9 @@ export default function GoodsReceipt({onDone}:{onDone?:()=>void}){
    if(rows.some(x=>!x.size.trim()||!x.sourcePath||x.imageCount<1))throw new Error('Mỗi Size cần tên và ảnh nguồn hợp lệ. Xóa Size trống trước khi lưu.')
    for(const r of rows) if(r.imageCount!==r.quantity) throw new Error('Tồn phải bám theo ảnh thực tế: Size '+r.size+' có '+r.imageCount+' ảnh nhưng SL nhập là '+r.quantity)
    const payload={storeRoot,productId:flow==='NEW_PRODUCT'?undefined:productId||undefined,name,productCode:code,category,note,sizes:rows.filter(r=>r.size.trim()).map(r=>({size:r.size,sku:r.sku||undefined,quantity:r.imageCount,costPrice:Math.trunc(r.costPrice),salePrice:Math.trunc(r.salePrice),sourcePath:r.sourcePath||undefined}))}
-   const r=await fetch('/api/goods-receipt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const j=await r.json();if(!r.ok)throw new Error(j.error||'Nhập hàng thất bại')
+   const result=await runTask('/api/goods-receipt',payload,t=>{setTask(t);if(t.progress)setProgress(t.progress)});const j={result,events:[] as Progress[]}
    setProgress((j.events??[]).at(-1)??{phase:'DONE',percent:100,copied:j.result.copiedImages,total:j.result.copiedImages})
-   setMsg('Nhập thành công: '+j.result.totalQuantity+' bộ · '+j.result.copiedImages+' ảnh đã copy vào kho. Tiến độ được xác nhận sau khi máy chủ hoàn tất, không phải cập nhật trực tiếp.')
+   setMsg('Nhập thành công: '+j.result.totalQuantity+' bộ · '+j.result.copiedImages+' ảnh đã copy vào kho. Tiến độ trực tiếp và kết quả được lưu theo mã tác vụ.')
    setRows(previous=>previous.map(row=>({...row,sourcePath:'',imageCount:0,quantity:0})))
    if(flow==='NEW_PRODUCT'){setName('');setCode('');setRows([blank()])}
    apiJson<Product[]>('/api/products').then(setProducts).catch(()=>{})
@@ -86,7 +88,7 @@ export default function GoodsReceipt({onDone}:{onDone?:()=>void}){
   {flow!=='EXISTING_SIZE'&&<div className="row"><button onClick={()=>setRows(previous=>[...previous,blank()])}>+ THÊM SIZE</button>{rows.length>1&&<button onClick={()=>setRows(previous=>previous.slice(0,-1))}>BỎ SIZE CUỐI</button>}</div>}
   <div className="row actions"><span className="receiptRule">1 ảnh hợp lệ trong Size = 1 sản phẩm vật lý nhập kho</span><button className="primary" disabled={busy||reading||!storeRoot||(flow==='NEW_PRODUCT'?!name.trim():!productId)||rows.some(r=>!r.imageCount||!r.size.trim()||!r.sourcePath)} onClick={()=>void submit()}>{busy?'ĐANG NHẬP...':'XÁC NHẬN NHẬP HÀNG'}</button></div>
   </fieldset>{reading&&<p className="loadingState" role="status">Đang kiểm tra dữ liệu...</p>}
-  {progress&&<div className="progressBox"><div className="row"><b>{labels[progress.phase]??progress.phase}</b><strong>{progress.percent}%</strong></div><progress max="100" value={progress.percent}/><small>{progress.total?progress.copied+'/'+progress.total+' ảnh':''}{progress.current?' · '+progress.current:''}</small></div>}
+  <TaskMeter task={task}/>{!task&&progress&&<div className="progressBox"><div className="row"><b>{labels[progress.phase]??progress.phase}</b><strong>{progress.percent}%</strong></div><progress max="100" value={progress.percent}/><small>{progress.total?progress.copied+'/'+progress.total+' ảnh':''}{progress.current?' · '+progress.current:''}</small></div>}
   {msg&&<p className="notice" role="status">{msg}</p>}
   {pick&&<FolderPicker title={pick.kind==='store'?'Chọn kho ảnh Shop Mẹ CaCao':'Chọn folder ảnh hàng mới'} onClose={()=>setPick(null)} onPick={p=>{if(pick.kind==='store')setStoreRoot(p);else if(pick.row!==undefined){void inspect(pick.row,p)}setPick(null)}}/>}
  </section>

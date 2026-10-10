@@ -70,6 +70,11 @@ try{
       eq((await fetch(origin+'/api/store/scan',{method:'POST',headers,body:JSON.stringify({rootPath:root})})).status,403)
       eq((await fetch(origin+'/api/store/scan',{method:'POST',headers:{...headers,Origin:'https://untrusted.example'},body:JSON.stringify({rootPath:old})})).status,403)
       eq((await fetch(origin+'/api/store/scan',{method:'POST',headers,body:JSON.stringify({rootPath:old})})).status,200)
+      if(restart===0){
+        async function task(url:string,payload:unknown,key:string){const response=await fetch(origin+url,{method:'POST',headers:{...headers,Prefer:'respond-async','Idempotency-Key':key},body:JSON.stringify(payload)});eq(response.status,202);const {task}=await response.json() as any;for(let i=0;i<200;i++){const t=await (await fetch(origin+'/api/tasks/'+task.id)).json() as any;if(['SUCCEEDED','FAILED','REVIEW_REQUIRED'].includes(t.status)){eq(t.status,'SUCCEEDED');return t}await new Promise(r=>setTimeout(r,50))}throw Error('LOCAL worker timeout')}
+        eq((await task('/api/store/scan',{rootPath:old},'local-direct-task-scan-001')).result.summary.registeredImages,1)
+        const backup=await task('/api/backup/lossless',{},'local-direct-task-backup-001');eq(JSON.parse(fs.readFileSync(path.join(backup.result.directory,'lossless-manifest.json'),'utf8')).version,4)
+      }
       const duplicate=spawnSync(process.execPath,['--import','tsx',fileURLToPath(new URL('./server.ts',import.meta.url))],{env:{...env,PORT:String(port+1)},encoding:'utf8',timeout:15000});eq(duplicate.status,1);eq(duplicate.stderr.includes('đã có tiến trình'),true)
     }finally{if(child.exitCode===null){const exited=new Promise(r=>child.once('exit',r));child.send('SHOP_LOCAL_CLOSE');await exited}}
     eq(fs.existsSync(path.join(old,RUNTIME_LOCK)),false)

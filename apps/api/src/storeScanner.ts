@@ -13,7 +13,7 @@ function safeChildren(dir: string) {
   try { return fs.readdirSync(dir, { withFileTypes: true }).filter(e=>!INTERNAL_WAREHOUSE_FOLDERS.has(e.name.toLowerCase())) } catch(e) { throw new Error('Không đọc được thư mục kho: '+dir+' ('+(e as NodeJS.ErrnoException).code+'). Không thể kết luận kho trống.') }
 }
 
-export function scanStore(rootPath: string): ScannedProduct[] {
+export function scanStore(rootPath: string,onProgress?:(p:any)=>void): ScannedProduct[] {
   const root = path.resolve(rootPath)
   if(isInternalWarehousePath(fs.realpathSync(root)))throw new Error('Thư mục ảnh lưu thử không phải kho tồn; không được quét/import vào tồn.')
   if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) throw new Error('Không tìm thấy thư mục kho')
@@ -26,6 +26,7 @@ export function scanStore(rootPath: string): ScannedProduct[] {
   }
   const products: ScannedProduct[] = []
   const reservedCodes = new Set<string>()
+  let scannedSizes=0,scannedImages=0
   for (const productDir of rootChildren.filter(e => e.isDirectory())) {
     const productPath = path.join(root, productDir.name)
     let code = suggestProductCode(productDir.name)
@@ -47,6 +48,7 @@ export function scanStore(rootPath: string): ScannedProduct[] {
       const images = safeChildren(sizePath)
         .filter(e => e.isFile() && IMAGE_EXTENSIONS.has(path.extname(e.name).toLowerCase()))
         .map(e => path.join(sizePath, e.name))
+      scannedSizes++;scannedImages+=images.length;onProgress?.({phase:'SCAN',completed:products.length,total:folders.length,products:products.length,sizes:scannedSizes,images:scannedImages,current:sizePath})
       if (images.length === 0) warnings.push(`${sizeDir.name}: không có ảnh sản phẩm`)
       const existing=existingProduct?db.prepare('SELECT id,sku,cost_price,sale_price FROM product_variants WHERE product_id=? AND lower(size)=lower(?)').get(existingProduct.id,sizeDir.name) as {id:number;sku:string;cost_price:number;sale_price:number}|undefined:undefined
       sizes.push({size:sizeDir.name,folderPath:sizePath,images,suggestedSku:existing?.sku??suggestSku(code,sizeDir.name),existingVariantId:existing?.id,existingSku:existing?.sku,costPrice:existing?.cost_price,salePrice:existing?.sale_price,status:existing?'EXISTING':'NEW'})
@@ -55,6 +57,7 @@ export function scanStore(rootPath: string): ScannedProduct[] {
     const existingCount=sizes.filter(s=>s.status==='EXISTING').length
     const status:ScannedProduct['status']=existingProduct?(existingCount===sizes.length?'EXISTING':'PARTIAL'):'NEW'
     products.push({name:productDir.name,folderPath:productPath,suggestedProductCode:code,existingProductId:existingProduct?.id,status,sizes,warnings})
+    onProgress?.({phase:'SCAN',completed:products.length,total:folders.length,products:products.length,sizes:scannedSizes,images:scannedImages,current:productPath})
   }
   return products
 }

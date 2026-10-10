@@ -1,5 +1,6 @@
 import {salesActivity,SALES_AREA} from './salesExecution.js'
 import {localRuntime,ACTIVE_MARKER} from './localRuntime.js'
+import {taskActivity} from './taskActivity.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import {createHash} from 'node:crypto'
@@ -34,8 +35,8 @@ export function saveWatchSettings(input:WatchSettings){
  writeSetting('warehouse-watch',config);return config
 }
 function inside(root:string,file:string){const rel=path.relative(root,file);return !!rel&&!path.isAbsolute(rel)&&rel!=='..'&&!rel.startsWith('..'+path.sep)}
-export function warehouseSnapshot(inputRoot:string){
- const rootPath=validateWarehouseRoot(inputRoot),products=scanStore(rootPath)
+export function warehouseSnapshot(inputRoot:string,onProgress?:(p:any)=>void){
+ const rootPath=validateWarehouseRoot(inputRoot),products=scanStore(rootPath,onProgress)
  const registered=db.prepare('SELECT id,file_path FROM product_images').all() as {id:number;file_path:string}[]
  const registeredPaths=new Set(registered.map(r=>path.resolve(r.file_path)))
  const files=products.flatMap(p=>p.sizes.flatMap(s=>s.images))
@@ -60,18 +61,18 @@ export function markWarehouseNotice(id:string,state:'seen'|'resolved'){
  const notices=getWarehouseNotices(),n=notices.find(n=>n.id===id);if(!n)throw Error('Không tìm thấy thông báo')
  n.state=state;writeSetting('warehouse-notices',notices);return notices
 }
-export function checkWarehouse(rootPath=getWatchSettings().rootPath){
+export function checkWarehouse(rootPath=getWatchSettings().rootPath,onProgress?:(p:any)=>void){
  try{
-  const snapshot=warehouseSnapshot(rootPath),s=snapshot.summary
+  const snapshot=warehouseSnapshot(rootPath,onProgress),s=snapshot.summary
   const signature=JSON.stringify({pending:snapshot.products.flatMap(p=>p.sizes.flatMap(s=>s.pendingImages)).sort(),missing:snapshot.missing.map(r=>r.id).sort()})
   if(s.pendingImages||s.missingImages)recordNotice('changes',snapshot.rootPath,`${s.newProducts} mẫu mới · ${s.newSizes} Size mới · ${s.pendingImages} ảnh chờ duyệt · ${s.missingImages} ảnh đã đăng ký bị thiếu`,signature)
   else{const notices=getWarehouseNotices();for(const n of notices)if(n.rootPath===snapshot.rootPath)n.state='resolved';writeSetting('warehouse-notices',notices)}
   writeSetting('warehouse-last-scan',{at:snapshot.scannedAt,rootPath:snapshot.rootPath,summary:s});return snapshot
  }catch(e){const message=e instanceof Error?e.message:'Không đọc được kho';recordNotice('error',rootPath,message,message);throw e}
 }
-export function startWarehouseWatcher(){
+export function startWarehouseWatcher(schedule?:(root:string)=>void){
  let last=Date.now()
- const run=()=>{if(salesActivity.busy||salesActivity.readers||(process.env.SHOP_SANDBOX_ROOT&&fs.existsSync(path.join(process.env.SHOP_SANDBOX_ROOT,SALES_AREA+'-pending.json'))))return;const c=getWatchSettings();if(!localRuntime&&c.rootPath&&fs.existsSync(path.join(c.rootPath,ACTIVE_MARKER)))return;if(c.rootPath)try{checkWarehouse(c.rootPath)}catch(e){console.error('Warehouse scan:',e instanceof Error?e.message:e)}}
+ const run=()=>{if(taskActivity.busy||salesActivity.busy||salesActivity.readers||(process.env.SHOP_SANDBOX_ROOT&&fs.existsSync(path.join(process.env.SHOP_SANDBOX_ROOT,SALES_AREA+'-pending.json'))))return;const c=getWatchSettings();if(!localRuntime&&c.rootPath&&fs.existsSync(path.join(c.rootPath,ACTIVE_MARKER)))return;if(c.rootPath)try{if(schedule)schedule(c.rootPath);else checkWarehouse(c.rootPath)}catch(e){console.error('Warehouse scan:',e instanceof Error?e.message:e)}}
  if(getWatchSettings().startup)setTimeout(run,0).unref()
  const timer=setInterval(()=>{const c=getWatchSettings();if(c.periodic&&Date.now()-last>=c.intervalSeconds*1000){last=Date.now();run()}},10000)
  timer.unref();return timer

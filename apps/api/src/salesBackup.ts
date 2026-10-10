@@ -27,7 +27,7 @@ function validate(db:DatabaseSync,m:Manifest,file:(r:string)=>Buffer){
  }
  if(Number(db.prepare('SELECT COUNT(*) n FROM sales_units').get()!.n)!==m.records.filter(r=>r.sold).length||Number(db.prepare('SELECT COUNT(*) n FROM sales_ledger').get()!.n)!==m.records.filter(r=>r.sold).length)throw Error('Backup claims/ledger không đủ')
 }
-export function createSalesBackup(db:DatabaseSync,dbPath:string,rootInput:string){
+export function createSalesBackup(db:DatabaseSync,dbPath:string,rootInput:string,onProgress?:(p:any)=>void){
  const root=fs.realpathSync(rootInput);if(salesActivity.busy||fs.existsSync(path.join(root,SALES_AREA+'-pending.json')))throw Error('Giao dịch bán chưa rõ; dừng backup đầy đủ')
  const service=salesExecutionService(db,root);if(service.pending())throw Error('Giao dịch cần phục hồi')
  const records=(db.prepare('SELECT id,file_path FROM product_images ORDER BY id').all()).map(r=>({id:Number(r.id),canonical:relative(root,String(r.file_path)),sold:!!db.prepare('SELECT 1 FROM sales_units WHERE image_id=?').get(r.id)})),sources:string[]=[]
@@ -38,7 +38,8 @@ export function createSalesBackup(db:DatabaseSync,dbPath:string,rootInput:string
  const files=sources.map(p=>({relative:relative(root,p),backup_path:path.join('files',relative(root,p)),sha256:digest(exactFile(p)),size:fs.statSync(p).size})),m:Manifest={version:direct?4:3,mode:'lossless-recovery',database:'shop.db',database_sha256:'',sourceRoot:root,records,files}
  validate(db,m,r=>exactFile(resolve(root,r)))
  const parent=path.join(path.dirname(dbPath),'backups');fs.mkdirSync(parent,{recursive:true});if(fs.realpathSync(parent)!==parent)throw Error('Backup parent không an toàn');const dir=path.join(parent,'sales-'+randomUUID());fs.mkdirSync(dir)
- const snapshot=path.join(dir,'shop.db');db.exec("VACUUM INTO '"+snapshot.replace(/'/g,"''")+"'");m.database_sha256=digest(exactFile(snapshot));for(let i=0;i<files.length;i++)copy(sources[i],path.join(dir,files[i].backup_path),files[i].sha256)
+ const snapshot=path.join(dir,'shop.db');db.exec("VACUUM INTO '"+snapshot.replace(/'/g,"''")+"'");m.database_sha256=digest(exactFile(snapshot));for(let i=0;i<files.length;i++){copy(sources[i],path.join(dir,files[i].backup_path),files[i].sha256);onProgress?.({phase:'BACKUP_COPY',completed:i+1,total:files.length,current:files[i].relative})}
+ onProgress?.({phase:'BACKUP_VERIFY',completed:files.length,total:files.length})
  writeDurable(path.join(dir,'lossless-manifest.json'),JSON.stringify(m));const verified=verifySalesBackup(dir)
  return {directory:dir,database:snapshot,mode:'lossless-recovery',imageCount:records.length,soldImageCount:records.filter(r=>r.sold).length,archiveFileCount:files.filter(f=>f.relative.startsWith(SALES_AREA+path.sep)).length,totalBytes:files.reduce((n,f)=>n+f.size,0),manifest:'lossless-manifest.json',verified}
 }

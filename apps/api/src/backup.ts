@@ -55,8 +55,9 @@ export async function createOptimizedImageBackup(){
  * compared by SHA-256 to the original and used for later disaster recovery.
  * Original customer image locations are never modified.
  */
-export function createLosslessBackup(){
- if(readSchemaVersion(db)===130){if(!process.env.SHOP_SANDBOX_ROOT)throw Error('Sale backup cần sandbox');return createSalesBackup(db,dbPath,process.env.SHOP_SANDBOX_ROOT)}
+export function createLosslessBackup(onProgress?:(p:any)=>void){
+ onProgress?.({phase:'BACKUP_VALIDATE',completed:0})
+ if(readSchemaVersion(db)===130){if(!process.env.SHOP_SANDBOX_ROOT)throw Error('Sale backup cần sandbox');return createSalesBackup(db,dbPath,process.env.SHOP_SANDBOX_ROOT,onProgress)}
  const schema=readSchemaVersion(db),archiveSources=schema===120&&process.env.SHOP_SANDBOX_ROOT?archiveSnapshot(process.env.SHOP_SANDBOX_ROOT):[]
  const records=db.prepare('SELECT id,product_id,variant_id,file_path FROM product_images ORDER BY id').all() as Array<{id:number;product_id:number;variant_id:number|null;file_path:string}>
  if(records.some(r=>isInternalWarehousePath(r.file_path)||(fs.existsSync(r.file_path)&&isInternalWarehousePath(fs.realpathSync(r.file_path)))))throw Error('Ảnh thư mục thử/staging đã bị đăng ký như hàng tồn. Dừng backup đầy đủ để kiểm tra metadata, không bỏ qua âm thầm.')
@@ -73,8 +74,10 @@ export function createLosslessBackup(){
   fs.copyFileSync(rec.file_path,backupPath,fs.constants.COPYFILE_EXCL)
   const after=hash(rec.file_path),copyHash=hash(backupPath)
   if(after!==before||copyHash!==before)throw new Error('Ảnh nguồn đã thay đổi trong lúc sao lưu: '+rec.file_path)
+  onProgress?.({phase:'BACKUP_COPY',completed:files.length+1,total:records.length,current:rec.file_path})
   files.push({id:rec.id,product_id:rec.product_id,variant_id:rec.variant_id,source_path:rec.file_path,backup_path:path.relative(base.directory,backupPath),size:fs.statSync(backupPath).size,sha256:copyHash})
  }
+ onProgress?.({phase:'BACKUP_VERIFY',completed:files.length,total:records.length})
  const snapshot=path.join(base.directory,'shop.db')
  const archives:ExtraFile[]=[]
  for(const file of archiveSources){
