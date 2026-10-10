@@ -57,7 +57,7 @@ app.use('/api',(req,res,next)=>{
 // Tasks run in a separate process; fence stock reads/mutations during any task.
 app.use('/api',(req,res,next)=>{
  if(req.path==='/health'||req.path.startsWith('/tasks')||req.path==='/store/import-batch-task'||(req.get('Prefer')==='respond-async'&&['/store/scan','/goods-receipt','/backup/lossless'].includes(req.path)))return next()
- if(taskActivity.busy||(tasks.pendingReview()&&!['GET','HEAD'].includes(req.method)))return res.status(409).json({error:'Có tác vụ đang chạy hoặc cần đối soát. Mở Tiến độ tác vụ để kiểm tra.',code:'TASK_BUSY_OR_REVIEW'})
+ if((taskActivity.busy&&!(taskActivity.readOnly&&['GET','HEAD'].includes(req.method)))||(tasks.pendingReview()&&!['GET','HEAD'].includes(req.method)))return res.status(409).json({error:'Có tác vụ đang chạy hoặc cần đối soát. Mở Tiến độ tác vụ để kiểm tra.',code:'TASK_BUSY_OR_REVIEW'})
  next()
 })
 // Coordinate all HTTP reads/writes while async sale preparation/staging runs.

@@ -9,7 +9,7 @@
 - SSE trực tiếp và polling dự phòng. Mất kết nối/reload không hủy công việc hoặc tự tạo lô khác. Mã idempotency được ghi trước khi gửi; cùng mã và payload trả lại tác vụ cũ, khác payload bị chặn.
 - Tiến độ & lịch sử tác vụ dưới header: 30 tác vụ gần nhất, mở kết quả đã lưu, theo dõi tác vụ đang chạy và xác nhận kết quả cũ để gỡ yêu cầu chờ trên trình duyệt.
 - Metadata/results ở `operation-tasks` cạnh DB; không thêm schema/migration. Trạng thái được ghi qua file tạm + fsync + rename; không xóa dữ liệu kinh doanh.
-- Một worker tại một thời điểm, chặn thao tác kho/bán/backup khác và các đọc tồn trong khi xử lý để không trình bày trạng thái copy dở như đã hoàn tất.
+- Một worker tại một thời điểm, chặn thao tác kho/bán/backup khác; khi nhập/copy ảnh chặn đọc tồn để không trình bày trạng thái dở như đã hoàn tất. Quét chỉ đọc vẫn cho xem kho.
 
 ## Khi bị gián đoạn
 

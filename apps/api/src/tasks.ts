@@ -31,7 +31,7 @@ export function taskManager(dbPath:string){
   const hash=digest(JSON.stringify({kind,payload})),old=list().find(t=>t.key===key)
   if(old){if(old.hash!==hash)throw Error('Cùng mã tác vụ nhưng dữ liệu đã thay đổi');return read(old.id)}
   if(taskActivity.busy||pendingReview())throw Error('Có tác vụ đang chạy hoặc cần kiểm tra. Không tạo tác vụ mới.')
-  const t:Task={format:1,id:randomUUID(),key,hash,kind,status:'QUEUED',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};save(t);taskActivity.busy=true
+  const t:Task={format:1,id:randomUUID(),key,hash,kind,status:'QUEUED',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};save(t);taskActivity.busy=true;taskActivity.readOnly=kind==='SCAN'
   // Seal parent ownership before spawning, child waits for the durable worker PID before opening DB.
   write(lock,{id:t.id,pid:process.pid})
   const extension=path.extname(fileURLToPath(import.meta.url)),worker=fileURLToPath(new URL('./taskWorker'+extension,import.meta.url))

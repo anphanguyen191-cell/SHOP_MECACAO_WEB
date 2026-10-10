@@ -157,6 +157,7 @@ try{
  for(let i=0;i<20;i++){startupNotice=(await api('/api/warehouse/notices')).some(n=>n.kind==='changes'&&n.state==='unseen');if(startupNotice)break;await sleep(100)}
  check(startupNotice,'startup scan emits a real pending-image notice without a manual scan')
  const baselineNoticeCount=(await api('/api/warehouse/notices')).length
+ for(let i=0;i<200;i++){const tasks=await api('/api/tasks');if(!tasks.some(t=>['QUEUED','RUNNING'].includes(t.status)))break;await sleep(50)}
  await api('/api/warehouse/settings',{method:'PUT',body:{...config,periodic:true}})
  const periodicFile=path.join(sizeDir,'PENDING-PERIODIC.png');fs.copyFileSync(file3,periodicFile)
  let periodicNotice=false;const deadline=Date.now()+75000
