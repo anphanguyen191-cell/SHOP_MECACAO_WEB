@@ -2,6 +2,7 @@
 - Windows Mobile LAN UI: IP/cổng, tự tạo HTTPS/CA, tài khoản/đổi/khóa, bật/tắt, URL copy và cài trust iPhone; không cần mkcert hoặc CLI thông thường.
 - CA-only bootstrap 10 phút, cert bundle atomic, khóa CA riêng không lưu; cert 90 ngày/CA 1 năm, tạo lại cần trust CA mới. Tắt LAN đóng TLS/CA, LOCAL vẫn chạy; restart mặc định tắt.
 - Đổi tài khoản thu hồi mọi phiên ngay; Host/private peer/Origin chặt, unknown-login saturation không khóa owner lâu dài. API/UI không trả khóa/hash/password; audit quản trị chung hash-chain.
+- Launcher loại cấu hình LAN thừa kế, luôn khởi động LAN tắt; polling timeout/abort và báo offline ngay khi thiết bị mất mạng.
 - Mất kết nối/hết phiên/đổi vai trò xóa dữ liệu màn cũ và tải lại đúng quyền; đọc có timeout, nghiệp vụ ghi vẫn giữ pending intent hiện có.
 - Giữ đầy đủ chặng1–4/Stage5A/ảnh iPhone/polling, kho tự tạo UI/fresh install, transaction/recovery/backup. Không thêm delete/cloud hoặc chuyển DB bắt buộc.
 - Full local gate + 44 LAN control/79 security/17 HTTPS/13 concurrent SOLD/24 photo PASS; thêm browser CI setup/HTTPS/role/offline/refresh/revoke và screenshot sáng/tối. Chưa nghiệm thu thiết bị thật/STABLE.

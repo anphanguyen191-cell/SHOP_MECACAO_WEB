@@ -6,7 +6,7 @@ import {spawn} from 'node:child_process'
 import {setTimeout as sleep} from 'node:timers/promises'
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'main-ui-')),project=path.join(tmp,'release')
 fs.mkdirSync(project);fs.cpSync('apps/api/dist',path.join(project,'apps/api/dist'),{recursive:true});fs.cpSync('apps/web/dist',path.join(project,'apps/web/dist'),{recursive:true});fs.copyFileSync('apps/api/package.json',path.join(project,'apps/api/package.json'));fs.symlinkSync(path.resolve('node_modules'),path.join(project,'node_modules'),'junction')
-const env={...process.env,SHOP_FRESH_DEVELOPMENT:'1',PORT:'0'};for(const k of ['SHOP_DB_PATH','SHOP_SANDBOX_ROOT','SHOP_LOCAL_V2_CONFIG','SHOP_LOCAL_V2_RESTORE_READY','SHOP_TASK_WORKER'])delete env[k]
+const env={...process.env,SHOP_FRESH_DEVELOPMENT:'1',PORT:'0',SHOP_LAN_ENABLED:'1',SHOP_LAN_BIND:'invalid-inherited-address',SHOP_LAN_PORT:'3443'};for(const k of ['SHOP_DB_PATH','SHOP_SANDBOX_ROOT','SHOP_LOCAL_V2_CONFIG','SHOP_LOCAL_V2_RESTORE_READY','SHOP_TASK_WORKER'])delete env[k]
 // Launch the same canonical entry point as Windows, on its own temporary installation.
 fs.cpSync('scripts/start-stage2.mjs',path.join(project,'scripts/start-stage2.mjs'),{recursive:true})
 const app=spawn(process.execPath,['scripts/start-stage2.mjs'],{cwd:project,env,stdio:['ignore','pipe','pipe']});let logs='';app.stdout.on('data',b=>logs+=b);app.stderr.on('data',b=>logs+=b)
@@ -24,6 +24,7 @@ try{
  ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true})});ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}})
  await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Page.navigate',{url:'http://127.0.0.1:3000'});await until("!!document.querySelector('.releaseWarehouse button')")
  assert(await run("document.querySelector('.releaseStatus').textContent.includes('3.4.0-stage6-main-test')"))
+ assert.equal((await fetch('http://127.0.0.1:3000/api/local/lan').then(r=>r.json())).enabled,false)
  await run("document.querySelector('.releaseWarehouse button').click()");await until("!!document.querySelector('.folderModal')");await run("document.querySelector('[aria-label=\"Đóng chọn thư mục\"]').click()")
  // Real folder selection, automatic launcher restart, and UI reload without manual scripts.
  const own=path.join(tmp,'my-test-warehouse');fs.mkdirSync(own)

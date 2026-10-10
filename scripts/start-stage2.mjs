@@ -5,7 +5,7 @@ const project=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..')
 const port=3000,url='http://127.0.0.1:'+port
 try{await fetch(url+'/api/health',{signal:AbortSignal.timeout(1000)});throw Error('Cong 3000 dang duoc su dung. Dong server cu truoc khi mo ban moi.')}catch(e){if(e.message.startsWith('Cong'))throw e}
 const env={...process.env,SHOP_FRESH_DEVELOPMENT:'1',PORT:String(port),SHOP_HOST:'127.0.0.1'}
-for(const key of ['SHOP_DB_PATH','SHOP_SANDBOX_ROOT','SHOP_LOCAL_V2_CONFIG','SHOP_LOCAL_V2_RESTORE_READY','SHOP_LOCAL_V2_REVIEW','SHOP_TASK_WORKER'])delete env[key]
+for(const key of ['SHOP_DB_PATH','SHOP_SANDBOX_ROOT','SHOP_LOCAL_V2_CONFIG','SHOP_LOCAL_V2_RESTORE_READY','SHOP_LOCAL_V2_REVIEW','SHOP_TASK_WORKER','SHOP_LAN_ENABLED','SHOP_LAN_BIND','SHOP_LAN_PORT'])delete env[key]
 let child,opened=false
 process.on('SIGINT',()=>child?.kill('SIGINT'));process.on('SIGTERM',()=>child?.kill('SIGTERM'))
 for(;;){
