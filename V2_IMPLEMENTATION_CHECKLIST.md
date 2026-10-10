@@ -1,3 +1,7 @@
+# Checkpoint mới — sandbox130
+
+Bán toàn đơn và lịch sử, khóa xuyên API/watcher, backup/restore các vai trò đã nối trong sandbox riêng. `V2_SALES_SANDBOX_CHECKPOINT.md` và `WINDOWS_V2_SALES_TEST.md` thay trạng thái cũ cho scope này. Không đánh dấu owner Windows/kho thật/cleanup/STABLE PASS.
+
 # V2 — Thứ tự triển khai và nghiệm thu
 
 Ngày: 2026-10-10. **Đợt nháp sandbox đã triển khai; chưa có xác nhận bán/xóa ảnh.** Xem `V2_DRAFT_CHECKPOINT.md`. Đợt 1/2 có nền schema120 + CRUD/UI nháp; đợt 0 có automated full restore/launcher (`V2_BACKUP_RESTORE_CHECKPOINT.md`), Windows restore/STABLE vẫn là gate release, đợt 3 có prototype ảnh nhẹ chỉ đọc (`V2_IMAGE_PREVIEW_CHECKPOINT.md`); đợt 3 có lưu derivative bền vững + cloned-file staging lab (`V2_ARCHIVE_RECOVERY_CHECKPOINT.md`); backup/restore schema110/120 + trial archives có nền mới; kiểm tra toàn đơn chỉ đọc + UI có V2_PREFLIGHT_CHECKPOINT.md; nối SALE/claim/cleanup/SOLD backup và đợt 4–7 chưa hoàn tất.

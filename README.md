@@ -1,3 +1,7 @@
+## Test Windows V2 bán hàng trọn luồng
+
+Chạy `RUN_WINDOWS_V2_SALES_TEST.bat` (3007, V2SalesSandbox riêng). Có confirm bán trong kho test, lịch sử ảnh nhẹ, restart và full backup/restore130. Xem [WINDOWS_V2_SALES_TEST.md](WINDOWS_V2_SALES_TEST.md). Gốc giữ staging, chưa xóa/chưa bật kho thật/STABLE.
+
 # SHOP MECACAO WEB
 
 Greenfield local-first web app cho Shop Mẹ CaCao.

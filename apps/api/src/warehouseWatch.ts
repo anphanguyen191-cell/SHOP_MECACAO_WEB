@@ -1,3 +1,4 @@
+import {salesActivity,SALES_AREA} from './salesExecution.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import {createHash} from 'node:crypto'
@@ -36,7 +37,8 @@ export function warehouseSnapshot(inputRoot:string){
  const registered=db.prepare('SELECT id,file_path FROM product_images').all() as {id:number;file_path:string}[]
  const registeredPaths=new Set(registered.map(r=>path.resolve(r.file_path)))
  const files=products.flatMap(p=>p.sizes.flatMap(s=>s.images))
- const missing=registered.filter(r=>inside(rootPath,path.resolve(r.file_path))&&!fs.existsSync(r.file_path))
+ const sold=new Set(db.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_units'").get()?db.prepare('SELECT image_id FROM sales_units').all().map(r=>Number(r.image_id)):[])
+ const missing=registered.filter(r=>!sold.has(r.id)&&inside(rootPath,path.resolve(r.file_path))&&!fs.existsSync(r.file_path))
  const rows=products.map(p=>({...p,sizes:p.sizes.map(s=>({...s,registeredImages:s.images.filter(f=>registeredPaths.has(f)),pendingImages:s.images.filter(f=>!registeredPaths.has(f))}))}))
  const sizes=rows.flatMap(p=>p.sizes)
  return {mode:'PREVIEW_ONLY',rootPath,productCount:rows.length,products:rows,missing,
@@ -67,7 +69,7 @@ export function checkWarehouse(rootPath=getWatchSettings().rootPath){
 }
 export function startWarehouseWatcher(){
  let last=Date.now()
- const run=()=>{const c=getWatchSettings();if(c.rootPath)try{checkWarehouse(c.rootPath)}catch(e){console.error('Warehouse scan:',e instanceof Error?e.message:e)}}
+ const run=()=>{if(salesActivity.busy||salesActivity.readers||(process.env.SHOP_SANDBOX_ROOT&&fs.existsSync(path.join(process.env.SHOP_SANDBOX_ROOT,SALES_AREA+'-pending.json'))))return;const c=getWatchSettings();if(c.rootPath)try{checkWarehouse(c.rootPath)}catch(e){console.error('Warehouse scan:',e instanceof Error?e.message:e)}}
  if(getWatchSettings().startup)setTimeout(run,0).unref()
  const timer=setInterval(()=>{const c=getWatchSettings();if(c.periodic&&Date.now()-last>=c.intervalSeconds*1000){last=Date.now();run()}},10000)
  timer.unref();return timer

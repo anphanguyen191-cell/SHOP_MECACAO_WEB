@@ -7,7 +7,7 @@ export class SalesError extends Error{constructor(message:string,public status=4
 type Item={imageId:number;unitPrice:number}
 type Input={items:Item[];discount:number;note:string}
 type Stock={image_id:number;product_id:number;variant_id:number;file_path:string;product_name:string;product_code:string;size:string;sku:string;unit_cost:number;product_status:string;variant_status:string}
-type Order={id:string;status:'DRAFT'|'CANCELLED_DRAFT';version:number;discount:number;note:string;created_at:string;updated_at:string;request_hash:string}
+type Order={id:string;status:'DRAFT'|'CANCELLED_DRAFT'|'SOLD';version:number;discount:number;note:string;created_at:string;updated_at:string;request_hash:string}
 type Saved={image_id:number;product_id:number;variant_id:number;product_name:string;product_code:string;size:string;sku:string;unit_price:number;unit_cost:number|null}
 
 function money(value:unknown,label:string){if(!Number.isSafeInteger(value)||Number(value)<0)throw new SalesError(label+' phải là số đồng nguyên không âm');return value as number}
@@ -27,11 +27,14 @@ function validate(raw:any):Input{
 
 /** Drafts have no filesystem writes, inventory transactions, image claims or reservations. */
 export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
- const root=fs.realpathSync(sandboxRoot)
+ const root=fs.realpathSync(sandboxRoot),sales=!!db.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_confirmations'").get()
+ const sold=(id:number)=>sales&&!!db.prepare('SELECT 1 FROM sales_units WHERE image_id=?').get(id)
  const select=db.prepare(`SELECT i.id image_id,i.product_id,i.variant_id,i.file_path,p.name product_name,p.product_code,v.size,v.sku,v.cost_price unit_cost,p.status product_status,v.status variant_status FROM product_images i JOIN products p ON p.id=i.product_id JOIN product_variants v ON v.id=i.variant_id AND v.product_id=p.id WHERE i.id=?`)
  function stock(id:number){return select.get(id) as Stock|undefined}
  function unavailable(row:Stock|undefined){
   if(!row)return 'Ảnh không còn đăng ký'
+  if(sold(row.image_id))return 'Bộ hàng đã bán'
+  if(row.file_path.split(/[\\/]/).some(s=>s.startsWith('.mecacao-')))return 'Ảnh không thuộc kho đang bán'
   if(row.product_status!=='active'||row.variant_status!=='active')return 'Product/Size đã ngừng hoạt động'
   if(!['.jpg','.jpeg','.png','.webp','.heic'].includes(path.extname(row.file_path).toLowerCase()))return 'Định dạng không phải ảnh tồn'
   try{
@@ -42,10 +45,10 @@ export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
   return null
  }
  function transaction<T>(action:()=>T){db.exec('BEGIN IMMEDIATE');try{const r=action();db.exec('COMMIT');return r}catch(e){db.exec('ROLLBACK');throw e}}
- function order(id:string){const row=db.prepare('SELECT * FROM sales_orders WHERE id=?').get(id) as Order|undefined;if(!row)throw new SalesError('Không tìm thấy đơn',404);return row}
+ function order(id:string){const row=db.prepare('SELECT * FROM sales_orders WHERE id=?').get(id) as Order|undefined;if(!row)throw new SalesError('Không tìm thấy đơn',404);if(sales&&db.prepare('SELECT 1 FROM sales_confirmations WHERE order_id=?').get(id))row.status='SOLD';return row}
  function conflicts(ids:number[],exclude=''){
   if(!ids.length)return {conflicts:[],conflictToken:''}
-  const rows=db.prepare(`SELECT i.image_id,i.product_name,i.size,o.id,o.version,o.note FROM sales_order_images i JOIN sales_orders o ON o.id=i.order_id WHERE o.status='DRAFT' AND o.id<>? AND i.image_id IN (${ids.map(()=>'?').join(',')}) ORDER BY i.image_id,o.id`).all(exclude,...ids) as Array<{image_id:number;product_name:string;size:string;id:string;version:number;note:string}>
+  const rows=db.prepare(`SELECT i.image_id,i.product_name,i.size,o.id,o.version,o.note FROM sales_order_images i JOIN sales_orders o ON o.id=i.order_id WHERE o.status='DRAFT' ${sales?'AND NOT EXISTS(SELECT 1 FROM sales_confirmations c WHERE c.order_id=o.id)':''} AND o.id<>? AND i.image_id IN (${ids.map(()=>'?').join(',')}) ORDER BY i.image_id,o.id`).all(exclude,...ids) as Array<{image_id:number;product_name:string;size:string;id:string;version:number;note:string}>
   const grouped=new Map<number,{imageId:number;productName:string;size:string;orders:Array<{id:string;code:string;version:number;note:string}>}>()
   for(const r of rows){const item=grouped.get(r.image_id)??{imageId:r.image_id,productName:r.product_name,size:r.size,orders:[]};item.orders.push({id:r.id,code:r.id.slice(0,8).toUpperCase(),version:r.version,note:r.note});grouped.set(r.image_id,item)}
   return {conflicts:[...grouped.values()],conflictToken:rows.length?createHash('sha256').update(JSON.stringify({ids:[...ids].sort((a,b)=>a-b),exclude,rows})).digest('hex'):''}
@@ -56,7 +59,8 @@ export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
  }
  function get(id:string){
   const row=order(id)
-  const items=(db.prepare('SELECT * FROM sales_order_images WHERE order_id=? ORDER BY position').all(id) as Saved[]).map(item=>({...item,unavailable:unavailable(stock(item.image_id))}))
+  const saved=(row.status==='SOLD'?db.prepare('SELECT snapshot FROM sales_units WHERE order_id=? ORDER BY image_id').all(id).map(u=>JSON.parse(String(u.snapshot))):db.prepare('SELECT * FROM sales_order_images WHERE order_id=? ORDER BY position').all(id)) as Saved[]
+  const items=saved.map(item=>({...item,unavailable:row.status==='SOLD'?'Bộ hàng đã bán':unavailable(stock(item.image_id))}))
   const subtotal=items.reduce((n,i)=>n+i.unit_price,0)
   return {id:row.id,status:row.status,version:row.version,discount:row.discount,note:row.note,created_at:row.created_at,updated_at:row.updated_at,items,quantity:items.length,subtotal,total:subtotal-row.discount,available:items.every(i=>!i.unavailable),reservesStock:false,...conflicts(items.map(i=>i.image_id),id)}
  }
@@ -69,8 +73,8 @@ export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
  return {
   get,
   list(status='DRAFT'){
-   if(!['DRAFT','CANCELLED_DRAFT','all'].includes(status))throw new SalesError('Trạng thái đơn không hợp lệ')
-   return db.prepare(`SELECT o.id,o.status,o.version,o.discount,o.note,o.created_at,o.updated_at,COUNT(i.image_id) quantity,COALESCE(SUM(i.unit_price),0) subtotal,COALESCE(SUM(i.unit_price),0)-o.discount total FROM sales_orders o LEFT JOIN sales_order_images i ON i.order_id=o.id WHERE (?='all' OR o.status=?) GROUP BY o.id ORDER BY o.created_at DESC,o.id LIMIT 200`).all(status,status)
+   if(!['DRAFT','CANCELLED_DRAFT','SOLD','all'].includes(status))throw new SalesError('Trạng thái đơn không hợp lệ')
+   return db.prepare(`SELECT o.id,${sales?"CASE WHEN EXISTS(SELECT 1 FROM sales_confirmations c WHERE c.order_id=o.id) THEN 'SOLD' ELSE o.status END":'o.status'} status,o.version,o.discount,o.note,o.created_at,o.updated_at,COUNT(i.image_id) quantity,COALESCE(SUM(i.unit_price),0) subtotal,COALESCE(SUM(i.unit_price),0)-o.discount total FROM sales_orders o LEFT JOIN sales_order_images i ON i.order_id=o.id WHERE (?='all' OR ${sales?"CASE WHEN EXISTS(SELECT 1 FROM sales_confirmations c WHERE c.order_id=o.id) THEN 'SOLD' ELSE o.status END":'o.status'}=?) GROUP BY o.id ORDER BY o.created_at DESC,o.id LIMIT 200`).all(status,status)
   },
   create(raw:any,key:unknown){
    if(typeof key!=='string'||! /^[A-Za-z0-9_-]{16,100}$/.test(key))throw new SalesError('Thiếu mã yêu cầu tạo đơn hợp lệ')

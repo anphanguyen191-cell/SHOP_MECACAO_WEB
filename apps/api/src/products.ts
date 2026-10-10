@@ -66,7 +66,7 @@ export function listProducts(search = '',filters:ProductListFilters={}) {
     const sizes=productVariants.map(v=>({size:v.size,stock:(imageMap.get(v.id)??[]).filter(x=>x.product_id===p.id&&x.exists).length}))
     const totalStock=sizes.reduce((n,v)=>n+v.stock,0)
     const filteredStock=selectedSize?sizes.filter(v=>v.size===selectedSize).reduce((n,v)=>n+v.stock,0):totalStock
-    return {...p,ledger_stock:productVariants.reduce((n,v)=>n+Number(v.ledger_stock),0),variant_count:sizes.length,total_stock:totalStock,filtered_stock:filteredStock,sizes:sizes.map(v=>v.size),stock_by_size:sizes}
+    return {...p,image_id:productVariants.flatMap(v=>imageMap.get(v.id)??[]).find(i=>i.product_id===p.id&&i.exists)?.id??null,ledger_stock:productVariants.reduce((n,v)=>n+Number(v.ledger_stock),0),variant_count:sizes.length,total_stock:totalStock,filtered_stock:filteredStock,sizes:sizes.map(v=>v.size),stock_by_size:sizes}
   }).filter(p=>(!selectedSize||p.sizes.includes(selectedSize))&&(stockState==='all'||(stockState==='in'?p.filtered_stock>0:p.filtered_stock===0)))
   if(sort==='stock_desc')result.sort((a,b)=>b.filtered_stock-a.filtered_stock||a.name.localeCompare(b.name,'vi'))
   else if(sort==='stock_asc')result.sort((a,b)=>a.filtered_stock-b.filtered_stock||a.name.localeCompare(b.name,'vi'))

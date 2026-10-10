@@ -1,10 +1,11 @@
+import {salesActivity,SALES_AREA} from './salesExecution.js'
 import {isInternalWarehousePath} from './warehouseAreas.js'
 import {restoreTestRouter} from './restoreRoutes.js'
 import express from 'express'
 import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { db,dbPath,salesDraftsEnabled } from './db.js'
+import { db,dbPath,salesDraftsEnabled,salesExecutionEnabled } from './db.js'
 import {readSchemaVersion} from './schema.js'
 import {salesDraftRouter} from './salesRoutes.js'
 import { createProduct, getProduct, listProducts, suggestProductCode, suggestSku, listCategories, setProductStatus, updateVariantPricing } from './products.js'
@@ -41,6 +42,12 @@ function sandboxPathAllowed(value:unknown){
  }catch{return false}
 }
 app.use(express.json({ limit: '2mb' }))
+// Coordinate all HTTP reads/writes while async sale preparation/staging runs.
+app.use('/api',(req,res,next)=>{
+ if(!salesExecutionEnabled||!sandboxRoot||req.path==='/health'||req.path==='/sales/drafts/recover'||/^\/sales\/drafts\/operations\//.test(req.path)||/\/confirm$/.test(req.path))return next()
+ if(salesActivity.busy||fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json'))||db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get())return res.status(409).json({error:'Giao dịch bán đang xử lý hoặc cần phục hồi. Vào Bán hàng kiểm tra trạng thái.',code:'SALE_RECOVERY_REQUIRED'})
+ salesActivity.readers++;let done=false;const release=()=>{if(!done){done=true;salesActivity.readers--}};res.once('finish',release);res.once('close',release);next()
+})
 // Test mode enforces isolation at the API, not merely via a yellow UI banner.
 app.use('/api',(req,res,next)=>{
  if(!sandboxRoot)return next()
@@ -63,7 +70,7 @@ app.use('/api',(req,res,next)=>{
 })
 
 app.get('/api/health', (_req, res) => res.json({
-  ok: true, app: 'SHOP_MECACAO_WEB', version: salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot,salesDrafts:salesDraftsEnabled
+  ok: true, app: 'SHOP_MECACAO_WEB', version: salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot,salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
 }))
 if(salesDraftsEnabled&&sandboxRoot)app.use('/api/sales/drafts',salesDraftRouter(db,sandboxRoot,PORT))
 else app.use('/api/sales/drafts',(_req,res)=>res.status(404).json({error:'V2 đơn nháp chưa bật; chỉ thử bằng sandbox V2 riêng.'}))

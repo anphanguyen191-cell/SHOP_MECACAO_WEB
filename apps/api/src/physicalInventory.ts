@@ -12,13 +12,14 @@ export type PhysicalImage = {id:number;product_id:number;variant_id:number;file_
 export function physicalImagesByVariant(variantIds:number[]) {
  const result=new Map<number,PhysicalImage[]>()
  const ids=[...new Set(variantIds)]
+ const sold=new Set<number>(db.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_units'").get()?(db.prepare('SELECT image_id FROM sales_units').all().map(r=>Number(r.image_id))):[])
  const extensions=new Set(['.jpg','.jpeg','.png','.webp','.heic'])
  for(let offset=0;offset<ids.length;offset+=500){
   const chunk=ids.slice(offset,offset+500)
   const rows=db.prepare(`SELECT id,product_id,variant_id,file_path FROM product_images WHERE variant_id IN (${chunk.map(()=>'?').join(',')}) ORDER BY sort_order,id`).all(...chunk) as Array<Omit<PhysicalImage,'file_name'|'exists'>>
   for(const row of rows){
    let exists=false
-   if(extensions.has(path.extname(row.file_path).toLowerCase())&&!isInternalWarehousePath(row.file_path)){
+   if(!sold.has(row.id)&&extensions.has(path.extname(row.file_path).toLowerCase())&&!isInternalWarehousePath(row.file_path)){
     try{exists=fs.statSync(row.file_path).isFile()&&!isInternalWarehousePath(fs.realpathSync(row.file_path))}catch(e){
      const code=(e as NodeJS.ErrnoException).code
      if(code!=='ENOENT'&&code!=='ENOTDIR')throw new Error('Không kiểm tra được ảnh kho: '+row.file_path,{cause:e})

@@ -36,5 +36,6 @@ export function batchImport(items:BatchImportItem[]){
 
 export function history(variantId:number){
  if(!Number.isInteger(variantId)||variantId<=0) throw new Error('Variant không hợp lệ')
- return db.prepare('SELECT id,transaction_type,quantity,unit_cost,note,created_at FROM inventory_transactions WHERE variant_id=? ORDER BY id DESC').all(variantId)
+ const table=db.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_ledger'").get()?"(SELECT id,variant_id,transaction_type,quantity,unit_cost,note,created_at FROM inventory_transactions UNION ALL SELECT -image_id id,variant_id,transaction_type,quantity,unit_cost,'Đơn '||substr(order_id,1,8) note,created_at FROM sales_ledger)":'inventory_transactions'
+ return db.prepare(`SELECT id,transaction_type,quantity,unit_cost,note,created_at FROM ${table} WHERE variant_id=? ORDER BY created_at DESC,id DESC`).all(variantId)
 }

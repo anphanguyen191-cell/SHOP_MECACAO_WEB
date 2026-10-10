@@ -1,3 +1,5 @@
+import {createHash} from 'node:crypto'
+import {rejectSoldSource} from './soldSource.js'
 import {isInternalWarehousePath} from './warehouseAreas.js'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -52,7 +54,7 @@ export function commitStoreImport(input:ApprovedStoreImport){
    const size=variant.size.trim(),variantCost=variant.costPrice??input.costPrice??0,variantSale=variant.salePrice??input.salePrice??0
    if(!Number.isFinite(variantCost)||variantCost<0||!Number.isFinite(variantSale)||variantSale<0)throw new Error('Giá theo size không hợp lệ')
    const images=variant.images??[]
-   validateImages(root,images)
+   validateImages(root,images);for(const image of images)rejectSoldSource(db,createHash('sha256').update(fs.readFileSync(image)).digest('hex'))
    const existing=existingBySize.get(productId,size) as {id:number;sku:string}|undefined
    // An existing Size may acquire newly photographed stock outside the app.
    // Register only new paths: re-scanning the same warehouse is idempotent.

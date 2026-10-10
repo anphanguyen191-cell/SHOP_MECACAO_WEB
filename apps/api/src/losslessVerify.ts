@@ -1,3 +1,4 @@
+import {verifySalesBackup} from './salesBackup.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import {createHash} from 'node:crypto'
@@ -7,6 +8,7 @@ export function verifyLosslessBackup(directory:string){
  const dir=fs.realpathSync(path.resolve(directory)),manifestPath=path.join(dir,'lossless-manifest.json')
  if(!fs.lstatSync(manifestPath).isFile()||fs.realpathSync(manifestPath)!==manifestPath)throw Error('Manifest không phải file vật lý an toàn')
  const obj=JSON.parse(fs.readFileSync(manifestPath,'utf8')) as {version:number;archives?:Array<{relative_path:string;backup_path:string;sha256:string;size:number}>;database:string;database_sha256:string;files:Array<{id:number;source_path:string;backup_path:string;sha256:string;size:number}>}
+ if(obj.version===3)return verifySalesBackup(dir)
  if(![1,2].includes(obj.version)||obj.database!=='shop.db'||!Array.isArray(obj.files))throw new Error('Manifest sao lưu không hợp lệ')
  const hash=(p:string)=>createHash('sha256').update(fs.readFileSync(p)).digest('hex')
  const snapshot=path.join(dir,'shop.db')

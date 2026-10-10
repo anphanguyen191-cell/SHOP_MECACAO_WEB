@@ -9,6 +9,7 @@ export function getImageRecord(id:number){
   if(!Number.isInteger(id)||id<=0) throw new Error('Ảnh không hợp lệ')
   const row=db.prepare('SELECT id,product_id,variant_id,file_path,is_primary,sort_order FROM product_images WHERE id=?').get(id) as {id:number;product_id:number;variant_id:number|null;file_path:string;is_primary:number;sort_order:number}|undefined
   if(!row) return null
+  if(db.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_units'").get()&&db.prepare('SELECT 1 FROM sales_units WHERE image_id=?').get(id))return {...row,missing:true}
   const resolved=path.resolve(row.file_path)
   const ext=path.extname(resolved).toLowerCase()
   if(!allowed.has(ext)) throw new Error('Định dạng ảnh không được hỗ trợ')

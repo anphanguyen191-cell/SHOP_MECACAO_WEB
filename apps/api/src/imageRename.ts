@@ -24,6 +24,7 @@ export function previewImageRename(inputRoot:string,selectedIds?:number[]){
  const rows=db.prepare('SELECT i.id,i.file_path,p.name,v.size FROM product_images i JOIN products p ON p.id=i.product_id JOIN product_variants v ON v.id=i.variant_id ORDER BY i.id').all() as {id:number;file_path:string;name:string;size:string}[]
  const found=new Set<number>()
  for(const row of rows){
+  if(db.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_units'").get()&&db.prepare('SELECT 1 FROM sales_units WHERE image_id=?').get(row.id))continue
   if(!inside(rootPath,path.resolve(row.file_path))||(selected&&!selected.has(row.id)))continue
   found.add(row.id)
   if(!fs.existsSync(row.file_path)){missing.push(row.id);continue}

@@ -1,3 +1,7 @@
+# Checkpoint 2026-10-10 — V2 sales sandbox130
+
+Owner requested whole-flow Windows test. Added opt-in actual sandbox sale + immutable SOLD history/relative evidence, coordinated HTTP/watch lock and recovery, role-aware full backup/portable restore and new port3007/3016 launchers. Originals retained; default110 and draft120 unchanged. Scope: `V2_SALES_SANDBOX_CHECKPOINT.md`; acceptance: `WINDOWS_V2_SALES_TEST.md`. Latest CI must be checked for final commit. Not business release/STABLE; image quality/cleanup and owner full Windows/restore acceptance pending. Historical checkpoints below describe earlier revisions.
+
 ## 2026-10-10 — V2 copied-only confirm trial UI/API
 
 Connected preflight to trusted copy/derivative/staging/atomic-commit orchestration on cloned DB/photos, persistent same-key trial status/resume/recovery and explicit responsive themed UI. Added eighteen hard-exit points and real HTTP/browser replay tests. Protected internal trial areas from stock/import/share and stopped full backup on invalid internal registrations. No operational sale, source migration/deletion or SOLD backup release; see V2_CONFIRM_TRIAL_CHECKPOINT.md.

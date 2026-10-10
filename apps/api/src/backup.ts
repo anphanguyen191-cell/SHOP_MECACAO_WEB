@@ -1,3 +1,4 @@
+import {createSalesBackup} from './salesBackup.js'
 import {archiveSnapshot,type ExtraFile} from './archiveSnapshot.js'
 import {readSchemaVersion} from './schema.js'
 import fs from 'node:fs'
@@ -55,6 +56,7 @@ export async function createOptimizedImageBackup(){
  * Original customer image locations are never modified.
  */
 export function createLosslessBackup(){
+ if(readSchemaVersion(db)===130){if(!process.env.SHOP_SANDBOX_ROOT)throw Error('Sale backup cần sandbox');return createSalesBackup(db,dbPath,process.env.SHOP_SANDBOX_ROOT)}
  const schema=readSchemaVersion(db),archiveSources=schema===120&&process.env.SHOP_SANDBOX_ROOT?archiveSnapshot(process.env.SHOP_SANDBOX_ROOT):[]
  const records=db.prepare('SELECT id,product_id,variant_id,file_path FROM product_images ORDER BY id').all() as Array<{id:number;product_id:number;variant_id:number|null;file_path:string}>
  if(records.some(r=>isInternalWarehousePath(r.file_path)||(fs.existsSync(r.file_path)&&isInternalWarehousePath(fs.realpathSync(r.file_path)))))throw Error('Ảnh thư mục thử/staging đã bị đăng ký như hàng tồn. Dừng backup đầy đủ để kiểm tra metadata, không bỏ qua âm thầm.')

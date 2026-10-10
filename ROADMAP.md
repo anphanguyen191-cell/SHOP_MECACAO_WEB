@@ -8,7 +8,7 @@ Statuses: BACKLOG / PROPOSED / APPROVED / IMPLEMENTING / TESTING / DONE / REJECT
 |---|---|---|
 | V0.1.2 | Foundation / local + GitHub preview | DONE / STABLE |
 | V1.0 | Product + SKU + image-backed physical inventory | CI PASS; WINDOWS USER-REPORTED PASS 2026-10-10; full restore / STABLE checkpoint pending |
-| V2.0 | Orders / sales / stock deduction | DRAFT + COPIED-ONLY CONFIRM TRIAL IMPLEMENTED / SOURCE SALE PENDING; production sales gated on V1 STABLE + recovery/restore acceptance |
+| V2.0 | Orders / sales / stock deduction | SANDBOX130 CONFIRM + SOLD HISTORY + FULL BACKUP/RESTORE IMPLEMENTED / OWNER WINDOWS & BUSINESS RELEASE PENDING; production sales gated on V1 STABLE + recovery/restore acceptance |
 | V3.0 | Customers + receipt PNG | BACKLOG |
 | V4.0 | Reports + stocktake | BACKLOG |
 | V5.0 | PWA/mobile LAN workflow | BACKLOG |

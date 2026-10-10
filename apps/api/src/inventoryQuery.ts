@@ -27,7 +27,7 @@ function inventoryMetadata(filters:InventoryFilters={}){
 export function inventoryRows(filters:InventoryFilters={}){
  const {rows,state,threshold}=inventoryMetadata(filters)
  const images=physicalImagesByVariant(rows.map(r=>r.variant_id))
- const actual=rows.map(r=>({...r,ledger_stock:Number(r.stock||0),stock:(images.get(r.variant_id)??[]).filter(x=>x.product_id===r.product_id&&x.exists).length}))
+ const actual=rows.map(r=>({...r,image_id:(images.get(r.variant_id)??[]).find(i=>i.product_id===r.product_id&&i.exists)?.id??null,ledger_stock:Number(r.stock||0),stock:(images.get(r.variant_id)??[]).filter(x=>x.product_id===r.product_id&&x.exists).length}))
  return actual.filter(r=>state==='all'||(state==='out'&&r.stock===0)||(state==='low'&&r.stock>0&&r.stock<=threshold)||(state==='ok'&&r.stock>threshold))
 }
 
@@ -72,7 +72,7 @@ export function inventorySuggestions(search=''){
 
 export function inventoryHistory(limit=200){
  const safe=Number.isInteger(limit)?Math.min(Math.max(limit,1),1000):200
- return db.prepare(`SELECT t.id,t.transaction_type,t.quantity,t.unit_cost,t.note,t.created_at,v.id AS variant_id,v.sku,v.size,p.id AS product_id,p.product_code,p.name AS product_name FROM inventory_transactions t JOIN product_variants v ON v.id=t.variant_id JOIN products p ON p.id=v.product_id ORDER BY t.id DESC LIMIT ?`).all(safe)
+ return db.prepare(`SELECT t.id,t.transaction_type,t.quantity,t.unit_cost,t.note,t.created_at,v.id AS variant_id,v.sku,v.size,p.id AS product_id,p.product_code,p.name AS product_name FROM ${db.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_ledger'").get()?"(SELECT id,variant_id,transaction_type,quantity,unit_cost,note,created_at FROM inventory_transactions UNION ALL SELECT -image_id id,variant_id,transaction_type,quantity,unit_cost,'Đơn '||substr(order_id,1,8) note,created_at FROM sales_ledger)":'inventory_transactions'} t JOIN product_variants v ON v.id=t.variant_id JOIN products p ON p.id=v.product_id ORDER BY t.created_at DESC,t.id DESC LIMIT ?`).all(safe)
 }
 export function inventoryFilterOptions(){
  return {categories:(db.prepare("SELECT DISTINCT c.name FROM categories c JOIN products p ON p.category_id=c.id ORDER BY c.name").all() as Array<{name:string}>).map(x=>x.name),sizes:(db.prepare("SELECT DISTINCT size FROM product_variants ORDER BY size").all() as Array<{size:string}>).map(x=>x.size)}

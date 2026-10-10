@@ -21,6 +21,7 @@ const images=[
 ]
 for(const [target,r,g,b] of images){
  fs.mkdirSync(path.dirname(target),{recursive:true})
+ if(process.env.SHOP_ENABLE_V2_SALES==='1'&&process.env.SHOP_DB_PATH&&fs.existsSync(process.env.SHOP_DB_PATH))continue // sale restart must never recreate sold canonical images
  if(fs.existsSync(target))continue // never overwrite a tester's file
  await sharp({create:{width:900,height:1100,channels:3,background:{r,g,b}}}).jpeg({quality:87}).toFile(target)
 }
