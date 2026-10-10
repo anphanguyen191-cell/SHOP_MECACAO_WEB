@@ -3,6 +3,7 @@ import path from 'node:path'
 import os from 'node:os'
 import {isIP} from 'node:net'
 import {X509Certificate} from 'node:crypto'
+import {createLanAudit} from './lanAudit.js'
 import {createLanSessionManager,type LanCredential} from './lanSecurity.js'
 import {freshDevelopment,freshRoot} from './freshDevelopment.js'
 
@@ -29,6 +30,6 @@ export function configureLan(){
  if(cfg.format!==1||!Array.isArray(cfg.users)||!cfg.users.some(u=>u.role==='owner'))throw Error('Thiếu tài khoản chủ shop')
  const key=readExact(path.join(dir,'key.pem')),cert=readExact(path.join(dir,'cert.pem')),x=new X509Certificate(cert)
  if(!x.checkIP(address)||Date.parse(x.validFrom)>Date.now()||Date.parse(x.validTo)<Date.now())throw Error('Chứng chỉ HTTPS không hợp lệ với IP LAN')
- return {address,port,key,cert,sessions:createLanSessionManager(cfg.users)}
+ return {address,port,key,cert,sessions:createLanSessionManager(cfg.users),audit:createLanAudit(path.join(dir,'audit.jsonl'))}
 }
 export type LanRuntime=NonNullable<ReturnType<typeof configureLan>>
