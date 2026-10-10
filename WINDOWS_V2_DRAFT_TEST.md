@@ -26,3 +26,7 @@ Sau Xem trước ảnh nhẹ → Lưu bộ ảnh thử → Kiểm chứng lại.
 ## Backup/restore sang kho mới
 
 Cài đặt → Backup đầy đủ → chọn kho gốc warehouse trong sandbox → checkbox tạo bản thử riêng → Phục hồi & kiểm chứng → READY. Chạy RUN_WINDOWS_RESTORED_SANDBOX_TEST.bat chọn1; mở3016 để kiểm tra tồn, ảnh, ledger, nháp và kiểm chứng ảnh nhẹ; restart3016 rồi đối chiếu source3006 không đổi. Chi tiết: V2_BACKUP_RESTORE_CHECKPOINT.md. Chưa thay DB/kho thật hoặc xác nhận bán.
+
+## Kiểm tra toàn đơn trước bán
+
+Bảng mới trong đơn nháp: bấm Kiểm tra toàn đơn, đối chiếu mẫu/Size/bộ/tiền, mở kiểm tra từng bộ. Sửa giá/giảm giá → lưu → báo cáo cũ biến mất → kiểm tra lại. Nháp trùng, giá0, thiếu vốn và ảnh lỗi có cảnh báo riêng. Kiểm tra không bán/giữ hàng/trừ tồn. Các ca sandbox cụ thể: V2_PREFLIGHT_CHECKPOINT.md.

@@ -1,3 +1,7 @@
+## 2026-10-10 — V2 whole-order preflight
+
+Added read-only physical-image/decode/checksum gate and per-unit review in draft editor, with version/token revalidation, overlap/zero-price/cost warnings and desktop/mobile light/dark UI. Regression coverage includes changed/missing/corrupt images and report invalidation after saving edits. No SALE/SOLD/deletion; see V2_PREFLIGHT_CHECKPOINT.md.
+
 # 2026-10-10 — Full restore và backup archive V2
 
 Restore schema110/120 sang kho/database mới, byte-exact + ID/history preservation, SHA/integrity/FK/READY guards and seven hard-exit checks. Full V2 sandbox backup includes completed trial archives; pending/busy/corrupt sets fail closed. Cài đặt restore flow and Windows launcher3016 with V1/V2 choice. No live-DB switch, sale or original deletion. Details: V2_BACKUP_RESTORE_CHECKPOINT.md.

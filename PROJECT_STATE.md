@@ -1,3 +1,8 @@
+# V2 saved-order preflight checkpoint — 2026-10-10
+
+Read-only whole-draft physical image decode/hash and version revalidation, per-unit issues, draft overlaps, zero-price/unknown-cost warnings, reviewed totals; responsive themed UI invalidates old reports after edits. Sandbox POST preflight uses existing origin/loopback gate. Scope/tests: `V2_PREFLIGHT_CHECKPOINT.md`. No schema/claim/SALE/SOLD/confirm/deletion. V2 not complete; production sales and Windows restore/STABLE gates remain pending. Baseline a37320f exact Actions38015746092 all SUCCESS; new commit requires its own CI verification.
+
+---
 # Full restore / V2 derivative backup checkpoint — 2026-10-10
 
 Implemented schema110/120 lossless restore into NEW isolated warehouse/database, remapped paths with verified IDs/rows/files and transactional DB update, preserved source and bundle; READY only after full verification. V2 full backup now includes READY trial-archive JPEG/journals and refuses pending/busy/corrupt sets. Sandbox Cài đặt flow + separate Windows restored launcher3016. Scope/tests/owner steps: `V2_BACKUP_RESTORE_CHECKPOINT.md`. Local restore50 + HTTP57 + prior complete gate PASS; new exact CI required. Full operational sandbox restore now has automated server/launcher proof; shop Windows restore acceptance/STABLE still pending. No SALE/SOLD/confirm/deletion/schema migration.

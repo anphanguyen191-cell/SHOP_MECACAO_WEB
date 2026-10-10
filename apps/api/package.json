@@ -17,7 +17,8 @@
     "test:sales-preview": "node --import tsx src/salesPreviewSelfTest.ts",
     "test:sales-archive": "node --import tsx src/salesArchiveSelfTest.ts",
     "test:sales-staging": "node --import tsx src/salesStagingLabSelfTest.ts",
-    "test:restore": "node --import tsx src/losslessRestoreSelfTest.ts"
+    "test:restore": "node --import tsx src/losslessRestoreSelfTest.ts",
+    "test:sales-preflight": "node --import tsx src/salesPreflightSelfTest.ts"
   },
   "dependencies": {
     "express": "^4.21.2",

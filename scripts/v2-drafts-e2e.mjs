@@ -46,6 +46,12 @@ try{
  const light=await fetch(base+'/api/sales/drafts/'+d.id+'/preview/'+id+'?version=2&hash='+preview.items[0].sourceHash);assert(light.ok&&light.headers.get('content-type').includes('image/jpeg')&&light.headers.get('cache-control')==='no-store');checks++
  await api('/api/sales/drafts/'+d.id+'/preview','POST',{version:1},409)
  await api('/api/sales/drafts/'+d.id+'/preview','POST',{version:2},403,{Origin:'https://untrusted.example'})
+ const readiness=await api('/api/sales/drafts/'+d.id+'/preflight','POST',{version:2})
+ assert(readiness.readOnly&&readiness.checksPassed&&!readiness.canConfirmSale&&readiness.total===50000);checks++
+ await api('/api/sales/drafts/'+d.id+'/preflight','POST',{version:2,token:readiness.token})
+ await api('/api/sales/drafts/'+d.id+'/preflight','POST',{version:1},409)
+ await api('/api/sales/drafts/'+d.id+'/preflight','POST',{version:2,token:'a'.repeat(64)},409)
+ await api('/api/sales/drafts/'+d.id+'/preflight','POST',{version:2},403,{Origin:'https://untrusted.example'})
  const archiveInput={version:2,images:preview.items.map(i=>({imageId:i.imageId,sourceHash:i.sourceHash}))}
  const saved=await api('/api/sales/drafts/'+d.id+'/archives','POST',archiveInput,200,{'Idempotency-Key':'http-archive-request-0001'})
  assert(saved.status==='READY'&&saved.originalsRetained&&!saved.sold);checks++
@@ -126,6 +132,12 @@ async function browserTest(base,id){
   await run("document.querySelector('.draftConflictDialog .salesActionWarning').click()")
   await until("!!document.querySelector('.salesItem')")
   assert(await run("!!document.querySelector('.draftOverlapBadge')"));checks++
+  await run("document.querySelector('.preflightCheck').click()")
+  await until("!!document.querySelector('.preflightReport')")
+  assert(await run("document.querySelector('.preflightReport').textContent.includes('nháp khác')"));checks++
+  await run("document.querySelector('.preflightDetails').click()")
+  await until("!!document.querySelector('.preflightItems article')")
+  assert(await run("document.querySelector('.preflightItems').textContent.includes('Ảnh đọc được')"));checks++
   await run("document.querySelector('.salesPreviewHeading button').click()")
   await until("!!document.querySelector('.salesPreviewCompare')")
   await until("document.querySelector('.salesPreviewCompare figure:nth-child(2) img').naturalWidth>0")
@@ -149,6 +161,12 @@ async function browserTest(base,id){
   await run("document.querySelector('.salesButtons button').click()")
   await until("document.querySelector('.salesEditorHead').textContent.includes('Phiên bản 2')")
   assert(await run("document.querySelector('.salesTotals').textContent.includes('49.000')"));checks++
+  await until("!document.querySelector('.preflightCheck').disabled")
+  assert(await run("!document.querySelector('.preflightReport')"));checks++
+  await run("document.querySelector('.preflightCheck').click()")
+  await until("!!document.querySelector('.preflightReport')")
+  assert(await run("document.querySelector('.preflightStats').textContent.includes('49.000')"));checks++
+  await run("document.querySelector('.preflightDetails').click()")
   const artifact=path.resolve('artifacts/v2-drafts');fs.mkdirSync(artifact,{recursive:true})
   for(const width of [1366,390])for(const dark of [false,true]){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:768,deviceScaleFactor:1,mobile:width===390})
