@@ -1,3 +1,4 @@
+import LanLogin from './LanLogin'
 import SoldRetentionView from './SoldRetentionView'
 import BusinessReports from './BusinessReports'
 import StocktakeView from './StocktakeView'
@@ -19,7 +20,7 @@ import SalesDraftView from './SalesDraftView'
 import {useDraftConflictChoice} from './DraftConflictChoice'
 import {apiJson,useBooleanPreference} from './uiState'
 
-type Health={ok:boolean;version:string;schema:number;database:string;freshDevelopment?:boolean;customWarehouse?:boolean;release?:{version:string;channel:string;stage:number;status:string;next:string};sandbox?:boolean;localV2Review?:boolean;localV2Business?:boolean;localV2RestoreReview?:boolean;warehouse?:string;databasePath?:string;incoming?:string;salesDrafts?:boolean;salesExecution?:boolean}
+type Health={ok:boolean;version:string;schema:number;database:string;freshDevelopment?:boolean;customWarehouse?:boolean;release?:{version:string;channel:string;stage:number;status:string;next:string};sandbox?:boolean;localV2Review?:boolean;localV2Business?:boolean;localV2RestoreReview?:boolean;warehouse?:string;databasePath?:string;incoming?:string;salesDrafts?:boolean;salesExecution?:boolean;lanClient?:boolean;lanRole?:'owner'|'cashier'|'inventory'|'viewer'}
 type ProductRow={id:number;product_code:string;name:string;category?:string;variant_count:number;total_stock:number;image_id?:number|null;filtered_stock?:number;sizes?:string[];stock_by_size?:Array<{size:string;stock:number}>}
 type CatalogSuggestion={product_id:number;product_code:string;product_name:string;variant_id:number;sku:string;size:string;stock:number}
 const demo:ProductRow[]=[
@@ -31,7 +32,9 @@ const baseNav=['Tổng quan','Danh mục sản phẩm','Nhập hàng','Import kh
 export default function App(){
  const isDemo=useMemo(()=>location.hostname.endsWith('github.io')||new URLSearchParams(location.search).get('demo')==='1',[])
  const [health,setHealth]=useState<Health|null>(null),[active,setActive]=useState('Tổng quan')
- const nav=health?.salesDrafts&&!isDemo?[...baseNav.slice(0,-1),'Khách hàng','Bán hàng','Công nợ',...(health?.salesExecution?['Báo cáo','Kiểm kê','Ảnh SOLD']:[]),'Cài đặt']:baseNav
+ const [lanLoginRequired,setLanLoginRequired]=useState(false),[healthReload,setHealthReload]=useState(0)
+ const baseAccess=health?.lanClient?baseNav.filter(n=>!['Nhập hàng','Import kho','Cài đặt'].includes(n)):baseNav
+ const nav=health?.salesDrafts&&!isDemo?[...baseAccess.filter(n=>n!=='Cài đặt'),'Khách hàng','Bán hàng','Công nợ',...(health?.salesExecution?['Báo cáo','Kiểm kê','Ảnh SOLD']:[]),...(health?.lanClient?[]:['Cài đặt'])]:baseAccess
  const conflictChoice=useDraftConflictChoice()
  const [salesId,setSalesId]=useState<string|null>(null),[addToDraft,setAddToDraft]=useState<string|null>(null)
  const [menuOpen,setMenuOpen]=useState(false),[menuSearch,setMenuSearch]=useState('')
@@ -44,7 +47,8 @@ export default function App(){
  const [showAdd,setShowAdd]=useState(false),[productReload,setProductReload]=useState(0)
  const [detailProductId,setDetailProductId]=useState<number|null>(null),[dashboard,setDashboard]=useState<any>(null),[catalog,setCatalog]=useState<any>(null)
  const [catalogLoading,setCatalogLoading]=useState(false),[catalogError,setCatalogError]=useState(''),[dashboardError,setDashboardError]=useState('')
- useEffect(()=>{if(isDemo)return;fetch('/api/health').then(r=>r.json()).then(setHealth).catch(()=>setHealth(null))},[isDemo])
+ useEffect(()=>{if(isDemo)return;fetch('/api/health').then(async r=>{if(r.status===401){setLanLoginRequired(true);setHealth(null);return}if(!r.ok)throw Error('Server unavailable');setHealth(await r.json());setLanLoginRequired(false)}).catch(()=>setHealth(null))},[isDemo,healthReload])
+ useEffect(()=>{const expired=()=>{if(!isDemo){setLanLoginRequired(true);setHealth(null)}};window.addEventListener('mecacao-lan-expired',expired);return()=>window.removeEventListener('mecacao-lan-expired',expired)},[isDemo])
  useEffect(()=>{if(isDemo||active!=='Tổng quan')return;const controller=new AbortController();setDashboardError('');apiJson('/api/inventory/dashboard',{signal:controller.signal}).then(setDashboard).catch(e=>{if(!controller.signal.aborted){setDashboard(null);setDashboardError(e.message)}});return()=>controller.abort()},[active,isDemo,productReload])
  useEffect(()=>{
   if(isDemo){setCatalogSizes(['Size 1','Size 2','Size 3','Size 4']);return}
@@ -92,7 +96,7 @@ export default function App(){
  },[products,isDemo,search,catalogSize,catalogStock,catalogSort])
  function chooseCatalogSuggestion(s:CatalogSuggestion){setSearch(s.product_name);setCatalogSize(s.size);setCatalogSuggestions([])}
  const isWindowsSandbox=!!health?.sandbox&&!health?.freshDevelopment&&!isDemo
- const mode=isDemo?'DEMO':health?.ok?(health?.freshDevelopment?'LOCAL · MAIN':health?.localV2Business?'LOCAL V2 · KHO KINH DOANH':isWindowsSandbox?'TEST SANDBOX':'LOCAL'):'LOCAL / API OFFLINE'
+ const mode=isDemo?'DEMO':health?.ok?(health?.lanClient?'LOCAL · LAN':health?.freshDevelopment?'LOCAL · MAIN':health?.localV2Business?'LOCAL V2 · KHO KINH DOANH':isWindowsSandbox?'TEST SANDBOX':'LOCAL'):'LOCAL / API OFFLINE'
  const catalogDisplay=isDemo?{
   categoryBreakdown:[{category:'Đồ tole bé gái',count:2}],
   sizeBreakdown:[{size:'Size 1',count:2},{size:'Size 2',count:2},{size:'Size 3',count:2},{size:'Size 4',count:1}],
@@ -114,11 +118,12 @@ export default function App(){
   setSalesId(result.id);setAddToDraft(null);goTo('Bán hàng')
  }
  function goTo(section:string){if(!window.dispatchEvent(new Event('mecacao-before-navigate',{cancelable:true}))){setMenuOpen(false);return;}setActive(section);setMenuOpen(false);setMenuSearch('');setDetailProductId(null)}
+ if(lanLoginRequired)return <LanLogin onLogin={()=>setHealthReload(n=>n+1)}/>
  return <div className={'shell '+(darkMode?'themeDark':'')+(compact?' densityCompact':' densityComfort')}>
   {conflictChoice.dialog}
-  <header className="topbar"><div className="brandIdentity"><button type="button" className="menuToggle" aria-label="Mở danh mục chức năng" aria-expanded={menuOpen} onClick={()=>setMenuOpen(true)}>☰</button><img className="brandLogo" src={`${import.meta.env.BASE_URL}brand/logo.jpg`} alt="Logo Shop Mẹ CaCao" onError={e=>{e.currentTarget.style.display="none"}}/><span className="brandMonogram">MC</span><div><p className="eyebrow">SHOP MẸ CACAO · SINCE 2023</p><h1>Quản lý kho</h1></div></div><div className="headerActions"><DisplayDensity compact={compact} onChange={setCompact}/><WarehouseNotifications isDemo={isDemo} onReview={()=>goTo('Import kho')}/><button type="button" className="themeToggle" onClick={()=>setDarkMode(v=>!v)} aria-label={darkMode?"Bật giao diện sáng":"Bật giao diện tối"}>{darkMode?"☀":"☾"}</button><span className={'badge '+(mode==='LOCAL'?'local':mode==='DEMO'?'demo':mode==='TEST SANDBOX'?'test':'offline')}>{mode}</span></div></header>
-  {!isDemo&&health?.ok&&<TaskProgress/>}
-  {(health?.freshDevelopment||isDemo)&&<ReleaseStatus version={health?.version??'3.2.0-stage4'} release={health?.release} warehouse={health?.warehouse} custom={health?.customWarehouse} onImport={()=>goTo('Import kho')}/>}
+  <header className="topbar"><div className="brandIdentity"><button type="button" className="menuToggle" aria-label="Mở danh mục chức năng" aria-expanded={menuOpen} onClick={()=>setMenuOpen(true)}>☰</button><img className="brandLogo" src={`${import.meta.env.BASE_URL}brand/logo.jpg`} alt="Logo Shop Mẹ CaCao" onError={e=>{e.currentTarget.style.display="none"}}/><span className="brandMonogram">MC</span><div><p className="eyebrow">SHOP MẸ CACAO · SINCE 2023</p><h1>Quản lý kho</h1></div></div><div className="headerActions"><DisplayDensity compact={compact} onChange={setCompact}/><WarehouseNotifications isDemo={isDemo} onReview={()=>goTo('Import kho')}/><button type="button" className="themeToggle" onClick={()=>setDarkMode(v=>!v)} aria-label={darkMode?"Bật giao diện sáng":"Bật giao diện tối"}>{darkMode?"☀":"☾"}</button>{health?.lanClient&&<button type="button" className="lanLogout" onClick={()=>{void fetch('/api/lan/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).finally(()=>{setHealth(null);setLanLoginRequired(true)})}}>Đăng xuất</button>}<span className={'badge '+(mode==='LOCAL'?'local':mode==='DEMO'?'demo':mode==='TEST SANDBOX'?'test':'offline')}>{mode}</span></div></header>
+  {!isDemo&&health?.ok&&!health?.lanClient&&<TaskProgress/>}
+  {(health?.freshDevelopment||isDemo)&&<ReleaseStatus version={health?.version??'3.2.0-stage4'} release={health?.release} warehouse={health?.lanClient?undefined:health?.warehouse} custom={health?.customWarehouse} onImport={()=>goTo('Import kho')}/>}
   {health?.localV2Business&&<div className="sandboxSafetyBanner businessSafetyBanner" role="status"><b>LOCAL V2 · KHO KINH DOANH</b><br/>Kho: {health.warehouse}<br/>DB: {health.databasePath}<br/>Ảnh nhập mới: {health.incoming} · Không mở V1/Python cũ đồng thời.</div>}
   {health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">BẢN PHỤC HỒI THỬ · Không phải kho kinh doanh.</div>}
   {isWindowsSandbox&&!health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">{health?.localV2Review?'LOCAL V2 — BẢN SAO ĐỂ DUYỆT. Dữ liệu lấy từ backup V1; thao tác chỉ thay bản sao, chưa kích hoạt kho thật.':'CHẾ ĐỘ THỬ WINDOWS — Database và kho giả lập riêng. KHÔNG thao tác ghi lên D:\\1-Me CaCao Store.'}</div>}
