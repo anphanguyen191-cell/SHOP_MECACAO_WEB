@@ -23,6 +23,8 @@ jobs:
       - run: npm ci
       - name: Dependency security audit
         run: npm audit --omit=dev --audit-level=critical
+      - name: Stage 6 HTTPS LAN isolated auth and role acceptance
+        run: node --import tsx scripts/stage6-lan-http-e2e.mjs
       - name: V1 internal gate
         run: npm run test:gate
       - name: Stage 2 fresh release HTTP and PNG acceptance
