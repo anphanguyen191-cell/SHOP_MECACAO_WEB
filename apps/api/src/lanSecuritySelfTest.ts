@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import {createLanSessionManager,makeLanCredential,checkLanCredential,lanApiAllowed} from './lanSecurity.js'
+import {createLanSessionManager,makeLanCredential,checkLanCredential,lanApiAllowed,changeLanAccount} from './lanSecurity.js'
 let checks=0
 const must=(v:unknown,m:string)=>{assert.ok(v,m);checks++}
 let t=100_000
@@ -44,4 +44,11 @@ must(!lanApiAllowed('cashier','POST','/api/sales/drafts/stocktakes'),'Cashier ca
 must(!lanApiAllowed('owner','DELETE','/api/sales/drafts/order-1'),'Unknown destructive verb denied')
 must(!lanApiAllowed('owner','POST','/api/mystery/new'),'Unknown API denied')
 must(!lanApiAllowed('owner','POST','/api/fs/%2e%2e/secret'),'Encoded path denied')
+const team=changeLanAccount([owner],'owner','test-password-567890',{action:'add',username:'inventory1',role:'inventory',password:'test-inventory-12345'})
+must(team.length===2&&team[1].role==='inventory','Owner can add staff')
+assert.throws(()=>changeLanAccount([owner],'owner','incorrect',{action:'add',username:'cashier3',role:'cashier',password:'long-password-1234'}));checks++
+const changed=changeLanAccount(team,'owner','test-password-567890',{action:'reset',username:'inventory1',password:'changed-password-4455'})
+must(checkLanCredential(changed[1],'changed-password-4455')&&!checkLanCredential(changed[1],'test-inventory-12345'),'Reset revokes old credential on restart')
+must(changeLanAccount(changed,'owner','test-password-567890',{action:'disable',username:'inventory1'}).length===1,'Owner may revoke staff')
+assert.throws(()=>changeLanAccount([owner],'owner','test-password-567890',{action:'disable',username:'owner'}));checks++
 console.log('STAGE6 SECURITY FOUNDATION PASS',checks)
