@@ -31,3 +31,17 @@
 .shell :is(.reportPanel,.stocktakePanel,.financePanel,.debtPanel) :is(.primary,button[type=submit]){min-height:44px;font-weight:750;border-radius:14px}
 .shell .warning{line-height:1.5}
 @media(max-width:760px){.shell :is(.financePanel,.debtPanel,.reportPanel,.stocktakePanel){max-width:100%;overflow-wrap:anywhere}.shell :is(.reportPanel,.stocktakePanel) :is(table,[role=table]){display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}}
+
+/* Checkpoint 4/5 — SOLD evidence, iPhone photo inbox, settings & system feedback */
+.shell :is(.soldRetentionPage,.phoneInbox,.settingsPage){color:var(--mc-ink);min-width:0}
+.shell :is(.soldRetentionIntro,.soldRetentionCard,.phoneInboxCard,.phoneInboxHeader,.phoneInboxSummary>div,.phoneInboxUpload,.phoneInboxReviewNotice,.settingsSection){background:var(--mc-surface);color:var(--mc-ink);border:1px solid var(--mc-border);border-radius:var(--mc-radius-lg);box-shadow:var(--mc-shadow)}
+.shell :is(.soldRetentionCard,.phoneInboxCard,.settingsSection) :is(h2,h3,b,strong){color:var(--mc-ink);overflow-wrap:anywhere}
+.shell :is(.soldRetentionPage,.phoneInbox,.settingsPage) :is(p,small){line-height:1.55}
+.shell :is(.soldRetentionPage,.phoneInbox,.settingsPage) :is(input,select,textarea){background:var(--mc-input);color:var(--mc-ink);border-color:var(--mc-border)}
+.shell .phoneInboxSummary>div:nth-child(3n+1){border-top:4px solid var(--ui-pink)}
+.shell .phoneInboxSummary>div:nth-child(3n+2){border-top:4px solid var(--ui-blue)}
+.shell .phoneInboxSummary>div:nth-child(3n){border-top:4px solid var(--ui-green)}
+.shell :is(.soldRetentionPage,.phoneInbox,.settingsPage) button:not(:disabled){min-height:42px}
+.shell .notice[role=alert]{border:1px solid #d09b56;background:#fff5e5;color:#74450a}
+.shell.themeDark .notice[role=alert]{background:#443728;color:#fbd8a3;border-color:#96794d}
+@media(max-width:760px){.shell :is(.soldRetentionIntro,.soldRetentionCard,.phoneInboxCard,.phoneInboxUpload,.settingsSection){max-width:100%;overflow-wrap:anywhere}.shell .phoneInboxSummary>div{padding:12px}}
