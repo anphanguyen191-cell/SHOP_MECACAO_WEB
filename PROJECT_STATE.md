@@ -1,3 +1,8 @@
+# V2 read-only image preview checkpoint — 2026-10-10
+
+Implemented sandbox draft preview: original/optimized JPEG comparison, actual sizes, source checksums/version validation, zero-price/duplicate warnings, responsive themed UI. No sale/archive/staging/deletion/schema change. Local gate + preview16 + HTTP34 PASS; exact Windows/browser CI must be checked on the new commit. Scope, quality approval and remaining gates: `V2_IMAGE_PREVIEW_CHECKPOINT.md`. V1 restore/STABLE and V2 confirm remain pending.
+
+---
 # V2 draft duplicate choice / UI checkpoint — 2026-10-10
 
 User reports Windows create/add draft OK and requests explicit duplicate-unit choice plus polished UI as a development rule. Implemented transactional duplicate image-ID detection with fresh conflict token, styled confirmation/cancel dialog, related-draft badges and consistent pastel action buttons. Different units of the same Product/Size remain valid; cancelled/own draft excluded, price-only edits do not prompt again. No schema/stock/ledger/file change. Scope/tests: `V2_DRAFT_DUPLICATE_CHECKPOINT.md`. Mandatory rule for every feature: `DEVELOPMENT_PRINCIPLES.md` — optimize workflow and UI while implementing, not after backend-only completion. Check Actions on this commit for exact CI evidence; V2 sales/restore/STABLE still pending.

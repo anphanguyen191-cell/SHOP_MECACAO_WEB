@@ -41,6 +41,11 @@ try{
  assert((await api('/api/sales/drafts')).length===1);checks++
  const shared=await api('/api/sales/drafts','POST',{...input,conflictToken:warning.conflictToken},201,{'Idempotency-Key':'http-duplicate-key-002'})
  await api('/api/sales/drafts/'+shared.id+'/cancel','POST',{version:1})
+ const preview=await api('/api/sales/drafts/'+d.id+'/preview','POST',{version:2})
+ assert(preview.readOnly&&preview.quantity===1&&preview.items[0].width===300&&preview.items[0].height===400);checks++
+ const light=await fetch(base+'/api/sales/drafts/'+d.id+'/preview/'+id+'?version=2&hash='+preview.items[0].sourceHash);assert(light.ok&&light.headers.get('content-type').includes('image/jpeg')&&light.headers.get('cache-control')==='no-store');checks++
+ await api('/api/sales/drafts/'+d.id+'/preview','POST',{version:1},409)
+ await api('/api/sales/drafts/'+d.id+'/preview','POST',{version:2},403,{Origin:'https://untrusted.example'})
  const stock=await api('/api/inventory/dashboard');assert(stock.stock===1&&hash()===original);checks++
  const ledger=await api('/api/inventory/history');assert(ledger.length===1&&ledger[0].transaction_type==='OPENING');checks++
  await stop();await start();assert((await api('/api/sales/drafts/'+d.id)).version===2);checks++
@@ -97,6 +102,15 @@ async function browserTest(base,id){
   await run("document.querySelector('.draftConflictDialog .salesActionWarning').click()")
   await until("!!document.querySelector('.salesItem')")
   assert(await run("!!document.querySelector('.draftOverlapBadge')"));checks++
+  await run("document.querySelector('.salesPreviewHeading button').click()")
+  await until("!!document.querySelector('.salesPreviewCompare')")
+  await until("document.querySelector('.salesPreviewCompare figure:nth-child(2) img').naturalWidth>0")
+  assert(await run("document.querySelector('.salesPreviewStats').textContent.includes('bộ')"));checks++
+  for(const width of [1366,390]){
+   await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:768,deviceScaleFactor:1,mobile:width===390})
+   assert(await run('document.documentElement.scrollWidth')<=width+2,'preview overflow');checks++
+  }
+
   assert(await run("getComputedStyle(document.querySelector('.salesHeading .salesActionPrimary')).backgroundColor==='rgb(163, 63, 107)'"));checks++
   assert(await run("document.querySelector('.salesEditorHead').textContent.includes('Phiên bản 1')"));checks++
   await run("(()=>{const i=document.querySelector('.salesMoney input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'1000');i.dispatchEvent(new Event('input',{bubbles:true}))})()")

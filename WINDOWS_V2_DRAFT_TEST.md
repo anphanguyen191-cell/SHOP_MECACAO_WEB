@@ -14,3 +14,7 @@ Bản này chỉ chuẩn bị đơn nháp, chưa bán/trừ tồn/xóa ảnh. V1
 10. Kiểm tra màn hình Windows ở chế độ Gọn/Thoải mái, sáng/tối; danh sách/form không tràn ngang. Báo bước bị lỗi và nội dung thông báo nếu có.
 
 Để quay về V1, đóng server V2 và chạy RUN_WINDOWS_V1_SAFE_TEST.bat hoặc launcher LOCAL V1 đã dùng. Không chép DB V2 đè V1; không cần xóa sandbox V2. File `.pre-v120-*.bak` chỉ chứa dữ liệu trước migration, không có nháp tạo sau đó.
+
+## Xem trước ảnh nhẹ (đợt tiếp theo)
+
+Mở nháp đã lưu → Xem trước ảnh nhẹ → so sánh gốc/bản nhẹ và tổng dung lượng → đổi ảnh bằng danh sách. Thử cả sáng/tối, Gọn/Thoải mái. Ảnh gốc không thay đổi; bản nhẹ chưa được lưu lịch sử, chưa bán. Cấu hình 1280px/quality82 là đề xuất để duyệt bằng mắt, không tự coi là chính sách xóa gốc đã được duyệt. Ảnh hỏng, đơn sửa, file đổi/mất phải báo lỗi; xem trước lại sau khi sửa nguyên nhân.

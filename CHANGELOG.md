@@ -1,3 +1,7 @@
+# 2026-10-10 — V2 ảnh nhẹ xem trước
+
+Sandbox nháp: so sánh ảnh gốc/JPEG 1280 quality82, dung lượng thật, guards version/hash/decode, UI pastel sáng/tối/mobile. Chỉ đọc, không bán/xóa/đổi tồn/schema. Chi tiết: V2_IMAGE_PREVIEW_CHECKPOINT.md.
+
 ## 2026-10-10 — Draft duplicate choice and UI polish
 
 - Require explicit, transaction-revalidated choice before placing the same physical image in another draft; identify related orders, exclude cancelled/current draft, preserve idempotent retry and no reservation.
