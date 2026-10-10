@@ -106,7 +106,7 @@ export default function App(){
  },[products,isDemo,search,catalogSize,catalogStock,catalogSort])
  function chooseCatalogSuggestion(s:CatalogSuggestion){setSearch(s.product_name);setCatalogSize(s.size);setCatalogSuggestions([])}
  const isWindowsSandbox=!!health?.sandbox&&!health?.freshDevelopment&&!isDemo
- const mode=isDemo?'DEMO':health?.ok?(health?.lanClient?'LOCAL · LAN':health?.freshDevelopment?'LOCAL · MAIN':health?.localV2Business?'LOCAL V2 · KHO KINH DOANH':isWindowsSandbox?'TEST SANDBOX':'LOCAL'):'LOCAL / API OFFLINE'
+ const mode=isDemo?'DEMO':health?.ok?(health?.lanClient?'LOCAL · LAN':health?.freshDevelopment?(health.release?.channel==='main-test'?'LOCAL · MAIN TEST':'LOCAL · MAIN'):health?.localV2Business?'LOCAL V2 · KHO KINH DOANH':isWindowsSandbox?'TEST SANDBOX':'LOCAL'):'LOCAL / API OFFLINE'
  const catalogDisplay=isDemo?{
   categoryBreakdown:[{category:'Đồ tole bé gái',count:2}],
   sizeBreakdown:[{size:'Size 1',count:2},{size:'Size 2',count:2},{size:'Size 3',count:2},{size:'Size 4',count:1}],

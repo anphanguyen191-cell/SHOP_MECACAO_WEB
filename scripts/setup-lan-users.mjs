@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url'
 import {makeLanCredential,changeLanAccount} from '../apps/api/src/lanSecurity.ts'
 
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..')
-const directory=path.join(repo,'data','stage4','lan')
+const directory=path.join(repo,'data','stage6-main-test','lan')
 if(!process.stdin.isTTY||!process.stdout.isTTY)throw Error('Chỉ chỉnh tài khoản trực tiếp trên Windows')
 const rl=readline.createInterface({input:process.stdin,output:process.stdout})
 const ask=(prompt)=>new Promise(resolve=>rl.question(prompt,resolve))
