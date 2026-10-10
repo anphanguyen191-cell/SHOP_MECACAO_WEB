@@ -112,7 +112,7 @@ export default function App(){
   }else result=await conflictChoice.submit(token=>apiJson('/api/sales/drafts',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify({items,discount:0,note:'',conflictToken:token})}))
   setSalesId(result.id);setAddToDraft(null);goTo('Bán hàng')
  }
- function goTo(section:string){setActive(section);setMenuOpen(false);setMenuSearch('');setDetailProductId(null)}
+ function goTo(section:string){if(!window.dispatchEvent(new Event('mecacao-before-navigate',{cancelable:true}))){setMenuOpen(false);return;}setActive(section);setMenuOpen(false);setMenuSearch('');setDetailProductId(null)}
  return <div className={'shell '+(darkMode?'themeDark':'')+(compact?' densityCompact':' densityComfort')}>
   {conflictChoice.dialog}
   <header className="topbar"><div className="brandIdentity"><button type="button" className="menuToggle" aria-label="Mở danh mục chức năng" aria-expanded={menuOpen} onClick={()=>setMenuOpen(true)}>☰</button><img className="brandLogo" src={`${import.meta.env.BASE_URL}brand/logo.jpg`} alt="Logo Shop Mẹ CaCao" onError={e=>{e.currentTarget.style.display="none"}}/><span className="brandMonogram">MC</span><div><p className="eyebrow">SHOP MẸ CACAO · SINCE 2023</p><h1>Quản lý kho</h1></div></div><div className="headerActions"><DisplayDensity compact={compact} onChange={setCompact}/><WarehouseNotifications isDemo={isDemo} onReview={()=>goTo('Import kho')}/><button type="button" className="themeToggle" onClick={()=>setDarkMode(v=>!v)} aria-label={darkMode?"Bật giao diện sáng":"Bật giao diện tối"}>{darkMode?"☀":"☾"}</button><span className={'badge '+(mode==='LOCAL'?'local':mode==='DEMO'?'demo':mode==='TEST SANDBOX'?'test':'offline')}>{mode}</span></div></header>

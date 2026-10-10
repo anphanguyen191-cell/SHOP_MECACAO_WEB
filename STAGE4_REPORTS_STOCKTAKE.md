@@ -26,7 +26,7 @@ Giá vốn hoặc tên sản phẩm thay đổi hôm nay không viết lại bá
 1. Nhập hoặc quét/import hàng trước; mở **Kiểm kê**, đặt tên và **Mở phiên kiểm kê mới**. Chỉ có một phiên đang mở.
 2. Phiên chụp mọi Mẫu/Size đã đăng ký, gồm trạng thái ngưng hoạt động; lưu tồn sổ, tồn ảnh hiện hữu, số ảnh thiếu và số ảnh SOLD. Ảnh SOLD/khu vực nội bộ không tính tồn.
 3. Đếm hàng thực tế theo Size, nhập số đếm (0 được chấp nhận; trống = chưa đếm). Chênh lệch = số đếm − tồn ảnh tại đầu phiên. Ghi lý do cho từng Size lệch.
-4. **Lưu số đếm**; có thể lọc mẫu/Size hoặc chỉ hàng lệch/chưa đếm. CSV chỉ xuất số đã lưu trên máy chủ. Đếm chưa lưu được báo rõ; trình duyệt cảnh báo khi đóng/reload.
+4. **Lưu số đếm**; có thể lọc mẫu/Size hoặc chỉ hàng lệch/chưa đếm. CSV chỉ xuất số đã lưu trên máy chủ. Đếm chưa lưu được báo rõ; trình duyệt cảnh báo khi đóng/reload; chặn chuyển chức năng đến khi lưu hoặc đọc lại số đã lưu.
 5. Ghi kết luận, **Xác nhận hoàn tất kiểm kê**. Phải đếm đủ, lưu trước, có lý do các Size lệch. Kho thay đổi trong lúc đếm sẽ chặn chốt; hủy với lý do rồi tạo phiên mới.
 6. Mở lại phiên hoàn tất/hủy để xem và xuất CSV. Không sửa/xóa lịch sử cuối cùng.
 
