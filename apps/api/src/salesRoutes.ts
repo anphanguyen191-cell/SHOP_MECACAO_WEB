@@ -18,6 +18,7 @@ export function salesDraftRouter(db:DatabaseSync,root:string,port:number){
  const retention=readSchemaVersion(db)===130?soldRetentionService(db,root):null
  const router=Router(),service=salesDraftService(db,root),preview=salesPreviewService(db,root),archive=salesArchiveService(db,root),preflight=salesPreflightService(db,root),trial=readSchemaVersion(db)===120?salesConfirmTrialService(db,root):null,sales=readSchemaVersion(db)===130?salesExecutionService(db,root):null
  router.use((req,res,next)=>{
+  if(res.locals.lanUser)return next()
   if(!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress||''))return res.status(403).json({error:'V2 thử nghiệm chỉ truy cập trên cùng máy.'})
   if(req.method!=='GET'){
    let same=false;try{const u=new URL(req.get('origin')||'');same=u.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(u.hostname)&&Number(u.port||80)===port}catch{}
