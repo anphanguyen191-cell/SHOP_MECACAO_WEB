@@ -20,3 +20,14 @@
 .shell :is(.salesList,.salesEditor,.receipt,.warehouseWorkspace) :is(h2,h3,strong){overflow-wrap:anywhere}
 .shell.themeDark :is(.receipt,.salesEditor,.warehouseWorkspace,.salesList) :is(input,select,textarea){background:var(--mc-input)!important;color:var(--mc-ink)!important}
 @media(max-width:760px){.shell :is(.receipt,.salesEditor,.salesList,.warehouseWorkspace){padding:clamp(12px,3vw,19px)}.shell :is(.formGrid,.receiptRow){gap:12px}.shell .receiptRow>*{min-width:0}}
+
+/* Checkpoint 3/5 — finance, reports and stocktake */
+.shell :is(.financePanel,.debtPanel,.reportPanel,.stocktakePanel,.stocktakeCard,.aftercarePanel,.reportCard,.financeCard){background:var(--mc-surface);color:var(--mc-ink);border:1px solid var(--mc-border);border-radius:var(--mc-radius-lg);box-shadow:var(--mc-shadow);min-width:0}
+.shell :is(.reportPanel,.stocktakePanel,.financePanel,.debtPanel) :is(h2,h3,strong){color:var(--mc-ink);overflow-wrap:anywhere}
+.shell :is(.reportPanel,.stocktakePanel,.financePanel,.debtPanel) :is(input,select,textarea){color:var(--mc-ink);background:var(--mc-input);border-color:var(--mc-border);min-width:0}
+.shell :is(.reportPanel,.stocktakePanel,.financePanel,.debtPanel) :is(table,[role=table]){width:100%;font-variant-numeric:tabular-nums}
+.shell :is(.reportPanel,.stocktakePanel,.financePanel,.debtPanel) :is(th,[role=columnheader]){font-size:12px;letter-spacing:.025em;color:var(--mc-subtle);text-align:left}
+.shell :is(.reportPanel,.stocktakePanel,.financePanel,.debtPanel) :is(td,th){padding:11px 9px;border-bottom:1px solid var(--mc-border)}
+.shell :is(.reportPanel,.stocktakePanel,.financePanel,.debtPanel) :is(.primary,button[type=submit]){min-height:44px;font-weight:750;border-radius:14px}
+.shell .warning{line-height:1.5}
+@media(max-width:760px){.shell :is(.financePanel,.debtPanel,.reportPanel,.stocktakePanel){max-width:100%;overflow-wrap:anywhere}.shell :is(.reportPanel,.stocktakePanel) :is(table,[role=table]){display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}}
