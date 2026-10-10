@@ -44,7 +44,7 @@ export function installLanGuard(app:Application,lan:LanRuntime|null){
    if(!originOK(req,lan))return res.status(403).json({error:'Yêu cầu khác nguồn bị chặn'})
    if(req.get('content-type')?.split(';')[0].trim().toLowerCase()!=='application/json')return res.status(415).json({error:'Giao dịch LAN chỉ nhận JSON'})
   }
-  if(!lanApiAllowed(identity.role,req.method,req.path))return res.status(403).json({error:'Tài khoản không có quyền truy cập chức năng này qua LAN'})
+  if(!lanApiAllowed(identity.role,req.method,req.baseUrl+req.path))return res.status(403).json({error:'Tài khoản không có quyền truy cập chức năng này qua LAN'})
   res.locals.lanUser=identity
   next()
  })
