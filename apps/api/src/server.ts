@@ -164,7 +164,7 @@ else app.use('/api/sales/drafts',(_req,res)=>res.status(404).json({error:'V2 đ�
 if(sandboxRoot)app.use('/api/backup/restore-test',restoreTestRouter(sandboxRoot,PORT,localRuntime?.dataRoot??(freshDevelopment&&customWarehouse?freshRoot:undefined)))
 else app.post('/api/backup/restore-test',(_req,res)=>res.status(403).json({error:'Restore thử chỉ bật trong sandbox, không thay database đang dùng.'}))
 
-app.get('/api/inventory/share/capabilities',(_req,res)=>res.json(clipboardCapabilities()))
+app.get('/api/inventory/share/capabilities',(_req,res)=>res.json({...clipboardCapabilities(),nativeFiles:res.locals.lanUser?false:clipboardCapabilities().nativeFiles}))
 app.post('/api/inventory/share/prepare',(req,res)=>{
  try{const images=selectedStockImages(req.body.ids,p=>sandboxPathAllowed(p));res.json({images:images.map(i=>({id:i.id,name:i.file_name,product:i.product,size:i.size,url:'/api/inventory/share/image/'+i.id}))})}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không kiểm tra được ảnh'})}
 })
