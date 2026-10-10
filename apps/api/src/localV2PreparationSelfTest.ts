@@ -11,6 +11,7 @@ import {businessSnapshot,prepareLocalV2} from './localV2Preparation.js'
 import {digest} from './salesExecution.js'
 import {salesDraftService} from './salesDrafts.js'
 import {verifyLosslessBackup} from './losslessVerify.js'
+import {checkLocalV2Release} from './localV2ReleaseCheck.js'
 
 const [mode,bundleArg,oldArg,targetArg,point]=process.argv.slice(2)
 if(mode==='worker'){await prepareLocalV2(bundleArg,oldArg,targetArg,p=>{if(p===point)process.exit(79)});process.exit(0)}
@@ -37,6 +38,30 @@ try{
   eq(result.status,'READY_FOR_REVIEW');eq(result.activated,false);eq(result.businessActivationAllowed,false);eq(result.candidate.schema,130);eq(result.imagesVerified,1)
   for(const [copy,schema] of [[result.candidate,130],[result.restoreProof,130],[result.rollbackProof,110]] as const){const handle=new DatabaseSync(copy.database,{readOnly:true});try{eq(readSchemaVersion(handle),schema);eq(businessSnapshot(handle,copy.warehouse).sha256,baseline.sha256);eq(handle.prepare('SELECT stock FROM inventory_stock WHERE variant_id=23').get()!.stock,8);eq(digest(fs.readFileSync(path.join(copy.warehouse,'Lửng gái','Size tự do','001.png'))),digest(bytes));if(schema===130){eq(handle.prepare('SELECT COUNT(*) n FROM sales_ledger').get()!.n,0);eq(salesDraftService(handle,copy.targetRoot).list().length,0)}}finally{handle.close()}}
   eq(verifyLosslessBackup(result.postMigrationBackup).ok,true);eq(digest(fs.readFileSync(dbPath)),sourceHash);eq(digest(fs.readFileSync(file)),digest(bytes));eq(digest(fs.readFileSync(path.join(bundle,'shop.db'))),backupHash)
+  const pristine=checkLocalV2Release(path.join(root,'prepared'),bundle)
+  eq(pristine.status,'TECHNICALLY_READY_FOR_REVIEW');eq(pristine.businessActivationAllowed,false);eq(pristine.requiresRecheckAtActivation,true);eq(pristine.counts?.product_images,1)
+  eq(checkLocalV2Release(path.join(root,'prepared')).status,'BLOCKED')
+  // Drafts, even cancelled ones, must not be promoted from a rehearsal copy.
+  const candidateDb=new DatabaseSync(result.candidate.database),drafts=salesDraftService(candidateDb,result.candidate.targetRoot)
+  const draft= drafts.create({items:[{imageId:41,unitPrice:50000}],discount:0,note:'test'},'release-check-draft-key-001')
+  eq(checkLocalV2Release(path.join(root,'prepared'),bundle).checks.find(c=>c.id==='candidate')?.ok,false)
+  drafts.cancel(draft.id,1);candidateDb.close()
+  eq(checkLocalV2Release(path.join(root,'prepared'),bundle).status,'BLOCKED')
+  const changed=await prepareLocalV2(bundle,old,path.join(root,'changed'))
+  const changedDb=new DatabaseSync(changed.candidate.database);changedDb.exec('UPDATE product_variants SET sale_price=51000 WHERE id=23');changedDb.close()
+  eq(checkLocalV2Release(path.join(root,'changed'),bundle).checks.find(c=>c.id==='candidate')?.ok,false)
+  const imageChanged=await prepareLocalV2(bundle,old,path.join(root,'image-changed'))
+  fs.writeFileSync(path.join(imageChanged.candidate.warehouse,'Lửng gái','Size tự do','001.png'),'bad')
+  eq(checkLocalV2Release(path.join(root,'image-changed'),bundle).checks.find(c=>c.id==='candidate')?.ok,false)
+  const liveChanged=path.join(root,'latest-changed');fs.mkdirSync(liveChanged);fs.copyFileSync(path.join(bundle,'shop.db'),path.join(liveChanged,'shop.db'));fs.copyFileSync(path.join(bundle,'41.png'),path.join(liveChanged,'41.png'))
+  const liveDb=new DatabaseSync(path.join(liveChanged,'shop.db'));liveDb.exec('UPDATE product_variants SET cost_price=13000 WHERE id=23');liveDb.close()
+  fs.writeFileSync(path.join(liveChanged,'lossless-manifest.json'),JSON.stringify({...mf,database_sha256:digest(fs.readFileSync(path.join(liveChanged,'shop.db')))}))
+  eq(checkLocalV2Release(path.join(root,'prepared'),liveChanged).checks.find(c=>c.id==='latestV1')?.ok,false)
+  const markerPath=path.join(root,'image-changed','local-v2-ready.json'),originalMarker=fs.readFileSync(markerPath)
+  fs.writeFileSync(markerPath,JSON.stringify({...JSON.parse(originalMarker.toString()),rollbackProof:{...imageChanged.rollbackProof,database:dbPath}}))
+  eq(checkLocalV2Release(path.join(root,'image-changed'),bundle).checks.find(c=>c.id==='rollbackProof')?.ok,false)
+  fs.writeFileSync(markerPath,originalMarker)
+  eq(digest(fs.readFileSync(dbPath)),sourceHash);eq(digest(fs.readFileSync(path.join(bundle,'shop.db'))),backupHash)
   await reject(()=>prepareLocalV2(bundle,old,path.join(root,'prepared')))
   await reject(()=>prepareLocalV2(bundle,old,path.join(old,'bad')))
   await reject(()=>prepareLocalV2(bundle,old,path.join(bundle,'bad')))
@@ -56,5 +81,5 @@ try{
   fs.writeFileSync(path.join(bundle,'41.png'),bytes);fs.writeFileSync(manifest,JSON.stringify(mf))
   // Corrupt backup rejected before target creation.
   fs.writeFileSync(path.join(bundle,'41.png'),'corrupt');await reject(()=>prepareLocalV2(bundle,old,path.join(root,'corrupt')));eq(fs.existsSync(path.join(root,'corrupt')),false)
-  console.log(`LOCAL_V2_PREPARATION PASS: ${checks} assertions; V1→130 isolated copy, complete business rows/sequences/settings, byte-exact photos, ledger mismatch retained, V2 backup/restore proof, V1 rollback proof, ten hard exits, offline source, corruption/decode/path guards; source untouched`)
+  console.log(`LOCAL_V2_PREPARATION PASS: ${checks} assertions; V1→130 isolated copy, complete business rows/sequences/settings, byte-exact photos, ledger mismatch retained, V2 backup/restore and V1 rollback proof, ten hard exits, release check blocks draft/cancelled orders, changed price/photo/latest V1 and redirected marker; source untouched`)
 }finally{fs.rmSync(root,{recursive:true,force:true})}

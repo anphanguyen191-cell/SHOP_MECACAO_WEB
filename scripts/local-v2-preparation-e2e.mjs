@@ -17,6 +17,12 @@ const eq=(a,b)=>{assert.deepEqual(a,b);checks++}
 async function api(url,method='GET',body,expected=200,headers={}){const r=await fetch(base+url,{method,headers:{Origin:base,'Content-Type':'application/json',...headers},body:body===undefined?undefined:JSON.stringify(body)}),data=await r.json();eq(r.status,expected);return data}
 async function start(){logs='';launcher=spawn(process.execPath,['scripts/run-local-v2-review.mjs'],{env,stdio:['pipe','pipe','pipe','ipc']});let chosen=false;launcher.stdout.on('data',chunk=>{logs+=chunk;if(!chosen&&logs.includes('Chọn số gói')){chosen=true;launcher.stdin.write('1\n')}});launcher.stderr.on('data',x=>logs+=x);for(let i=0;i<150;i++){if(launcher.exitCode!==null)throw Error(logs);try{const h=await api('/api/health');if(h.localV2Review)return h}catch{}await sleep(100)}throw Error('Review launcher timeout: '+logs)}
 async function stop(){if(launcher&&launcher.exitCode===null){const p=launcher;await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Launcher shutdown timeout')),15000);p.once('exit',()=>{clearTimeout(timer);resolve()});p.send('stop')})}launcher=null}
+async function checkReleaseCLI(expected){
+ const child=spawn(process.execPath,['scripts/check-local-v2-release.mjs'],{env,stdio:['pipe','pipe','pipe']});let text='',first=false,second=false
+ child.stdout.on('data',chunk=>{text+=chunk;if(!first&&text.includes('Chọn số gói: ')){first=true;child.stdin.write('1\n')}if(!second&&text.includes('Thư mục backup đầy đủ V1 cuối')){second=true;child.stdin.write('"'+bundle+'"\n')}});child.stderr.on('data',x=>text+=x)
+ const code=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>{child.kill();reject(Error('Release check timeout '+text))},30000);child.once('exit',code=>{clearTimeout(timer);resolve(code)})})
+ eq(code,expected==='BLOCKED'?1:0);assert(text.includes('KIỂM TRA LOCAL V2: '+expected));checks++;assert(text.includes('chưa cho phép kích hoạt kinh doanh'));checks++
+}
 try{
  fs.mkdirSync(path.join(old,'Mẫu có dấu','Size 1'),{recursive:true});fs.mkdirSync(bundle)
  const file=path.join(old,'Mẫu có dấu','Size 1','001.png');await sharp({create:{width:32,height:40,channels:3,background:'#aadecc'}}).png().toFile(file)
@@ -31,6 +37,7 @@ try{
  const code=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>{setup.kill();reject(Error('Prepare CLI timeout '+output))},60000);setup.once('exit',code=>{clearTimeout(timer);resolve(code)})});eq(code,0);assert(output.includes('READY_FOR_REVIEW'));checks++
  const prepBase=path.join(appdata,'ShopMeCaCao','V2LocalPreparation'),packages=fs.readdirSync(prepBase);eq(packages.length,1)
  const ready=JSON.parse(fs.readFileSync(path.join(prepBase,packages[0],'local-v2-ready.json'),'utf8'));eq(ready.candidate.schema,130);eq(ready.activated,false)
+ await checkReleaseCLI('TECHNICALLY_READY_FOR_REVIEW')
  const health=await start();eq(health.schema,130);eq(health.sandbox,true);eq(health.salesExecution,true);eq((await api('/api/inventory/dashboard')).stock,1)
  eq((await api('/api/products'))[0].total_stock,1)
  await api('/api/store/scan','POST',{rootPath:old},403)
@@ -44,6 +51,10 @@ try{
  eq(digest(fs.readFileSync(dbPath)),sourceHash);eq(digest(fs.readFileSync(file)),original);eq(fs.existsSync(path.join(ready.candidate.warehouse,'Mẫu có dấu','Size 1','001.png')),false)
  if(process.platform!=='win32'&&process.env.V2_SKIP_BROWSER!=='1')await browserReview()
  await stop()
+ await checkReleaseCLI('BLOCKED')
+ const reportDir=path.join(prepBase,packages[0],'release-reports'),reports=fs.readdirSync(reportDir).filter(n=>n.endsWith('.json')).map(n=>JSON.parse(fs.readFileSync(path.join(reportDir,n),'utf8')))
+ eq(reports.length,2);eq(reports.every(r=>r.businessActivationAllowed===false&&r.requiresRecheckAtActivation),true)
+ eq(digest(fs.readFileSync(dbPath)),sourceHash)
  console.log(`LOCAL_V2_REVIEW_HTTP PASS: ${checks} assertions; real interactive prepare/review launcher, accented/spaced paths, preserved IDs, physical stock1 vs ledger8, copy-only sale/restart/backup, original path denied, V1 rollback/source unchanged`)
 }finally{await stop();fs.rmSync(root,{recursive:true,force:true})}
 

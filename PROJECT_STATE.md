@@ -1,3 +1,7 @@
+# V2 LOCAL read-only release check — 2026-10-10
+
+Owner requested continuing after LOCAL copy delivery. Added advisory package/source/latest V1 validation, no-test-order gate and durable TXT/JSON reports; `CHECK_WINDOWS_V2_LOCAL_RELEASE.bat`, `V2_LOCAL_ACTIVATION_PLAN.md`, `V2_LOCAL_RELEASE_CHECKPOINT.md`. Owner copy-data review not yet reported; not inferred from “tiếp”. No live activation/schema/data change. e5d086d baseline exact CI38031750870 Linux/Windows22/24/deploy SUCCESS verified. New implementation requires exact CI; current LOCAL sandbox/path assumptions must be adapted and tested before any business cutover.
+
 # V2 LOCAL preparation on verified V1 backup copy — 2026-10-10
 
 Owner authorized steps1–2 after Windows sandbox PASS. Added backup-only110→130 new-copy preparation with complete row/ID/sequence/price/history comparison, image decode/SHA, checked V2 backup/restore and separate V1 rollback proof; new Windows interactive preparation/review launchers3017 and copy-review banner. `V2_LOCAL_PREPARATION_CHECKPOINT.md`, `WINDOWS_V2_LOCAL_PREPARATION.md`. No business DB migration/activation/sold-original cleanup; sandbox guards remain. New tests plus full gate/exact CI required on this implementation commit. Owner copy-data review remains pending; ten-step sandbox Windows PASS remains accepted.
