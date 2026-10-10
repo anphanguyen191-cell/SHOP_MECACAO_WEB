@@ -29,7 +29,7 @@
 
 ## Phạm vi chưa hoàn thành, không tự nhận full mobile/STABLE
 - Chưa nghiệm thu Windows + iPhone Safari **thực tế** cùng Wi-Fi, TLS/CA trên thiết bị thật, firewall đúng subnet.
-- Chưa có upload/camera từ iPhone để tạo hàng mới an toàn. Nhập hàng theo thư mục Windows, quét ổ đĩa, native clipboard, backup/restore và recovery chỉ dành cho Windows.
+- Checkpoint 6C đã có upload/chọn ảnh từ Safari vào **vùng chờ**; đối chiếu hash, loại ảnh trùng/SOLD, xem trước và **Windows duyệt bản sao**. Để tạo hàng mới và tăng tồn, chủ shop vẫn phải vào màn Nhập hàng Windows khai báo mẫu/Size/giá và xác nhận. Chưa có import trực tiếp trên iPhone, kiểm thử camera vật lý hay xóa ảnh.
 - Chưa có hệ thống thông báo cập nhật tức thời cho màn bán/tồn hoặc offline queue (không được hiển thị ghi nhận thành công khi mạng mất).
 - Chưa chạy đủ ma trận iPhone thử mất Wi-Fi, khởi động lại Windows, phiên hết hạn, nhiều người thao tác cùng lúc, chặn sai vai trò.
 - Stage 5B (di chuyển lưu trữ có xác nhận) và 5C (xóa theo thời hạn được chủ shop duyệt) vẫn chưa triển khai, vì cần chốt chính sách lưu giữ và nghiệm thu restore/hậu mãi.
@@ -47,3 +47,9 @@
 10. Backup/restore ở khu vực riêng và hậu mãi ảnh SOLD; không tự xóa/move ảnh gốc hoặc nguồn.
 
 **Kết luận:** Chỉ nâng bản main khi gate CI PASS, chỉnh đủ luồng và hồ sơ; sau đó chủ shop nghiệm thu Windows/iPhone trước khi xét STABLE.
+
+## Bổ sung Checkpoint 6C — Ảnh iPhone chờ duyệt
+- Mã nguồn `lanPhotoInbox.ts`, `lanPhotoRoutes.ts`, `PhonePhotoInboxView.tsx`, `phonePhotoInbox.css`.
+- Giới hạn: 4 MB/ảnh, 12 ảnh/lần trên UI, 200 ảnh trong hộp, JPEG/PNG/WebP, HEIC có thể chuyển JPEG trên iPhone (không bảo đảm fidelity trước khi Windows duyệt).
+- API: `GET /api/lan/photos`, `GET /api/lan/photos/:id/preview`, `POST /api/lan/photos/upload` cho owner/inventory; `POST /api/lan/photos/:id/review` **chỉ Windows LOCAL**. Không có API ghi sản phẩm/stock từ iPhone.
+- Cần thực nghiệm thiết bị thật và kiểm thử quy trình nhập hàng sau duyệt trước khi công nhận Stage 6 hoàn chỉnh.

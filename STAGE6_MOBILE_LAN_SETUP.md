@@ -30,7 +30,7 @@ Thay `192.168.1.100` bằng **IP thật trên Windows**. Cài chứng chỉ CA v
 
 ## Những phần bị khóa trên iPhone trong checkpoint này
 - Chọn thư mục ổ đĩa Windows, Import kho trực tiếp qua file system, đổi tên ảnh vật lý, native Windows clipboard, backup/restore, phục hồi giao dịch bằng lệnh đặc quyền, dọn ảnh SOLD.
-- Để nhập ảnh bằng iPhone cần một luồng upload/staging riêng, có checksum, phê duyệt và kiểm tra lặp; chưa triển khai nên không quảng cáo là đã đầy đủ 100% nghiệp vụ.
+- Đã có luồng nhận ảnh iPhone vào khu chờ riêng và Windows duyệt bản sao. **Chưa** tự đưa vào tồn: phải nhập phiếu Nhập hàng từ ảnh đã duyệt trên Windows; iPhone không có quyền duyệt hoặc nhập trực tiếp vào SQLite.
 - Cloud/offline queue ghi giao dịch và truy cập ngoài Wi-Fi thuộc Stage 7.
 
 ## Quyền API bước đầu
@@ -63,3 +63,12 @@ Thay `192.168.1.100` bằng **IP thật trên Windows**. Cài chứng chỉ CA v
 - Dashboard, Danh mục, Tồn, Đơn hàng, Khách hàng, Công nợ, Báo cáo và Ảnh SOLD tự đọc lại. Đơn/kiểm kê chưa lưu được giữ, báo cảnh báo đối chiếu.
 - Không coi tín hiệu phiên bản là xác nhận giao dịch. Khi mất Wi-Fi thông báo mất kết nối; không có offline queue ghi.
 - Chưa chứng minh đủ thay đổi ngoài API (watcher) hay hoạt động trên Safari thực tế. Không gọi STABLE.
+
+## Checkpoint 6C — Hộp ảnh iPhone chờ duyệt (PREVIEW, không STABLE)
+1. Trên iPhone Safari đã đăng nhập bằng `owner` hoặc `inventory`, mở **Ảnh iPhone**. Chọn/chụp tối đa 12 ảnh mỗi lượt; mỗi ảnh được gửi tối đa 4 MB (JPEG/PNG/WebP; HEIC hoặc ảnh quá lớn có thể được Safari chuyển/nén JPEG, phải kiểm tra lại màu và họa tiết).
+2. Server kiểm tra giải mã, kích thước, SHA-256; từ chối nội dung trùng ảnh trong hộp chờ, ảnh đã đăng ký và hash ảnh SOLD. Chỉ sau khi thành công ảnh mới được lưu tại `data/stage4/lan/phone-pending/` trên máy Windows.
+3. Chủ shop **trên Windows LOCAL**, mở **Ảnh iPhone**, đối chiếu ảnh, kích thước và tên tệp. Nhấn **Duyệt và sao chép nguồn**; API chỉ chấp nhận thao tác này trên `localhost:3000`, từ chối kể cả tài khoản owner ở LAN.
+4. Bản sao đã duyệt nằm ở `data/stage4/lan/phone-reviewed/<uuid>/source.jpg` (hoặc PNG/WebP). Ảnh gốc và bản preview ở thư mục `phone-pending` **không bị xóa/di chuyển**. Tại màn **Nhập hàng** trên Windows, chọn đúng thư mục nguồn vừa duyệt, khai báo Product/Size/giá và số lượng ảnh, rồi xác nhận theo quy trình nhập hàng hiện hành.
+5. Nhận hoặc duyệt ảnh **không tạo hàng tồn**. Chỉ ảnh canonical đã được nghiệp vụ Nhập hàng đăng ký thành công mới được cộng tồn. Không tự đăng ký một ảnh SOLD thành hàng hoàn trả.
+6. Giới hạn tạm thời: 200 ảnh/lượt lưu trữ trong hộp chờ, không có nút xóa tự động. Khi đầy, dừng nhận để đối soát/backup; không xóa tay dữ liệu gốc. Không đưa các tệp trong `data/stage4/lan` lên GitHub.
+7. **Chưa nghiệm thu:** HTTPS trên Safari iPhone thật, camera HEIC ngoài hiện trường, ngắt Wi-Fi khi đang gửi, UI màn nhỏ và nhập ảnh đã duyệt trên Windows thực tế. Các kiểm thử GitHub chỉ dùng tệp ảnh giả lập.

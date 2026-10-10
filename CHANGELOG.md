@@ -1,3 +1,7 @@
+## WIP — Checkpoint 6C iPhone photo inbox (chưa main / chưa STABLE) — 2026-10-10
+- Thêm ảnh iPhone vào vùng chờ, kiểm tra JPEG/PNG/WebP, SHA-256, dung lượng và chống ảnh trùng/SOLD; chủ shop Windows duyệt bản sao, không cộng tồn. Trình duyệt có thể chuyển HEIC sang JPEG.
+- Bổ sung API role owner/inventory và chặn duyệt bản sao qua LAN; giữ nguyên ảnh gốc, chờ xác nhận Nhập hàng Windows. Chưa nghiệm thu camera iPhone / kho thật.
+
 ## WIP — Stage 5A + UI Refresh + Stage 6 LAN Preview (nhánh riêng, chưa main) — 2026-10-10
 - SOLD retention read-only, Global UI tokens, HTTPS LAN opt-in/auth/RBAC/audit và test dual-client; chờ CI cuối + Windows/iPhone nghiệm thu; không xóa ảnh, không dùng kho thật.
 
