@@ -1,4 +1,6 @@
 import {rejectSoldSource} from './soldSource.js'
+import {requireApprovedPhoneReceiptSource} from './lanPhotoInbox.js'
+import {freshDevelopment,freshRoot} from './freshDevelopment.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
@@ -17,7 +19,7 @@ export type ReceiveProgress={phase:'VALIDATE'|'PREPARE'|'COPY'|'VERIFY'|'DB_COMM
 function safeName(v:string){const s=v.trim();if(!s||s.length>180||/[<>:"/\\|?*\x00-\x1f]/.test(s)||s==='.'||s==='..'||/[. ]$/.test(s)||/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)/i.test(s))throw new Error('Tên Product/Size không hợp lệ trên Windows');return s}
 function validateMoney(v:number,label:string){if(!Number.isInteger(v)||v<0)throw new Error(label+' phải là số nguyên không âm')}
 function validateQty(v:number){if(!Number.isInteger(v)||v<=0)throw new Error('Số lượng nhập phải là số nguyên lớn hơn 0')}
-export function inspectImageFolder(sourcePath:string){const dir=path.resolve(sourcePath||'');if(!sourcePath||!fs.existsSync(dir)||!fs.statSync(dir).isDirectory())throw new Error('Folder ảnh nguồn không tồn tại');const images=fs.readdirSync(dir,{withFileTypes:true}).filter(x=>x.isFile()&&IMAGE_EXTENSIONS.has(path.extname(x.name).toLowerCase())).map(x=>path.join(dir,x.name));return {path:dir,count:images.length,images}}
+export function inspectImageFolder(sourcePath:string){const dir=path.resolve(sourcePath||'');if(freshDevelopment)requireApprovedPhoneReceiptSource(freshRoot,dir);if(!sourcePath||!fs.existsSync(dir)||!fs.statSync(dir).isDirectory())throw new Error('Folder ảnh nguồn không tồn tại');const images=fs.readdirSync(dir,{withFileTypes:true}).filter(x=>x.isFile()&&IMAGE_EXTENSIONS.has(path.extname(x.name).toLowerCase())).map(x=>path.join(dir,x.name));return {path:dir,count:images.length,images}}
 function imageFiles(xs:string[]=[],sourcePath?:string){const all=[...xs,...(sourcePath?inspectImageFolder(sourcePath).images:[])];return [...new Set(all.map(x=>path.resolve(x)))].filter(x=>IMAGE_EXTENSIONS.has(path.extname(x).toLowerCase()))}
 function nextTarget(dir:string,ext:string,reserved:Set<string>){let n=1;while(true){const name=String(n).padStart(3,'0')+ext.toLowerCase();const p=path.join(dir,name);if(!fs.existsSync(p)&&!reserved.has(p)){reserved.add(p);return p}n++}}
 function digest(file:string){const h=createHash('sha256');h.update(fs.readFileSync(file));return h.digest('hex')}
@@ -38,7 +40,7 @@ export function receiveGoods(input:ReceiveInput,onProgress?:(p:ReceiveProgress)=
  if(new Set(normalizedSizes).size!==normalizedSizes.length)throw new Error('Size nhập bị trùng trong cùng phiếu')
  const explicitSkus=input.sizes.map(s=>s.sku?.trim().toUpperCase()).filter(Boolean) as string[]
  if(new Set(explicitSkus).size!==explicitSkus.length)throw new Error('SKU nhập bị trùng trong cùng phiếu')
- const sizes=input.sizes.map(s=>{validateQty(s.quantity);validateMoney(s.costPrice,'Giá nhập');validateMoney(s.salePrice,'Giá bán');const size=safeName(s.size);const images=imageFiles(s.images,s.sourcePath);for(const p of images){if(!fs.existsSync(p)||!fs.statSync(p).isFile())throw new Error('Không tìm thấy ảnh nguồn: '+p)}return {...s,size,images}})
+ const sizes=input.sizes.map(s=>{validateQty(s.quantity);validateMoney(s.costPrice,'Giá nhập');validateMoney(s.salePrice,'Giá bán');const size=safeName(s.size);const images=imageFiles(s.images,s.sourcePath);for(const p of images){if(freshDevelopment)requireApprovedPhoneReceiptSource(freshRoot,p);if(!fs.existsSync(p)||!fs.statSync(p).isFile())throw new Error('Không tìm thấy ảnh nguồn: '+p)}return {...s,size,images}})
  for(const s of sizes){
   if(s.images.length===0)throw new Error('Size '+s.size+' chưa có ảnh. Nhập hàng vật lý yêu cầu ít nhất một ảnh; chỉ ghi sổ không tạo tồn thực tế.')
   if(s.quantity!==s.images.length)throw new Error('Tồn phải bám theo ảnh thực tế: Size '+s.size+' có '+s.images.length+' ảnh nhưng SL nhập là '+s.quantity)
@@ -61,7 +63,7 @@ export function receiveGoods(input:ReceiveInput,onProgress?:(p:ReceiveProgress)=
    for(const existingFile of fs.readdirSync(dir)){const candidate=path.join(dir,existingFile);if(IMAGE_EXTENSIONS.has(path.extname(existingFile).toLowerCase())&&fs.statSync(candidate).isFile())hashes.add(digest(candidate))}
    if(!inside(fs.realpathSync(root),canonicalDir))throw new Error('Thư mục kho đích nằm ngoài kho đã chọn')
    const copies:{src:string;dest:string;sha256:string}[]=[]
-   for(const src of s.images){const source=fs.realpathSync(src);if(source===fs.realpathSync(root)||inside(fs.realpathSync(root),source))throw new Error('Không được nhập ảnh nguồn từ chính kho đích: '+src);const hash=digest(source);rejectSoldSource(db,hash);if(hashes.has(hash))throw new Error('Ảnh trùng nội dung đã có trong kho hoặc trong phiếu: '+path.basename(src));hashes.add(hash);copies.push({src,dest:getWatchSettings().autoRename?nextNamedImage(dir,productName,s.size,path.extname(src),reserved):nextTarget(dir,path.extname(src),reserved),sha256:hash})}
+   for(const src of s.images){if(freshDevelopment)requireApprovedPhoneReceiptSource(freshRoot,src);const source=fs.realpathSync(src);if(source===fs.realpathSync(root)||inside(fs.realpathSync(root),source))throw new Error('Không được nhập ảnh nguồn từ chính kho đích: '+src);const hash=digest(source);rejectSoldSource(db,hash);if(hashes.has(hash))throw new Error('Ảnh trùng nội dung đã có trong kho hoặc trong phiếu: '+path.basename(src));hashes.add(hash);copies.push({src,dest:getWatchSettings().autoRename?nextNamedImage(dir,productName,s.size,path.extname(src),reserved):nextTarget(dir,path.extname(src),reserved),sha256:hash})}
    plans.push({size:s,dir,copies})}
   // Journal MUST be persisted before creating any inventory image.
   journal=createReceiptJournal({storeRoot:root,files:plans.flatMap(p=>p.copies.map(x=>({dest:x.dest,sha256:x.sha256}))),createdDirs})

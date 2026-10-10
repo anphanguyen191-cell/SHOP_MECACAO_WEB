@@ -145,3 +145,25 @@ export function createPhonePhotoInbox(inboxRoot:string,approvedRoot:string,rejec
  }
  return {stage,list,get,preview,review,approvedSource}
 }
+
+/** Fail closed when a Goods Receipt tries to use an unapproved, or tampered,
+ * iPhone staging file. Applies independently of optional HTTP sandbox guards.
+ * Ordinary source folders outside the phone inbox remain unchanged.
+ */
+export function requireApprovedPhoneReceiptSource(freshRoot:string,candidate:string){
+ const value=path.resolve(candidate)
+ const pending=path.resolve(freshRoot,'lan','phone-pending')
+ const approved=path.resolve(freshRoot,'lan','phone-reviewed')
+ const relative=(base:string)=>path.relative(base,value)
+ const internal=(rel:string)=>rel===''||(rel!=='..'&&!rel.startsWith('..'+path.sep)&&!path.isAbsolute(rel))
+ if(internal(relative(pending)))throw new PhonePhotoError('Ảnh iPhone chưa duyệt không được nhập trực tiếp vào kho',409)
+ const rel=relative(approved)
+ if(!internal(rel))return
+ const parts=rel.split(path.sep)
+ if(parts.length<1||parts.length>2||!validId(parts[0]))throw new PhonePhotoError('Đường dẫn ảnh duyệt không hợp lệ',409)
+ const inbox=createPhonePhotoInbox(pending,approved)
+ const record=inbox.get(parts[0])
+ const verified=inbox.approvedSource(parts[0])
+ const approvedFile=path.join(verified.intakeFolder,'source'+allowed[record.mime].ext)
+ if(value!==verified.intakeFolder&&value!==approvedFile)throw new PhonePhotoError('Chỉ nguồn ảnh đã duyệt được dùng cho Nhập hàng',409)
+}

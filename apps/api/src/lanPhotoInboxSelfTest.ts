@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import sharp from 'sharp'
-import {createPhonePhotoInbox,PHONE_PHOTO_MAX_BYTES} from './lanPhotoInbox.js'
+import {createPhonePhotoInbox,PHONE_PHOTO_MAX_BYTES,requireApprovedPhoneReceiptSource} from './lanPhotoInbox.js'
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'mecacao-phone-inbox-'))
 let n=0
 const check=(value:unknown,msg:string)=>{assert.ok(value,msg);n++}
@@ -27,6 +27,20 @@ try{
  check(fs.existsSync(path.join(root,'inbox',first.id+'.jpg')),'Immutable staged source retained')
  check(inbox.review(first.id,first.sha256,true).registeredStock===false,'Review retry idempotent')
  check(inbox.approvedSource(first.id).intakeFolder===reviewed.intakeFolder,'Previously approved source can be reopened after review')
+ const stageRoot=path.join(root,'stage-gate')
+ const stageInbox=createPhonePhotoInbox(path.join(stageRoot,'lan','phone-pending'),path.join(stageRoot,'lan','phone-reviewed'))
+ const staged=await stageInbox.stage(b,'inventory1')
+ const pendingFile=path.join(stageRoot,'lan','phone-pending',staged.id+'.jpg')
+ assert.throws(()=>requireApprovedPhoneReceiptSource(stageRoot,pendingFile),/chưa duyệt/);n++
+ stageInbox.review(staged.id,staged.sha256,true)
+ const approvedFolder=stageInbox.approvedSource(staged.id).intakeFolder
+ requireApprovedPhoneReceiptSource(stageRoot,approvedFolder);n++
+ requireApprovedPhoneReceiptSource(stageRoot,path.join(approvedFolder,'source.jpg'));n++
+ assert.throws(()=>requireApprovedPhoneReceiptSource(stageRoot,path.join(approvedFolder,'additional.jpg')),/nguồn ảnh đã duyệt/);n++
+ fs.writeFileSync(path.join(approvedFolder,'source.jpg'),Buffer.from('different'))
+ assert.throws(()=>requireApprovedPhoneReceiptSource(stageRoot,approvedFolder),/checksum/);n++
+ requireApprovedPhoneReceiptSource(stageRoot,path.join(root,'unrelated'));n++
+
  assert.throws(()=>inbox.approvedSource('not-an-id'),/Mã ảnh/);n++
  const reopen=createPhonePhotoInbox(path.join(root,'inbox'),path.join(root,'approved'))
  check(reopen.approvedSource(first.id).sha256===first.sha256,'Approved source available after application restart')
