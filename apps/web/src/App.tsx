@@ -30,6 +30,8 @@ const demo:ProductRow[]=[
 {id:2,product_code:'BG0001',name:'Bộ gái hoa',category:'Đồ tole bé gái',variant_count:4,total_stock:7,sizes:['Size 1','Size 2','Size 3','Size 4'],stock_by_size:[{size:'Size 1',stock:2},{size:'Size 2',stock:1},{size:'Size 3',stock:1},{size:'Size 4',stock:3}]}
 ]
 const baseNav=['Tổng quan','Danh mục sản phẩm','Nhập hàng','Import kho','Tồn kho','Cài đặt']
+const demoNav=['Tổng quan','Danh mục sản phẩm','Nhập hàng','Import kho','Tồn kho','Khách hàng','Bán hàng','Công nợ','Báo cáo','Kiểm kê','Ảnh SOLD','Ảnh iPhone','Cài đặt']
+const demoInfo:Record<string,string>={'Khách hàng':'Danh bạ khách, liên hệ và thông tin giao hàng.','Bán hàng':'Đơn nháp, chọn ảnh, chốt SOLD và phiếu PNG.','Công nợ':'Các khoản phải thu và hoàn khách.','Báo cáo':'Doanh số, dòng tiền, giá vốn và xuất CSV.','Kiểm kê':'Các phiên kiểm đếm theo mẫu và Size.','Ảnh SOLD':'Kiểm chứng ảnh hàng đã bán và SHA-256.','Ảnh iPhone':'Nhận ảnh qua Wi-Fi, chủ shop duyệt trên Windows.'}
 
 export default function App(){
  const isDemo=useMemo(()=>location.hostname.endsWith('github.io')||new URLSearchParams(location.search).get('demo')==='1',[])
@@ -42,7 +44,7 @@ export default function App(){
  const canAuditSold=!health?.lanClient||lanRole==='owner'
  const canPhoneInbox=!isDemo&&!!health?.freshDevelopment&&(!health?.lanClient||lanRole==='owner'||lanRole==='inventory')
  const baseAccess=health?.lanClient?baseNav.filter(n=>!['Nhập hàng','Import kho','Cài đặt'].includes(n)):baseNav
- const nav=health?.salesDrafts&&!isDemo?[...baseAccess.filter(n=>n!=='Cài đặt'),...(canSell?['Khách hàng','Bán hàng','Công nợ']:[]),...(health?.salesExecution?[...(canReport?['Báo cáo']:[]),...(canCount?['Kiểm kê']:[]),...(canAuditSold?['Ảnh SOLD']:[])]:[]),...(canPhoneInbox?['Ảnh iPhone']:[]),...(health?.lanClient?[]:['Cài đặt'])]:baseAccess
+ const nav=isDemo?demoNav:health?.salesDrafts?[...baseAccess.filter(n=>n!=='Cài đặt'),...(canSell?['Khách hàng','Bán hàng','Công nợ']:[]),...(health?.salesExecution?[...(canReport?['Báo cáo']:[]),...(canCount?['Kiểm kê']:[]),...(canAuditSold?['Ảnh SOLD']:[])]:[]),...(canPhoneInbox?['Ảnh iPhone']:[]),...(health?.lanClient?[]:['Cài đặt'])]:baseAccess
  const conflictChoice=useDraftConflictChoice()
  const [salesId,setSalesId]=useState<string|null>(null),[addToDraft,setAddToDraft]=useState<string|null>(null)
  const [receiptPrefill,setReceiptPrefill]=useState<string|null>(null)
@@ -161,7 +163,8 @@ export default function App(){
  </div>}
  <div className="brandHeroCompact"><section className="hero"><img className="brandBanner" src={`${import.meta.env.BASE_URL}brand/banner.jpg`} alt="Banner Shop Mẹ CaCao" onError={e=>{e.currentTarget.style.display="none"}}/><p className="eyebrow">SHOP MẸ CACAO · SINCE 2023</p><h2>{active}</h2><p>Quản lý sản phẩm, Size và tồn kho theo ảnh vật lý. {isDemo?'Dữ liệu trên trang này là minh họa.':'Xem dữ liệu kho thật tại LOCAL.'}</p></section></div>
  </div>}
-  {active==='Nhập hàng'&&<ReceiptDashboard isDemo={isDemo} initialSourcePath={receiptPrefill} onInitialSourceApplied={()=>setReceiptPrefill(null)} onChanged={()=>setProductReload(x=>x+1)}/>}
+  {isDemo&&demoInfo[active]&&<section className="demoFeaturePreview"><span className="demoPreviewKicker">XEM TRƯỚC CHỨC NĂNG · DEMO</span><h2>{active}</h2><p>{demoInfo[active]}</p><div className="demoPreviewDisabled"><b>Không kết nối Windows</b><span>Đây là bản xem giao diện. Không có dữ liệu khách hàng và không thể ghi đơn, xuất kho, thu tiền hoặc kiểm kê.</span></div><button type="button" disabled>Chỉ thao tác được trên Windows / Mobile LAN</button></section>}
+   {active==='Nhập hàng'&&<ReceiptDashboard isDemo={isDemo} initialSourcePath={receiptPrefill} onInitialSourceApplied={()=>setReceiptPrefill(null)} onChanged={()=>setProductReload(x=>x+1)}/>}
   {active==='Ảnh iPhone'&&canPhoneInbox&&<PhonePhotoInboxView mobile={!!health?.lanClient} onChanged={()=>setProductReload(n=>n+1)} onBeginReceipt={folder=>{if(health?.lanClient)return;setReceiptPrefill(folder);goTo('Nhập hàng')}}/>}
   {active==='Tồn kho'&&<InventoryView isDemo={isDemo} onDraft={health?.salesDrafts&&canSell?chooseForDraft:undefined} draftLabel={addToDraft?'THÊM VÀO ĐƠN NHÁP':'TẠO ĐƠN NHÁP'}/>}
   {active==='Báo cáo'&&health?.salesExecution&&canReport&&<BusinessReports onOrder={id=>{setSalesId(id);goTo('Bán hàng')}}/>}
