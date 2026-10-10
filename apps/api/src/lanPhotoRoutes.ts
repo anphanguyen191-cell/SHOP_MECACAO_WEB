@@ -34,10 +34,8 @@ function checkExisting(sha256:string,size:number){
   }catch(e){if(e instanceof PhonePhotoError)throw e}
  }
 }
-export function phonePhotoRouter(){
+export function createPhotoRouterForInbox(inbox:ReturnType<typeof createPhonePhotoInbox>){
  const router=express.Router()
- if(!freshDevelopment)return router
- const inbox=createPhonePhotoInbox(path.join(freshRoot,'lan','phone-pending'),path.join(freshRoot,'lan','phone-reviewed'),checkExisting)
  // Local Windows can inspect all; authenticated LAN roles are enforced globally.
  const who=(req:express.Request)=>req.res?.locals.lanUser?.username as string|undefined
  const handle=(res:express.Response,e:unknown)=>{
@@ -60,4 +58,10 @@ export function phonePhotoRouter(){
   catch(e){handle(res,e)}
  })
  return router
+}
+export function phonePhotoRouter(){
+ if(!freshDevelopment)return express.Router()
+ return createPhotoRouterForInbox(createPhonePhotoInbox(
+  path.join(freshRoot,'lan','phone-pending'),path.join(freshRoot,'lan','phone-reviewed'),checkExisting
+ ))
 }
