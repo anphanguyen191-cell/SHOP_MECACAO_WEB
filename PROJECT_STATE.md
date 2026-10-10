@@ -1,4 +1,4 @@
-> **Checkpoint phát triển 10/10/2026:** Stage 5A (kiểm chứng ảnh SOLD), Global UI Refresh và Stage 6 Mobile LAN HTTPS đang nằm trong PR #1, **chưa tích hợp main / chưa STABLE**. Chi tiết [PREVIEW_CHECKPOINT_STAGE5_STAGE6_2026-10-10.md](PREVIEW_CHECKPOINT_STAGE5_STAGE6_2026-10-10.md). Không dùng kho thật trong nhánh thử nghiệm.
+> **MAIN TEST 3.3.0-stage6-main-test — CHƯA STABLE:** mã Stage 5A + Stage 6 Mobile LAN sẵn sàng để kiểm thử trên Windows/iPhone với dữ liệu riêng `data/stage6-main-test`. Không sử dụng kho kinh doanh hoặc chạy đè bản đang bán hàng. Xem [HƯỚNG DẪN MAIN TEST](MAIN_TEST_STAGE6_RELEASE.md). Các checkpoint Stage 4 bên dưới là lịch sử.
 
 # Checkpoint hiện tại — Chặng 4 — 3.2.0-stage4
 

@@ -1,3 +1,8 @@
+## MAIN TEST — 3.3.0-stage6-main-test (chưa STABLE) — 2026-10-11
+- Stage 5A kiểm chứng và giữ nguyên ảnh SOLD; Stage 6C/6D HTTPS LAN, xác thực vai trò, kiểm toán, đồng bộ và ảnh chờ từ iPhone được chuẩn bị tích hợp MAIN TEST.
+- Database riêng `data/stage6-main-test/database/shop-stage6-main-test.db`. Windows launcher chỉ cho chọn kho thử có marker; `CREATE_MAIN_TEST_WAREHOUSE.bat` tạo ảnh fixture. Không tự chuyển `data/stage4` hoặc cộng ảnh iPhone vào tồn.
+- Không mở Internet, không xoá ảnh, chưa nghiệm thu trực tiếp Safari/Windows. CI commit MAIN TEST phải PASS trước khi merge.
+
 ## WIP — Checkpoint 6C iPhone photo inbox (chưa main / chưa STABLE) — 2026-10-10
 - Thêm ảnh iPhone vào vùng chờ, kiểm tra JPEG/PNG/WebP, SHA-256, dung lượng và chống ảnh trùng/SOLD; chủ shop Windows duyệt bản sao, không cộng tồn. Trình duyệt có thể chuyển HEIC sang JPEG.
 - Bổ sung API role owner/inventory và chặn duyệt bản sao qua LAN; giữ nguyên ảnh gốc, chờ xác nhận Nhập hàng Windows. Chưa nghiệm thu camera iPhone / kho thật.

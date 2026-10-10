@@ -7,6 +7,8 @@ import {spawn} from 'node:child_process'
 import sharp from 'sharp'
 const base=fs.mkdtempSync(path.join(os.tmpdir(),'stage2-http-')),project=path.join(base,'release')
 fs.mkdirSync(project);fs.cpSync('apps/api/dist',path.join(project,'apps/api/dist'),{recursive:true});fs.mkdirSync(path.join(project,'apps/api'),{recursive:true});fs.copyFileSync('apps/api/package.json',path.join(project,'apps/api/package.json'));fs.symlinkSync(path.resolve('node_modules'),path.join(project,'node_modules'),'junction')
+// Guard the previous Stage 4 database against any MAIN TEST startup activity.
+const stage4Sentinel=path.join(project,'data','stage4','database','shop-stage4.db');fs.mkdirSync(path.dirname(stage4Sentinel),{recursive:true});fs.writeFileSync(stage4Sentinel,'STAGE4_UNTOUCHED_SENTINEL')
 const source=path.join(base,'shop-source');fs.mkdirSync(source);const photo=path.join(source,'001.png');await sharp({create:{width:200,height:240,channels:3,background:'#fad2e5'}}).png().toFile(photo);const bytes=fs.readFileSync(photo)
 const probe=http.createServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));const port=probe.address().port;await new Promise(r=>probe.close(r))
 const url='http://127.0.0.1:'+port,env={...process.env,PORT:String(port),SHOP_FRESH_DEVELOPMENT:'1',SHOP_HOST:'127.0.0.1'};for(const k of ['SHOP_DB_PATH','SHOP_SANDBOX_ROOT','SHOP_LOCAL_V2_CONFIG','SHOP_LOCAL_V2_RESTORE_READY','SHOP_TASK_WORKER'])delete env[k]
@@ -17,12 +19,13 @@ async function ready(){for(let n=0;n<100;n++){try{const r=await fetch(url+'/api/
 async function request(route,method='GET',body,key){const r=await fetch(url+route,{method,headers:{Origin:url,'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()}}
 async function stop(child){if(child.exitCode!==null)return;await new Promise(resolve=>{child.once('exit',resolve);child.kill()})}
 try{
- server=start();let h=await ready();eq(h.freshDevelopment,true);eq((await request('/api/products')).data.length,0)
+ server=start();let h=await ready();eq(h.freshDevelopment,true);eq(fs.readFileSync(stage4Sentinel,'utf8'),'STAGE4_UNTOUCHED_SENTINEL');eq(fs.existsSync(path.join(project,'data','stage6-main-test','database','shop-stage6-main-test.db')),true);eq((await request('/api/products')).data.length,0)
  const second=start();await new Promise(r=>second.once('exit',r));eq(second.exitCode!==0,true)
  eq(h.release.version,'3.3.0-stage6-main-test');eq(h.release.stage,6);eq(h.release.channel,'main-test')
  eq((await request('/api/local/warehouse','POST',{warehouse:path.parse(base).root})).status,409)
  const own=path.join(base,'my-warehouse'),size=path.join(own,'Bộ tự tạo','Size 1');fs.mkdirSync(size,{recursive:true});const ownPhoto=path.join(size,'001.png');fs.copyFileSync(photo,ownPhoto)
  fs.writeFileSync(path.join(own,'.mecacao-stage6-main-test.json'),JSON.stringify({format:1,purpose:'SHOP_MECACAO_STAGE6_MAIN_TEST_ONLY'}))
+ const another=path.join(base,'unmarked-warehouse');fs.mkdirSync(another);eq((await request('/api/local/warehouse','POST',{warehouse:another})).status,409)
  const selection=await request('/api/local/warehouse','POST',{warehouse:own});eq(selection.status,200)
  await new Promise(r=>server.once('exit',r));eq(server.exitCode,75)
  server=start();h=await ready();eq(h.customWarehouse,true);eq(h.warehouse,own)
