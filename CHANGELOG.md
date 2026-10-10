@@ -1,3 +1,7 @@
+## 2026-10-10 — V2 copied-only confirm trial UI/API
+
+Connected preflight to trusted copy/derivative/staging/atomic-commit orchestration on cloned DB/photos, persistent same-key trial status/resume/recovery and explicit responsive themed UI. Added eighteen hard-exit points and real HTTP/browser replay tests. Protected internal trial areas from stock/import/share and stopped full backup on invalid internal registrations. No operational sale, source migration/deletion or SOLD backup release; see V2_CONFIRM_TRIAL_CHECKPOINT.md.
+
 ## 2026-10-10 — V2 copied-DB atomic commit foundation
 
 Added isolated schema129 prototype: backup migration, atomic SOLD/UNIQUE image claims/SALE ledger, immutable snapshots, request-key idempotency, current-cost/zero-price guards and DB-derived staging recovery. Added eleven hard-exit points and real two-process contention tests to the Linux/Windows gate. Not mounted by server/UI; no live stock/schema/file mutation or deletion. See V2_ATOMIC_COMMIT_CHECKPOINT.md.

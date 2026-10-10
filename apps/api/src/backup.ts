@@ -8,6 +8,7 @@ import sharp from 'sharp'
 import {verifyLosslessBackup} from './losslessVerify.js'
 export {verifyLosslessBackup} from './losslessVerify.js'
 import { db, dbPath } from './db.js'
+import {isInternalWarehousePath} from './warehouseAreas.js'
 
 export function createBackup(){
  const root=path.dirname(dbPath),dir=path.join(root,'backups')
@@ -55,10 +56,11 @@ export async function createOptimizedImageBackup(){
  */
 export function createLosslessBackup(){
  const schema=readSchemaVersion(db),archiveSources=schema===120&&process.env.SHOP_SANDBOX_ROOT?archiveSnapshot(process.env.SHOP_SANDBOX_ROOT):[]
+ const records=db.prepare('SELECT id,product_id,variant_id,file_path FROM product_images ORDER BY id').all() as Array<{id:number;product_id:number;variant_id:number|null;file_path:string}>
+ if(records.some(r=>isInternalWarehousePath(r.file_path)||(fs.existsSync(r.file_path)&&isInternalWarehousePath(fs.realpathSync(r.file_path)))))throw Error('Ảnh thư mục thử/staging đã bị đăng ký như hàng tồn. Dừng backup đầy đủ để kiểm tra metadata, không bỏ qua âm thầm.')
  const base=createBackup()
  const imageDir=path.join(base.directory,'lossless-images')
  fs.mkdirSync(imageDir,{recursive:true})
- const records=db.prepare('SELECT id,product_id,variant_id,file_path FROM product_images ORDER BY id').all() as Array<{id:number;product_id:number;variant_id:number|null;file_path:string}>
  const hash=(p:string)=>createHash('sha256').update(fs.readFileSync(p)).digest('hex')
  const files:Array<{id:number;product_id:number;variant_id:number|null;source_path:string;backup_path:string;size:number;sha256:string}>=[]
  for(const rec of records){

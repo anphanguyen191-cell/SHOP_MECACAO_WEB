@@ -1,3 +1,8 @@
+# V2 copied-order confirmation trial / UI checkpoint — 2026-10-10
+
+Added sandbox orchestration from saved-order preflight to copied DB/photos, trusted derivatives, stage + atomic commit; loopback/origin trial API, same-key retry/status/recovery and explicit copied-only UI with persistent request key/resume after reload. Source draft/stock/ledger/photos unchanged, no operational confirm/SALE/SOLD/deletion/migration. Internal trial/archive areas excluded from scans/import/stock/images/share, lossless backup fails closed on invalid internal registrations. Scope/tests/owner steps: `V2_CONFIRM_TRIAL_CHECKPOINT.md`. Eighteen process-exit points plus HTTP/browser flow; exact new CI required. Default110/draft120 remain; 129 only copied lab. V2 source sales/SOLD backup/restore and V1 owner restore/STABLE still pending.
+
+---
 # V2 atomic commit / DB-derived recovery lab — 2026-10-10
 
 Owner authorized continuing. Added copied-database-only schema129 migration/verified backup, atomic SOLD snapshots + UNIQUE image claims + SALE ledger, request/payload idempotency, immutable committed evidence, current-cost capture and zero-price acknowledgement. Recovery now derives COMMITTED/UNCOMMITTED/AMBIGUOUS from real SQLite evidence and journal hashes, not a harness-supplied decision. Eleven hard-process-exit points + two-process contention; source DB/images preserved. Scope/tests: `V2_ATOMIC_COMMIT_CHECKPOINT.md`. **Not wired into server/UI; not operational V2 confirm, no live migration/sale/deletion.** Default110/draft120 unchanged; Windows restore/STABLE and V2 sale release gates remain pending. Exact new CI must be checked; baseline bd4b9b6 Actions38016377754 all SUCCESS.

@@ -1,4 +1,4 @@
-import {ARCHIVE_FOLDER} from './salesArchive.js'
+import {isInternalWarehousePath} from './warehouseAreas.js'
 import {restoreTestRouter} from './restoreRoutes.js'
 import express from 'express'
 import path from 'node:path'
@@ -35,7 +35,7 @@ function sandboxPathAllowed(value:unknown){
  if(typeof value!=='string'||!value.trim())return false
  try{
   const real=fs.realpathSync(path.resolve(value))
-  if(real.split(path.sep).includes(ARCHIVE_FOLDER))return false
+  if(isInternalWarehousePath(real))return false
   const rel=path.relative(sandboxRoot,real)
   return rel===''||(!path.isAbsolute(rel)&&rel!=='..'&&!rel.startsWith('..'+path.sep))
  }catch{return false}

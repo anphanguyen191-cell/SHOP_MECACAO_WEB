@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { db } from './db.js'
+import {isInternalWarehousePath} from './warehouseAreas.js'
 
 const allowed = new Set(['.jpg','.jpeg','.png','.webp','.gif','.bmp','.heic','.heif'])
 
@@ -11,9 +12,11 @@ export function getImageRecord(id:number){
   const resolved=path.resolve(row.file_path)
   const ext=path.extname(resolved).toLowerCase()
   if(!allowed.has(ext)) throw new Error('Định dạng ảnh không được hỗ trợ')
+  if(isInternalWarehousePath(resolved))return {...row,file_path:resolved,missing:true}
   if(!fs.existsSync(resolved)) return {...row,file_path:resolved,missing:true}
   const stat=fs.statSync(resolved)
   if(!stat.isFile()) return {...row,file_path:resolved,missing:true}
+  if(isInternalWarehousePath(fs.realpathSync(resolved)))return {...row,file_path:resolved,missing:true}
   return {...row,file_path:resolved,missing:false}
 }
 

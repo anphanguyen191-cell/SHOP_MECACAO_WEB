@@ -17,6 +17,10 @@ Ngày: 2026-10-10. **Đợt nháp sandbox đã triển khai; chưa có xác nh�
 
 `V2_ATOMIC_COMMIT_CHECKPOINT.md`: trên DB/ảnh bản sao có migration129, atomic SOLD/claim/SALE, request-key idempotency và DB-derived recovery; kiểm thử hai tiến trình thật tranh cùng hàng, 11 hard-exit points. Không mount server/UI, không đánh dấu các ca bán vận hành bên dưới PASS. Còn promotion schema chính thức, khóa xuyên module, orchestration/confirm/API/UI và SOLD backup/restore.
 
+## Rehearsal từ UI/API — chưa bán nguồn
+
+`V2_CONFIRM_TRIAL_CHECKPOINT.md`: nút Thử xác nhận trên bản sao, snapshot DB/ảnh, trusted JPEG, stage/commit, persistent-key retry/status/recovery, resume sau reload; nguồn DRAFT/stock/ledger giữ nguyên. Bản thử không thuộc backup nguồn, không migration/source SALE. Không đánh dấu V2 operational acceptance bên dưới PASS từ rehearsal.
+
 ## Ca kiểm thử bắt buộc
 
 - [ ] Một bộ, nhiều bộ cùng Size, nhiều Size/Product; số lượng đúng image IDs.

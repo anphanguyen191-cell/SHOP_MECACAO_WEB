@@ -19,7 +19,8 @@
     "test:sales-staging": "node --import tsx src/salesStagingLabSelfTest.ts",
     "test:restore": "node --import tsx src/losslessRestoreSelfTest.ts",
     "test:sales-preflight": "node --import tsx src/salesPreflightSelfTest.ts",
-    "test:sales-commit-lab": "node --import tsx src/salesCommitLabSelfTest.ts"
+    "test:sales-commit-lab": "node --import tsx src/salesCommitLabSelfTest.ts",
+    "test:sales-confirm-trial": "node --import tsx src/salesConfirmTrialSelfTest.ts"
   },
   "dependencies": {
     "express": "^4.21.2",

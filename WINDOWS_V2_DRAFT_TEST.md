@@ -30,3 +30,7 @@ Cài đặt → Backup đầy đủ → chọn kho gốc warehouse trong sandbox
 ## Kiểm tra toàn đơn trước bán
 
 Bảng mới trong đơn nháp: bấm Kiểm tra toàn đơn, đối chiếu mẫu/Size/bộ/tiền, mở kiểm tra từng bộ. Sửa giá/giảm giá → lưu → báo cáo cũ biến mất → kiểm tra lại. Nháp trùng, giá0, thiếu vốn và ảnh lỗi có cảnh báo riêng. Kiểm tra không bán/giữ hàng/trừ tồn. Các ca sandbox cụ thể: V2_PREFLIGHT_CHECKPOINT.md.
+
+## Thử xác nhận trên bản sao
+
+Sau kiểm tra đạt, checkbox xác nhận chỉ bản sao → Thử xác nhận trên bản sao → đối chiếu bộ/tiền/KB. Kiểm tra trạng thái, F5/mở đúng nháp/kiểm tra lại phải resume đúng lần thử. Tồn nguồn và đơn NHÁP giữ nguyên. Bản thử tốn DB/ảnh riêng, chưa tự dọn và không thuộc backup nguồn. Chi tiết và mức nghiệm thu: V2_CONFIRM_TRIAL_CHECKPOINT.md. Chưa phải nút bán vận hành.

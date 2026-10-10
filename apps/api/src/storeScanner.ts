@@ -1,4 +1,4 @@
-import {ARCHIVE_FOLDER} from './salesArchive.js'
+import {INTERNAL_WAREHOUSE_FOLDERS,isInternalWarehousePath} from './warehouseAreas.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import { suggestProductCode, suggestSku } from './products.js'
@@ -10,12 +10,12 @@ export type ScannedSize = { size:string;folderPath:string;images:string[];sugges
 export type ScannedProduct = { name:string;folderPath:string;suggestedProductCode:string;existingProductId?:number;status:'NEW'|'EXISTING'|'PARTIAL';sizes:ScannedSize[];warnings:string[] }
 
 function safeChildren(dir: string) {
-  try { return fs.readdirSync(dir, { withFileTypes: true }).filter(e=>e.name!==ARCHIVE_FOLDER) } catch(e) { throw new Error('Không đọc được thư mục kho: '+dir+' ('+(e as NodeJS.ErrnoException).code+'). Không thể kết luận kho trống.') }
+  try { return fs.readdirSync(dir, { withFileTypes: true }).filter(e=>!INTERNAL_WAREHOUSE_FOLDERS.has(e.name.toLowerCase())) } catch(e) { throw new Error('Không đọc được thư mục kho: '+dir+' ('+(e as NodeJS.ErrnoException).code+'). Không thể kết luận kho trống.') }
 }
 
 export function scanStore(rootPath: string): ScannedProduct[] {
   const root = path.resolve(rootPath)
-  if(fs.realpathSync(root).split(path.sep).includes(ARCHIVE_FOLDER))throw new Error('Thư mục ảnh lưu thử không phải kho tồn; không được quét/import vào tồn.')
+  if(isInternalWarehousePath(fs.realpathSync(root)))throw new Error('Thư mục ảnh lưu thử không phải kho tồn; không được quét/import vào tồn.')
   if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) throw new Error('Không tìm thấy thư mục kho')
   const rootChildren = safeChildren(root)
   const hasDirectImages = (dir:string) => safeChildren(dir).some(e=>e.isFile()&&IMAGE_EXTENSIONS.has(path.extname(e.name).toLowerCase()))
@@ -61,7 +61,7 @@ export function scanStore(rootPath: string): ScannedProduct[] {
 
 export function isPathInsideRoot(rootPath: string, candidate: string) {
   const root = path.resolve(rootPath)
-  if(fs.realpathSync(root).split(path.sep).includes(ARCHIVE_FOLDER))throw new Error('Thư mục ảnh lưu thử không phải kho tồn; không được quét/import vào tồn.')
+  if(isInternalWarehousePath(fs.realpathSync(root)))throw new Error('Thư mục ảnh lưu thử không phải kho tồn; không được quét/import vào tồn.')
   const target = path.resolve(candidate)
   const rel = path.relative(root, target)
   return rel.length > 0 && rel !== '..' && !rel.startsWith('..' + path.sep) && !path.isAbsolute(rel)

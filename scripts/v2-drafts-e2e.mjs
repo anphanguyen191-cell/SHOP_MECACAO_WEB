@@ -52,6 +52,18 @@ try{
  await api('/api/sales/drafts/'+d.id+'/preflight','POST',{version:1},409)
  await api('/api/sales/drafts/'+d.id+'/preflight','POST',{version:2,token:'a'.repeat(64)},409)
  await api('/api/sales/drafts/'+d.id+'/preflight','POST',{version:2},403,{Origin:'https://untrusted.example'})
+ const trialBody={version:2,token:readiness.token,confirmed:true,acknowledgeZeroPrice:false},trialKey='http-confirm-trial-key-0001'
+ await api('/api/sales/drafts/'+d.id+'/confirm-trial','POST',{...trialBody,confirmed:false},400,{'Idempotency-Key':trialKey})
+ await api('/api/sales/drafts/'+d.id+'/confirm-trial','POST',trialBody,403,{Origin:'https://untrusted.example','Idempotency-Key':trialKey})
+ const trialResult=await api('/api/sales/drafts/'+d.id+'/confirm-trial','POST',trialBody,200,{'Idempotency-Key':trialKey})
+ assert(trialResult.status==='SOLD_TRIAL'&&trialResult.quantity===1&&trialResult.total===50000&&trialResult.sourceUnchanged);checks++
+ assert((await api('/api/sales/drafts/'+d.id+'/confirm-trial','POST',trialBody,200,{'Idempotency-Key':trialKey})).status==='SOLD_TRIAL');checks++
+ await api('/api/sales/drafts/'+d.id+'/confirm-trial','POST',{...trialBody,acknowledgeZeroPrice:true},409,{'Idempotency-Key':trialKey})
+ assert((await api('/api/sales/drafts/'+d.id+'/confirm-trials/'+trialKey)).status==='SOLD_TRIAL');checks++
+ assert((await api('/api/sales/drafts/'+d.id)).status==='DRAFT'&&(await api('/api/inventory/dashboard')).stock===1&&hash()===original);checks++
+ const labFolder=path.join(root,'.mecacao-v2-recovery-lab')
+ await api('/api/store/scan','POST',{rootPath:labFolder},403)
+ await api('/api/store/import','POST',{confirmed:true,product:{rootPath:labFolder,name:'INVALID',productCode:'INVALID',variants:[]}},403)
  const archiveInput={version:2,images:preview.items.map(i=>({imageId:i.imageId,sourceHash:i.sourceHash}))}
  const saved=await api('/api/sales/drafts/'+d.id+'/archives','POST',archiveInput,200,{'Idempotency-Key':'http-archive-request-0001'})
  assert(saved.status==='READY'&&saved.originalsRetained&&!saved.sold);checks++
@@ -138,6 +150,25 @@ async function browserTest(base,id){
   await run("document.querySelector('.preflightDetails').click()")
   await until("!!document.querySelector('.preflightItems article')")
   assert(await run("document.querySelector('.preflightItems').textContent.includes('Ảnh đọc được')"));checks++
+  await until("!!document.querySelector('.confirmTrialCheckbox')")
+  await run("document.querySelector('.confirmTrialCheckbox').click()")
+  await until("!document.querySelector('.confirmTrialSubmit').disabled")
+  await run("document.querySelector('.confirmTrialSubmit').click()")
+  await until("document.querySelector('.confirmTrialResult')?.textContent.includes('Bản sao đã xác nhận bán')")
+  assert(await run("document.querySelector('.confirmTrialResult').textContent.includes('50.000')"));checks++
+  await run("document.querySelector('.confirmTrialStatus').click()")
+  await until("!document.querySelector('.confirmTrialStatus').disabled")
+  assert((await api('/api/inventory/dashboard')).stock===1);checks++
+  const resumeCode=await run("document.querySelector('.salesEditorHead h3').textContent")
+  await cmd('Page.reload')
+  await until("Array.from(document.querySelectorAll('.sidebar button')).some(b=>b.textContent==='Bán hàng')")
+  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Bán hàng').click()")
+  await until("!!document.querySelector('.salesOrderRow')")
+  await run("Array.from(document.querySelectorAll('.salesOrderRow')).find(b=>b.textContent.includes("+JSON.stringify(resumeCode)+")).click()")
+  await until("!!document.querySelector('.preflightCheck')")
+  await run("document.querySelector('.preflightCheck').click()")
+  await until("document.querySelector('.confirmTrialResult')?.textContent.includes('Bản sao đã xác nhận bán')")
+  assert(await run("document.querySelector('.confirmTrialResult').textContent.includes('50.000')"));checks++
   await run("document.querySelector('.salesPreviewHeading button').click()")
   await until("!!document.querySelector('.salesPreviewCompare')")
   await until("document.querySelector('.salesPreviewCompare figure:nth-child(2) img').naturalWidth>0")
@@ -167,6 +198,10 @@ async function browserTest(base,id){
   await until("!!document.querySelector('.preflightReport')")
   assert(await run("document.querySelector('.preflightStats').textContent.includes('49.000')"));checks++
   await run("document.querySelector('.preflightDetails').click()")
+  await run("document.querySelector('.confirmTrialCheckbox').click()")
+  await until("!document.querySelector('.confirmTrialSubmit').disabled")
+  await run("document.querySelector('.confirmTrialSubmit').click()")
+  await until("document.querySelector('.confirmTrialResult')?.textContent.includes('49.000')")
   const artifact=path.resolve('artifacts/v2-drafts');fs.mkdirSync(artifact,{recursive:true})
   for(const width of [1366,390])for(const dark of [false,true]){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:768,deviceScaleFactor:1,mobile:width===390})
