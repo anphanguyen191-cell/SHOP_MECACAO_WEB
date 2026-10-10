@@ -139,7 +139,8 @@ async function browserTest(base,id){
   await run("(()=>{const i=document.querySelector('.stocktakePanel input[aria-label^=\"Lý do\"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'Đếm giả lập để đối chiếu hàng chưa có ảnh');i.dispatchEvent(new Event('input',{bubbles:true}))})()")
   await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Lưu số đếm'&&!b.disabled)")
   await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Báo cáo').click()")
-  assert(await run("!!document.querySelector('.stocktakePanel')&&document.querySelector('[role=alert]').textContent.includes('trước khi chuyển chức năng')"));checks++
+  await until("!!document.querySelector('.stocktakePanel')&&document.querySelector('.stage4Page [role=alert]')?.textContent.includes('trước khi chuyển chức năng')")
+  assert(await run("document.querySelector('.stocktakePanel input[type=number]').value==='1'"));checks++
 
   await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Lưu số đếm').click()")
   await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Lưu số đếm'&&b.disabled)")
