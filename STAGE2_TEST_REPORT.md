@@ -1,28 +1,26 @@
-## Cập nhật v3.0.1-stage2 — 2026-10-10
+# Báo cáo kiểm thử main — 3.0.1-stage2
 
-Giao diện sáng tăng tương phản và tách màu nhóm chức năng. `START_SHOP.bat` là launcher main thống nhất; alias chặng 2 gọi cùng launcher. Trước khi có dữ liệu, chọn thư mục kho trên UI; app tự restart, dùng kho đó trực tiếp theo layout DIRECT. DB vẫn riêng cho bản cài, không đọc/di chuyển DB cũ. Chọn kho không đăng ký hoặc thay đổi ảnh; quét/import có bước duyệt riêng. Đã có dữ liệu thì không đổi kho để tránh trộn đường dẫn. Thanh phiên bản ghi v3.0.1-stage2, main, chặng 2; chặng 3 chưa triển khai. Kiểm thử HTTP chọn kho/import/restart/bán/PNG/backup trên fixture; CI Linux và Windows 22/24 xác nhận cùng mã main.
+Ngày xác nhận: 10/10/2026. Baseline runtime: [`099386ad48cef9babb525eb2d43e63fe22099449`](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/commit/099386ad48cef9babb525eb2d43e63fe22099449). [Actions 38042560022](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/runs/38042560022): **Linux, Windows Node 22, Windows Node 24, deploy đều SUCCESS**.
 
-# Báo cáo bàn giao chặng 2
+| Kiểm tra | Kết quả / Phạm vi |
+|---|---|
+| Toàn bộ gate | PASS: typecheck/schema/core/performance/warehouse/sharing/drafts/preflight/preview/archive/staging/commit/confirm/sales/restore/tasks/stage2/build/source UI |
+| Chặng 2 service | PASS 26 kiểm tra khách trùng/version, snapshot, ship/miễn ship, tiền/overflow/idempotency, PNG nhiều trang, SOLD khóa sửa, restart/restore |
+| HTTP bản cài mới | PASS 35 kiểm tra DB rỗng, metadata phiên bản/chặng, chọn kho UI, scan/import, khóa server trùng, nguồn COPY, contact/đơn/PNG, origin, restart/bán/backup DIRECT/restore READY |
+| Launcher và UI main | Chromium PASS: chạy launcher chính trong bản cài tạm, phiên bản/tiến độ, folder picker, chọn kho, tự restart, reload đúng kho |
+| Browser nghiệp vụ | PASS các luồng chọn ảnh/nháp, cảnh báo, lưu contact/ship, PNG, bán/lịch sử/khóa SOLD, full restore UI |
+| Giao diện | PASS 1366px và 390px sáng/tối; ảnh CI đã xem, màu nhóm/viền/chữ rõ, không tràn ngang; kiểm tra source UI PASS 31 mục |
+| Hồi quy tương thích | CI PASS setup/biến môi trường, V1 backup → bản sao LOCAL V2, rollback và API trong kho giả lập |
+| GitHub Pages | Deploy SUCCESS sau Linux và cả Windows; Pages là DEMO, không kết nối DB/kho shop |
 
-Mã nguồn được phát triển từ baseline chặng 1 `aa304bc`. Tất cả dữ liệu kiểm thử là giả lập/bản cài tạm; không truy cập kho kinh doanh trên máy chủ shop.
+Toàn bộ kiểm thử dùng fixture/thư mục tạm. Không truy cập kho kinh doanh của chủ shop. Browser chạy trong CI Linux; host phát triển không cài/chạy Chromium cho nhiệm vụ này. Mã runtime của bản main đầy đủ chức năng LOCAL được kiểm chứng, không chỉ một UI mock.
 
-## Phạm vi hoàn thành
+## Giới hạn
 
-Khách hàng; cảnh báo điện thoại trùng; tìm/sửa khách; snapshot giao hàng trong đơn; phí ship/miễn ship; tổng thanh toán; lưu/mở/sửa nháp; PNG thương hiệu từ đơn đã lưu; phiếu nhiều trang; tạo lại PNG; xuất từ lịch sử SOLD; bản cài dữ liệu mới và launcher một bước. Toàn bộ source và chức năng baseline được giữ.
+- Chủ shop chưa xác nhận nghiệm thu Windows **bản 3.0.1-stage2**. Các PASS chủ shop của checkpoint cũ không áp dụng tự động cho bản này.
+- Cầu nối clipboard và kiểm tra Windows có trong source/CI; việc Ctrl+V vào Zalo/Messenger thực tế của chủ shop chưa được xác nhận. Web Share phụ thuộc thiết bị/trình duyệt.
+- Không gắn STABLE chỉ từ CI; không khẳng định mọi lỗi thực tế đã được loại bỏ.
+- COD/chuyển khoản/thu tiền/công nợ/hậu mãi, báo cáo đầy đủ, LAN/cloud chưa triển khai.
+- Backup SQLite hoặc ảnh nén riêng không thay full backup. Restore thử tạo vùng mới, không tự chuyển DB đang dùng.
 
-## Bằng chứng trên môi trường Linux Node 24
-
-- TypeScript + production build: PASS.
-- Kiểm thử chặng 2: PASS 26 kiểm tra nghiệp vụ, PNG, restart và restore.
-- HTTP bản cài mới: PASS 19 kiểm tra kho rỗng, khóa server thứ hai, COPY nguồn ngoài, chống origin khác, khách/đơn/PNG, restart, bán và backup.
-- Hồi quy `npm run test:gate`: PASS (schema, core, performance, warehouse, sharing, drafts, preflight, preview, archive, staging, commit, confirmation, sales execution, restore, tasks, chặng 2, build, source UI).
-- Hồi quy HTTP đơn nháp: PASS 77 kiểm tra; HTTP bán hàng: PASS 56 kiểm tra. Browser được bỏ qua có chủ đích trên host hiện tại.
-- Kiểm tra trực quan phiếu PNG mẫu: tiếng Việt có dấu, ảnh/tên/Size/giá/ship/tổng rõ ràng.
-
-## Giới hạn kiểm chứng
-
-CI trên nhánh `main` chạy Linux Node 22, Windows Node 22/24 và Chromium desktop/mobile. Kết quả của đúng commit xem tại [GitHub Actions](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/workflows/pages.yml). Chỉ kết luận PASS khi toàn bộ job của commit đó thành công; không dùng kết quả baseline thay cho bản mới.
-
-Môi trường phát triển local không có Chromium; kiểm tra UI tại local gồm typecheck/source và phiếu PNG. Browser acceptance được thực hiện qua CI Linux. GitHub Pages chỉ deploy sau khi cả Linux và Windows đạt.
-
-Bản ZIP dùng để chạy thử chặng 2. Chưa gắn nhãn STABLE nghiệm thu trên Windows. COD/thu tiền/công nợ và hậu mãi vẫn thuộc chặng 3.
+Cập nhật tổng hợp tài liệu sau baseline này không đổi mã chạy hoặc phiên bản runtime. Nếu mã chạy đổi, cần CI mới tương ứng; không dùng PASS của baseline thay cho code mới. Phạm vi chức năng/kiến trúc để phát triển tiếp nằm trong [MAIN_CHECKPOINT_2026-10-10.md](MAIN_CHECKPOINT_2026-10-10.md).

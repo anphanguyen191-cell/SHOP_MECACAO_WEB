@@ -1,3 +1,9 @@
+## Checkpoint main đầy đủ — 2026-10-10
+- Xác nhận runtime 3.0.1-stage2 trên main (`099386a`), Actions 38042560022: Linux, Windows 22/24, browser và deploy SUCCESS.
+- Tổng hợp toàn bộ chức năng, nguyên tắc, kiến trúc/dữ liệu, bằng chứng và giới hạn trong MAIN_CHECKPOINT_2026-10-10.md.
+- Đồng bộ PROJECT_STATE/ROADMAP/hướng dẫn chặng 2; sửa trạng thái khách/PNG BACKLOG đã lỗi thời, thống nhất START_SHOP.bat.
+- Giữ nhật ký PROJECT_STATE cũ trong docs/history. Cập nhật tài liệu, không đổi runtime hoặc triển khai chặng 3.
+
 ## 3.0.1-stage2 — 2026-10-10
 - Tăng tương phản giao diện sáng, tách nhóm chức năng xanh/cam/tím, giữ palette tối.
 - Launcher Windows main thống nhất; chọn kho ngay trên UI trước khi nhập dữ liệu, tự restart.

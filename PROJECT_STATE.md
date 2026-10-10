@@ -1,271 +1,30 @@
-## Cập nhật v3.0.1-stage2 — 2026-10-10
+# Trạng thái hiện tại — Shop Mẹ CaCao Web
 
-Giao diện sáng tăng tương phản và tách màu nhóm chức năng. `START_SHOP.bat` là launcher main thống nhất; alias chặng 2 gọi cùng launcher. Trước khi có dữ liệu, chọn thư mục kho trên UI; app tự restart, dùng kho đó trực tiếp theo layout DIRECT. DB vẫn riêng cho bản cài, không đọc/di chuyển DB cũ. Chọn kho không đăng ký hoặc thay đổi ảnh; quét/import có bước duyệt riêng. Đã có dữ liệu thì không đổi kho để tránh trộn đường dẫn. Thanh phiên bản ghi v3.0.1-stage2, main, chặng 2; chặng 3 chưa triển khai. Kiểm thử HTTP chọn kho/import/restart/bán/PNG/backup trên fixture; CI Linux và Windows 22/24 xác nhận cùng mã main.
+Checkpoint 10/10/2026: **main đã tích hợp đầy đủ chặng 1 + chặng 2, runtime 3.0.1-stage2**. Windows dùng cùng mã main qua `START_SHOP.bat`; alias chặng 2 gọi cùng launcher. Không có bước chọn DB V1 hoặc migration dữ liệu thử cũ bắt buộc.
 
-# Checkpoint hiện tại — chặng 2, phát hành đầy đủ trên main — 2026-10-10
+Nguồn tổng hợp chức năng, kiến trúc, quyết định và bước tiếp: [MAIN_CHECKPOINT_2026-10-10.md](MAIN_CHECKPOINT_2026-10-10.md). Khi tiếp tục phát triển, đọc tài liệu này cùng [DEVELOPMENT_PRINCIPLES.md](DEVELOPMENT_PRINCIPLES.md) và [ROADMAP.md](ROADMAP.md).
 
-Chủ shop duyệt đưa toàn bộ chức năng đến hiện tại vào main. Baseline chặng 1 giữ nguyên; bổ sung khách hàng, snapshot giao hàng, phí ship/miễn ship, tổng thanh toán và phiếu PNG phân trang từ đơn đã lưu. Source + UI + test + launcher + tài liệu cùng một bản.
+| Mục | Trạng thái |
+|---|---|
+| Baseline mã chạy | `099386ad48cef9babb525eb2d43e63fe22099449` trên main |
+| Bằng chứng | [Actions 38042560022](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/runs/38042560022): Linux, Windows 22/24, browser và deploy SUCCESS |
+| Chặng 1 | Kho theo ảnh, danh mục, nhập/COPY, quét/import/rename, chia sẻ, nháp/bán/lịch sử, backup/restore và tiến độ tác vụ đã tích hợp |
+| Chặng 2 | Khách hàng, contact snapshot, ship/miễn ship, tổng thanh toán, PNG nhiều trang/tạo lại/SOLD đã tích hợp |
+| Tối ưu mới nhất | Giao diện sáng tăng tương phản; chọn kho trên UI, tự restart; hiển thị phiên bản/main/chặng hiện tại |
+| Dữ liệu | DB mới theo thư mục cài mới; mở lại cùng bản giữ dữ liệu; chọn kho trước khi có dữ liệu, quét/import sau bước duyệt |
+| Phát hành hiện tại | Bản phát triển đầy đủ chức năng đã triển khai; chưa gắn STABLE nghiệm thu máy chủ shop |
+| Bước tiếp | Đặc tả chặng 3 thu tiền/công nợ/hậu mãi, trình chủ shop duyệt trước khi triển khai |
 
-Quy trình phát triển đã được chủ shop điều chỉnh: mỗi bản cài mới có dữ liệu riêng, không bắt kế thừa dữ liệu thử của các bản trước. Chạy START_SHOP_CHANG_2.bat; nhập ảnh trên UI vào kho đích tự tạo bằng COPY. Restart cùng bản cài giữ dữ liệu. Chưa truy cập kho thật của chủ shop. Những checkpoint chuyển V1→V2 phía dưới là lịch sử, không phải điều kiện mở bản chặng 2.
+CI chỉ dùng fixture/thư mục tạm. Không truy cập kho thật của chủ shop. Chủ shop chưa xác nhận nghiệm thu Windows của bản 3.0.1-stage2; không lấy báo cáo cũ thay cho bản mới. Các cập nhật tài liệu không thay phiên bản runtime; nếu mã chạy đổi, cập nhật baseline/CI mới.
 
-Kiểm thử local đã PASS; CI Linux/Windows Node 22/24 + browser kiểm chứng đúng commit main. Xem STAGE2_CUSTOMERS_PNG.md và STAGE2_TEST_REPORT.md. Chặng 3 (thu tiền/công nợ/hậu mãi) chưa triển khai; không tự suy ra LOCAL STABLE từ CI.
+## Quy tắc ưu tiên
 
-# Stage 1 durable live operation progress — 2026-10-10
+- Kế thừa chức năng và mã; không bắt kế thừa dữ liệu thử. Bản tải mới giải nén vào thư mục mới, không ghi đè/xóa bản cũ.
+- Một ảnh đăng ký còn trong kho = một bộ còn tồn. Ledger là lịch sử/đối soát. Nháp/PNG/chọn/chia sẻ không trừ hàng.
+- Snapshot khách/hàng đã lưu không tự đổi theo danh mục; SOLD bất biến, chưa đồng nghĩa đã thu tiền.
+- Giữ transaction, request key/version, journal/hash, locking, recovery và full backup/restore. Tối ưu UI cùng chức năng.
+- Ý tưởng mới ngoài phần duyệt cần đề xuất riêng. Quyền tích hợp các phần đã duyệt lên GitHub main và chạy Windows CI đã được cấp.
 
-Owner explicitly approved completing stage1. Added separate IPC worker/SSE plus polling, durable task keys/results, scoped async scan/receipt/batch registration/full backup, restart/replay guards, active-worker fencing and fail-closed interrupted task review. Background scans retain compact summary; foreground results remain reopenable. UI uses live progress, persistent same-key retry and a shared history/review panel. No schema migration, cloud/V3 or forced cancellation. `STAGE1_TASK_PROGRESS.md` contains scope, limits and Windows copy test. Actual business cutover/STABLE acceptance still not inferred from sandbox PASS. New exact CI required.
+## Lịch sử
 
-# V2 LOCAL business activation implementation — 2026-10-10
-
-Owner explicitly requested real-warehouse readiness. Added explicit clean-package activation into a separate schema130 DB with existing direct Product/Size/photo layout, V1 source/current-photo equality checks, complete version4 backup/restore proof before an active marker, loopback/origin/path guards, single-server PID lock, legacy Web V1 marker guard, accurate business/restore UI, remembered Windows launcher and unchanged-data-only rollback retaining all files. No actual business warehouse accessed; owner copy review/cutover acceptance pending, not inferred from prior sandbox PASS. `WINDOWS_V2_BUSINESS_START.md` describes gates. Sold originals remain retained; no cleanup/LAN/V3. New exact CI required before delivery.
-
-# V2 LOCAL read-only release check — 2026-10-10
-
-Owner requested continuing after LOCAL copy delivery. Added advisory package/source/latest V1 validation, no-test-order gate and durable TXT/JSON reports; `CHECK_WINDOWS_V2_LOCAL_RELEASE.bat`, `V2_LOCAL_ACTIVATION_PLAN.md`, `V2_LOCAL_RELEASE_CHECKPOINT.md`. Owner copy-data review not yet reported; not inferred from “tiếp”. No live activation/schema/data change. e5d086d baseline exact CI38031750870 Linux/Windows22/24/deploy SUCCESS verified. New implementation requires exact CI; current LOCAL sandbox/path assumptions must be adapted and tested before any business cutover.
-
-# V2 LOCAL preparation on verified V1 backup copy — 2026-10-10
-
-Owner authorized steps1–2 after Windows sandbox PASS. Added backup-only110→130 new-copy preparation with complete row/ID/sequence/price/history comparison, image decode/SHA, checked V2 backup/restore and separate V1 rollback proof; new Windows interactive preparation/review launchers3017 and copy-review banner. `V2_LOCAL_PREPARATION_CHECKPOINT.md`, `WINDOWS_V2_LOCAL_PREPARATION.md`. No business DB migration/activation/sold-original cleanup; sandbox guards remain. New tests plus full gate/exact CI required on this implementation commit. Owner copy-data review remains pending; ten-step sandbox Windows PASS remains accepted.
-
-# V2 Windows sandbox accepted by owner — 2026-10-10
-
-Owner reports all ten conversational Windows steps PASS after setup fix, including restart, AVAILABLE rename and full restore/backup again. Runtime source c6f73eae7c8bf02e44f611cee8c1cad7e41d9647; exact Actions38029511584 Linux/Windows22/Windows24/deploy all SUCCESS independently verified. Scope/evidence and remaining release gates: `V2_WINDOWS_ACCEPTANCE_2026-10-10.md`. V2 sandbox Windows acceptance complete; business activation/migration and sold-original cleanup remain unapproved/unimplemented release work. Historical pending-Windows statements below are superseded for this sandbox flow only.
-
-# Windows first-time V2 setup environment fix — 2026-10-10
-
-Owner screenshot shows test:core stopped by the sales sandbox guard: run-self-test cleared drafts/root but inherited SHOP_ENABLE_V2_SALES=1. Clear both flags in isolated runners and clear operational DB/root/flags inside SETUP_FIRST_TIME's SETLOCAL (caller values restored on return). Add Linux/Windows Node22/24 regression running all three setup runners with V2 flags and a protected sentinel caller DB/root. No business data/schema changes. Exact new CI required; owner first-time launch still needs retest.
-
-# Restore result regression fix — 2026-10-10
-
-Review for owner Windows instructions found schema130 restore result missing counts consumed by UI. Return verified row counts, make UI resilient, show correct V2 sales restore launcher, and add real Chromium full-backup→restore READY result coverage. Tests and exact CI must be checked on new commit. This supersedes b001faf for owner download.
-
-# Checkpoint 2026-10-10 — V2 sales sandbox130
-
-Owner requested whole-flow Windows test. Added opt-in actual sandbox sale + immutable SOLD history/relative evidence, coordinated HTTP/watch lock and recovery, role-aware full backup/portable restore and new port3007/3016 launchers. Originals retained; default110 and draft120 unchanged. Scope: `V2_SALES_SANDBOX_CHECKPOINT.md`; acceptance: `WINDOWS_V2_SALES_TEST.md`. Latest CI must be checked for final commit. Not business release/STABLE; image quality/cleanup and owner full Windows/restore acceptance pending. Historical checkpoints below describe earlier revisions.
-
-# V2 copied-order confirmation trial / UI checkpoint — 2026-10-10
-
-Added sandbox orchestration from saved-order preflight to copied DB/photos, trusted derivatives, stage + atomic commit; loopback/origin trial API, same-key retry/status/recovery and explicit copied-only UI with persistent request key/resume after reload. Source draft/stock/ledger/photos unchanged, no operational confirm/SALE/SOLD/deletion/migration. Internal trial/archive areas excluded from scans/import/stock/images/share, lossless backup fails closed on invalid internal registrations. Scope/tests/owner steps: `V2_CONFIRM_TRIAL_CHECKPOINT.md`. Eighteen process-exit points plus HTTP/browser flow; exact new CI required. Default110/draft120 remain; 129 only copied lab. V2 source sales/SOLD backup/restore and V1 owner restore/STABLE still pending.
-
----
-# V2 atomic commit / DB-derived recovery lab — 2026-10-10
-
-Owner authorized continuing. Added copied-database-only schema129 migration/verified backup, atomic SOLD snapshots + UNIQUE image claims + SALE ledger, request/payload idempotency, immutable committed evidence, current-cost capture and zero-price acknowledgement. Recovery now derives COMMITTED/UNCOMMITTED/AMBIGUOUS from real SQLite evidence and journal hashes, not a harness-supplied decision. Eleven hard-process-exit points + two-process contention; source DB/images preserved. Scope/tests: `V2_ATOMIC_COMMIT_CHECKPOINT.md`. **Not wired into server/UI; not operational V2 confirm, no live migration/sale/deletion.** Default110/draft120 unchanged; Windows restore/STABLE and V2 sale release gates remain pending. Exact new CI must be checked; baseline bd4b9b6 Actions38016377754 all SUCCESS.
-
----
-# V2 saved-order preflight checkpoint — 2026-10-10
-
-Read-only whole-draft physical image decode/hash and version revalidation, per-unit issues, draft overlaps, zero-price/unknown-cost warnings, reviewed totals; responsive themed UI invalidates old reports after edits. Sandbox POST preflight uses existing origin/loopback gate. Scope/tests: `V2_PREFLIGHT_CHECKPOINT.md`. No schema/claim/SALE/SOLD/confirm/deletion. V2 not complete; production sales and Windows restore/STABLE gates remain pending. Baseline a37320f exact Actions38015746092 all SUCCESS; new commit requires its own CI verification.
-
----
-# Full restore / V2 derivative backup checkpoint — 2026-10-10
-
-Implemented schema110/120 lossless restore into NEW isolated warehouse/database, remapped paths with verified IDs/rows/files and transactional DB update, preserved source and bundle; READY only after full verification. V2 full backup now includes READY trial-archive JPEG/journals and refuses pending/busy/corrupt sets. Sandbox Cài đặt flow + separate Windows restored launcher3016. Scope/tests/owner steps: `V2_BACKUP_RESTORE_CHECKPOINT.md`. Local restore50 + HTTP57 + prior complete gate PASS; new exact CI required. Full operational sandbox restore now has automated server/launcher proof; shop Windows restore acceptance/STABLE still pending. No SALE/SOLD/confirm/deletion/schema migration.
-
----
-# V2 durable archive / recovery prototype — 2026-10-10
-
-Owner authorized continuing V2. Added sandbox save/verify/recover derivative sets with durable plan/ready journals, source and output SHA validation, idempotent retry, retained originals, responsive UI and protected archive exclusion from stock imports/scans. Added isolated cloned-file staging lab with no-overwrite same-volume movement and all-file fail-closed recovery. Scope/evidence: `V2_ARCHIVE_RECOVERY_CHECKPOINT.md`. Local archive52/staging47 + V1 gate/HTTP43 PASS; check CI on this commit for Windows/browser. No actual SALE/confirm/SOLD/deletion/schema change. Full restore and release gates remain open.
-
----
-# V2 read-only image preview checkpoint — 2026-10-10
-
-Implemented sandbox draft preview: original/optimized JPEG comparison, actual sizes, source checksums/version validation, zero-price/duplicate warnings, responsive themed UI. No sale/archive/staging/deletion/schema change. Local gate + preview16 + HTTP34 PASS; exact Windows/browser CI must be checked on the new commit. Scope, quality approval and remaining gates: `V2_IMAGE_PREVIEW_CHECKPOINT.md`. V1 restore/STABLE and V2 confirm remain pending.
-
----
-# V2 draft duplicate choice / UI checkpoint — 2026-10-10
-
-User reports Windows create/add draft OK and requests explicit duplicate-unit choice plus polished UI as a development rule. Implemented transactional duplicate image-ID detection with fresh conflict token, styled confirmation/cancel dialog, related-draft badges and consistent pastel action buttons. Different units of the same Product/Size remain valid; cancelled/own draft excluded, price-only edits do not prompt again. No schema/stock/ledger/file change. Scope/tests: `V2_DRAFT_DUPLICATE_CHECKPOINT.md`. Mandatory rule for every feature: `DEVELOPMENT_PRINCIPLES.md` — optimize workflow and UI while implementing, not after backend-only completion. Check Actions on this commit for exact CI evidence; V2 sales/restore/STABLE still pending.
-
----
-# V2 draft sandbox implementation — 2026-10-10
-
-Owner authorized “triển khai tiếp đi bro”. Phase 1/2 draft foundation implemented, **sandbox-only / not V2 sales release**: schema120 backup+transaction migration, idempotent create, optimistic update/cancel, snapshots, VND validation, no reservation or stock/ledger/file mutations, real API and inventory-to-draft UI. Scope/evidence/rollback: `V2_DRAFT_CHECKPOINT.md`. Windows steps: `WINDOWS_V2_DRAFT_TEST.md`, `RUN_WINDOWS_V2_DRAFT_TEST.bat` (isolated V2DraftSandbox/port3006).
-
-Default LOCAL remains V1 schema110; experimental flag requires sandbox, rejects absent sandbox before DB opening. No confirm/SALE/SOLD/archive/deletion yet. V1 full restore/STABLE remains a release gate; owner-reported Windows PASS retained. Check exact new Actions run for Windows CI/browser proof; local service39 and HTTP23 PASS, local Chromium unavailable. Remaining V2 phases: archive/journal/recovery, atomic sale, all-module eligibility and complete backup/restore.
-
----
-# V1 Windows user acceptance / V2 logic preparation — 2026-10-10
-
-User reports “v1 mình đã test ổn rồi bro” and requests V2 logic preparation. Record **Windows V1 USER-REPORTED PASS**, not historical PRE-WINDOWS. Delivered baseline f35375835757457bc7011f127a32f96d3856a060; Actions 37945599496 SUCCESS verified again. Scope/evidence limits: `V1_ACCEPTANCE_CHECKPOINT_2026-10-10.md` (full operational restore proof still pending; no inferred per-app clipboard results).
-
-V2 specification/checklist prepared: `V2_SALES_LOGIC_SPEC.md`, `V2_IMPLEMENTATION_CHECKLIST.md`. **PROPOSED / documentation only**, no V2 runtime, schema migration, image deletion or stock mutation. User preference for optimized sold-image retention is captured; draft/no-reservation, confirmed-order immutability, pricing and cleanup mechanics need approval before code. V1 STABLE checkpoint/full restore gate remains distinct from the user's successful Windows use report.
-
----
-# V1 inventory send checkpoint — 2026-10-09
-
-User approved stock-image selection and fast multi-image copy/share. Implemented Size/Product/filter groups, Shift range, large viewer, bottom action bar and Windows native CF_HDROP source bridge; mobile Web Share preparation is capability gated. Scope, proof and Windows paste checklist: `V1_INVENTORY_SEND_CHECKPOINT.md`. No inventory writes/schema migration; V1 NOT STABLE, V2 blocked. Windows bridge compilation/format and new-process native clipboard round-trip are checked by Windows CI; actual Ctrl+V into each Zalo/Messenger variant and real mobile share remain UNVERIFIED until shop acceptance. Check Actions for the exact delivered commit; old runs do not prove new changes.
-
----
-# V1 desktop experience checkpoint — 2026-10-09
-
-User approved comprehensive compact UI optimization. Six modules now offer remembered Gọn / Thoải mái; desktop layouts reduce spacing and use horizontal KPIs/forms/cards, while mobile tap targets stay unchanged. Evidence/scope: `V1_DESKTOP_EXPERIENCE_CHECKPOINT.md`. Browser matrix covers both densities/themes at 1366×768 and 1920×1080 plus mobile and mocked LOCAL workflows. Check latest Actions for the delivered commit. User reported the preceding Windows build works; this UI revision and complete restart/rename/full restore still need shop acceptance. **V1 NOT STABLE; V2 blocked.** Historical statements below are not proof for this revision.
-
----
-# Windows EPERM acceptance blocker — 2026-10-09
-
-User's Windows Node 24.21 setup failed in receiveGoods at fsync: copied images were opened read-only. The same defect affected physical rename. Both COPY targets now open r+ (writable, no truncation); flush failures still abort safely. Regression tests enforce Windows-like writable-flush rules, including rename crash workers. CI now runs isolated internal and real HTTP gates on Windows Node 22 and 24 before Pages deploy. Windows CI is not full shop acceptance / complete restore; V1 remains NOT STABLE. Check Actions for this fix's exact commit.
-
----
-# V1 warehouse upgrade checkpoint — 2026-10-09
-
-User approved groups 1–9 and automatic-scan notifications. Local tests PASS: 45 HTTP assertions, warehouse crash/recovery tests, build/typecheck/core/performance and Chromium desktop/mobile. Details and limits: `V1_WAREHOUSE_UPGRADE_TEST_REPORT.md`; approval: `V1_WAREHOUSE_UPGRADE_SPEC.md`. User reported one successful Windows import scenario, not full acceptance. **V1 NOT STABLE; Windows full acceptance and full restore UNVERIFIED; V2 blocked.** Historical checkpoints below do not prove this revision. Verify Actions for the delivered commit.
-
----
-# Authoritative V1 checkpoint — 2026-10-09
-
-Status: **LOCAL AUTOMATED GATES PASS; Windows / full restore UNVERIFIED; V1 NOT STABLE.** See `V1_FINAL_PREFLIGHT_2026-10-09.md` for current source changes, executed evidence, scope and remaining gates. This supersedes every historical statement below. Check the latest Actions run independently; do not use an older run as proof for new code. V2 remains blocked.
-
----
-# Latest V1 pre-Windows quality checkpoint — 2026-10-08
-
-**Status: AUTOMATED PRE-WINDOWS GATE PASS at GitHub Actions run 37729772120; real Windows test UNVERIFIED; V1 NOT STABLE.** This section supersedes historical progress statements below.
-
-- [PASS] TypeScript/web/API build, schema110 migration snapshots via SQLite VACUUM INTO, isolated SQLite core tests, 16 UI source regressions and Chromium mobile smoke screenshots.
-- [PASS] Real HTTP server exercised on temporary Linux warehouse: **HTTP_API_ACCEPTANCE PASS (26 assertions)** covering scan/import approval, 3 receipt flows, duplicate rejection, physical-vs-ledger separation, four original SHA hashes, full lossless backup verification, server restart/persistence.
-- [PASS] Crash-safety simulation: separate worker forcibly exits after first copied image and separate new worker recovers only the uncommitted copy; source originals are unchanged. Mixed-commit/corrupt-file journals fail closed rather than deleting ambiguous warehouse files.
-- [PASS] Receipt workflow journals planned target filenames and SHA-256 before copying; SQLite WAL synchronous=FULL; existing Size scanner idempotently incorporates new images without duplicating their registration.
-- [PASS] Manual full backup now includes byte-identical physical images + SQLite + SHA-256 checks; legacy DB-only and lossy optimized backups are clearly labeled as partial/non-lossless.
-- [PASS] UI smoke at 320/390/430/768 width, dark-mode contrast, product chart labels, six-tab navigation, smart search, toggleable dashboards and screenshotted browser evidence.
-- [PREPARED] One-click Windows *isolated* test: `RUN_WINDOWS_V1_SAFE_TEST.bat`; help in `WINDOWS_V1_ACCEPTANCE_TEST.md`; test-only port 3005, sandbox under LOCALAPPDATA. Actual Windows execution remains pending.
-- [BLOCKER] Full lossless restore into an operational Windows warehouse path has **not** been proven. Journal corruption during an interrupted partial copy intentionally halts for manual review; true live progress streaming is not implemented. No external LAN authentication. Never test writes directly on the real D: warehouse.
-- [RELEASE] V1 may enter disposable Windows acceptance after latest CI passes, but must remain NOT STABLE until real Windows test and recovery protocol review pass. Do not begin V2.
-
----
-# V1 CURRENT STATUS — 2026-10-08 (authoritative; supersedes older checkpoints)
-
-**Buildable DEMO UI: PASSED browser regression on commit 3b537594 (GitHub Actions 37716663127, verify + deploy SUCCESS).** Further six-tab browser checks are committed and require their own CI result. **Windows business-data acceptance: NOT PASSED / NOT EXECUTED. V1 remains NOT STABLE.**
-
-- Four collapsible dashboards are now above task content: overview, catalog, goods receipts and inventory. Large branding banner is compact and placed below overview analytics.
-- Responsive inventory chart regression corrected: product labels render horizontally above each bar, not in the obsolete 60px three-column CSS grid.
-- Dark mode contrast corrected for catalog/inventory KPIs, drawer search (light background remains), product ranks, inventory heading and goods receipt metrics.
-- The GitHub Actions V1 gate now runs web/API TypeScript, schema migration self-test, isolated real SQLite core tests, production build, 16 source UI regression checks, and Chromium browser testing with screenshot artifacts. Browser checks cover 390px navigation, visual overflow, KPI contrast, fold/unfold and search. Additional 320/430/768px and six-tab coverage are being integrated.
-- Product search, Size suggestions, stock filters and product charts use registered existing physical image counts. Ledger remains separate for history and reconciliation.
-- **Open safety gates:** power-loss recovery journal for mixed filesystem/DB goods receipts; genuine streaming progress; backup/restore of original images; end-to-end verification of all write flows on a disposable Windows warehouse; real iPhone acceptance. Existing full database snapshot/optimized-image backup is not a substitute for proving full restore.
-- Never point destructive or acceptance experiments at the customer's real D: inventory. Test on a copy with verifiable before/after manifests.
-
----
-# PROJECT STATE — SHOP MECACAO WEB
-
-Updated: 2026-10-06
-
-## Current baseline
-- Version: **V0.1.2**
-- Codename: **Foundation Stable**
-- Status: **V1.0 REOPENED — UX + PHYSICAL-INVENTORY IMPLEMENTATION**
-- Stable baseline: **YES**
-- Foundation acceptance: **PASS — Windows laptop + iPhone GitHub Preview**
-- V1 acceptance: **NOT PASS / REOPENED** after real Windows UX review.
-
-## Architecture decisions — APPROVED
-1. Greenfield; không phụ thuộc core desktop cũ.
-2. Local-first web app.
-3. React + TypeScript + Vite + PWA frontend.
-4. Node.js + Express local API.
-5. SQLite local database via built-in `node:sqlite`.
-6. Không dùng native SQLite npm addon cần Visual Studio Build Tools.
-7. GitHub = source/version/preview; không lưu dữ liệu shop thật.
-8. GitHub Pages = DEMO/PREVIEW.
-9. Local production = `http://localhost:3000`.
-10. Development gate: Proposal → Approve → Implement → Internal checks → User Test → PASS → Baseline.
-11. Không giao user test khi chưa qua pre-test gate; phần không thể xác minh phải ghi UNVERIFIED.
-
-## V0.1.2 PASS checklist
-- [x] GitHub repository/source.
-- [x] GitHub Actions install/build.
-- [x] GitHub Pages deploy.
-- [x] iPhone preview.
-- [x] DEMO mode detection.
-- [x] Windows Node/npm environment.
-- [x] `SETUP_FIRST_TIME.bat` → SETUP PASS.
-- [x] API/frontend production build.
-- [x] `START_SHOP.bat` startup patch.
-- [x] `http://localhost:3000` reachable.
-- [x] LOCAL mode detection.
-- [x] `data/shop.db` created.
-
-## Defects found and closed
-1. `better-sqlite3` required native compilation/Visual Studio Build Tools on Node 24.
-   - Resolution: replaced with built-in `node:sqlite`.
-2. Initial Windows startup script opened browser while server was unavailable / quoting was fragile.
-   - Resolution: V0.1.2 startup waits for `/api/health` before opening browser and preserves server error output.
-
-## Known non-blocking item
-- GitHub Preview mobile navigation can overflow horizontally; defer UI polish until feature UI exists.
-
-## 2026-10-07 V1 acceptance candidate
-- Schema target: **110**, per-size/SKU current pricing.
-- Automatic pre-migration snapshot for existing schema 100 before migration to 110.
-- Daily **Nhập hàng** flow added separately from existing-store onboarding.
-- Goods receipt supports existing/new Product and Size, per-size quantity/prices, physical image COPY into canonical warehouse, source-folder image counting, confirmed quantity override, ledger `IMPORT`, rollback, and progress phases.
-- **Superseded 2026-10-07:** physical inventory is now image-backed for Shop Mẹ CaCao: one existing canonical Size image represents one physical item. Ledger remains audit/history and must be reconciled against physical images; mismatches are explicit, never silently rewritten.
-- GitHub Actions run **37636041261**: verify SUCCESS + deploy SUCCESS.
-- Windows real-runtime/real-warehouse acceptance remains **UNVERIFIED** until user executes acceptance procedure.
-
-## Next milestone
-**V1.0 — Product + SKU + Inventory Ledger**
-
-Status: **IMPLEMENTING — inventory operations/history UI committed; automated gate next**
-
-Specification: `V1_SPEC.md`
-
-Approved decisions: size tự do; storage theo `1-Me CaCao Store/<Tên sản phẩm>/<Size>/ảnh`; mã/SKU được gợi ý tự động nhưng người dùng được chọn/chỉnh trước khi lưu.
-
-
-## V1.0 implementation progress
-- [x] Specification locked.
-- [x] SQLite schema v100: categories, products, variants, images, inventory ledger, settings.
-- [x] Derived stock view; no direct stock column.
-- [x] API/service layer.
-- [x] Product/SKU engine/workflows (backend).
-- [x] Existing folder/image scanner backend (read-only preview).
-- [x] Import approval/commit backend with explicit confirmation + DB rollback.
-- [x] Product/Inventory list UI + store scanner preview UI.
-- [x] Import edit/approval UI with explicit confirmation.
-- [x] Inventory operations/history UI source committed.
-- [x] Isolated disposable test database runner.
-- [x] Store import commit/rollback self-test source.
-- [x] Backup creation self-test source.
-- [x] Automated test gate and 390px Chromium browser smoke PASS (run 37716663127, 2026-10-08).
-- [ ] User acceptance test.
-
-## Internal Gate Evidence — 2026-10-06
-- GitHub Actions run 37486889569: verify SUCCESS, deploy SUCCESS.
-- TypeScript web/API: PASS.
-- SCHEMA_SELF_TEST: PASS (blank, reopen, future-version guard, legacy guard, corrupt-version guard).
-- SELF_TEST_V1: PASS (ledger, rollback, filters/settings/inactive, image pipeline, persistence/integrity/FK, store import rollback, backup cleanup).
-- Production build: PASS.
-- GitHub Pages deploy: PASS.
-- Remaining: Windows/local real warehouse acceptance; physical image-copy backup policy; dependency security audit (npm reported 2 critical vulnerabilities during install).
-
-## Pre-Acceptance Checkpoint — optimized image backup
-- GitHub Actions run 37489137893: verify SUCCESS, deploy SUCCESS.
-- Production dependency audit: 0 vulnerabilities at critical gate (dev/tooling warnings remain isolated from production audit).
-- Sharp install/runtime on CI: PASS through core integration test.
-- Manual optimized image backup: PASS (real JPEG generation, resize max 1920, quality 85, no enlargement, physical backup file verified, reduced-byte assertion on test fixture).
-- Image backup is manual only; no automatic physical image backup task exists.
-- Original warehouse images remain untouched.
-- V1 is ready for consolidated Windows/local acceptance after acceptance package/instructions are prepared.
-
-
-## 2026-10-07 — Approved V1 UX / inventory baseline
-- V1 remains REOPENED until DATA + BUSINESS + FILESYSTEM + UX + WINDOWS gates pass.
-- UI direction: colorful Shop Mẹ CaCao identity (pink/yellow/mint/baby-blue/cream), logo/banner assets, consistent controls and responsive states.
-- Danh mục sản phẩm = catalog/dashboard, not a duplicate inventory list.
-- Tồn kho = inventory dashboard + Windows-Explorer-style Product → Size → physical images.
-- Inventory dashboard: total physical stock, products, Size/SKU, out-of-stock, Top 5 high stock, Top 5 lowest positive stock, stock by Size, reconciliation warnings.
-- Inventory search autocompletes existing Product / product code / SKU / Size with physical counts; automatic browser scenarios cover core navigation, and further Windows validation is still required.
-- Physical stock rule: **1 existing canonical image in a Size = 1 physical item in stock**. Missing physical image reduces physical count; ledger/image mismatch is shown for reconciliation.
-- Images in Size gallery are selectable. Selection is V1 foundation for future send-to-customer, order, sale and closing-slip workflows; selection itself never performs SALE.
-- Nhập hàng UX must have 3 explicit flows: (1) completely new Product, (2) new Size for existing Product, (3) additional stock for existing Product+Size. Existing Product/Size/SKU values must be selectable/autofilled.
-- Incoming goods, folder picker, real-time progress, crash recovery and scanner reconciliation remain IMPLEMENTING / UNVERIFIED until deep regression passes.
-
-## 2026-10-08 — V1 deep audit (work in progress)
-- Latest UI baseline: official logo/banner committed, feature drawer, responsive product cards, physical-stock dashboard; GitHub DEMO charts explicitly illustrative.
-- Goods receipt hardening commits: ec4f449 (reject SHA-256 duplicate images and self-import from canonical Size folder), 4392cbc (folder picker stale-state fix; remove misleading post-response progress replay).
-- Physical stock remains count of existing registered canonical image files; ledger is a separate audit balance. `inventoryRows` and product-list totals have since been migrated to physical-image counts; the former statement was the 08:00 audit finding and is superseded by the authoritative status above.
-- No-image goods receipt is **currently explicitly rejected**, not silently posted as physical stock. Separate ledger-only workflows remain distinct and need UX clarification.
-- Progress is **not live-streamed**; API currently returns phase events only after synchronous completion. UI must not imply live progress.
-- Crash-safe journaling/recovery and full restore testing remain **OPEN**.
-- CI verification for the newest commits: **PENDING at time of this update**. Do not infer PASS from older workflow runs.
-- Real Windows D: warehouse acceptance, actual restart, image-original protection, restore and iPhone visual acceptance: **UNVERIFIED**. Never use real warehouse for destructive testing.
-- V1 status: **NOT STABLE / NOT ACCEPTED**. No V2.
+[Nhật ký trạng thái trước checkpoint tổng hợp](docs/history/PROJECT_STATE_BEFORE_MAIN_CHECKPOINT_2026-10-10.md) được giữ nguyên để truy vết. Các dòng “default V1”, “V3 BACKLOG”, “không có bán”, “progress không live” hoặc gate chuyển DB trong checkpoint cũ chỉ mô tả các bản cũ; không thay thế trạng thái hiện tại ở đây.

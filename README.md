@@ -14,6 +14,7 @@ Bản đầy đủ kế thừa chức năng kho/nhập/chọn ảnh/bán hàng/b
 
 Không yêu cầu DB V1, backup V1 hoặc các launcher PREPARE/ACTIVATE để chạy bản phát triển này. Các tài liệu chuyển kho cũ là lịch sử và công cụ tương thích tùy chọn.
 
+- [Tổng hợp chức năng main, kiến trúc và nền tảng chặng tiếp](MAIN_CHECKPOINT_2026-10-10.md)
 - [Bắt đầu chặng 2](BAT_DAU_CHANG_2.txt)
 - [Chức năng, kiến trúc và quy tắc chặng 2](STAGE2_CUSTOMERS_PNG.md)
 - [Bằng chứng kiểm thử và giới hạn](STAGE2_TEST_REPORT.md)
@@ -27,6 +28,6 @@ Không yêu cầu DB V1, backup V1 hoặc các launcher PREPARE/ACTIVATE để c
 - `CHANGELOG.md`: lịch sử baseline/fix.
 - `ROADMAP.md`: roadmap và gate.
 
-### Thử full restore ở vị trí mới
+### Phục hồi thử trên bản main
 
-Trong Cài đặt sandbox: backup đầy đủ → Phục hồi thử sang kho mới → READY. Chạy `RUN_WINDOWS_RESTORED_SANDBOX_TEST.bat` chọn1 V2 / 2 V1 để mở3016; source3005/3006 giữ nguyên. Scope/evidence/Windows steps: [V2_BACKUP_RESTORE_CHECKPOINT.md](V2_BACKUP_RESTORE_CHECKPOINT.md). Chưa tự chuyển DB đang dùng hay release bán hàng.
+Cài đặt → Backup đầy đủ → Phục hồi thử sang vùng mới → kiểm tra READY. Luồng này không thay DB/kho đang chạy. Các launcher sandbox/V1→V2 riêng còn trong source để tương thích và kiểm thử; không phải bước cài bản main. Xem [checkpoint main](MAIN_CHECKPOINT_2026-10-10.md) để biết phạm vi hiện tại và các giới hạn.

@@ -14,7 +14,7 @@ Bổ sung theo yêu cầu chủ shop ngày 2026-10-10. Áp dụng cho mọi ch�
 
 - Làm xuyên suốt database → service → API → giao diện → module liên quan → kiểm thử. Hiển thị trạng thái loading, rỗng, lỗi, thành công đúng kết quả thật.
 - Luồng dễ hiểu: chọn hàng, thêm/bỏ, lưu, quay lại và cảnh báo đúng lúc; hạn chế nhập lại và thao tác dư. Thao tác chưa lưu, xung đột hoặc lặp lại phải được giải thích để người dùng lựa chọn.
-- Nút có vai trò và màu nhất quán: hành động chính hồng, thêm hàng mint, quay lại/hủy phụ màu trung tính, bỏ hàng hồng nhạt, cảnh báo vàng/kem. Có chữ rõ; không chỉ dùng màu để phân biệt. Không để nút/select mặc định thô trong chức năng mới.
+- Nút có vai trò và màu nhất quán: hành động chính hồng đậm, các nhóm chức năng xanh/cam/tím dễ phân biệt, quay lại/hủy phụ rõ ràng, cảnh báo cam/vàng có chữ đậm. Ưu tiên tương phản đủ đọc, không dùng nền pastel quá nhạt làm các chức năng lẫn nhau. Có chữ rõ; không chỉ dùng màu để phân biệt. Không để nút/select mặc định thô trong chức năng mới.
 - Đồng bộ chữ, khoảng cách, bo góc, ảnh đúng tỷ lệ, hover/focus/disabled/busy; gọn trên Windows, dễ chạm trên điện thoại. Phải kiểm tra Gọn/Thoải mái, sáng/tối, không tràn ngang; desktop không kéo dài vô ích.
 - Dialog nêu rõ nguyên nhân, hàng/đơn bị ảnh hưởng và lựa chọn tiếp tục hoặc quay lại; hỗ trợ bàn phím, Escape, quản lý focus; không tự xác nhận thay người dùng.
 - Rà các tab liên quan sau thay đổi. Kiểm thử luồng thật từ chọn hàng đến kết quả, bao gồm cảnh báo và nhánh hủy; không chỉ kiểm tra nút có xuất hiện. CI PASS chưa thay thế nghiệm thu Windows của chủ shop.
@@ -29,4 +29,8 @@ Bổ sung theo yêu cầu chủ shop ngày 2026-10-10. Áp dụng cho mọi ch�
 
 ## An toàn dữ liệu và checkpoint
 
-Giữ tồn thực tế theo ảnh đã đăng ký còn hiện hữu; ledger chỉ lịch sử/đối soát. Giữ ảnh nguồn, transaction/rollback/recovery, backup và restore đã kiểm chứng. Không thay schema, cấu trúc kho, số tồn hoặc xóa file âm thầm. Tách đã triển khai, CI PASS, Windows user PASS và STABLE; V2 sandbox nháp không có nghĩa đã release bán hàng hoặc hoàn tất gate V1 restore.
+Giữ tồn thực tế theo ảnh đã đăng ký còn hiện hữu; ledger chỉ lịch sử/đối soát. Giữ ảnh nguồn, transaction/rollback/recovery, backup và restore đã kiểm chứng. Không thay schema, cấu trúc kho, số tồn hoặc xóa file âm thầm. Tách đã triển khai, CI PASS, Windows user PASS và STABLE. Main hiện đã có bán hàng/restore trong bản phát triển 3.0.1-stage2; các gate chuyển DB V1 lịch sử không phải điều kiện khởi chạy bản phát triển mới. Không coi CI là nghiệm thu trên máy chủ shop.
+
+## Baseline để tiếp tục
+
+Đọc `PROJECT_STATE.md` và `MAIN_CHECKPOINT_2026-10-10.md` trước checkpoint lịch sử. `START_SHOP.bat` là launcher chính. Quyền đưa phần đã duyệt lên main và chạy CI đã có; ý tưởng mới ngoài phạm vi cần đề xuất riêng. Không phát triển tự động chặng 3 chỉ từ yêu cầu tổng hợp nền tảng.
