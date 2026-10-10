@@ -96,6 +96,8 @@ export function lanApiAllowed(role:LanRole,rawMethod:string,rawPath:string){
    /^\/api\/sales\/drafts\/sold-retention(?:\/\d+\/verify)?$/,
    /^\/api\/sales\/drafts\/reports\/(?:summary|export\.csv)$/
   ].some(re=>re.test(p)))return true
+  // Reserved route segments must never be interpreted as an arbitrary order ID.
+  if(/^\/api\/sales\/drafts\/(?:stocktakes|sold-retention|reports|recover|archives)(?:\/|$)/.test(p))return false
   if(role==='owner'||role==='cashier'){
    return [
     /^\/api\/sales\/drafts$/, /^\/api\/sales\/drafts\/customers$/,
