@@ -13,6 +13,7 @@ export class ApiError extends Error{constructor(message:string,public status:num
 export async function apiJson<T=any>(url:string,options?:RequestInit):Promise<T>{
  const r=await fetch(url,options)
  const data=await r.json()
+ if(r.status===401)window.dispatchEvent(new Event('mecacao-lan-expired'))
  if(!r.ok)throw new ApiError(data.error||'Không đọc được dữ liệu từ máy chủ',r.status,data)
  return data as T
 }
