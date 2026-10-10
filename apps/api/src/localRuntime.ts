@@ -48,5 +48,9 @@ export function claimRuntime(config:NonNullable<typeof localRuntime>){
 export function legacyWarehouseActive(db:DatabaseSync){
   if(!db.prepare("SELECT 1 FROM sqlite_master WHERE name='product_images'").get())return false
   const roots=new Set(db.prepare('SELECT file_path FROM product_images').all().map(row=>path.dirname(path.dirname(path.dirname(String(row.file_path))))))
+  if(db.prepare("SELECT 1 FROM sqlite_master WHERE name='app_settings'").get()){
+    const watch=db.prepare("SELECT value FROM app_settings WHERE key='warehouse-watch'").get()
+    if(watch){const root=JSON.parse(String(watch.value)).rootPath;if(typeof root==='string'&&path.isAbsolute(root))roots.add(root)}
+  }
   return [...roots].some(root=>fs.existsSync(path.join(root,ACTIVE_MARKER)))
 }

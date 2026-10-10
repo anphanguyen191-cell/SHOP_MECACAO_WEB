@@ -345,6 +345,8 @@ button.overviewStat:focus-visible{outline:3px solid #aa4d79;outline-offset:3px}
 
 /* Dedicated Windows acceptance sandbox warning; never confuse with LOCAL real data */
 .sandboxSafetyBanner{padding:11px 18px;background:#fff1b6;color:#6f3c00;border:2px solid #e8b04c;border-left:0;border-right:0;font-size:12px;font-weight:850;text-align:center;line-height:1.5}
+.businessSafetyBanner{background:#e3f6ef;border-color:#87c8ae;color:#18553e;overflow-wrap:anywhere;text-align:left}
+.themeDark .sandboxSafetyBanner.businessSafetyBanner{background:#173e34;border-color:#71c5a0;color:#d9fff0}
 .badge.test{background:#ffe187;color:#74420a;border:1px solid #d69f3c}
 .themeDark .sandboxSafetyBanner{background:#664315;border-color:#ffc15c;color:#fff4cb}
 .themeDark .badge.test{background:#ffe187;color:#74420a}

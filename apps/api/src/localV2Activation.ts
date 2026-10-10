@@ -20,6 +20,9 @@ export function activateLocalV2(packageRoot:string,sourceDatabase:string,dataRoo
   const release=checkLocalV2Release(packageRoot,ready.sourceBundle)
   if(release.status!=='TECHNICALLY_READY_FOR_REVIEW')throw Error('Gói duyệt chưa đạt: '+release.checks.filter(c=>!c.ok).map(c=>c.message).join('; '))
   const manifest=JSON.parse(exactFile(path.join(ready.sourceBundle,'lossless-manifest.json')).toString())
+  const required=manifest.files.reduce((n:bigint,f:{size:number})=>n+BigInt(f.size),0n)*2n+BigInt(fs.statSync(ready.candidate.database).size)*3n+64n*1024n*1024n
+  const volume=fs.statfsSync(path.dirname(dataRoot),{bigint:true})
+  if(volume.bavail*volume.bsize<required)throw Error('Không đủ dung lượng backup/restore trước kích hoạt. Cần ít nhất '+required+' bytes trống; chưa tạo DB V2')
   const images=manifest.files.map((f:{id:number;source_path:string;sha256:string})=>({id:f.id,relative:path.relative(warehouse,f.source_path),sha256:f.sha256}))
   function frozen(){const source=new DatabaseSync(sourceDatabase,{readOnly:true});try{source.exec('BEGIN');if(source.prepare("SELECT value FROM app_metadata WHERE key='schema_version'").get()?.value!=='110'||businessSnapshot(source,warehouse).sha256!==ready.baseline.sha256)throw Error('V1 thay đổi sau backup; tạo backup và gói duyệt mới');for(const f of images)exactFile(path.join(warehouse,f.relative),f.sha256)
     const registered=new Set(images.map((f:{relative:string})=>path.join(warehouse,f.relative)))
