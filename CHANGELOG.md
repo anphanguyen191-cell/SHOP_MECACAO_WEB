@@ -1,3 +1,9 @@
+## Global UI Refresh — Checkpoint 1–5 (2026-10-11, WIP)
+- Chuẩn hóa màu viền thẻ Dashboard, Danh mục và Tồn kho; cải thiện độ rõ nội dung ở dark mode.
+- Đồng bộ các khối biểu mẫu Nhập hàng, Bán hàng, Khách hàng, Tài chính, Công nợ, Báo cáo, Kiểm kê, Ảnh SOLD, Ảnh iPhone và Cài đặt.
+- Chỉ bổ sung stylesheet `globalUIRefresh.css` sau các CSS cũ và kiểm tra nguồn; không thay API, schema, transaction hay ảnh.
+- Chưa nghiệm thu visual Windows/iPhone thật, không đánh dấu STABLE.
+
 ## 3.3.1-stage6-main-test — 2026-10-11
 - Theo yêu cầu chủ shop: chọn kho tự tạo trên laptop qua UI, không cần marker/CREATE_MAIN_TEST_WAREHOUSE.bat; dùng đầy đủ nhập/scan/import/rename/bán/tiền/backup như LOCAL.
 - Giữ fresh DB bản cài, chọn kho trước khi có dữ liệu, tự restart và mở lại giữ kho. Giữ chặn root/app-data/symlink/kho bản cài khác, transaction/recovery và quyền LAN.

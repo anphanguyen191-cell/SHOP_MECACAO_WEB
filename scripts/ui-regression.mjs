@@ -67,3 +67,12 @@ must(read('apps/api/src/lanPhotoRoutes.ts').includes('allowedLocalGet(req)'),'Ap
 
 const receiptSource=read('apps/web/src/GoodsReceipt.tsx')
 must(receiptSource.includes('reviewedPhotoSource.current')&&receiptSource.includes('void inspect(0,reviewedPhotoSource.current)'),'Reviewed iPhone photo source must survive switching Product/Size without auto-registering stock')
+
+const globalUi=read('apps/web/src/globalUIRefresh.css')
+const entry=read('apps/web/src/main.tsx')
+must(entry.includes("import './globalUIRefresh.css'"),'Global UI stylesheet loaded after existing design layers')
+for(const selector of ['overviewStats','catalogMetrics','inventoryMetrics','salesEditor','receipt','reportPanel','stocktakePanel','soldRetentionPage','phoneInbox','settingsSection']){
+ must(globalUi.includes(selector),'Global UI should cover '+selector)
+}
+must(globalUi.includes('.shell.themeDark'),'Global UI preserves dark-mode contrast')
+must(globalUi.includes('@media(max-width:760px)'),'Global UI supports mobile layouts')

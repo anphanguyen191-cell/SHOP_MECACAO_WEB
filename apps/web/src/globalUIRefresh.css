@@ -1,0 +1,47 @@
+/* Shop Mẹ CaCao UI checkpoint 1 — visual-only desktop/mobile */
+.shell{--ui-pink:#b44f82;--ui-blue:#3989c5;--ui-amber:#bd872b;--ui-green:#348764;--ui-violet:#8862bb}
+.shell :is(.overviewStat,.catalogMetrics article,.inventoryMetrics article,.card,.inventoryCard){border:1px solid var(--mc-border);border-radius:18px;box-shadow:var(--mc-shadow);min-width:0}
+.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics)>*:nth-child(5n+1){border-left:5px solid var(--ui-pink)}
+.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics)>*:nth-child(5n+2){border-left:5px solid var(--ui-blue)}
+.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics)>*:nth-child(5n+3){border-left:5px solid var(--ui-amber)}
+.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics)>*:nth-child(5n+4){border-left:5px solid var(--ui-green)}
+.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics)>*:nth-child(5n){border-left:5px solid var(--ui-violet)}
+.shell.themeDark :is(.overviewStats,.catalogMetrics,.inventoryMetrics)>*{background:var(--mc-surface)!important;color:var(--mc-ink)!important}
+.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics) :is(strong,small,span){overflow-wrap:anywhere}
+.shell :is(.catalogPanel,.inventoryFilters,.inventoryHeading,.inventoryCard,.overviewPanel){border-color:var(--mc-border);color:var(--mc-ink)}
+.shell .inventoryCard:hover,.shell .product:hover{border-color:var(--mc-accent);box-shadow:0 8px 25px #3f233919}
+@media(max-width:760px){.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics){grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.shell :is(.inventoryHeading,.catalogPanelHeading){flex-wrap:wrap;gap:12px}}
+
+/* Checkpoint 2/5 — forms: receiving, sales, customer records */
+.shell :is(.receiptIntro,.receipt,.receiptOverview,.warehouseWorkspace,.salesList,.salesEditor,.salesArchivePanel,.customerPanel,.customerEditor,.customerList){background:var(--mc-surface);color:var(--mc-ink);border:1px solid var(--mc-border);border-radius:var(--mc-radius-lg);box-shadow:var(--mc-shadow);min-width:0}
+.shell :is(.receipt,.salesEditor,.warehouseWorkspace) :is(input,select,textarea){min-width:0;max-width:100%;background:var(--mc-input);color:var(--mc-ink);border-color:var(--mc-border)}
+.shell :is(.receipt,.salesEditor,.warehouseWorkspace) :is(label,small){line-height:1.45}
+.shell :is(.receipt,.salesEditor,.warehouseWorkspace) :is(.primary,button[type=submit]){min-height:44px;border-radius:14px;font-weight:750}
+.shell :is(.salesList,.salesEditor,.receipt,.warehouseWorkspace) :is(h2,h3,strong){overflow-wrap:anywhere}
+.shell.themeDark :is(.receipt,.salesEditor,.warehouseWorkspace,.salesList) :is(input,select,textarea){background:var(--mc-input)!important;color:var(--mc-ink)!important}
+@media(max-width:760px){.shell :is(.receipt,.salesEditor,.salesList,.warehouseWorkspace){padding:clamp(12px,3vw,19px)}.shell :is(.formGrid,.receiptRow){gap:12px}.shell .receiptRow>*{min-width:0}}
+
+/* Checkpoint 3/5 — finance, reports and stocktake */
+.shell :is(.financePanel,.debtPanel,.reportPanel,.stocktakePanel,.stocktakeCard,.aftercarePanel,.reportCard,.financeCard){background:var(--mc-surface);color:var(--mc-ink);border:1px solid var(--mc-border);border-radius:var(--mc-radius-lg);box-shadow:var(--mc-shadow);min-width:0}
+.shell :is(.reportPanel,.stocktakePanel,.financePanel,.debtPanel) :is(h2,h3,strong){color:var(--mc-ink);overflow-wrap:anywhere}
+.shell :is(.reportPanel,.stocktakePanel,.financePanel,.debtPanel) :is(input,select,textarea){color:var(--mc-ink);background:var(--mc-input);border-color:var(--mc-border);min-width:0}
+.shell :is(.reportPanel,.stocktakePanel,.financePanel,.debtPanel) :is(table,[role=table]){width:100%;font-variant-numeric:tabular-nums}
+.shell :is(.reportPanel,.stocktakePanel,.financePanel,.debtPanel) :is(th,[role=columnheader]){font-size:12px;letter-spacing:.025em;color:var(--mc-subtle);text-align:left}
+.shell :is(.reportPanel,.stocktakePanel,.financePanel,.debtPanel) :is(td,th){padding:11px 9px;border-bottom:1px solid var(--mc-border)}
+.shell :is(.reportPanel,.stocktakePanel,.financePanel,.debtPanel) :is(.primary,button[type=submit]){min-height:44px;font-weight:750;border-radius:14px}
+.shell .warning{line-height:1.5}
+@media(max-width:760px){.shell :is(.financePanel,.debtPanel,.reportPanel,.stocktakePanel){max-width:100%;overflow-wrap:anywhere}.shell :is(.reportPanel,.stocktakePanel) :is(table,[role=table]){display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}}
+
+/* Checkpoint 4/5 — SOLD evidence, iPhone photo inbox, settings & system feedback */
+.shell :is(.soldRetentionPage,.phoneInbox,.settingsPage){color:var(--mc-ink);min-width:0}
+.shell :is(.soldRetentionIntro,.soldRetentionCard,.phoneInboxCard,.phoneInboxHeader,.phoneInboxSummary>div,.phoneInboxUpload,.phoneInboxReviewNotice,.settingsSection){background:var(--mc-surface);color:var(--mc-ink);border:1px solid var(--mc-border);border-radius:var(--mc-radius-lg);box-shadow:var(--mc-shadow)}
+.shell :is(.soldRetentionCard,.phoneInboxCard,.settingsSection) :is(h2,h3,b,strong){color:var(--mc-ink);overflow-wrap:anywhere}
+.shell :is(.soldRetentionPage,.phoneInbox,.settingsPage) :is(p,small){line-height:1.55}
+.shell :is(.soldRetentionPage,.phoneInbox,.settingsPage) :is(input,select,textarea){background:var(--mc-input);color:var(--mc-ink);border-color:var(--mc-border)}
+.shell .phoneInboxSummary>div:nth-child(3n+1){border-top:4px solid var(--ui-pink)}
+.shell .phoneInboxSummary>div:nth-child(3n+2){border-top:4px solid var(--ui-blue)}
+.shell .phoneInboxSummary>div:nth-child(3n){border-top:4px solid var(--ui-green)}
+.shell :is(.soldRetentionPage,.phoneInbox,.settingsPage) button:not(:disabled){min-height:42px}
+.shell .notice[role=alert]{border:1px solid #d09b56;background:#fff5e5;color:#74450a}
+.shell.themeDark .notice[role=alert]{background:#443728;color:#fbd8a3;border-color:#96794d}
+@media(max-width:760px){.shell :is(.soldRetentionIntro,.soldRetentionCard,.phoneInboxCard,.phoneInboxUpload,.settingsSection){max-width:100%;overflow-wrap:anywhere}.shell .phoneInboxSummary>div{padding:12px}}
