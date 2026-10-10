@@ -2,58 +2,69 @@ import fs from 'node:fs'
 import path from 'node:path'
 import readline from 'node:readline'
 import {fileURLToPath} from 'node:url'
-import {makeLanCredential} from '../apps/api/src/lanSecurity.ts'
+import {makeLanCredential,changeLanAccount} from '../apps/api/src/lanSecurity.ts'
 
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..')
 const directory=path.join(repo,'data','stage4','lan')
-if(!process.stdin.isTTY||!process.stdout.isTTY)throw Error('Chỉ tạo tài khoản LAN trực tiếp tại cửa sổ Windows, không dùng terminal tự động')
+if(!process.stdin.isTTY||!process.stdout.isTTY)throw Error('Chỉ chỉnh tài khoản trực tiếp trên Windows')
 const rl=readline.createInterface({input:process.stdin,output:process.stdout})
 const ask=(prompt)=>new Promise(resolve=>rl.question(prompt,resolve))
-const secret=(prompt)=>new Promise((resolve,reject)=>{
- rl.pause()
- process.stdout.write(prompt)
- let value=''
- const stdin=process.stdin
- stdin.setRawMode(true);stdin.resume()
- function done(err){
-  stdin.removeListener('data',listen);stdin.setRawMode(false);stdin.pause();process.stdout.write('\n')
-  if(err)reject(err);else resolve(value)
- }
- function listen(chunk){
-  for(const c of String(chunk)){
-   if(c==='\r'||c==='\n'){done();return}
-   if(c==='\u0003'){done(Error('Đã hủy'));return}
-   if(c==='\u007f'||c==='\b'){if(value.length){value=value.slice(0,-1);process.stdout.write('\b \b')}continue}
-   if(c>=' '&&value.length<256){value+=c;process.stdout.write('*')}
+function secret(prompt){
+ return new Promise((resolve,reject)=>{
+  rl.pause()
+  process.stdout.write(prompt)
+  let value='',done=false
+  const stdin=process.stdin
+  stdin.setRawMode(true);stdin.resume()
+  function finish(err){
+   if(done)return
+   done=true
+   stdin.removeListener('data',listen);stdin.setRawMode(false);stdin.pause();process.stdout.write('\n')
+   if(err)reject(err);else resolve(value)
   }
- }
- stdin.on('data',listen)
-})
+  function listen(chunk){
+   for(const c of String(chunk)){
+    if(c==='\r'||c==='\n'){finish();return}
+    if(c==='\u0003'){finish(Error('Đã hủy'));return}
+    if(c==='\u007f'||c==='\b'){if(value.length){value=value.slice(0,-1);process.stdout.write('\b \b')}continue}
+    if(c>=' '&&value.length<256){value+=c;process.stdout.write('*')}
+   }
+  }
+  stdin.on('data',listen)
+ })
+}
 try{
- const username=(await ask('Tài khoản (chữ thường, từ 3 ký tự): ')).trim()
- const existingFile=path.join(directory,'users.json')
- const exists=fs.existsSync(existingFile)
- const role=exists?(await ask('Quyền (owner/cashier/inventory/viewer): ')).trim():'owner'
- const password=await secret('Mật khẩu (14+ ký tự, có chữ và số): ')
- const confirm=await secret('Nhập lại mật khẩu: ')
- if(password!==confirm)throw Error('Mật khẩu xác nhận không khớp')
- const row=makeLanCredential(username,password,role)
  fs.mkdirSync(directory,{recursive:true})
- if(fs.realpathSync(directory)!==directory)throw Error('Thư mục LAN không an toàn')
- let rows=[]
+ if(fs.realpathSync(directory)!==directory||fs.lstatSync(directory).isSymbolicLink())throw Error('Thư mục LAN không an toàn')
+ const file=path.join(directory,'users.json'),exists=fs.existsSync(file)
+ let users=[]
  if(exists){
-  if(fs.realpathSync(existingFile)!==existingFile)throw Error('File tài khoản không an toàn')
-  const previous=JSON.parse(fs.readFileSync(existingFile,'utf8'))
-  if(previous.format!==1||!Array.isArray(previous.users))throw Error('Cấu hình tài khoản hiện hành không hợp lệ')
-  rows=previous.users
-  if(rows.some(x=>x.username===row.username))throw Error('Tên đăng nhập đã tồn tại; không ghi đè')
- }else if(role!=='owner')throw Error('Tài khoản đầu tiên phải là chủ shop')
- rows.push(row)
- const out=JSON.stringify({format:1,users:rows},null,2)+'\n'
- const tmp=existingFile+'.tmp-'+process.pid
+  if(fs.realpathSync(file)!==file||fs.lstatSync(file).isSymbolicLink())throw Error('File tài khoản không an toàn')
+  const cfg=JSON.parse(fs.readFileSync(file,'utf8'))
+  if(cfg.format!==1||!Array.isArray(cfg.users))throw Error('Cấu hình LAN không hợp lệ')
+  users=cfg.users
+ }
+ const choice=exists?String(await ask('1=Thêm tài khoản / 2=Đổi mật khẩu / 3=Khóa tài khoản: ')).trim():'1'
+ const kind=choice==='1'?'add':choice==='2'?'reset':choice==='3'?'disable':null
+ if(!kind)throw Error('Lựa chọn không hợp lệ')
+ const actor=exists?String(await ask('Tài khoản chủ shop xác nhận: ')).trim():''
+ const username=String(await ask('Tên tài khoản cần thao tác: ')).trim()
+ const role=kind==='add'&&exists?String(await ask('Quyền (owner/cashier/inventory/viewer): ')).trim():kind==='add'?'owner':undefined
+ const ownerPassword=exists?await secret('Mật khẩu CHỦ SHOP: '):''
+ let newPassword
+ if(kind!=='disable'){
+  newPassword=await secret('Mật khẩu mới (14+ ký tự, có chữ và số): ')
+  const confirm=await secret('Nhập lại mật khẩu mới: ')
+  if(newPassword!==confirm)throw Error('Mật khẩu mới nhập lại không khớp')
+ }
+ const changed=exists
+  ?changeLanAccount(users,actor,ownerPassword,{action:kind,username,role,password:newPassword})
+  :[makeLanCredential(username,newPassword,role)]
+ const out=JSON.stringify({format:1,users:changed},null,2)+'\n'
+ const tmp=file+'.tmp-'+process.pid
  const fd=fs.openSync(tmp,'wx',0o600)
  try{fs.writeFileSync(fd,out);fs.fsyncSync(fd)}finally{fs.closeSync(fd)}
- fs.renameSync(tmp,existingFile)
- console.log('Đã tạo tài khoản LAN. Không lưu mật khẩu nguyên văn.')
- console.log('Tiếp theo cần cert.pem / key.pem đúng IP Wi-Fi trong '+directory)
+ fs.renameSync(tmp,file)
+ console.log('Đã lưu cấu hình tài khoản, không lưu mật khẩu nguyên văn.')
+ console.log('QUAN TRỌNG: Đóng và mở lại START_SHOP_LAN.bat để áp dụng quyền mới và hủy toàn bộ phiên đăng nhập cũ.')
 }catch(err){console.error('THẤT BẠI:',err.message);process.exitCode=1}finally{rl.close()}
