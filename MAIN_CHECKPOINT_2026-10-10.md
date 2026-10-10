@@ -1,3 +1,5 @@
+> Checkpoint chặng2 lịch sử. Trạng thái hiện tại: [main chặng4](MAIN_CHECKPOINT_STAGE4_2026-10-10.md).
+
 > Checkpoint dưới đây lưu baseline chặng 2. Bản mới 3.1.0-stage3 đã triển khai theo yêu cầu tiếp của chủ shop; trạng thái hiện tại đọc PROJECT_STATE.md và STAGE3_PAYMENTS_AFTERCARE.md. Các dòng “chặng 3 chưa triển khai” bên dưới chỉ đúng tại baseline 099386a.
 
 # Nền tảng main — Shop Mẹ CaCao Web — 10/10/2026

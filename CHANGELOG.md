@@ -1,3 +1,9 @@
+## 3.2.0-stage4 — 2026-10-10
+- Báo cáo ngày VN: SOLD/doanh số/ship/sản phẩm, thu/hoàn/giảm, công nợ hiện tại, lãi gộp snapshot/thiếu vốn và xuất CSV an toàn.
+- Phiên kiểm kê theo Size: snapshot tồn ảnh/sổ/thiếu/SOLD, đếm/chênh/lý do, version/hash/kho thay đổi, chốt/hủy bất biến và CSV. Không tự điều chỉnh tồn.
+- Backup/restore giữ kiểm kê; dữ liệu fresh stage4, cùng START_SHOP.bat và chức năng chặng1/2/3.
+- Local service78, HTTP77, fullgate PASS; CI Windows/Linux/browser chạy mã mới. Checkpoint tổng hợp: MAIN_CHECKPOINT_STAGE4_2026-10-10.md.
+
 ## 3.1.0-stage3 — 2026-10-10
 - Thu tiền/cọc nhiều lần, COD/chuyển khoản/tiền mặt; hoàn/điều chỉnh, số dư/công nợ và giao hàng/vận đơn độc lập với SOLD.
 - Chứng từ bất biến, revision/order version, transaction và same-key retry; UI giữ pending intent qua reload.

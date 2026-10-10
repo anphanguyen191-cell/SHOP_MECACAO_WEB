@@ -28,7 +28,7 @@ if(process.env.SHOP_SANDBOX_ROOT&&!localRuntime&&!freshDevelopment){
 
 if(process.env.SHOP_SANDBOX_ROOT&&fs.existsSync(dbPath)&&(fs.realpathSync(dbPath)!==dbPath||!fs.lstatSync(dbPath).isFile()))throw Error('Sandbox DB không được là symlink hoặc file ngoài vùng thử')
 if(fs.existsSync(dbPath)&&!localRuntime){const precheck=new DatabaseSync(dbPath,{readOnly:true});try{if(legacyWarehouseActive(precheck))throw Error('Kho đã kích hoạt LOCAL V2. Không mở V1/sandbox trên cùng kho. Dùng START_SHOP_V2_LOCAL.bat.')}finally{precheck.close()}}
-if((localRuntime||freshDevelopment)&&!(process.env.SHOP_TASK_WORKER==='1'&&process.send))claimRuntime(localRuntime??{format:1,mode:'LOCAL_V2_BUSINESS',dataRoot:freshRoot,warehouse:customWarehouse?freshWarehouse:freshRoot,incoming:'',database:dbPath,sourceV1Database:'',sourceBackup:'',baselineHash:'',imageHashes:[],activatedAt:'',configPath:'',configSha:'stage3-fresh',review:true})
+if((localRuntime||freshDevelopment)&&!(process.env.SHOP_TASK_WORKER==='1'&&process.send))claimRuntime(localRuntime??{format:1,mode:'LOCAL_V2_BUSINESS',dataRoot:freshRoot,warehouse:customWarehouse?freshWarehouse:freshRoot,incoming:'',database:dbPath,sourceV1Database:'',sourceBackup:'',baselineHash:'',imageHashes:[],activatedAt:'',configPath:'',configSha:'stage4-fresh',review:true})
 export const db=new DatabaseSync(dbPath)
 db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;')
 try{

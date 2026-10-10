@@ -38,3 +38,7 @@ Giữ tồn thực tế theo ảnh đã đăng ký còn hiện hữu; ledger ch�
 ## Chủ shop duyệt chặng 3 — 10/10/2026
 
 Yêu cầu “triển khai chặng tiếp theo” đã cấp quyền triển khai thu tiền/công nợ/hậu mãi trên nền main chặng 2 và tích hợp bản mới đầy đủ lên main. Giữ số nghĩa `total`/`payableTotal`, SOLD/contact/SALE ledger bất biến; chứng từ thu/hoàn/giảm riêng; không đồng nhất bán, giao và thu. Đổi trả vật lý không tự hoàn nguyên ảnh SOLD. Những backlog ngoài phạm vi vẫn đề xuất riêng.
+
+## Chủ shop duyệt chặng4 — 10/10/2026
+
+Sau khi hoàn tất chặng3, chủ shop yêu cầu “Triển khai chặng tiếp theo đi bro”: triển khai báo cáo/kiểm kê và đưa bản đầy đủ lên main. Báo cáo tách doanh số với dòng tiền; thiếu vốn không giả định0. Kiểm kê lưu đếm/chênh/lý do, không tự sửa tồn ảnh. Checkpoint hiện tại là MAIN_CHECKPOINT_STAGE4_2026-10-10.md. Ngoài phạm vi này vẫn đề xuất riêng.

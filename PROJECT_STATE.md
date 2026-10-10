@@ -1,3 +1,15 @@
+# Checkpoint hiện tại — Chặng 4 — 3.2.0-stage4
+
+Main giữ toàn bộ chức năng chặng 1/2/3; thêm báo cáo bán hàng/dòng tiền/lãi gộp và phiên kiểm kê lưu số đếm/chênh lệch/lý do. Nguồn trạng thái hiện tại: [checkpoint main đầy đủ](MAIN_CHECKPOINT_STAGE4_2026-10-10.md), [đặc tả chặng4](STAGE4_REPORTS_STOCKTAKE.md), [test report](STAGE4_TEST_REPORT.md).
+
+Một START_SHOP.bat, chọn kho qua UI; bản cài mới dùng data/stage4/database/shop-stage4.db. Không tự mở DB test stage2/3. Kiểm thử chỉ giả lập. Local gate PASS, service78/HTTP77; CI main Windows22/24/Linux/browser cần đối chiếu đúng commit. Chưa nghiệm thu trên máy chủ shop/chưa STABLE.
+
+Báo cáo tách doanh số, dòng tiền trong kỳ và công nợ hiện tại; thiếu giá vốn không báo lãi đầy đủ. Kiểm kê không tự đổi tồn ảnh/ledger; SOLD không trở lại tồn. Bước tiếp là nghiệm thu/sửa phản hồi, rồi đề xuất riêng LAN/đồng bộ; không tự triển khai backlog.
+
+---
+
+## Checkpoint chặng3 lịch sử
+
 # Checkpoint hiện tại — Chặng 3 — 3.1.0-stage3
 
 Chủ shop đã yêu cầu triển khai chặng tiếp. Main mới kế thừa đầy đủ chặng 1/2 và thêm thu/cọc/hoàn/điều chỉnh, COD/chuyển khoản/tiền mặt, giao hàng/vận đơn, Công nợ theo khách/đơn, hậu mãi và số đã thu/còn lại trên PNG. Xem [STAGE3_PAYMENTS_AFTERCARE.md](STAGE3_PAYMENTS_AFTERCARE.md) và [STAGE3_TEST_REPORT.md](STAGE3_TEST_REPORT.md).

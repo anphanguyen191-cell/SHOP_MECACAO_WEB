@@ -19,7 +19,7 @@ async function stop(child){if(child.exitCode!==null)return;await new Promise(res
 try{
  server=start();let h=await ready();eq(h.freshDevelopment,true);eq((await request('/api/products')).data.length,0)
  const second=start();await new Promise(r=>second.once('exit',r));eq(second.exitCode!==0,true)
- eq(h.release.version,'3.1.0-stage3');eq(h.release.stage,3)
+ eq(h.release.version,'3.2.0-stage4');eq(h.release.stage,4)
  eq((await request('/api/local/warehouse','POST',{warehouse:path.parse(base).root})).status,409)
  const own=path.join(base,'my-warehouse'),size=path.join(own,'Bộ tự tạo','Size 1');fs.mkdirSync(size,{recursive:true});const ownPhoto=path.join(size,'001.png');fs.copyFileSync(photo,ownPhoto)
  const selection=await request('/api/local/warehouse','POST',{warehouse:own});eq(selection.status,200)
@@ -68,9 +68,23 @@ try{
  const restock=await request('/api/goods-receipt','POST',{storeRoot:h.warehouse,productId:explorer[0].product_id,sizes:[{size:'Size 1',quantity:1,costPrice:20000,salePrice:50000,images:[freshPhoto]}]});eq(restock.status,201);eq(fs.existsSync(beforeSoldFile),false)
  const renameAfter=await request('/api/warehouse/rename/preview','POST',{rootPath:h.warehouse});eq(renameAfter.status,200);eq(renameAfter.data.files.every(f=>f.newPath!==beforeSoldFile),true)
  const renamedAfter=await request('/api/warehouse/rename/commit','POST',{rootPath:h.warehouse,ids:[...renameAfter.data.files.map(f=>f.id),...renameAfter.data.unchanged],token:renameAfter.data.token,confirmed:true});eq(renamedAfter.status,200);eq(fs.existsSync(beforeSoldFile),false)
+ // Stage4 acceptance: read-only reports and durable stocktake against a fresh selected warehouse.
+ const period='from=2000-01-01&to=2100-12-31'
+ const report=await request('/api/sales/drafts/reports/summary?'+period);eq(report.status,200);eq(report.data.totals.orders,1);eq(report.data.totals.goodsTotal,'45000');eq(report.data.totals.receipts,'20000');eq(report.data.totals.grossMargin,'25000');eq(report.data.totals.dueNow,'40000')
+ eq((await request('/api/sales/drafts/reports/summary?from=2026-99-10&to=2026-10-10')).status,400)
+ const exportCSV=await fetch(url+'/api/sales/drafts/reports/export.csv?'+period);eq(exportCSV.status,200);eq((await exportCSV.text()).includes(draft.id),true)
+ const createdCount=await request('/api/sales/drafts/stocktakes','POST',{title:'Kiểm kê HTTP'},'stage4-http-count-001');eq(createdCount.status,201);let session=createdCount.data
+ eq((await request('/api/sales/drafts/stocktakes','POST',{title:'Kiểm kê HTTP'},'stage4-http-count-001')).data.id,session.id)
+ const counts=session.rows.map(r=>({variantId:r.variantId,counted:r.physical,note:''}))
+ eq((await request('/api/sales/drafts/stocktakes/'+session.id,'PUT',{version:0,rows:counts})).status,409)
+ session=(await request('/api/sales/drafts/stocktakes/'+session.id,'PUT',{version:1,rows:counts})).data;eq(session.version,2)
+ const finished=await request('/api/sales/drafts/stocktakes/'+session.id+'/finish','POST',{version:2,confirmed:true,conclusion:'Số đếm khớp ảnh'});eq(finished.status,200);eq(finished.data.status,'CLOSED')
+ eq((await request('/api/sales/drafts/stocktakes/'+session.id,'PUT',{version:3,rows:counts})).status,409)
+ const countCSV=await fetch(url+'/api/sales/drafts/stocktakes/'+session.id+'/export.csv');eq(countCSV.status,200);eq((await countCSV.text()).includes('Kiểm kê HTTP'),true)
+ const countForbidden=await fetch(url+'/api/sales/drafts/stocktakes',{method:'POST',headers:{Origin:'https://external.invalid','Content-Type':'application/json','Idempotency-Key':'stage4-bad-origin-001'},body:JSON.stringify({title:'Không được ghi'})});eq(countForbidden.status,403)
  const backup=await request('/api/backup/lossless','POST',{});eq(backup.status,201)
  eq(JSON.parse(fs.readFileSync(path.join(backup.data.backup.directory,'lossless-manifest.json'),'utf8')).version,4)
- const restored=await request('/api/backup/restore-test','POST',{directory:backup.data.backup.directory,warehouseRoot:h.warehouse,confirmed:true});assert.equal(restored.status,200,JSON.stringify(restored.data));checks++;eq(restored.data.status,'READY');eq(restored.data.counts.finance_entries,1);eq(restored.data.counts.aftercare_cases,1)
+ const restored=await request('/api/backup/restore-test','POST',{directory:backup.data.backup.directory,warehouseRoot:h.warehouse,confirmed:true});assert.equal(restored.status,200,JSON.stringify(restored.data));checks++;eq(restored.data.status,'READY');eq(restored.data.counts.finance_entries,1);eq(restored.data.counts.aftercare_cases,1);eq(restored.data.counts.stocktake_sessions,1);eq(restored.data.counts.stocktake_rows,counts.length)
  const soldPng=await fetch(url+'/api/sales/drafts/'+draft.id+'/slip.png?version=1');eq(soldPng.status,200)
  console.log('STAGE2_HTTP PASS: '+checks+' checks; fresh empty database, main release metadata, UI-selected own warehouse, scan/import, one server, external source COPY, customer/order/PNG, origin guard, restart')
 }finally{if(server)await stop(server);fs.rmSync(base,{recursive:true,force:true})}

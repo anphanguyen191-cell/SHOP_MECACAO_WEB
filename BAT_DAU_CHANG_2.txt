@@ -1,4 +1,4 @@
-SHOP MẸ CACAO — MAIN — v3.1.0-stage3
+SHOP MẸ CACAO — MAIN — v3.2.0-stage4
 
 1. Tải main: https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip
 2. Giải nén vào một thư mục mới, chạy START_SHOP.bat.
@@ -11,7 +11,7 @@ SHOP MẸ CACAO — MAIN — v3.1.0-stage3
 7. BÁN HÀNG: chọn khách, giá, giảm giá, phí ship → lưu → tạo PNG hoặc xác nhận bán.
 
 Đây là đầy đủ chức năng LOCAL của mã main, cùng launcher dùng cho kiểm thử và sử dụng.
-Thanh phiên bản hiển thị bản hiện tại và chặng 3.
+Thanh phiên bản hiển thị bản hiện tại và chặng 4.
 BÁN HÀNG có Thanh toán & giao hàng: ghi cọc/thu/hoàn/điều chỉnh, hậu mãi.
 CÔNG NỢ: xem đơn đã bán còn phải thu/cần hoàn.
 PNG gồm đã thu/còn lại. Chi tiết: STAGE3_PAYMENTS_AFTERCARE.md.
@@ -23,3 +23,7 @@ Mở lại cùng bản cài giữ dữ liệu đã nhập; không tải đè lê
 Kho chọn trực tiếp là kho ứng dụng thao tác khi nhập, đổi tên hoặc bán hàng.
 Nhập hàng từ thư mục ảnh nguồn khác dùng COPY; ảnh nguồn không bị đổi.
 START_SHOP_CHANG_2.bat là tên tương thích, gọi cùng START_SHOP.bat.
+
+BÁO CÁO: lọc ngày VN, doanh số/thu tiền/lãi gộp/công nợ hiện tại, tải CSV.
+KIỂM KÊ: mở phiên, đếm Mẫu/Size, lưu số đếm và lý do lệch, kết luận rồi chốt. Không tự chỉnh tồn ảnh.
+Chi tiết bản hiện tại: STAGE4_REPORTS_STOCKTAKE.md, MAIN_CHECKPOINT_STAGE4_2026-10-10.md.

@@ -1,3 +1,5 @@
+import BusinessReports from './BusinessReports'
+import StocktakeView from './StocktakeView'
 import {DebtsView} from './OrderFinance'
 import ReleaseStatus from './ReleaseStatus'
 import CustomersView from './CustomersView'
@@ -28,7 +30,7 @@ const baseNav=['Tổng quan','Danh mục sản phẩm','Nhập hàng','Import kh
 export default function App(){
  const isDemo=useMemo(()=>location.hostname.endsWith('github.io')||new URLSearchParams(location.search).get('demo')==='1',[])
  const [health,setHealth]=useState<Health|null>(null),[active,setActive]=useState('Tổng quan')
- const nav=health?.salesDrafts&&!isDemo?[...baseNav.slice(0,-1),'Khách hàng','Bán hàng','Công nợ','Cài đặt']:baseNav
+ const nav=health?.salesDrafts&&!isDemo?[...baseNav.slice(0,-1),'Khách hàng','Bán hàng','Công nợ',...(health?.salesExecution?['Báo cáo','Kiểm kê']:[]),'Cài đặt']:baseNav
  const conflictChoice=useDraftConflictChoice()
  const [salesId,setSalesId]=useState<string|null>(null),[addToDraft,setAddToDraft]=useState<string|null>(null)
  const [menuOpen,setMenuOpen]=useState(false),[menuSearch,setMenuSearch]=useState('')
@@ -115,7 +117,7 @@ export default function App(){
   {conflictChoice.dialog}
   <header className="topbar"><div className="brandIdentity"><button type="button" className="menuToggle" aria-label="Mở danh mục chức năng" aria-expanded={menuOpen} onClick={()=>setMenuOpen(true)}>☰</button><img className="brandLogo" src={`${import.meta.env.BASE_URL}brand/logo.jpg`} alt="Logo Shop Mẹ CaCao" onError={e=>{e.currentTarget.style.display="none"}}/><span className="brandMonogram">MC</span><div><p className="eyebrow">SHOP MẸ CACAO · SINCE 2023</p><h1>Quản lý kho</h1></div></div><div className="headerActions"><DisplayDensity compact={compact} onChange={setCompact}/><WarehouseNotifications isDemo={isDemo} onReview={()=>goTo('Import kho')}/><button type="button" className="themeToggle" onClick={()=>setDarkMode(v=>!v)} aria-label={darkMode?"Bật giao diện sáng":"Bật giao diện tối"}>{darkMode?"☀":"☾"}</button><span className={'badge '+(mode==='LOCAL'?'local':mode==='DEMO'?'demo':mode==='TEST SANDBOX'?'test':'offline')}>{mode}</span></div></header>
   {!isDemo&&health?.ok&&<TaskProgress/>}
-  {(health?.freshDevelopment||isDemo)&&<ReleaseStatus version={health?.version??'3.1.0-stage3'} release={health?.release} warehouse={health?.warehouse} custom={health?.customWarehouse} onImport={()=>goTo('Import kho')}/>}
+  {(health?.freshDevelopment||isDemo)&&<ReleaseStatus version={health?.version??'3.2.0-stage4'} release={health?.release} warehouse={health?.warehouse} custom={health?.customWarehouse} onImport={()=>goTo('Import kho')}/>}
   {health?.localV2Business&&<div className="sandboxSafetyBanner businessSafetyBanner" role="status"><b>LOCAL V2 · KHO KINH DOANH</b><br/>Kho: {health.warehouse}<br/>DB: {health.databasePath}<br/>Ảnh nhập mới: {health.incoming} · Không mở V1/Python cũ đồng thời.</div>}
   {health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">BẢN PHỤC HỒI THỬ · Không phải kho kinh doanh.</div>}
   {isWindowsSandbox&&!health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">{health?.localV2Review?'LOCAL V2 — BẢN SAO ĐỂ DUYỆT. Dữ liệu lấy từ backup V1; thao tác chỉ thay bản sao, chưa kích hoạt kho thật.':'CHẾ ĐỘ THỬ WINDOWS — Database và kho giả lập riêng. KHÔNG thao tác ghi lên D:\\1-Me CaCao Store.'}</div>}
@@ -143,6 +145,8 @@ export default function App(){
  </div>}
   {active==='Nhập hàng'&&<ReceiptDashboard isDemo={isDemo} onChanged={()=>setProductReload(x=>x+1)}/>}
   {active==='Tồn kho'&&<InventoryView isDemo={isDemo} onDraft={health?.salesDrafts?chooseForDraft:undefined} draftLabel={addToDraft?'THÊM VÀO ĐƠN NHÁP':'TẠO ĐƠN NHÁP'}/>}
+  {active==='Báo cáo'&&health?.salesExecution&&<BusinessReports onOrder={id=>{setSalesId(id);goTo('Bán hàng')}}/>}
+  {active==='Kiểm kê'&&health?.salesExecution&&<StocktakeView/>}
   {active==='Công nợ'&&health?.salesDrafts&&<DebtsView onOrder={id=>{setSalesId(id);goTo('Bán hàng')}}/>}
   {active==='Khách hàng'&&health?.salesDrafts&&<CustomersView/>}
   {active==='Bán hàng'&&health?.salesDrafts&&<SalesDraftView business={!!health?.localV2Business||!!health?.freshDevelopment} execute={!!health?.salesExecution} onStockChanged={()=>setProductReload(n=>n+1)} openId={salesId} onOpen={setSalesId} onSelectImages={id=>{setAddToDraft(id);goTo('Tồn kho')}}/>}

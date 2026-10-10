@@ -123,6 +123,40 @@ async function browserTest(base,id){
   await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Công nợ').click()")
   await until("Array.from(document.querySelectorAll('.debtOrder')).some(b=>b.textContent.includes("+JSON.stringify(id.slice(0,8).toUpperCase())+"))")
   assert(await run("Array.from(document.querySelectorAll('.debtOrder')).find(b=>b.textContent.includes("+JSON.stringify(id.slice(0,8).toUpperCase())+")).textContent.includes('55.000')"));checks++
+  // Stage4 browser acceptance through real forms; all inventory remains unchanged.
+  await cmd('Emulation.setDeviceMetricsOverride',{width:1366,height:768,deviceScaleFactor:1,mobile:false})
+  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Báo cáo').click()")
+  await until("document.querySelector('.stage4Table')?.textContent.includes("+JSON.stringify(id.slice(0,8).toUpperCase())+" )")
+  assert(await run("document.querySelector('.stage4Metrics').textContent.includes('10.000')"));checks++
+  assert(await run("document.querySelector('a[href*=\"reports/export\"]').hasAttribute('download')"));checks++
+  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Kiểm kê').click()")
+  await until("!!document.querySelector('input[aria-label=\"Tên phiên kiểm kê\"]')")
+  await run("(()=>{const i=document.querySelector('input[aria-label=\"Tên phiên kiểm kê\"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'Kiểm kê qua giao diện');i.dispatchEvent(new Event('input',{bubbles:true}))})()")
+  await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Mở phiên kiểm kê mới'&&!b.disabled)")
+  await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Mở phiên kiểm kê mới').click()")
+  await until("!!document.querySelector('.stocktakePanel input[type=number]')")
+  await run("(()=>{const i=document.querySelector('.stocktakePanel input[type=number]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'1');i.dispatchEvent(new Event('input',{bubbles:true}))})()")
+  await run("(()=>{const i=document.querySelector('.stocktakePanel input[aria-label^=\"Lý do\"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'Đếm giả lập để đối chiếu hàng chưa có ảnh');i.dispatchEvent(new Event('input',{bubbles:true}))})()")
+  await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Lưu số đếm'&&!b.disabled)")
+  await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Lưu số đếm').click()")
+  await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Lưu số đếm'&&b.disabled)")
+  await run("(()=>{const i=document.querySelector('input[aria-label=\"Kết luận kiểm kê\"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'Đã lưu chênh lệch, kiểm tra nhập ảnh sau');i.dispatchEvent(new Event('input',{bubbles:true}))})()")
+  await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Xác nhận hoàn tất kiểm kê'&&!b.disabled)")
+  await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Xác nhận hoàn tất kiểm kê').click()")
+  await until("document.querySelector('.stocktakePanel')?.textContent.includes('Đã hoàn tất')")
+  assert((await api('/api/inventory/dashboard')).stock===0);checks++
+  const counted=(await api('/api/sales/drafts/stocktakes'))[0];assert(counted.status==='CLOSED');checks++
+  const countDetail=await api('/api/sales/drafts/stocktakes/'+counted.id);assert(countDetail.rows[0].counted===1&&countDetail.rows[0].physical===0);checks++
+  for(const section of ['Báo cáo','Kiểm kê']){
+   await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==="+JSON.stringify(section)+").click()")
+   await until(section==='Báo cáo'?"!!document.querySelector('.stage4Table')":"!!document.querySelector('.stage4SessionList button')")
+   if(section==='Kiểm kê'){await run("document.querySelector('.stage4SessionList button').click()");await until("!!document.querySelector('.stocktakePanel')")}
+   for(const width of [1366,390])for(const dark of [false,true]){
+    await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:768,deviceScaleFactor:1,mobile:width===390});await run("document.querySelector('.shell').classList.toggle('themeDark',"+dark+")");await sleep(150)
+    assert(await run("document.documentElement.scrollWidth<=innerWidth+2"));checks++
+    await run("document.querySelector('.stage4Page').scrollIntoView({block:'start'})");const pic=await cmd('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(artifact,width+'-'+(dark?'dark':'light')+'-'+(section==='Báo cáo'?'reports':'stocktake')+'.png'),Buffer.from(pic.data,'base64'))
+   }
+  }
   await cmd('Page.reload');await until("Array.from(document.querySelectorAll('.sidebar button')).some(b=>b.textContent==='Bán hàng')")
   await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Bán hàng').click()")
   await until("!!document.querySelector('.salesListHead select')")
@@ -141,6 +175,6 @@ async function browserTest(base,id){
   await run("document.querySelector('.restorePrimary').click()")
   await until("document.querySelector('.restoreResult')?.textContent.includes('READY')")
   assert(await run("document.querySelector('.restoreResult').textContent.includes('schema 130')&&document.querySelector('.restoreResult').textContent.includes('3 đơn và lịch sử')&&document.querySelector('.restoreResult').textContent.includes('RUN_WINDOWS_RESTORED_V2_SALES_TEST.bat')"));checks++
-  console.log('V2_SALES_BROWSER PASS: preflight checkbox -> actual sandbox sale -> locked history JPEG -> reload SOLD filter; 1366/390px light/dark, schema130 restore READY UI; Stage3 deposit/aftercare/debt UI')
+  console.log('V2_SALES_BROWSER PASS: preflight checkbox -> actual sandbox sale -> locked history JPEG -> reload SOLD filter; 1366/390px light/dark, schema130 restore READY UI; Stage3 deposit/aftercare/debt UI; Stage4 reports, counted discrepancy and immutable close UI')
  }finally{ws?.close();c.kill();await sleep(300);fs.rmSync(profile,{recursive:true,force:true})}
 }
