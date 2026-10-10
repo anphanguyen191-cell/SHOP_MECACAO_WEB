@@ -75,17 +75,29 @@ export function lanApiAllowed(role:LanRole,rawMethod:string,rawPath:string){
  if(/^\/api\/inventory\/share\/copy$/.test(p))return false
  if(/^\/api\/sales\/drafts\/recover$/.test(p))return false
  if(/^\/api\/sales\/drafts\/[^/]+\/archives(\/|$)/.test(p))return false
- if(method==='GET')return [
- /^\/api\/health$/, /^\/api\/products(?:\/\d+)?$/, /^\/api\/inventory\/(?:dashboard|explorer|suggestions|filter-options|share\/capabilities|share\/image\/\d+)$/,
- /^\/api\/catalog\/dashboard$/, /^\/api\/images\/\d+$/,
- /^\/api\/sales\/drafts$/, /^\/api\/sales\/drafts\/customers$/,
- /^\/api\/sales\/drafts\/customers\/[^/]+$/, /^\/api\/sales\/drafts\/finance\/debts$/,
- /^\/api\/sales\/drafts\/reports\/(?:summary|export\.csv)$/,
- /^\/api\/sales\/drafts\/stocktakes(?:\/[^/]+(?:\/export\.csv)?)?$/,
- /^\/api\/sales\/drafts\/sold-retention(?:\/\d+\/verify)?$/,
- /^\/api\/sales\/drafts\/operations\/[A-Za-z0-9_-]+$/,
- /^\/api\/sales\/drafts\/[^/]+(?:\/(?:finance|slip|slip\.png|sold|sold-image\/\d+|preview\/\d+))?$/
- ].some(re=>re.test(p))
+ if(method==='GET'){
+  const shared=[
+   /^\/api\/health$/, /^\/api\/products(?:\/\d+)?$/, /^\/api\/inventory\/(?:dashboard|explorer|suggestions|filter-options|share\/capabilities|share\/image\/\d+)$/,
+   /^\/api\/catalog\/dashboard$/, /^\/api\/images\/\d+$/, /^\/api\/settings$/
+  ]
+  if(shared.some(re=>re.test(p)))return true
+  if((role==='owner'||role==='inventory')&&[
+   /^\/api\/sales\/drafts\/stocktakes(?:\/[A-Za-z0-9_-]+(?:\/export\.csv)?)?$/
+  ].some(re=>re.test(p)))return true
+  if(role==='owner'&&[
+   /^\/api\/sales\/drafts\/sold-retention(?:\/\d+\/verify)?$/,
+   /^\/api\/sales\/drafts\/reports\/(?:summary|export\.csv)$/
+  ].some(re=>re.test(p)))return true
+  if(role==='owner'||role==='cashier'){
+   return [
+    /^\/api\/sales\/drafts$/, /^\/api\/sales\/drafts\/customers$/,
+    /^\/api\/sales\/drafts\/finance\/debts$/,
+    /^\/api\/sales\/drafts\/operations\/[A-Za-z0-9_-]+$/,
+    /^\/api\/sales\/drafts\/[A-Za-z0-9_-]+(?:\/(?:finance|slip|slip\.png|sold|sold-image\/\d+|preview\/\d+))?$/
+   ].some(re=>re.test(p))
+  }
+  return false
+ }
  // Preparing JPEG shares reads verified stock but must never call native Windows clipboard.
  if(method==='POST'&&p==='/api/inventory/share/prepare')return true
  if(role==='viewer')return false
