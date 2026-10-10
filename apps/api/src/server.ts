@@ -1,3 +1,4 @@
+import {phonePhotoRouter} from './lanPhotoRoutes.js'
 import {createLanChangeFeed} from './lanChangeFeed.js'
 import {configureLan} from './lanRuntime.js'
 import {installLanGuard,listenLan} from './lanServer.js'
@@ -52,6 +53,8 @@ function sandboxPathAllowed(value:unknown){
   return rel===''||(!path.isAbsolute(rel)&&rel!=='..'&&!rel.startsWith('..'+path.sep))
  }catch{return false}
 }
+// Photo upload is explicit, bounded separately; all existing APIs retain their 2 MB limit.
+app.use('/api/lan/photos/upload',express.json({limit:'6mb'}))
 app.use(express.json({ limit: '2mb' }))
 installLanGuard(app,lan)
 app.use(changeFeed.middleware)
@@ -64,6 +67,7 @@ app.use('/api',(req,res,next)=>{
  next()
 })
 app.get('/api/lan/changes',(_req,res)=>res.set('Cache-Control','no-store').json(changeFeed.view()))
+if(freshDevelopment)app.use('/api/lan/photos',phonePhotoRouter())
 // Tasks run in a separate process; fence stock reads/mutations during any task.
 app.use('/api',(req,res,next)=>{
  if(req.path==='/health'||req.path.startsWith('/tasks')||req.path==='/store/import-batch-task'||(req.get('Prefer')==='respond-async'&&['/store/scan','/goods-receipt','/backup/lossless'].includes(req.path)))return next()
@@ -81,7 +85,7 @@ app.use('/api',(req,res,next)=>{
  if(!sandboxRoot)return next()
  if(freshDevelopment){
   const target=(v:unknown)=>typeof v==='string'&&path.resolve(v)===freshWarehouse&&sandboxPathAllowed(v)
-  const source=(v:unknown)=>{try{if(typeof v!=='string')return false;const real=fs.realpathSync(path.resolve(v));return real===path.resolve(v)&&!isInternalWarehousePath(real)}catch{return false}}
+  const source=(v:unknown)=>{try{if(typeof v!=='string')return false;const real=fs.realpathSync(path.resolve(v));const pendingRoot=path.join(freshRoot,'lan','phone-pending'),rel=path.relative(pendingRoot,real);if(rel===''||(!path.isAbsolute(rel)&&rel!=='..'&&!rel.startsWith('..'+path.sep)))return false;return real===path.resolve(v)&&!isInternalWarehousePath(real)}catch{return false}}
   let ok=true
   if(req.path==='/store/scan'||req.path.startsWith('/warehouse/rename/')||(req.path==='/warehouse/settings'&&req.method==='PUT'))ok=target(req.body.rootPath)
   if(req.path==='/warehouse/file')ok=target(req.query.rootPath)&&sandboxPathAllowed(req.query.path)

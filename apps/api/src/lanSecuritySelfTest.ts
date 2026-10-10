@@ -51,4 +51,10 @@ const changed=changeLanAccount(team,'owner','test-password-567890',{action:'rese
 must(checkLanCredential(changed[1],'changed-password-4455')&&!checkLanCredential(changed[1],'test-inventory-12345'),'Reset revokes old credential on restart')
 must(changeLanAccount(changed,'owner','test-password-567890',{action:'disable',username:'inventory1'}).length===1,'Owner may revoke staff')
 assert.throws(()=>changeLanAccount([owner],'owner','test-password-567890',{action:'disable',username:'owner'}));checks++
+must(lanApiAllowed('owner','GET','/api/lan/photos'),'Owner may inspect mobile inbox')
+must(lanApiAllowed('inventory','POST','/api/lan/photos/upload'),'Inventory may stage photo')
+must(!lanApiAllowed('cashier','POST','/api/lan/photos/upload'),'Cashier cannot upload stock')
+must(!lanApiAllowed('viewer','GET','/api/lan/photos'),'Viewer cannot inspect staging')
+must(!lanApiAllowed('owner','POST','/api/lan/photos/11111111-1111-1111-1111-111111111111/review'),'LAN owner cannot review via WiFi')
+must(lanApiAllowed('inventory','GET','/api/lan/photos/11111111-1111-1111-1111-111111111111/preview'),'Authorized preview')
 console.log('STAGE6 SECURITY FOUNDATION PASS',checks)

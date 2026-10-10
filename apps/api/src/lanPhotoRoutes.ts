@@ -14,7 +14,7 @@ const allowedOrigin=(req:express.Request)=>{
  try{const o=new URL(req.get('origin')??'');return o.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(o.hostname)&&Number(o.port||80)===Number(process.env.PORT??3000)}catch{return false}
 }
 function checkExisting(sha256:string,size:number){
- rejectSoldSource(db,sha256)
+ try{rejectSoldSource(db,sha256)}catch{throw new PhonePhotoError('Ảnh trùng ảnh SOLD; không được nhập trở lại tồn kho.',409)}
  // An exact byte-for-byte match to any already registered physical item
  // cannot be counted as a new physical piece without a distinct source image.
  for(const row of db.prepare('SELECT file_path FROM product_images').all() as {file_path:string}[]){

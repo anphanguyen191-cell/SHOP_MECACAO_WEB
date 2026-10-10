@@ -84,6 +84,7 @@ export function lanApiAllowed(role:LanRole,rawMethod:string,rawPath:string){
  if(/^\/api\/sales\/drafts\/recover$/.test(p))return false
  if(/^\/api\/sales\/drafts\/[^/]+\/archives(\/|$)/.test(p))return false
  if(method==='GET'){
+  if(/^\/api\/lan\/photos(?:\/[a-f0-9-]{36}\/preview)?$/.test(p))return role==='owner'||role==='inventory'
   const shared=[
    /^\/api\/health$/, /^\/api\/lan\/changes$/, /^\/api\/products(?:\/\d+)?$/, /^\/api\/inventory\/(?:dashboard|explorer|suggestions|filter-options|share\/capabilities|share\/image\/\d+)$/,
    /^\/api\/catalog\/dashboard$/, /^\/api\/images\/\d+$/, /^\/api\/settings$/
@@ -108,6 +109,8 @@ export function lanApiAllowed(role:LanRole,rawMethod:string,rawPath:string){
   }
   return false
  }
+ if(method==='POST'&&p==='/api/lan/photos/upload')return role==='owner'||role==='inventory'
+ // Photo review is Windows-only; never add it to LAN allowlist.
  // Preparing JPEG shares reads verified stock but must never call native Windows clipboard.
  if(method==='POST'&&p==='/api/inventory/share/prepare')return true
  if(role==='viewer')return false
