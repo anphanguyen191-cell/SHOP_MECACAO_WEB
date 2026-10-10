@@ -12,7 +12,8 @@ export default function OrderFinance({id,disabled,onChanged}:{id:string;disabled
  const [pending,setPending]=useState<any>(()=>{try{return JSON.parse(localStorage.getItem(pendingKey)||'null')}catch{return null}})
  const lock=useRef(false),retry=useRef<{payload:string;key:string}|null>(null)
  useEffect(()=>{const c=new AbortController();setError('');apiJson('/api/sales/drafts/'+id+'/finance',{signal:c.signal}).then(s=>{if(c.signal.aborted)return;setData(s);setMethod(s.method);setReceiptMethod(s.method);setDelivery(s.delivery);setTracking(s.tracking)}).catch(e=>{if(!c.signal.aborted)setError(e.message)});return()=>c.abort()},[id,reload])
- useEffect(()=>{const changed=()=>{if(lock.current||busy||pending)setError('Có giao dịch khác trên máy chủ. Chưa thay đổi chứng từ đang xử lý; đối chiếu sổ trước khi ghi tiếp.');else setReload(n=>n+1)};window.addEventListener('mecacao-server-change',changed);return()=>window.removeEventListener('mecacao-server-change',changed)},[busy,pending])
+ const financeEditing=!!data&&(!!amount.trim()||!!note.trim()||!!caseNote.trim()||tracking!==(data.tracking??'')||delivery!==data.delivery||method!==data.method||receiptMethod!==data.method||kind!=='RECEIPT'||caseKind!=='SUPPORT'||Object.values(resolution).some(x=>x.trim().length>0))
+ useEffect(()=>{const changed=()=>{if(lock.current||busy||pending||financeEditing)setError('Sổ thanh toán có thay đổi trên thiết bị khác. Nội dung đang nhập được giữ nguyên; đối chiếu sổ trước khi lưu.');else setReload(n=>n+1)};window.addEventListener('mecacao-server-change',changed);return()=>window.removeEventListener('mecacao-server-change',changed)},[busy,pending,financeEditing])
  async function write(route:string,body:any,verb='POST',idempotent=false){
   if(lock.current||disabled||!data||pending)return;lock.current=true;setBusy(true);setError('')
   const payload=JSON.stringify({...body,version:data.version,orderVersion:data.orderVersion})
