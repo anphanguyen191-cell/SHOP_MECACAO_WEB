@@ -1,3 +1,5 @@
+> **MAIN TEST 3.3.0-stage6-main-test — CHƯA STABLE:** mã Stage 5A + Stage 6 Mobile LAN sẵn sàng để kiểm thử trên Windows/iPhone với dữ liệu riêng `data/stage6-main-test`. Không sử dụng kho kinh doanh hoặc chạy đè bản đang bán hàng. Xem [HƯỚNG DẪN MAIN TEST](MAIN_TEST_STAGE6_RELEASE.md). Các checkpoint Stage 4 bên dưới là lịch sử.
+
 # Roadmap hiện tại — Shop Mẹ CaCao Web
 
 Dùng cùng [checkpoint main hiện tại](MAIN_CHECKPOINT_STAGE4_2026-10-10.md) và [nguyên tắc](DEVELOPMENT_PRINCIPLES.md). Mốc mã đã kiểm chứng: `099386a`, runtime baseline **3.0.1-stage2**; hiện đã triển khai bản **3.2.0-stage4**; [CI 38042560022](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/runs/38042560022) SUCCESS trên Linux/Windows 22/24/browser/deploy.

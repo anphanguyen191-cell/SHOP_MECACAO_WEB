@@ -6,6 +6,7 @@ import './styles.css'
 import './desktopExperience.css'
 import './inventorySharing.css'
 import './lightContrast.css'
+import './uiRefresh.css'
 
 registerSW({ immediate: true })
 

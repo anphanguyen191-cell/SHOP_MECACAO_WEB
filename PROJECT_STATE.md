@@ -1,3 +1,5 @@
+> **MAIN TEST 3.3.0-stage6-main-test — CHƯA STABLE:** mã Stage 5A + Stage 6 Mobile LAN sẵn sàng để kiểm thử trên Windows/iPhone với dữ liệu riêng `data/stage6-main-test`. Không sử dụng kho kinh doanh hoặc chạy đè bản đang bán hàng. Xem [HƯỚNG DẪN MAIN TEST](MAIN_TEST_STAGE6_RELEASE.md). Các checkpoint Stage 4 bên dưới là lịch sử.
+
 # Checkpoint hiện tại — Chặng 4 — 3.2.0-stage4
 
 Main giữ toàn bộ chức năng chặng 1/2/3; thêm báo cáo bán hàng/dòng tiền/lãi gộp và phiên kiểm kê lưu số đếm/chênh lệch/lý do. Nguồn trạng thái hiện tại: [checkpoint main đầy đủ](MAIN_CHECKPOINT_STAGE4_2026-10-10.md), [đặc tả chặng4](STAGE4_REPORTS_STOCKTAKE.md), [test report](STAGE4_TEST_REPORT.md).

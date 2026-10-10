@@ -2,6 +2,8 @@ name: Deploy GitHub Pages Preview
 on:
   push:
     branches: ["main"]
+  pull_request:
+    branches: ["main"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,6 +23,12 @@ jobs:
       - run: npm ci
       - name: Dependency security audit
         run: npm audit --omit=dev --audit-level=critical
+      - name: Stage 6 HTTPS LAN isolated auth and role acceptance
+        run: node --import tsx scripts/stage6-lan-http-e2e.mjs
+      - name: Stage 6 dual-device concurrent SOLD over real HTTPS API
+        run: node --import tsx scripts/stage6-lan-real-sale-e2e.mjs
+      - name: Stage 6 real HTTPS iPhone photo upload and localhost review
+        run: node --import tsx scripts/stage6-photo-http-e2e.mjs
       - name: V1 internal gate
         run: npm run test:gate
       - name: Stage 2 fresh release HTTP and PNG acceptance
@@ -83,6 +91,7 @@ jobs:
       - name: Windows V2 sales sandbox HTTP acceptance
         run: node scripts/v2-sales-e2e.mjs
   deploy:
+    if: github.event_name == 'push'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -1,3 +1,5 @@
+> **MAIN TEST 3.3.0-stage6-main-test — CHƯA STABLE:** mã Stage 5A + Stage 6 Mobile LAN sẵn sàng để kiểm thử trên Windows/iPhone với dữ liệu riêng `data/stage6-main-test`. Không sử dụng kho kinh doanh hoặc chạy đè bản đang bán hàng. Xem [HƯỚNG DẪN MAIN TEST](MAIN_TEST_STAGE6_RELEASE.md). Các checkpoint Stage 4 bên dưới là lịch sử.
+
 # SHOP MẸ CACAO WEB — bản mới nhất trên main
 
 ## Bản 3.2.0-stage4: Báo cáo và kiểm kê

@@ -13,7 +13,7 @@ for(;;){
  const ended=new Promise((resolve,reject)=>{child.once('error',reject);child.once('exit',code=>resolve(code??1))})
  let ready=false
  for(let n=0;n<60&&child.exitCode===null;n++){
-  try{const h=await fetch(url+'/api/health',{signal:AbortSignal.timeout(500)}).then(r=>r.json());if(h.ok&&h.freshDevelopment&&h.database==='shop-stage4.db'&&h.salesExecution){ready=true;console.log('\nSHOP ME CACAO - '+h.version+' - MAIN\n'+url+'\nKho: '+h.warehouse+'\nChon kho tren giao dien truoc khi nhap du lieu.\nDong cua so nay de dung ung dung.\n');break}}catch{}
+  try{const h=await fetch(url+'/api/health',{signal:AbortSignal.timeout(500)}).then(r=>r.json());if(h.ok&&h.freshDevelopment&&h.database==='shop-stage6-main-test.db'&&h.salesExecution){ready=true;console.log('\nSHOP ME CACAO - '+h.version+' - MAIN TEST / PREVIEW\n'+url+'\nKho: '+h.warehouse+'\nCHI DUNG KHO GIA LAP TAO BANG CREATE_MAIN_TEST_WAREHOUSE.bat.\nDong cua so nay de dung ung dung.\n');break}}catch{}
   await new Promise(r=>setTimeout(r,500))
  }
  if(!ready){child.kill();await ended;throw Error('Server khong san sang; giu nguyen du lieu de kiem tra.')}
