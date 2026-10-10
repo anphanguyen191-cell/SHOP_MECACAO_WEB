@@ -151,8 +151,9 @@ export function changeLanAccount(
  }
  if(!target)throw Error('Không tìm thấy tài khoản')
  if(request.action==='reset'){
-  if(!request.password)throw Error('Thiếu mật khẩu mới')
-  return existing.map(x=>x.username===name?makeLanCredential(name,request.password,x.role):x)
+  const newPassword=request.password
+  if(!newPassword)throw Error('Thiếu mật khẩu mới')
+  return existing.map(x=>x.username===name?makeLanCredential(name,newPassword,x.role):x)
  }
  if(request.action==='disable'){
   if(target.role==='owner'&&existing.filter(x=>x.role==='owner').length<=1)throw Error('Không được khóa chủ shop cuối cùng')
