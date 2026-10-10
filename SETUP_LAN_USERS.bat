@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title Shop Me CaCao - Tao tai khoan Mobile LAN
+title Shop Me CaCao - Tao tai khoan Mobile LAN MAIN TEST
 where node >nul 2>nul
 if errorlevel 1 (
  echo Can cai Node.js 22.13+.

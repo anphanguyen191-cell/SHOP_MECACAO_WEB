@@ -19,9 +19,10 @@ async function stop(child){if(child.exitCode!==null)return;await new Promise(res
 try{
  server=start();let h=await ready();eq(h.freshDevelopment,true);eq((await request('/api/products')).data.length,0)
  const second=start();await new Promise(r=>second.once('exit',r));eq(second.exitCode!==0,true)
- eq(h.release.version,'3.2.0-stage4');eq(h.release.stage,4)
+ eq(h.release.version,'3.3.0-stage6-main-test');eq(h.release.stage,6);eq(h.release.channel,'main-test')
  eq((await request('/api/local/warehouse','POST',{warehouse:path.parse(base).root})).status,409)
  const own=path.join(base,'my-warehouse'),size=path.join(own,'Bộ tự tạo','Size 1');fs.mkdirSync(size,{recursive:true});const ownPhoto=path.join(size,'001.png');fs.copyFileSync(photo,ownPhoto)
+ fs.writeFileSync(path.join(own,'.mecacao-stage6-main-test.json'),JSON.stringify({format:1,purpose:'SHOP_MECACAO_STAGE6_MAIN_TEST_ONLY'}))
  const selection=await request('/api/local/warehouse','POST',{warehouse:own});eq(selection.status,200)
  await new Promise(r=>server.once('exit',r));eq(server.exitCode,75)
  server=start();h=await ready();eq(h.customWarehouse,true);eq(h.warehouse,own)

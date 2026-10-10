@@ -2,18 +2,18 @@
 
 **Phạm vi phê duyệt:** cùng Wi-Fi, iPhone dùng chung React/Express/SQLite với Windows. Không cloud, không NAT/port forwarding, không mở Internet. Windows LOCAL tiếp tục ở `http://127.0.0.1:3000`; listener LAN, khi chủ shop tự bật, chạy tại `https://IP-WINDOWS:3443`.
 
-**TRẠNG THÁI:** mã có cổng HTTPS opt-in, tài khoản, session, chính sách quyền và giao diện đăng nhập. Chưa có nghiệm thu iPhone và kiểm thử E2E LAN hoàn chỉnh. CHỈ dùng kho giả lập; không nhập kho kinh doanh vào bản thử LAN. Nếu test không đạt, không chạy START_SHOP_LAN.bat.
+**TRẠNG THÁI:** mã có cổng HTTPS opt-in, tài khoản, session, chính sách quyền và giao diện đăng nhập. Chưa nghiệm thu iPhone vật lý; các bài E2E LAN giả lập đã có CI. CHỈ dùng kho giả lập; không nhập kho kinh doanh vào bản thử LAN. MAIN TEST chỉ sử dụng dữ liệu và kho ảnh giả lập do chương trình tạo; không bật với dữ liệu kinh doanh.
 
 ## Điều kiện bắt buộc trước khi có thể bật LAN
 1. Windows cài Node.js 22.13+ hoặc Node.js 24, máy và điện thoại chung Wi-Fi tin cậy; Windows không có cổng chuyển tiếp (port forwarding) ra Internet.
 2. Địa chỉ IPv4 của adapter Windows là mạng riêng `10.x.x.x`, `172.16–31.x.x` hoặc `192.168.x.x`; không chọn IP công cộng, loopback, IP của máy khác, hoặc `0.0.0.0`.
-3. Có chứng chỉ TLS `data/stage4/lan/cert.pem`, khóa `data/stage4/lan/key.pem` với Subject Alternative Name IP đúng địa chỉ Windows và đang trong hạn sử dụng. Chứng chỉ/CA phải được tin cậy trên iPhone; không bỏ qua cảnh báo HTTPS.
+3. Có chứng chỉ TLS `data/stage6-main-test/lan/cert.pem`, khóa `data/stage6-main-test/lan/key.pem` với Subject Alternative Name IP đúng địa chỉ Windows và đang trong hạn sử dụng. Chứng chỉ/CA phải được tin cậy trên iPhone; không bỏ qua cảnh báo HTTPS.
 4. Windows Firewall chỉ cho phép TCP 3443 từ subnet LAN tin cậy; không mở 3000 ra ngoài. Không cấu hình router để forward TCP 3443.
 5. Tạo tài khoản bằng `SETUP_LAN_USERS.bat`. Lần đầu cấp quyền `owner`; các lần sau có thể thêm `cashier`, `inventory`, `viewer`. Mật khẩu phải có ít nhất 14 ký tự, chữ và số; script hỏi không hiện mật khẩu, chỉ ghi salt + password hash.
 6. Chỉ khi đủ các điều kiện trên mới mở `START_SHOP_LAN.bat`, nhập IP Windows đã đăng ký certificate. Script gọi cùng `START_SHOP.bat`; không tạo server/database thứ hai.
 
 ## Cấu hình chứng chỉ (thử nghiệm, KHÔNG dùng kho thật)
-Có thể dùng tiện ích `mkcert` do chủ shop tự cài từ nguồn tin cậy trên Windows. Tạo và tin cậy CA theo hướng dẫn của mkcert; sau đó trong thư mục `data/stage4/lan`, tạo cặp cert/key riêng cho IP Windows:
+Có thể dùng tiện ích `mkcert` do chủ shop tự cài từ nguồn tin cậy trên Windows. Tạo và tin cậy CA theo hướng dẫn của mkcert; sau đó trong thư mục `data/stage6-main-test/lan`, tạo cặp cert/key riêng cho IP Windows:
 
 ```text
 mkcert -cert-file cert.pem -key-file key.pem 192.168.1.100
@@ -52,7 +52,7 @@ Thay `192.168.1.100` bằng **IP thật trên Windows**. Cài chứng chỉ CA v
 ## Quản trị tài khoản và audit (cập nhật checkpoint)
 - Mở `SETUP_LAN_USERS.bat` trên Windows. Nếu đã có chủ shop, chọn **1 — Thêm**, **2 — Đổi mật khẩu**, hoặc **3 — Khóa tài khoản**. Phải xác thực bằng tên và mật khẩu owner hiện hành. Không cho khóa owner cuối cùng.
 - **Luôn dừng và mở lại `START_SHOP_LAN.bat`** sau khi thêm/đổi/khóa tài khoản, vì server nạp tài khoản khi khởi động; restart cũng thu hồi toàn bộ phiên đăng nhập đã cấp.
-- Nhật ký kiểm toán nằm ở `data/stage4/lan/audit.jsonl` (hash-chain, không có mật khẩu/token hoặc nội dung request). Đừng xóa/sửa tay; nếu lỗi integrity, server sẽ từ chối bật LAN cho đến khi đối soát. Chưa có xoay vòng archive được xác nhận.
+- Nhật ký kiểm toán nằm ở `data/stage6-main-test/lan/audit.jsonl` (hash-chain, không có mật khẩu/token hoặc nội dung request). Đừng xóa/sửa tay; nếu lỗi integrity, server sẽ từ chối bật LAN cho đến khi đối soát. Chưa có xoay vòng archive được xác nhận.
 - Vai trò viewer xem thông tin tồn chung; cashier xem và ghi đơn/tiền/khách, không kiểm kê; inventory quản lý phiên kiểm kê, không bán; owner truy cập các tác vụ nghiệp vụ trên LAN **trừ những tác vụ bắt buộc Windows như backup/FS/recovery**.
 - Dữ liệu stage4/lan thuộc thư mục ứng dụng thử riêng. Không đưa key.pem, users.json hoặc audit.jsonl lên GitHub.
 
@@ -66,11 +66,11 @@ Thay `192.168.1.100` bằng **IP thật trên Windows**. Cài chứng chỉ CA v
 
 ## Checkpoint 6C — Hộp ảnh iPhone chờ duyệt (PREVIEW, không STABLE)
 1. Trên iPhone Safari đã đăng nhập bằng `owner` hoặc `inventory`, mở **Ảnh iPhone**. Chọn/chụp tối đa 12 ảnh mỗi lượt; mỗi ảnh được gửi tối đa 4 MB (JPEG/PNG/WebP; HEIC hoặc ảnh quá lớn có thể được Safari chuyển/nén JPEG, phải kiểm tra lại màu và họa tiết).
-2. Server kiểm tra giải mã, kích thước, SHA-256; từ chối nội dung trùng ảnh trong hộp chờ, ảnh đã đăng ký và hash ảnh SOLD. Chỉ sau khi thành công ảnh mới được lưu tại `data/stage4/lan/phone-pending/` trên máy Windows.
+2. Server kiểm tra giải mã, kích thước, SHA-256; từ chối nội dung trùng ảnh trong hộp chờ, ảnh đã đăng ký và hash ảnh SOLD. Chỉ sau khi thành công ảnh mới được lưu tại `data/stage6-main-test/lan/phone-pending/` trên máy Windows.
 3. Chủ shop **trên Windows LOCAL**, mở **Ảnh iPhone**, đối chiếu ảnh, kích thước và tên tệp. Nhấn **Duyệt và sao chép nguồn**; API chỉ chấp nhận thao tác này trên `localhost:3000`, từ chối kể cả tài khoản owner ở LAN.
-4. Bản sao đã duyệt nằm ở `data/stage4/lan/phone-reviewed/<uuid>/source.jpg` (hoặc PNG/WebP). Ảnh gốc và bản preview ở thư mục `phone-pending` **không bị xóa/di chuyển**. Tại màn **Nhập hàng** trên Windows, chọn đúng thư mục nguồn vừa duyệt, khai báo Product/Size/giá và số lượng ảnh, rồi xác nhận theo quy trình nhập hàng hiện hành.
+4. Bản sao đã duyệt nằm ở `data/stage6-main-test/lan/phone-reviewed/<uuid>/source.jpg` (hoặc PNG/WebP). Ảnh gốc và bản preview ở thư mục `phone-pending` **không bị xóa/di chuyển**. Tại màn **Nhập hàng** trên Windows, chọn đúng thư mục nguồn vừa duyệt, khai báo Product/Size/giá và số lượng ảnh, rồi xác nhận theo quy trình nhập hàng hiện hành.
 5. Nhận hoặc duyệt ảnh **không tạo hàng tồn**. Chỉ ảnh canonical đã được nghiệp vụ Nhập hàng đăng ký thành công mới được cộng tồn. Không tự đăng ký một ảnh SOLD thành hàng hoàn trả.
-6. Giới hạn tạm thời: 200 ảnh/lượt lưu trữ trong hộp chờ, không có nút xóa tự động. Khi đầy, dừng nhận để đối soát/backup; không xóa tay dữ liệu gốc. Không đưa các tệp trong `data/stage4/lan` lên GitHub.
+6. Giới hạn tạm thời: 200 ảnh/lượt lưu trữ trong hộp chờ, không có nút xóa tự động. Khi đầy, dừng nhận để đối soát/backup; không xóa tay dữ liệu gốc. Không đưa các tệp trong `data/stage6-main-test/lan` lên GitHub.
 7. **Chưa nghiệm thu:** HTTPS trên Safari iPhone thật, camera HEIC ngoài hiện trường, ngắt Wi-Fi khi đang gửi, UI màn nhỏ và nhập ảnh đã duyệt trên Windows thực tế. Các kiểm thử GitHub chỉ dùng tệp ảnh giả lập.
 
 ### Chuyển sang biểu mẫu Nhập hàng trên Windows

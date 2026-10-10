@@ -23,10 +23,10 @@ try{
  const port=Number(fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0]),targets=await fetch('http://127.0.0.1:'+port+'/json/list').then(r=>r.json())
  ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true})});ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}})
  await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Page.navigate',{url:'http://127.0.0.1:3000'});await until("!!document.querySelector('.releaseWarehouse button')")
- assert(await run("document.querySelector('.releaseStatus').textContent.includes('3.2.0-stage4')"))
+ assert(await run("document.querySelector('.releaseStatus').textContent.includes('3.3.0-stage6-main-test')"))
  await run("document.querySelector('.releaseWarehouse button').click()");await until("!!document.querySelector('.folderModal')");await run("document.querySelector('[aria-label=\"Đóng chọn thư mục\"]').click()")
  // Real folder selection, automatic launcher restart, and UI reload without manual scripts.
- const own=path.join(tmp,'my-test-warehouse');fs.mkdirSync(own)
+ const own=path.join(tmp,'my-test-warehouse');fs.mkdirSync(own);fs.writeFileSync(path.join(own,'.mecacao-stage6-main-test.json'),JSON.stringify({format:1,purpose:'SHOP_MECACAO_STAGE6_MAIN_TEST_ONLY'}))
  await run("fetch('/api/local/warehouse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({warehouse:"+JSON.stringify(own)+"})}).then(r=>r.json())")
  for(let i=0;i<100;i++){try{const h=await fetch('http://127.0.0.1:3000/api/health').then(r=>r.json());if(h.customWarehouse)break}catch{}await sleep(100)}
  await cmd('Page.reload');await until("document.querySelector('.releaseWarehouse')?.textContent.includes("+JSON.stringify(own)+")")
