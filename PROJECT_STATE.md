@@ -1,3 +1,7 @@
+# Windows first-time V2 setup environment fix — 2026-10-10
+
+Owner screenshot shows test:core stopped by the sales sandbox guard: run-self-test cleared drafts/root but inherited SHOP_ENABLE_V2_SALES=1. Clear both flags in isolated runners and clear operational DB/root/flags inside SETUP_FIRST_TIME's SETLOCAL (caller values restored on return). Add Linux/Windows Node22/24 regression running all three setup runners with V2 flags and a protected sentinel caller DB/root. No business data/schema changes. Exact new CI required; owner first-time launch still needs retest.
+
 # Restore result regression fix — 2026-10-10
 
 Review for owner Windows instructions found schema130 restore result missing counts consumed by UI. Return verified row counts, make UI resilient, show correct V2 sales restore launcher, and add real Chromium full-backup→restore READY result coverage. Tests and exact CI must be checked on new commit. This supersedes b001faf for owner download.
