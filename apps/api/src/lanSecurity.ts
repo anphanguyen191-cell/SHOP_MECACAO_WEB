@@ -92,6 +92,7 @@ export function lanApiAllowed(role:LanRole,rawMethod:string,rawPath:string){
   if(method==='POST'&&/^\/api\/sales\/drafts$/.test(p))return true
   if(method==='PUT'&&/^\/api\/sales\/drafts\/[A-Za-z0-9_-]+$/.test(p))return true
   if(method==='POST'&&/^\/api\/sales\/drafts\/[A-Za-z0-9_-]+\/(?:cancel|confirm|aftercare)$/.test(p))return true
+  if(method==='POST'&&/^\/api\/sales\/drafts\/[A-Za-z0-9_-]+\/(?:preflight|preview)$/.test(p))return true
   if(method==='POST'&&/^\/api\/sales\/drafts\/[A-Za-z0-9_-]+\/finance\/entries$/.test(p))return true
   if(method==='PUT'&&/^\/api\/sales\/drafts\/[A-Za-z0-9_-]+\/finance$/.test(p))return true
   if(method==='PUT'&&/^\/api\/sales\/drafts\/[A-Za-z0-9_-]+\/aftercare\/[A-Za-z0-9_-]+$/.test(p))return true
