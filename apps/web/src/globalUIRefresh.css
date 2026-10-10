@@ -11,3 +11,12 @@
 .shell :is(.catalogPanel,.inventoryFilters,.inventoryHeading,.inventoryCard,.overviewPanel){border-color:var(--mc-border);color:var(--mc-ink)}
 .shell .inventoryCard:hover,.shell .product:hover{border-color:var(--mc-accent);box-shadow:0 8px 25px #3f233919}
 @media(max-width:760px){.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics){grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.shell :is(.inventoryHeading,.catalogPanelHeading){flex-wrap:wrap;gap:12px}}
+
+/* Checkpoint 2/5 — forms: receiving, sales, customer records */
+.shell :is(.receiptIntro,.receipt,.receiptOverview,.warehouseWorkspace,.salesList,.salesEditor,.salesArchivePanel,.customerPanel,.customerEditor,.customerList){background:var(--mc-surface);color:var(--mc-ink);border:1px solid var(--mc-border);border-radius:var(--mc-radius-lg);box-shadow:var(--mc-shadow);min-width:0}
+.shell :is(.receipt,.salesEditor,.warehouseWorkspace) :is(input,select,textarea){min-width:0;max-width:100%;background:var(--mc-input);color:var(--mc-ink);border-color:var(--mc-border)}
+.shell :is(.receipt,.salesEditor,.warehouseWorkspace) :is(label,small){line-height:1.45}
+.shell :is(.receipt,.salesEditor,.warehouseWorkspace) :is(.primary,button[type=submit]){min-height:44px;border-radius:14px;font-weight:750}
+.shell :is(.salesList,.salesEditor,.receipt,.warehouseWorkspace) :is(h2,h3,strong){overflow-wrap:anywhere}
+.shell.themeDark :is(.receipt,.salesEditor,.warehouseWorkspace,.salesList) :is(input,select,textarea){background:var(--mc-input)!important;color:var(--mc-ink)!important}
+@media(max-width:760px){.shell :is(.receipt,.salesEditor,.salesList,.warehouseWorkspace){padding:clamp(12px,3vw,19px)}.shell :is(.formGrid,.receiptRow){gap:12px}.shell .receiptRow>*{min-width:0}}
