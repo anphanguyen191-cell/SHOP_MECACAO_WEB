@@ -10,6 +10,7 @@ app.put('/api/sales/drafts/order',(_req,res)=>res.status(409).json({error:'stale
 app.post('/api/lan/login',(_req,res)=>res.json({ok:true}))
 app.get('/api/inventory/explorer',(_req,res)=>res.json([]))
 const srv=app.listen(0,'127.0.0.1')
+await new Promise<void>((resolve,reject)=>{if(srv.listening)resolve();else {srv.once('listening',resolve);srv.once('error',reject)}})
 const base='http://127.0.0.1:'+(srv.address() as any).port
 let checks=0
 const read=async()=>await (await fetch(base+'/api/lan/changes')).json()
