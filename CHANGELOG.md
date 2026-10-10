@@ -1,3 +1,7 @@
+## 2026-10-10 — V2 copied-DB atomic commit foundation
+
+Added isolated schema129 prototype: backup migration, atomic SOLD/UNIQUE image claims/SALE ledger, immutable snapshots, request-key idempotency, current-cost/zero-price guards and DB-derived staging recovery. Added eleven hard-exit points and real two-process contention tests to the Linux/Windows gate. Not mounted by server/UI; no live stock/schema/file mutation or deletion. See V2_ATOMIC_COMMIT_CHECKPOINT.md.
+
 ## 2026-10-10 — V2 whole-order preflight
 
 Added read-only physical-image/decode/checksum gate and per-unit review in draft editor, with version/token revalidation, overlap/zero-price/cost warnings and desktop/mobile light/dark UI. Regression coverage includes changed/missing/corrupt images and report invalidation after saving edits. No SALE/SOLD/deletion; see V2_PREFLIGHT_CHECKPOINT.md.

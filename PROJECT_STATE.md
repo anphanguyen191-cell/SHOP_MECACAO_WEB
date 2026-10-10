@@ -1,3 +1,8 @@
+# V2 atomic commit / DB-derived recovery lab — 2026-10-10
+
+Owner authorized continuing. Added copied-database-only schema129 migration/verified backup, atomic SOLD snapshots + UNIQUE image claims + SALE ledger, request/payload idempotency, immutable committed evidence, current-cost capture and zero-price acknowledgement. Recovery now derives COMMITTED/UNCOMMITTED/AMBIGUOUS from real SQLite evidence and journal hashes, not a harness-supplied decision. Eleven hard-process-exit points + two-process contention; source DB/images preserved. Scope/tests: `V2_ATOMIC_COMMIT_CHECKPOINT.md`. **Not wired into server/UI; not operational V2 confirm, no live migration/sale/deletion.** Default110/draft120 unchanged; Windows restore/STABLE and V2 sale release gates remain pending. Exact new CI must be checked; baseline bd4b9b6 Actions38016377754 all SUCCESS.
+
+---
 # V2 saved-order preflight checkpoint — 2026-10-10
 
 Read-only whole-draft physical image decode/hash and version revalidation, per-unit issues, draft overlaps, zero-price/unknown-cost warnings, reviewed totals; responsive themed UI invalidates old reports after edits. Sandbox POST preflight uses existing origin/loopback gate. Scope/tests: `V2_PREFLIGHT_CHECKPOINT.md`. No schema/claim/SALE/SOLD/confirm/deletion. V2 not complete; production sales and Windows restore/STABLE gates remain pending. Baseline a37320f exact Actions38015746092 all SUCCESS; new commit requires its own CI verification.

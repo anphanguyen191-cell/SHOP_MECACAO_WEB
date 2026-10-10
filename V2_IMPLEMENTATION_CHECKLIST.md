@@ -13,6 +13,10 @@ Ngày: 2026-10-10. **Đợt nháp sandbox đã triển khai; chưa có xác nh�
 | 6 | Rà tất cả module và backup/restore V2 | Không cộng archive vào tồn, không import lại SOLD, rename/copy loại SOLD; restore sang kho mới giữ trạng thái |
 | 7 | CI và Windows acceptance sandbox | Linux + Windows Node 22/24 + browser PASS; chủ shop nghiệm thu; cập nhật docs và khóa V2 STABLE |
 
+## Nền transaction đợt4 — chưa release confirm
+
+`V2_ATOMIC_COMMIT_CHECKPOINT.md`: trên DB/ảnh bản sao có migration129, atomic SOLD/claim/SALE, request-key idempotency và DB-derived recovery; kiểm thử hai tiến trình thật tranh cùng hàng, 11 hard-exit points. Không mount server/UI, không đánh dấu các ca bán vận hành bên dưới PASS. Còn promotion schema chính thức, khóa xuyên module, orchestration/confirm/API/UI và SOLD backup/restore.
+
 ## Ca kiểm thử bắt buộc
 
 - [ ] Một bộ, nhiều bộ cùng Size, nhiều Size/Product; số lượng đúng image IDs.
