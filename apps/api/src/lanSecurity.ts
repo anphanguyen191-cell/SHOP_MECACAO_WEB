@@ -6,6 +6,8 @@ export type LanIdentity={username:string;role:LanRole}
 
 const roles=new Set<LanRole>(['owner','cashier','inventory','viewer'])
 const sessionAge=8*60*60*1000
+const maxTrackedNames=128
+const maxLiveSessions=512
 const cooldown=15*60*1000
 const passwordBytes=64
 const tokenDigest=(value:string)=>createHash('sha256').update(value).digest('hex')
@@ -32,6 +34,8 @@ export function createLanSessionManager(users:readonly LanCredential[],clock:()=
  const failures=new Map<string,{count:number;blockedUntil:number}>()
  const sessions=new Map<string,{user:LanIdentity;expires:number}>()
  const attempt=(username:string,password:string)=>{
+  // Bound untrusted login-name tracking and concurrent tokens on a shop-local server.
+  if(failures.size>=maxTrackedNames&&!failures.has(username.trim().toLowerCase()))return null
   const name=username.trim().toLowerCase()
   if(!usernamePattern.test(name)||typeof password!=='string'||password.length>256)return null
   const current=failures.get(name)
@@ -43,6 +47,10 @@ export function createLanSessionManager(users:readonly LanCredential[],clock:()=
    return null
   }
   failures.delete(name)
+  if(sessions.size>=maxLiveSessions){
+   for(const [key,entry] of sessions)if(entry.expires<=clock())sessions.delete(key)
+   if(sessions.size>=maxLiveSessions)return null
+  }
   const token=randomBytes(32).toString('base64url')
   const identity={username:user.username,role:user.role}
   sessions.set(tokenDigest(token),{user:identity,expires:clock()+sessionAge})

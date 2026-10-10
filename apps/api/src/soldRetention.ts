@@ -45,7 +45,8 @@ export function soldRetentionService(db:DatabaseSync,warehouseRoot:string){
   return entry as {staged:string;archive:string;sourceHash:string;archiveHash:string}
  }
  function describe(r:SoldRow):RetentionRow{
-  const snapshot=JSON.parse(r.snapshot) as {product_name?:string;size?:string}
+  let snapshot:{product_name?:string;size?:string}={}
+  try{snapshot=JSON.parse(r.snapshot)}catch{/* Corrupt historic snapshot must not block remaining evidence listings. */}
   const result:RetentionRow={
    imageId:r.imageId,orderId:r.orderId,soldAt:r.soldAt,productName:String(snapshot.product_name??'Bộ hàng'),
    size:String(snapshot.size??''),status:'REVIEW_REQUIRED',originalPresent:false,originalBytes:0,

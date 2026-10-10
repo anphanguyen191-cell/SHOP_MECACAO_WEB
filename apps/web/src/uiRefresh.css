@@ -97,3 +97,10 @@
 
 /* Keep the original dark drawer search design: field is transparent inside its rounded shell. */
 .shell.themeDark .drawerSearch input{background:transparent!important;box-shadow:none}
+
+/* Authenticated LAN preview banner; clearly distinguish demo, LOCAL and Wi-Fi. */
+.shell .lanSafetyBanner{margin:14px auto 0;width:min(1080px,calc(100% - 32px));display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:13px 17px;border-radius:17px;background:#fff5e8;border:1px solid #c48f51;color:#704019;line-height:1.4}
+.shell .lanSafetyBanner b{font-size:12px;letter-spacing:.03em}
+.shell .lanSafetyBanner span{font-size:13px}
+.shell.themeDark .lanSafetyBanner{background:#443625;border-color:#af8f55;color:#ffe8c9}
+@media(max-width:760px){.shell .lanSafetyBanner{margin:10px 12px 0;width:calc(100% - 24px);padding:12px}}
