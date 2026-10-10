@@ -25,6 +25,8 @@ jobs:
         run: npm audit --omit=dev --audit-level=critical
       - name: Stage 6 HTTPS LAN isolated auth and role acceptance
         run: node --import tsx scripts/stage6-lan-http-e2e.mjs
+      - name: Stage 6 dual-device concurrent SOLD over real HTTPS API
+        run: node --import tsx scripts/stage6-lan-real-sale-e2e.mjs
       - name: V1 internal gate
         run: npm run test:gate
       - name: Stage 2 fresh release HTTP and PNG acceptance
