@@ -1,5 +1,7 @@
 // This worker is started by the server, waits for its durable PID lock, and never serves HTTP.
 if(!process.send||process.env.SHOP_TASK_WORKER!=='1')throw Error('Task worker requires parent IPC')
+process.once('disconnect',()=>process.exit(1))
+function finish(value:unknown,code:number){process.once('message',(ack:any)=>process.exit(ack?.persisted===true?code:1));process.send?.(value)}
 process.once('message',async(message:any)=>{
  const emit=(progress:unknown)=>process.send?.({progress})
  try{
@@ -18,6 +20,6 @@ process.once('message',async(message:any)=>{
    }
    result={outcomes};emit({phase:'REGISTER',completed:outcomes.filter(r=>r.status==='SAVED').length,total:message.payload.products.length,outcomes})
   }else throw Error('Unknown task')
-  process.send?.({result},()=>process.exit(0))
- }catch(e){process.send?.({error:e instanceof Error?e.message:String(e)},()=>process.exit(1))}
+  finish({result},0)
+ }catch(e){finish({error:e instanceof Error?e.message:String(e)},1)}
 })

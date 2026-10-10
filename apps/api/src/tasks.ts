@@ -39,7 +39,7 @@ export function taskManager(dbPath:string){
   const child=spawn(process.execPath,args,{stdio:['ignore','ignore','pipe','ipc'],env:{...process.env,SHOP_TASK_WORKER:'1',SHOP_DB_PATH:dbPath}})
   let stderr='',last=0,final=false;child.stderr!.on('data',b=>{stderr=(stderr+b).slice(-2000)})
   const uncertain=(error:string)=>{t.status='REVIEW_REQUIRED';t.error=error;save(t)}
-  child.on('message',(m:any)=>{try{if(m.progress){t.progress=m.progress;if(Date.now()-last>100||m.progress.phase==='DONE'){save(t);last=Date.now()}else events.emit(t.id,{...t,updatedAt:new Date().toISOString()})}else if('result'in m){t.result=m.result;save(t);final=true}else if(m.error){t.error=m.error;save(t);final=true}}catch{final=false;child.kill()}})
+  child.on('message',(m:any)=>{try{if(m.progress){t.progress=m.progress;if(Date.now()-last>100||m.progress.phase==='DONE'){save(t);last=Date.now()}else events.emit(t.id,{...t,updatedAt:new Date().toISOString()})}else if('result'in m){t.result=m.result;save(t);final=true;child.send({persisted:true})}else if(m.error){t.error=m.error;save(t);final=true;child.send({persisted:true})}}catch(e){final=false;stderr+=' · Không lưu/xác nhận được kết quả: '+String(e);child.kill()}})
   child.once('spawn',()=>{try{write(lock,{id:t.id,pid:child.pid});t.status='RUNNING';save(t);child.send({kind,payload})}catch{child.kill()}})
   child.once('error',e=>{uncertain(e.message)})
   child.once('exit',()=>{try{if(fs.existsSync(lock)&&JSON.parse(fs.readFileSync(lock,'utf8')).id===t.id)fs.unlinkSync(lock);taskActivity.busy=false;if(!final)uncertain('Worker dừng trước kết quả cuối. '+stderr);else{t.status=t.error?'FAILED':'SUCCEEDED';save(t)}}finally{taskActivity.busy=false}})

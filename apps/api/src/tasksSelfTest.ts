@@ -44,7 +44,7 @@ try{
  await stop();await start();const again=await post('/api/goods-receipt',receiptPayload,'tasks-receipt-key-0001');eq(again.data.task.id,receipt.data.task.id);eq(again.data.task.status,'SUCCEEDED')
  const proof=new DatabaseSync(database,{readOnly:true});eq(Number(proof.prepare("SELECT COUNT(*) n FROM inventory_transactions WHERE transaction_type='IMPORT'").get()!.n),1);proof.close()
  const backup=await post('/api/backup/lossless',{},'tasks-backup-key-0001');eq(backup.status,202);const backed=await done(backup.data.task.id);eq(backed.status,'SUCCEEDED');eq(verifyLosslessBackup(backed.result.directory).ok,true);eq(backed.progress.phase,'BACKUP_VERIFY')
- const bad=await post('/api/goods-receipt',{...receiptPayload,productCode:'PN002'},'tasks-receipt-fail-0001');eq((await done(bad.data.task.id)).status,'FAILED')
+ const bad=await post('/api/goods-receipt',{...receiptPayload,productCode:'PN002'},'tasks-receipt-fail-0001');const badResult=await done(bad.data.task.id);assert.equal(badResult.status,'FAILED',JSON.stringify(badResult));checks++
  // Kill a freshly started worker before it can return a verified final result.
  const interrupted=await post('/api/store/scan',{rootPath:warehouse},'tasks-interrupted-0001');eq(interrupted.status,202)
  let lock=JSON.parse(fs.readFileSync(path.join(root,'database','operation-tasks','active.json'),'utf8'))
