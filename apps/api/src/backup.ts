@@ -1,8 +1,12 @@
+import {archiveSnapshot,type ExtraFile} from './archiveSnapshot.js'
+import {readSchemaVersion} from './schema.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import {createHash} from 'node:crypto'
 import {DatabaseSync} from 'node:sqlite'
 import sharp from 'sharp'
+import {verifyLosslessBackup} from './losslessVerify.js'
+export {verifyLosslessBackup} from './losslessVerify.js'
 import { db, dbPath } from './db.js'
 
 export function createBackup(){
@@ -50,6 +54,7 @@ export async function createOptimizedImageBackup(){
  * Original customer image locations are never modified.
  */
 export function createLosslessBackup(){
+ const schema=readSchemaVersion(db),archiveSources=schema===120&&process.env.SHOP_SANDBOX_ROOT?archiveSnapshot(process.env.SHOP_SANDBOX_ROOT):[]
  const base=createBackup()
  const imageDir=path.join(base.directory,'lossless-images')
  fs.mkdirSync(imageDir,{recursive:true})
@@ -67,41 +72,16 @@ export function createLosslessBackup(){
   files.push({id:rec.id,product_id:rec.product_id,variant_id:rec.variant_id,source_path:rec.file_path,backup_path:path.relative(base.directory,backupPath),size:fs.statSync(backupPath).size,sha256:copyHash})
  }
  const snapshot=path.join(base.directory,'shop.db')
- const manifest={version:1,createdAt:new Date().toISOString(),mode:'lossless-recovery',database:'shop.db',database_sha256:hash(snapshot),files}
+ const archives:ExtraFile[]=[]
+ for(const file of archiveSources){
+  const target=path.join(base.directory,'trial-archives',file.relative_path);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(file.source,target,fs.constants.COPYFILE_EXCL)
+  if(hash(target)!==file.sha256||hash(file.source)!==file.sha256)throw Error('Ảnh nhẹ thay đổi trong lúc backup')
+  archives.push({relative_path:file.relative_path,backup_path:path.relative(base.directory,target),sha256:file.sha256,size:file.size})
+ }
+ const manifest={version:archives.length?2:1,archives,createdAt:new Date().toISOString(),mode:'lossless-recovery',database:'shop.db',database_sha256:hash(snapshot),files}
  const tmp=path.join(base.directory,'lossless-manifest.json.tmp')
  fs.writeFileSync(tmp,JSON.stringify(manifest,null,2),'utf8')
  fs.renameSync(tmp,path.join(base.directory,'lossless-manifest.json'))
  const verified=verifyLosslessBackup(base.directory)
- return {directory:base.directory,mode:'lossless-recovery',imageCount:files.length,totalBytes:files.reduce((n,f)=>n+f.size,0),database:base.path,manifest:'lossless-manifest.json',verified}
-}
-/** Safe verification only. Does not restore or overwrite any warehouse file. */
-export function verifyLosslessBackup(directory:string){
- const dir=path.resolve(directory),manifestPath=path.join(dir,'lossless-manifest.json')
- const obj=JSON.parse(fs.readFileSync(manifestPath,'utf8')) as {version:number;database:string;database_sha256:string;files:Array<{id:number;source_path:string;backup_path:string;sha256:string;size:number}>}
- if(obj.version!==1||obj.database!=='shop.db'||!Array.isArray(obj.files))throw new Error('Manifest sao lưu không hợp lệ')
- const hash=(p:string)=>createHash('sha256').update(fs.readFileSync(p)).digest('hex')
- const snapshot=path.join(dir,'shop.db')
- if(hash(snapshot)!==obj.database_sha256)throw new Error('Backup database sai checksum')
- const checked=new Set<string>()
- const ids=new Set<number>()
- for(const rec of obj.files){
-  if(!Number.isInteger(rec.id)||rec.id<=0||ids.has(rec.id)||typeof rec.backup_path!=='string'||typeof rec.source_path!=='string'||!Number.isInteger(rec.size)||rec.size<0||!/^[0-9a-f]{64}$/.test(rec.sha256))throw new Error('Bản ghi ảnh sao lưu không hợp lệ hoặc trùng ID')
-  ids.add(rec.id)
-  const target=path.resolve(dir,rec.backup_path)
-  const rel=path.relative(dir,target)
-  if(!rel||rel==='..'||rel.startsWith('..'+path.sep)||path.isAbsolute(rel)||checked.has(target))throw new Error('Đường dẫn file sao lưu không an toàn')
-  checked.add(target)
-  if(!fs.existsSync(target)||!fs.statSync(target).isFile()||fs.statSync(target).size!==rec.size||hash(target)!==rec.sha256)throw new Error('Ảnh sao lưu bị thiếu hoặc sai checksum: '+rec.backup_path)
-  const physicalRel=path.relative(fs.realpathSync(dir),fs.realpathSync(target))
-  if(path.isAbsolute(physicalRel)||physicalRel==='..'||physicalRel.startsWith('..'+path.sep))throw new Error('Ảnh sao lưu tham chiếu ra ngoài bundle')
- }
- const restored=new DatabaseSync(snapshot,{readOnly:true})
- try{
-  const integrity=(restored.prepare('PRAGMA integrity_check').get() as {integrity_check:string}).integrity_check
-  if(integrity!=='ok'||restored.prepare('PRAGMA foreign_key_check').all().length)throw new Error('SQLite backup không toàn vẹn')
-  const registered=restored.prepare('SELECT id,file_path FROM product_images ORDER BY id').all() as Array<{id:number;file_path:string}>
-  const byId=new Map(obj.files.map(file=>[file.id,file]))
-  if(registered.length!==byId.size||registered.some(row=>byId.get(row.id)?.source_path!==row.file_path))throw new Error('Manifest sao lưu không bao phủ đầy đủ ảnh trong database')
- }finally{restored.close()}
- return {ok:true,imagesVerified:obj.files.length,dbVerified:true}
+ return {directory:base.directory,mode:'lossless-recovery',imageCount:files.length,archiveFileCount:archives.length,totalBytes:files.reduce((n,f)=>n+f.size,0),database:base.path,manifest:'lossless-manifest.json',verified}
 }

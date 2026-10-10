@@ -1,4 +1,5 @@
 import {ARCHIVE_FOLDER} from './salesArchive.js'
+import {restoreTestRouter} from './restoreRoutes.js'
 import express from 'express'
 import path from 'node:path'
 import fs from 'node:fs'
@@ -66,6 +67,9 @@ app.get('/api/health', (_req, res) => res.json({
 }))
 if(salesDraftsEnabled&&sandboxRoot)app.use('/api/sales/drafts',salesDraftRouter(db,sandboxRoot,PORT))
 else app.use('/api/sales/drafts',(_req,res)=>res.status(404).json({error:'V2 đơn nháp chưa bật; chỉ thử bằng sandbox V2 riêng.'}))
+
+if(sandboxRoot)app.use('/api/backup/restore-test',restoreTestRouter(sandboxRoot,PORT))
+else app.post('/api/backup/restore-test',(_req,res)=>res.status(403).json({error:'Restore thử chỉ bật trong sandbox, không thay database đang dùng.'}))
 
 app.get('/api/inventory/share/capabilities',(_req,res)=>res.json(clipboardCapabilities()))
 app.post('/api/inventory/share/prepare',(req,res)=>{

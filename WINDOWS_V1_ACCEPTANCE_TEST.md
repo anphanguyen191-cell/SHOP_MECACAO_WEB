@@ -49,3 +49,7 @@ Nếu bản c530b998 dừng SETUP với `EPERM ... fsync` trong `goodsReceipt.ts
 - Không gắn nhãn **V1 STABLE** cho đến khi checklist Windows trên bản sao đạt và phương án restore được xác minh.
 
 Nếu test phát hiện lỗi, ghi lại tên chức năng, bước thao tác, thông báo lỗi, ảnh chụp màn hình và đường dẫn kho giả lập (không gửi dữ liệu khách thật).
+
+## Bổ sung full restore vận hành (2026-10-10)
+
+Source mới có full restore sang kho mới schema110/120. Trong V1 sandbox3005, Cài đặt → backup đầy đủ → chọn kho gốc warehouse → xác nhận tạo bản restore riêng → READY. Mở RUN_WINDOWS_RESTORED_SANDBOX_TEST.bat chọn2, kiểm tra3016 rồi restart/đối chiếu source3005. Chưa ghi đè kho/DB thật. Xem V2_BACKUP_RESTORE_CHECKPOINT.md cho evidence/giới hạn và các bước; Windows owner PASS của ca restore mới vẫn cần ghi nhận trước STABLE.

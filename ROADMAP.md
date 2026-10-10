@@ -14,7 +14,7 @@ Statuses: BACKLOG / PROPOSED / APPROVED / IMPLEMENTING / TESTING / DONE / REJECT
 | V5.0 | PWA/mobile LAN workflow | BACKLOG |
 | V6.0 | Local-first sync/cloud | BACKLOG |
 
-The current V1 status is authoritative: owner reports successful Windows testing on 2026-10-10, and baseline f35375835757457bc7011f127a32f96d3856a060 has CI SUCCESS. See `V1_ACCEPTANCE_CHECKPOINT_2026-10-10.md` for scope. Full operational restore evidence / release checkpoint still need completion; do not invent per-case PASS or infer STABLE from old DONE/READY. Physical stock is the count of registered canonical Size images that still exist; ledger is history/reconciliation. Owner authorized sandbox draft implementation after the specification. See `V2_DRAFT_CHECKPOINT.md`; default V1 remains schema110. This does not release V2 sales or bypass the V1 full restore/STABLE gate.
+The current V1 status is authoritative: owner reports successful Windows testing on 2026-10-10, and baseline f35375835757457bc7011f127a32f96d3856a060 has CI SUCCESS. See `V1_ACCEPTANCE_CHECKPOINT_2026-10-10.md` for scope. Automated full restore/server/launcher is implemented in V2_BACKUP_RESTORE_CHECKPOINT.md; shop Windows restore acceptance / release checkpoint still need completion; do not invent per-case PASS or infer STABLE from old DONE/READY. Physical stock is the count of registered canonical Size images that still exist; ledger is history/reconciliation. Owner authorized sandbox draft implementation after the specification. See `V2_DRAFT_CHECKPOINT.md`; default V1 remains schema110. This does not release V2 sales or bypass the V1 full restore/STABLE gate.
 
 ## Gate rule
 Do not begin the next milestone until the current milestone:

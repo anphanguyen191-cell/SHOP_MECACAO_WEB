@@ -8,15 +8,15 @@ import {createHash} from 'node:crypto'
 import {setTimeout as sleep} from 'node:timers/promises'
 import sharp from 'sharp'
 
-const root=fs.mkdtempSync(path.join(os.tmpdir(),'mecacao-v2-http-')),store=path.join(root,'warehouse'),photo=path.join(store,'Mau test','Size 1','001.jpg'),dbPath=path.join(root,'database','drafts.db')
+const testBase=fs.mkdtempSync(path.join(os.tmpdir(),'mecacao-v2-http-')),root=path.join(testBase,'ShopMeCaCao','V2DraftSandbox'),store=path.join(root,'warehouse'),photo=path.join(store,'Mau test','Size 1','001.jpg'),dbPath=path.join(root,'database','drafts.db')
 fs.mkdirSync(path.dirname(photo),{recursive:true});fs.mkdirSync(path.dirname(dbPath),{recursive:true})
 await sharp({create:{width:300,height:400,channels:3,background:'#9bd6be'}}).jpeg().toFile(photo)
 const hash=()=>createHash('sha256').update(fs.readFileSync(photo)).digest('hex'),original=hash()
 const sock=net.createServer();await new Promise(r=>sock.listen(0,'127.0.0.1',r));const port=sock.address().port;await new Promise(r=>sock.close(r))
 const base='http://127.0.0.1:'+port
-let child,logs='',checks=0
-async function start(enabled=true){
- logs='';child=spawn(process.execPath,['apps/api/dist/server.js'],{env:{...process.env,PORT:String(port),SHOP_HOST:'127.0.0.1',SHOP_SANDBOX_ROOT:root,SHOP_DB_PATH:dbPath,SHOP_ENABLE_V2_DRAFTS:enabled?'1':''},stdio:['ignore','pipe','pipe']});child.stdout.on('data',x=>logs+=x);child.stderr.on('data',x=>logs+=x)
+let child,launcher,logs='',checks=0
+async function start(enabled=true,restored=null){
+ logs='';child=spawn(process.execPath,['apps/api/dist/server.js'],{env:{...process.env,PORT:String(port),SHOP_HOST:'127.0.0.1',SHOP_SANDBOX_ROOT:restored?.targetRoot||root,SHOP_DB_PATH:restored?.database||dbPath,SHOP_ENABLE_V2_DRAFTS:enabled?'1':''},stdio:['ignore','pipe','pipe']});child.stdout.on('data',x=>logs+=x);child.stderr.on('data',x=>logs+=x)
  for(let i=0;i<80;i++){if(child.exitCode!==null)throw Error(logs);try{const r=await fetch(base+'/api/health');if(r.ok)return await r.json()}catch{}await sleep(100)}throw Error('API timeout '+logs)
 }
 async function stop(){if(child&&child.exitCode===null){const c=child;await new Promise(r=>{c.once('exit',r);c.kill()})}child=null}
@@ -54,6 +54,22 @@ try{
  assert((await api('/api/sales/drafts/'+d.id+'/archives')).length===1);checks++
  await api('/api/sales/drafts/'+d.id+'/archives','POST',archiveInput,403,{Origin:'https://untrusted.example','Idempotency-Key':'http-untrusted-archive-key'})
  await api('/api/store/scan','POST',{rootPath:path.join(root,'.mecacao-v2-archive')},403)
+ const backup=await api('/api/backup/lossless','POST',{},201)
+ assert(backup.backup.archiveFileCount===3&&backup.backup.verified.archiveFilesVerified===3);checks++
+ await api('/api/backup/restore-test','POST',{directory:backup.backup.directory,warehouseRoot:store,confirmed:true},403,{Origin:'https://untrusted.example'})
+ await api('/api/backup/restore-test','POST',{directory:backup.backup.directory,warehouseRoot:store,confirmed:false},400)
+ const recovered=await api('/api/backup/restore-test','POST',{directory:backup.backup.directory,warehouseRoot:store,confirmed:true})
+ assert(recovered.status==='READY'&&!recovered.activated&&recovered.imagesVerified===1&&recovered.archiveFilesVerified===3);checks++
+ await stop();const restoredHealth=await start(true,recovered);assert(restoredHealth.database==='shop-restored.db'&&restoredHealth.schema===120);checks++
+ assert((await api('/api/inventory/dashboard')).stock===1&&(await api('/api/sales/drafts/'+d.id)).total===50000);checks++
+ await api('/api/sales/drafts/'+d.id+'/archives/'+saved.archiveId+'/verify','POST',{})
+ const restoredPhoto=await fetch(base+'/api/images/'+id);assert(restoredPhoto.ok&&createHash('sha256').update(Buffer.from(await restoredPhoto.arrayBuffer())).digest('hex')===original);checks++
+ await stop();await start()
+ launcher=spawn(process.execPath,['scripts/run-restored-sandbox.mjs','V2DraftSandbox'],{env:{...process.env,LOCALAPPDATA:testBase,SHOP_NO_OPEN_BROWSER:'1'},stdio:['ignore','pipe','pipe','ipc']})
+ let launcherLogs='';launcher.stdout.on('data',x=>launcherLogs+=x);launcher.stderr.on('data',x=>launcherLogs+=x)
+ let launchOk=false;for(let n=0;n<100;n++){if(launcher.exitCode!==null)throw Error(launcherLogs);try{const h=await(await fetch('http://127.0.0.1:3016/api/health')).json();if(h.sandbox&&h.database==='shop-restored.db'){launchOk=true;break}}catch{}await sleep(100)}assert(launchOk,launcherLogs);checks++
+ assert((await(await fetch('http://127.0.0.1:3016/api/inventory/dashboard')).json()).stock===1);checks++
+ const launched=launcher;await new Promise(r=>{launched.once('exit',r);launched.send('stop')});launcher=null
  const stock=await api('/api/inventory/dashboard');assert(stock.stock===1&&hash()===original);checks++
  const ledger=await api('/api/inventory/history');assert(ledger.length===1&&ledger[0].transaction_type==='OPENING');checks++
  await stop();await start();assert((await api('/api/sales/drafts/'+d.id)).version===2);checks++
@@ -70,7 +86,7 @@ try{
  const old=spawnSync(process.execPath,['apps/api/dist/server.js'],{env:{...process.env,SHOP_SANDBOX_ROOT:root,SHOP_DB_PATH:dbPath,SHOP_ENABLE_V2_DRAFTS:''},encoding:'utf8'})
  assert(old.status!==0&&old.stderr.includes('schema mới hơn'));checks++
  console.log('V2_DRAFT_HTTP PASS: '+checks+' assertions; real CRUD, same-origin, retry, stale version, restart, sandbox gate, V1 newer-schema refusal, unchanged physical stock/ledger')
-}finally{await stop();fs.rmSync(root,{recursive:true,force:true})}
+}finally{if(launcher&&launcher.exitCode===null){const c=launcher;await new Promise(r=>{c.once('exit',r);c.send('stop')})}await stop();fs.rmSync(testBase,{recursive:true,force:true})}
 
 async function browserTest(base,id){
  const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/chromium'].find(fs.existsSync);assert(chrome,'Chromium required for Linux V2 UI test')
@@ -139,6 +155,23 @@ async function browserTest(base,id){
    if(await run("document.querySelector('.shell').classList.contains('themeDark')")!==dark)await run("document.querySelector('.themeToggle').click()")
    await sleep(100);assert(await run('document.documentElement.scrollWidth')<=width+2,'V2 horizontal overflow '+width);checks++
    const pic=await cmd('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(artifact,width+'-'+(dark?'dark':'light')+'.png'),Buffer.from(pic.data,'base64'))
+  }
+  await cmd('Emulation.setDeviceMetricsOverride',{width:1366,height:768,deviceScaleFactor:1,mobile:false})
+  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()")
+  await until("!!document.querySelector('.restoreTestPanel')")
+  await run("Array.from(document.querySelectorAll('.inventoryActions button')).find(b=>b.textContent.includes('BACKUP ĐẦY ĐỦ')).click()")
+  await until("document.querySelector('.restoreTestPanel input[readonly]').value.length>0")
+  await run("(()=>{const i=document.querySelector('.restorePathRow input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,"+JSON.stringify(store)+");i.dispatchEvent(new Event('input',{bubbles:true}))})()")
+  await run("document.querySelector('.restoreConfirm input').click()")
+  await until("!document.querySelector('.restorePrimary').disabled")
+  await run("document.querySelector('.restorePrimary').click()")
+  await until("!!document.querySelector('.restoreResult')")
+  assert(await run("document.querySelector('.restoreResult').textContent.includes('READY')"));checks++
+  for(const width of [1366,390])for(const dark of [false,true]){
+   await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:768,deviceScaleFactor:1,mobile:width===390})
+   if(await run("document.querySelector('.shell').classList.contains('themeDark')")!==dark)await run("document.querySelector('.themeToggle').click()")
+   assert(await run('document.documentElement.scrollWidth')<=width+2,'restore overflow');checks++
+   const pic=await cmd('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(artifact,'restore-'+width+'-'+(dark?'dark':'light')+'.png'),Buffer.from(pic.data,'base64'))
   }
   console.log('V2_BROWSER PASS: inventory selection -> draft -> edit -> save, 1366/390px light/dark layout')
  }finally{ws?.close();c.kill();await sleep(300);fs.rmSync(profile,{recursive:true,force:true})}

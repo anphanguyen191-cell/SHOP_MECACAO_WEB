@@ -25,3 +25,7 @@ Greenfield local-first web app cho Shop Mẹ CaCao.
 - `PROJECT_STATE.md`: source of truth.
 - `CHANGELOG.md`: lịch sử baseline/fix.
 - `ROADMAP.md`: roadmap và gate.
+
+### Thử full restore ở vị trí mới
+
+Trong Cài đặt sandbox: backup đầy đủ → Phục hồi thử sang kho mới → READY. Chạy `RUN_WINDOWS_RESTORED_SANDBOX_TEST.bat` chọn1 V2 / 2 V1 để mở3016; source3005/3006 giữ nguyên. Scope/evidence/Windows steps: [V2_BACKUP_RESTORE_CHECKPOINT.md](V2_BACKUP_RESTORE_CHECKPOINT.md). Chưa tự chuyển DB đang dùng hay release bán hàng.

@@ -1,6 +1,6 @@
 # V2 — Thứ tự triển khai và nghiệm thu
 
-Ngày: 2026-10-10. **Đợt nháp sandbox đã triển khai; chưa có xác nhận bán/xóa ảnh.** Xem `V2_DRAFT_CHECKPOINT.md`. Đợt 1/2 có nền schema120 + CRUD/UI nháp; đợt 0 full restore/STABLE vẫn là gate release, đợt 3 có prototype ảnh nhẹ chỉ đọc (`V2_IMAGE_PREVIEW_CHECKPOINT.md`); đợt 3 có lưu derivative bền vững + cloned-file staging lab (`V2_ARCHIVE_RECOVERY_CHECKPOINT.md`); nối SALE/claim/cleanup/restore và đợt 4–7 chưa hoàn tất.
+Ngày: 2026-10-10. **Đợt nháp sandbox đã triển khai; chưa có xác nhận bán/xóa ảnh.** Xem `V2_DRAFT_CHECKPOINT.md`. Đợt 1/2 có nền schema120 + CRUD/UI nháp; đợt 0 có automated full restore/launcher (`V2_BACKUP_RESTORE_CHECKPOINT.md`), Windows restore/STABLE vẫn là gate release, đợt 3 có prototype ảnh nhẹ chỉ đọc (`V2_IMAGE_PREVIEW_CHECKPOINT.md`); đợt 3 có lưu derivative bền vững + cloned-file staging lab (`V2_ARCHIVE_RECOVERY_CHECKPOINT.md`); backup/restore schema110/120 + trial archives có nền mới; nối SALE/claim/cleanup/SOLD backup và đợt 4–7 chưa hoàn tất.
 
 | Đợt | Công việc | Bằng chứng cần có |
 |---|---|---|

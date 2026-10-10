@@ -1,3 +1,8 @@
+# Full restore / V2 derivative backup checkpoint — 2026-10-10
+
+Implemented schema110/120 lossless restore into NEW isolated warehouse/database, remapped paths with verified IDs/rows/files and transactional DB update, preserved source and bundle; READY only after full verification. V2 full backup now includes READY trial-archive JPEG/journals and refuses pending/busy/corrupt sets. Sandbox Cài đặt flow + separate Windows restored launcher3016. Scope/tests/owner steps: `V2_BACKUP_RESTORE_CHECKPOINT.md`. Local restore50 + HTTP57 + prior complete gate PASS; new exact CI required. Full operational sandbox restore now has automated server/launcher proof; shop Windows restore acceptance/STABLE still pending. No SALE/SOLD/confirm/deletion/schema migration.
+
+---
 # V2 durable archive / recovery prototype — 2026-10-10
 
 Owner authorized continuing V2. Added sandbox save/verify/recover derivative sets with durable plan/ready journals, source and output SHA validation, idempotent retry, retained originals, responsive UI and protected archive exclusion from stock imports/scans. Added isolated cloned-file staging lab with no-overwrite same-volume movement and all-file fail-closed recovery. Scope/evidence: `V2_ARCHIVE_RECOVERY_CHECKPOINT.md`. Local archive52/staging47 + V1 gate/HTTP43 PASS; check CI on this commit for Windows/browser. No actual SALE/confirm/SOLD/deletion/schema change. Full restore and release gates remain open.

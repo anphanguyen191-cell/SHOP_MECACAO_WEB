@@ -22,3 +22,7 @@ Mở nháp đã lưu → Xem trước ảnh nhẹ → so sánh gốc/bản nhẹ
 ## Lưu thử / restart / kiểm chứng
 
 Sau Xem trước ảnh nhẹ → Lưu bộ ảnh thử → Kiểm chứng lại. Restart server bằng Ctrl+C rồi chạy lại .bat; mở cùng nháp để kiểm chứng bộ thử còn hiện hữu. Sửa nháp và lưu: bộ cũ có phiên bản cũ, không tự áp dụng cho phiên bản mới. Nếu có INCOMPLETE journal hợp lệ, dùng Phục hồi bộ thử; nếu REVIEW_REQUIRED phải giữ file để kiểm tra, không xóa/đổi thủ công. Chưa xác nhận bán/xóa gốc. Phạm vi và 99 kiểm tra archive/staging: V2_ARCHIVE_RECOVERY_CHECKPOINT.md.
+
+## Backup/restore sang kho mới
+
+Cài đặt → Backup đầy đủ → chọn kho gốc warehouse trong sandbox → checkbox tạo bản thử riêng → Phục hồi & kiểm chứng → READY. Chạy RUN_WINDOWS_RESTORED_SANDBOX_TEST.bat chọn1; mở3016 để kiểm tra tồn, ảnh, ledger, nháp và kiểm chứng ảnh nhẹ; restart3016 rồi đối chiếu source3006 không đổi. Chi tiết: V2_BACKUP_RESTORE_CHECKPOINT.md. Chưa thay DB/kho thật hoặc xác nhận bán.

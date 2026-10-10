@@ -6,6 +6,8 @@ import {DatabaseSync} from 'node:sqlite'
 import {salesDraftService,SalesError} from './salesDrafts.js'
 import {salesPreviewService,PREVIEW_POLICY} from './salesPreview.js'
 
+let archiveOperations=0
+export function hasArchiveOperation(){return archiveOperations>0}
 export const ARCHIVE_FOLDER='.mecacao-v2-archive'
 type Entry={imageId:number;sourceHash:string;optimizedHash:string;optimizedBytes:number;width:number;height:number}
 type Plan={format:1;mode:'DRAFT_ARCHIVE_PROTOTYPE';keyHash:string;payloadHash:string;orderId:string;orderVersion:number;createdAt:string;policy:typeof PREVIEW_POLICY;items:Entry[]}
@@ -58,7 +60,7 @@ export function salesArchiveService(db:DatabaseSync,sandbox:string,checkpoint:(s
   safeDir(dir);writeNew(path.join(dir,'ready.json'),JSON.stringify({mode:plan.mode,planHash:hash(readFile(path.join(dir,'plan.json'),root)),completedAt:new Date().toISOString()}));checkpoint('ready')
   return summary(plan)
  }
- async function exclusive<T>(fn:()=>Promise<T>){if(busy)throw new SalesError('Đang kiểm chứng bộ lưu thử khác. Đợi hoàn tất.',429);busy=true;try{return await fn()}finally{busy=false}}
+ async function exclusive<T>(fn:()=>Promise<T>){if(busy)throw new SalesError('Đang kiểm chứng bộ lưu thử khác. Đợi hoàn tất.',429);busy=true;archiveOperations++;try{return await fn()}finally{busy=false;archiveOperations--}}
  function choice(raw:any):Choice{if(!raw||!Number.isSafeInteger(raw.version)||raw.version<1||!Array.isArray(raw.images)||!raw.images.length||raw.images.length>100)throw new SalesError('Thiếu kết quả xem trước hợp lệ');const ids=new Set<number>();for(const i of raw.images){if(!Number.isSafeInteger(i?.imageId)||i.imageId<1||ids.has(i.imageId)||!hex(i.sourceHash))throw new SalesError('Ảnh xem trước không hợp lệ');ids.add(i.imageId)}return {version:raw.version,images:[...raw.images].sort((a,b)=>a.imageId-b.imageId)}}
  return {
   prepare:(id:string,raw:unknown,key:unknown)=>exclusive(async()=>{

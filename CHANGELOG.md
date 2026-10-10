@@ -1,3 +1,7 @@
+# 2026-10-10 — Full restore và backup archive V2
+
+Restore schema110/120 sang kho/database mới, byte-exact + ID/history preservation, SHA/integrity/FK/READY guards and seven hard-exit checks. Full V2 sandbox backup includes completed trial archives; pending/busy/corrupt sets fail closed. Cài đặt restore flow and Windows launcher3016 with V1/V2 choice. No live-DB switch, sale or original deletion. Details: V2_BACKUP_RESTORE_CHECKPOINT.md.
+
 # 2026-10-10 — V2 lưu thử / phục hồi
 
 Durable derivative save/verify/recover, SHA/version guards, idempotent retained trial sets and pastel UI. Scanner/import exclude trial archive. Isolated cloned-file staging lab checks nine hard-exit points; no real sale/cleanup/schema changes. See V2_ARCHIVE_RECOVERY_CHECKPOINT.md.
