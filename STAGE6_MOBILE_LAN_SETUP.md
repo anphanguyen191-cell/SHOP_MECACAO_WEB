@@ -75,3 +75,5 @@ Thay `192.168.1.100` bằng **IP thật trên Windows**. Cài chứng chỉ CA v
 
 ### Chuyển sang biểu mẫu Nhập hàng trên Windows
 Sau khi bấm **Duyệt và sao chép nguồn** trong Ảnh iPhone, chọn **Chuyển sang Nhập hàng trên Windows** để hệ thống tự điền và quét thư mục nguồn đã duyệt. Đây chỉ là bước chuẩn bị biểu mẫu: chủ shop vẫn phải kiểm tra mẫu, Size, giá nhập, giá bán và số ảnh, rồi nhấn **XÁC NHẬN NHẬP HÀNG**. Không cộng tồn trước khi nghiệp vụ Nhập hàng hoàn tất.
+
+**Lưu ý khi chuyển Product/Size:** Thư mục ảnh nguồn đã duyệt được giữ khi chủ shop đổi giữa Mẫu mới / Thêm Size / Nhập thêm Size và khi chọn một Size hiện có. Mỗi lần đổi hệ thống quét lại số ảnh; chủ shop vẫn phải kiểm tra số lượng, giá và nhấn Xác nhận. Nếu chọn thư mục nguồn khác thủ công, nguồn iPhone cũ không còn được tự điền.

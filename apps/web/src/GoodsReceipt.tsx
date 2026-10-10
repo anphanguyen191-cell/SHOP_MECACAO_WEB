@@ -21,7 +21,7 @@ export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceAp
  useEffect(()=>{apiJson('/api/health').then(h=>{if(h.freshDevelopment&&h.warehouse){setFresh(true);setStoreRoot(h.warehouse);setFlow('NEW_PRODUCT')}}).catch(()=>{})},[])
  const [reading,setReading]=useState(false),[task,setTask]=useState<OperationTask|null>(null)
  useEffect(()=>{if(initialSourcePath){void inspect(0,initialSourcePath);onInitialSourceApplied?.()}},[])
- const requestVersion=useRef(0),submitLock=useRef(false)
+ const requestVersion=useRef(0),submitLock=useRef(false),reviewedPhotoSource=useRef(initialSourcePath??'')
  useEffect(()=>{let alive=true;apiJson<Product[]>('/api/products').then(j=>{if(alive)setProducts(j)}).catch(e=>{if(alive)setMsg(e.message)});return()=>{alive=false;requestVersion.current++}},[])
  const filteredProducts=useMemo(()=>{const q=productSearch.trim().toLowerCase();return q?products.filter(p=>p.name.toLowerCase().includes(q)||p.product_code.toLowerCase().includes(q)):products},[products,productSearch])
  async function chooseProduct(id:number){
@@ -33,14 +33,16 @@ export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceAp
    setDetail(j);setName(j.product.name);setCode(j.product.product_code)
    const first=j.variants?.[0]
    if(flow==='EXISTING_SIZE')setRows(first?[{...blank(),size:first.size,sku:first.sku,costPrice:first.cost_price??0,salePrice:first.sale_price??0}]:[blank()])
+   if(reviewedPhotoSource.current)void inspect(0,reviewedPhotoSource.current)
   }catch(e){if(version===requestVersion.current){setProductId(0);setMsg(e instanceof Error?e.message:'Không đọc được sản phẩm')}}
   finally{if(version===requestVersion.current)setReading(false)}
  }
- function switchFlow(next:Flow){requestVersion.current++;setReading(false);setFlow(next);setMsg('');setProgress(null);setProductId(0);setDetail(null);setProductSearch('');setName('');setCode('');setCategory('');setRows([blank()])}
+ function switchFlow(next:Flow){requestVersion.current++;setReading(false);setFlow(next);setMsg('');setProgress(null);setProductId(0);setDetail(null);setProductSearch('');setName('');setCode('');setCategory('');setRows([blank()]);if(reviewedPhotoSource.current)void inspect(0,reviewedPhotoSource.current)}
  function patch(i:number,k:keyof SizeRow,v:string|number){setRows(previous=>previous.map((row,index)=>index===i?{...row,[k]:typeof row[k]==='number'?Math.max(0,Number(v)||0):v,...(k==='sourcePath'?{imageCount:0,quantity:0}:{})}:row))}
  async function inspect(i:number,selectedPath?:string){
   const p=(selectedPath??rows[i].sourcePath).trim()
   if(!p)return
+  if(reviewedPhotoSource.current&&p!==reviewedPhotoSource.current)reviewedPhotoSource.current=''
   const version=++requestVersion.current;setReading(true);setMsg('')
   setRows(previous=>previous.map((row,index)=>index===i?{...row,sourcePath:p,imageCount:0,quantity:0}:row))
   try{
@@ -51,7 +53,7 @@ export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceAp
   }catch(e){if(version===requestVersion.current)setMsg(e instanceof Error?e.message:'Không đọc được folder ảnh')}
   finally{if(version===requestVersion.current)setReading(false)}
  }
- function chooseExistingVariant(id:number){const v=detail?.variants.find(x=>x.id===id);if(v)setRows([{size:v.size,sku:v.sku,quantity:1,costPrice:v.cost_price??0,salePrice:v.sale_price??0,sourcePath:'',imageCount:0}])}
+ function chooseExistingVariant(id:number){const v=detail?.variants.find(x=>x.id===id);if(v){setRows([{size:v.size,sku:v.sku,quantity:1,costPrice:v.cost_price??0,salePrice:v.sale_price??0,sourcePath:'',imageCount:0}]);if(reviewedPhotoSource.current)void inspect(0,reviewedPhotoSource.current)}}
  async function submit(){if(submitLock.current||reading)return;submitLock.current=true;setBusy(true);setMsg('');setProgress({phase:'VALIDATE',percent:2,copied:0,total:rows.reduce((n,r)=>n+r.imageCount,0)})
   try{
    if(rows.some(x=>!x.size.trim()||!x.sourcePath||x.imageCount<1))throw new Error('Mỗi Size cần tên và ảnh nguồn hợp lệ. Xóa Size trống trước khi lưu.')
@@ -63,6 +65,7 @@ export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceAp
    setRows(previous=>previous.map(row=>({...row,sourcePath:'',imageCount:0,quantity:0})))
    if(flow==='NEW_PRODUCT'){setName('');setCode('');setRows([blank()])}
    apiJson<Product[]>('/api/products').then(setProducts).catch(()=>{})
+   reviewedPhotoSource.current=''
    onDone?.()
   }catch(e){setProgress(null);setMsg(e instanceof Error?e.message:'Nhập hàng thất bại')}finally{submitLock.current=false;setBusy(false)}
  }

@@ -64,3 +64,6 @@ const inboxUI=read('apps/web/src/PhonePhotoInboxView.tsx')
 must(inboxUI.includes("'/api/lan/photos/'+photo.id+'/approved'"),'Previously reviewed photos can be reopened with server verification')
 must(inboxUI.includes('onBeginReceipt?.(approvedFolder)'),'Photo handoff must be explicit, not auto-stock')
 must(read('apps/api/src/lanPhotoRoutes.ts').includes('allowedLocalGet(req)'),'Approved source path restricted to Windows localhost')
+
+const receiptSource=read('apps/web/src/GoodsReceipt.tsx')
+must(receiptSource.includes('reviewedPhotoSource.current')&&receiptSource.includes('void inspect(0,reviewedPhotoSource.current)'),'Reviewed iPhone photo source must survive switching Product/Size without auto-registering stock')
