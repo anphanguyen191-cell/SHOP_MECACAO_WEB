@@ -188,8 +188,8 @@ async function browserTest(base,id){
   assert(await run("getComputedStyle(document.querySelector('.salesHeading .salesActionPrimary')).backgroundColor==='rgb(163, 63, 107)'"));checks++
   assert(await run("document.querySelector('.salesEditorHead').textContent.includes('Phiên bản 1')"));checks++
   await run("(()=>{const i=document.querySelector('.salesMoney input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'1000');i.dispatchEvent(new Event('input',{bubbles:true}))})()")
-  await until("!document.querySelector('.salesButtons button').disabled")
-  await run("document.querySelector('.salesButtons button').click()")
+  await until("Array.from(document.querySelectorAll('.salesButtons button')).some(b=>b.textContent==='Lưu thay đổi'&&!b.disabled)")
+  await run("Array.from(document.querySelectorAll('.salesButtons button')).find(b=>b.textContent==='Lưu thay đổi').click()")
   await until("document.querySelector('.salesEditorHead').textContent.includes('Phiên bản 2')")
   assert(await run("document.querySelector('.salesTotals').textContent.includes('49.000')"));checks++
   await until("!document.querySelector('.preflightCheck').disabled")
