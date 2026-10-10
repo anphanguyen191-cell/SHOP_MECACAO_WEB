@@ -12,7 +12,7 @@ export function salesDraftRouter(db:DatabaseSync,root:string,port:number){
   }
   next()
  })
- function execute(res:any,action:()=>unknown,status=200){try{res.status(status).json(action())}catch(e){res.status(e instanceof SalesError?e.status:500).json({error:e instanceof Error?e.message:'Không xử lý được đơn nháp'})}}
+ function execute(res:any,action:()=>unknown,status=200){try{res.status(status).json(action())}catch(e){res.status(e instanceof SalesError?e.status:500).json({error:e instanceof Error?e.message:'Không xử lý được đơn nháp',...(e instanceof SalesError?e.details:{})})}}
  router.get('/',(req,res)=>execute(res,()=>service.list(String(req.query.status??'DRAFT'))))
  router.post('/',(req,res)=>execute(res,()=>service.create(req.body,req.get('Idempotency-Key')),201))
  router.get('/:id',(req,res)=>execute(res,()=>service.get(req.params.id)))

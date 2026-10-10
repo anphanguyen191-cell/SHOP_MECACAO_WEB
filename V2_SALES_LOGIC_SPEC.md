@@ -24,7 +24,7 @@ V3 giữ khách hàng, COD/chuyển khoản, công nợ, phí vận chuyển/phi
 
 1. Tồn kho: chọn ảnh còn hàng bằng các thao tác đã có → **Đưa vào đơn nháp**. Chọn/gửi ảnh vẫn độc lập với tạo đơn.
 2. Kiểm tra từng Product, Size, SKU, ảnh, giá; số lượng tự lấy từ ảnh đã chọn. Có thể bỏ/thêm ảnh thực tế, không gõ số lượng vượt ảnh.
-3. Lưu nháp, mở lại, sửa. Hai đơn nháp có thể cùng tham chiếu một ảnh; giao diện ghi **“Nháp chưa giữ hàng”**.
+3. Lưu nháp, mở lại, sửa. Hai đơn nháp có thể cùng tham chiếu một ảnh **chỉ sau cảnh báo và lựa chọn tiếp tục** khi tạo/thêm ảnh. Cảnh báo đúng image ID, nêu mã nháp liên quan; ảnh khác cùng mẫu/Size không bị chặn. Khi mở lại có chỉ báo trùng; giao diện ghi **“Nháp chưa giữ hàng”**.
 4. Bấm Xem trước bán: tổng tiền, giảm giá, số bộ, ảnh nhẹ dự kiến, dung lượng trước/sau và quy tắc bỏ ảnh gốc đã bán.
 5. **Xác nhận bán**: server kiểm tra lại nguồn ảnh, phiên bản đơn và quyền sở hữu từng image ID; không tin số tiền/số tồn do client gửi.
 6. Thành công: mã đơn duy nhất, số bộ đã bán, tiền hàng sau giảm; dashboard/tồn cập nhật. Xem lại lịch sử bằng ảnh nhẹ.

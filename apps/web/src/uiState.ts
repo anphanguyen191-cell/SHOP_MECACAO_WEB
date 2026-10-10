@@ -9,9 +9,10 @@ export function useBooleanPreference(key:string,fallback:boolean){
  return [value,setValue] as const
 }
 
+export class ApiError extends Error{constructor(message:string,public status:number,public data:any){super(message)}}
 export async function apiJson<T=any>(url:string,options?:RequestInit):Promise<T>{
  const r=await fetch(url,options)
  const data=await r.json()
- if(!r.ok)throw new Error(data.error||'Không đọc được dữ liệu từ máy chủ')
+ if(!r.ok)throw new ApiError(data.error||'Không đọc được dữ liệu từ máy chủ',r.status,data)
  return data as T
 }

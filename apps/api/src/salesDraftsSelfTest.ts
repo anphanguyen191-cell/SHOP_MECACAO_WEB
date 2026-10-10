@@ -33,7 +33,13 @@ try{
  check(d.items[0].unit_cost===null,'unknown cost not treated as profit-zero')
  check(service.create(input,key).id===d.id&&service.list().length===1,'retry creates exactly one draft')
  rejects(()=>service.create({...input,discount:1},key),409)
- const second=service.create(input,'create-request-key-0002');check(second.id!==d.id,'two drafts may select same image')
+ let warning:any
+ try{service.create(input,'create-request-key-0002');assert.fail('duplicate draft must request choice')}catch(e){assert(e instanceof SalesError&&e.details.code==='DRAFT_IMAGE_CONFLICT');warning=e.details;checks++}
+ check(service.list().length===1,'warning creates no order')
+ check(warning.conflicts[0].orders[0].id===d.id,'warning identifies exact related order')
+ const second=service.create({...input,conflictToken:warning.conflictToken},'create-request-key-0002');check(second.id!==d.id,'two drafts may select same image after explicit choice')
+ check(service.get(d.id).conflicts.length===1,'reopen displays duplicate image warning')
+ check(service.create(input,'create-request-key-0002').id===second.id,'successful create retry does not demand choice again')
  for(const unitPrice of [-1,0.5,NaN,Number.MAX_SAFE_INTEGER+1])rejects(()=>service.create({...input,items:[{imageId:1,unitPrice}]},'invalid-money-request'),400)
  rejects(()=>service.create({...input,items:[{imageId:1,unitPrice:5},{imageId:1,unitPrice:5}]},'duplicate-image-request'),400)
  rejects(()=>service.create({...input,items:[]},'empty-images-request'),400)
@@ -70,6 +76,19 @@ try{
  rejects(()=>service.update(d.id,{...input,version:3}),409)
  check(service.list().length===1&&service.list('CANCELLED_DRAFT').length===1,'status filters')
  check(business()===frozen&&hash()===beforeHash,'all lifecycle paths leave warehouse and ledger unchanged')
+ // Another physical unit of the same Product/Size is not a duplicate.
+ const photo2=photo.replace('001','002');fs.writeFileSync(photo2,'second-unit');db.prepare('INSERT INTO product_images(product_id,variant_id,file_path) VALUES(1,1,?)').run(photo2)
+ const next={items:[{imageId:2,unitPrice:50000}],discount:0,note:''}
+ const third=service.create(next,'create-request-key-0003');check(!third.conflicts.length,'different image in same Size does not warn')
+ const extra={items:[{imageId:1,unitPrice:50000},{imageId:2,unitPrice:50000}],discount:0,note:'',version:1}
+ try{service.update(second.id,extra);assert.fail('adding shared item must warn')}catch(e){assert(e instanceof SalesError&&e.details.code==='DRAFT_IMAGE_CONFLICT');warning=e.details;checks++}
+ check(service.get(second.id).quantity===1&&service.get(second.id).version===1,'update warning leaves order unchanged')
+ service.update(third.id,{...next,version:1,note:'changed meanwhile'})
+ rejects(()=>service.update(second.id,{...extra,conflictToken:warning.conflictToken}),409)
+ try{service.update(second.id,extra)}catch(e){assert(e instanceof SalesError);warning=e.details}
+ check(service.update(second.id,{...extra,conflictToken:warning.conflictToken}).quantity===2,'fresh confirmation allows adding shared image')
+ service.cancel(third.id,2)
+ check(!service.get(second.id).conflicts.length,'cancelled drafts do not cause duplicate warnings')
  assertDatabaseIntegrity(db)
  // Migration DDL failure must roll back schema and existing business rows.
  const fail=new DatabaseSync(':memory:');bootstrapV100(fail);fail.exec('CREATE TABLE sales_order_images(marker TEXT)')

@@ -1,5 +1,7 @@
 # ROADMAP — SHOP MECACAO WEB
 
+Development rules: `DEVELOPMENT_PRINCIPLES.md` (feature + workflow + polished UI together).
+
 Statuses: BACKLOG / PROPOSED / APPROVED / IMPLEMENTING / TESTING / DONE / REJECTED
 
 | Version | Milestone | Status |

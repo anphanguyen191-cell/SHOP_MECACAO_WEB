@@ -3,7 +3,7 @@ import path from 'node:path'
 import {createHash,randomUUID} from 'node:crypto'
 import {DatabaseSync} from 'node:sqlite'
 
-export class SalesError extends Error{constructor(message:string,public status=400){super(message)}}
+export class SalesError extends Error{constructor(message:string,public status=400,public details:Record<string,unknown>={}){super(message)}}
 type Item={imageId:number;unitPrice:number}
 type Input={items:Item[];discount:number;note:string}
 type Stock={image_id:number;product_id:number;variant_id:number;file_path:string;product_name:string;product_code:string;size:string;sku:string;unit_cost:number;product_status:string;variant_status:string}
@@ -43,11 +43,22 @@ export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
  }
  function transaction<T>(action:()=>T){db.exec('BEGIN IMMEDIATE');try{const r=action();db.exec('COMMIT');return r}catch(e){db.exec('ROLLBACK');throw e}}
  function order(id:string){const row=db.prepare('SELECT * FROM sales_orders WHERE id=?').get(id) as Order|undefined;if(!row)throw new SalesError('Không tìm thấy đơn',404);return row}
+ function conflicts(ids:number[],exclude=''){
+  if(!ids.length)return {conflicts:[],conflictToken:''}
+  const rows=db.prepare(`SELECT i.image_id,i.product_name,i.size,o.id,o.version,o.note FROM sales_order_images i JOIN sales_orders o ON o.id=i.order_id WHERE o.status='DRAFT' AND o.id<>? AND i.image_id IN (${ids.map(()=>'?').join(',')}) ORDER BY i.image_id,o.id`).all(exclude,...ids) as Array<{image_id:number;product_name:string;size:string;id:string;version:number;note:string}>
+  const grouped=new Map<number,{imageId:number;productName:string;size:string;orders:Array<{id:string;code:string;version:number;note:string}>}>()
+  for(const r of rows){const item=grouped.get(r.image_id)??{imageId:r.image_id,productName:r.product_name,size:r.size,orders:[]};item.orders.push({id:r.id,code:r.id.slice(0,8).toUpperCase(),version:r.version,note:r.note});grouped.set(r.image_id,item)}
+  return {conflicts:[...grouped.values()],conflictToken:rows.length?createHash('sha256').update(JSON.stringify({ids:[...ids].sort((a,b)=>a-b),exclude,rows})).digest('hex'):''}
+ }
+ function requireConflictChoice(ids:number[],exclude:string,token:unknown){
+  const warning=conflicts(ids,exclude)
+  if(warning.conflicts.length&&token!==warning.conflictToken)throw new SalesError('Có bộ hàng đang nằm trong đơn nháp khác. Chọn có tiếp tục thêm hay không.',409,{code:'DRAFT_IMAGE_CONFLICT',...warning})
+ }
  function get(id:string){
   const row=order(id)
   const items=(db.prepare('SELECT * FROM sales_order_images WHERE order_id=? ORDER BY position').all(id) as Saved[]).map(item=>({...item,unavailable:unavailable(stock(item.image_id))}))
   const subtotal=items.reduce((n,i)=>n+i.unit_price,0)
-  return {id:row.id,status:row.status,version:row.version,discount:row.discount,note:row.note,created_at:row.created_at,updated_at:row.updated_at,items,quantity:items.length,subtotal,total:subtotal-row.discount,available:items.every(i=>!i.unavailable),reservesStock:false}
+  return {id:row.id,status:row.status,version:row.version,discount:row.discount,note:row.note,created_at:row.created_at,updated_at:row.updated_at,items,quantity:items.length,subtotal,total:subtotal-row.discount,available:items.every(i=>!i.unavailable),reservesStock:false,...conflicts(items.map(i=>i.image_id),id)}
  }
  function saveItems(id:string,input:Input){
   const rows=input.items.map(item=>{const row=stock(item.imageId),reason=unavailable(row);if(reason)throw new SalesError('Ảnh #'+item.imageId+': '+reason,409);return {row:row!,price:item.unitPrice}})
@@ -61,12 +72,13 @@ export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
    if(!['DRAFT','CANCELLED_DRAFT','all'].includes(status))throw new SalesError('Trạng thái đơn không hợp lệ')
    return db.prepare(`SELECT o.id,o.status,o.version,o.discount,o.note,o.created_at,o.updated_at,COUNT(i.image_id) quantity,COALESCE(SUM(i.unit_price),0) subtotal,COALESCE(SUM(i.unit_price),0)-o.discount total FROM sales_orders o LEFT JOIN sales_order_images i ON i.order_id=o.id WHERE (?='all' OR o.status=?) GROUP BY o.id ORDER BY o.created_at DESC,o.id LIMIT 200`).all(status,status)
   },
-  create(raw:unknown,key:unknown){
+  create(raw:any,key:unknown){
    if(typeof key!=='string'||! /^[A-Za-z0-9_-]{16,100}$/.test(key))throw new SalesError('Thiếu mã yêu cầu tạo đơn hợp lệ')
    const input=validate(raw),hash=createHash('sha256').update(JSON.stringify(input)).digest('hex')
    const id=transaction(()=>{
     const previous=db.prepare('SELECT id,request_hash FROM sales_orders WHERE request_key=?').get(key) as {id:string;request_hash:string}|undefined
     if(previous){if(previous.request_hash!==hash)throw new SalesError('Mã yêu cầu đã dùng với nội dung khác',409);return previous.id}
+    requireConflictChoice(input.items.map(i=>i.imageId),'',raw.conflictToken)
     const id=randomUUID();db.prepare('INSERT INTO sales_orders(id,request_key,request_hash,discount,note) VALUES(?,?,?,?,?)').run(id,key,hash,input.discount,input.note)
     saveItems(id,input);return id
    })
@@ -78,6 +90,8 @@ export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
    transaction(()=>{
     const row=order(id)
     if(row.status!=='DRAFT'||row.version!==raw.version)throw new SalesError('Đơn đã thay đổi hoặc đã hủy. Mở lại trước khi sửa.',409)
+    const existing=new Set((db.prepare('SELECT image_id FROM sales_order_images WHERE order_id=?').all(id) as Array<{image_id:number}>).map(i=>i.image_id))
+    requireConflictChoice(input.items.filter(i=>!existing.has(i.imageId)).map(i=>i.imageId),id,raw.conflictToken)
     saveItems(id,input)
     db.prepare("UPDATE sales_orders SET discount=?,note=?,version=version+1,updated_at=datetime('now') WHERE id=?").run(input.discount,input.note,id)
    })

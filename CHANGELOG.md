@@ -1,3 +1,9 @@
+## 2026-10-10 — Draft duplicate choice and UI polish
+
+- Require explicit, transaction-revalidated choice before placing the same physical image in another draft; identify related orders, exclude cancelled/current draft, preserve idempotent retry and no reservation.
+- Styled accessible conflict dialog, overlap badges and pastel primary/add/remove/secondary buttons with mobile/dark states; record mandatory feature + workflow + UI principles.
+- Regression coverage for decline/accept, stale token, same Product/Size different unit and unchanged data.
+
 ## 2026-10-10 — V2 draft sandbox foundation
 
 - Owner authorized continuation: isolated schema120 migration backup/rollback and draft CRUD with idempotent create, optimistic version, price validation and snapshots; no stock reservation/SALE/image mutation.

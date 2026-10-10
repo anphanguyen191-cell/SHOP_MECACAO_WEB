@@ -7,7 +7,7 @@ Bản này chỉ chuẩn bị đơn nháp, chưa bán/trừ tồn/xóa ảnh. V1
 3. Vào Tồn kho, mở mẫu → Size, chọn ảnh hoặc CHỌN NHÓM SIZE. Thanh dưới vẫn có COPY gửi khách và thêm **TẠO ĐƠN NHÁP**. Bấm tạo nháp → chuyển Bán hàng. Đối chiếu ảnh/Size/SKU, số bộ đúng số ảnh đã chọn; tồn và ledger giữ nguyên.
 4. Nhập giá bán từng bộ (ảnh mẫu mặc định có thể 0), giảm giá toàn đơn và ghi chú. Bấm Lưu thay đổi. Thử giảm giá lớn hơn tổng tiền, giá âm/thập phân: không lưu. Giá 0 có nhắc kiểm tra; đợt này chưa bán.
 5. Bấm **Thêm ảnh tồn** (lưu thay đổi trước nếu có). Chọn ảnh khác → THÊM VÀO ĐƠN NHÁP. Ảnh đã có trong đơn không thêm lần hai. Có thể Bỏ khỏi nháp rồi Lưu; số bộ/tổng tiền cập nhật.
-6. Tạo nháp thứ hai tham chiếu cùng ảnh: được phép vì nháp chưa giữ hàng. Copy/gửi ảnh không tạo thêm đơn hoặc trừ tồn.
+6. Tạo nháp thứ hai tham chiếu cùng ảnh: phải hiện cảnh báo kèm mã nháp liên quan. Chọn Quay lại chọn hàng: không tạo thêm đơn; chọn Vẫn thêm vào đơn nháp: mới lưu nháp thứ hai. Mở lại thấy nhãn bộ cũng ở nháp khác. Hai ảnh khác nhau cùng mẫu/Size không bị cảnh báo; nháp đã hủy không tính. Copy/gửi ảnh không tạo thêm đơn hoặc trừ tồn.
 7. Mở cùng một nháp ở hai cửa sổ trình duyệt. Cửa sổ A sửa/lưu; B sửa/lưu phải báo đơn đã thay đổi. Bấm Mở lại đơn ở B để xem bản mới, không ghi đè A âm thầm.
 8. Restart: đóng cửa sổ server V2 (hoặc Ctrl+C → Y nếu được hỏi), chạy lại cùng BAT. Mở Bán hàng → chọn nháp; giá, ghi chú, ảnh và phiên bản vẫn có. Kiểm tra Tồn kho như trước.
 9. Hủy nháp → xác nhận → lọc Đã hủy nháp. Đơn còn lịch sử, không chỉnh trực tiếp, ảnh vẫn ở kho và tồn không đổi.

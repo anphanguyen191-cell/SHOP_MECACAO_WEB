@@ -1,3 +1,8 @@
+# V2 draft duplicate choice / UI checkpoint — 2026-10-10
+
+User reports Windows create/add draft OK and requests explicit duplicate-unit choice plus polished UI as a development rule. Implemented transactional duplicate image-ID detection with fresh conflict token, styled confirmation/cancel dialog, related-draft badges and consistent pastel action buttons. Different units of the same Product/Size remain valid; cancelled/own draft excluded, price-only edits do not prompt again. No schema/stock/ledger/file change. Scope/tests: `V2_DRAFT_DUPLICATE_CHECKPOINT.md`. Mandatory rule for every feature: `DEVELOPMENT_PRINCIPLES.md` — optimize workflow and UI while implementing, not after backend-only completion. Check Actions on this commit for exact CI evidence; V2 sales/restore/STABLE still pending.
+
+---
 # V2 draft sandbox implementation — 2026-10-10
 
 Owner authorized “triển khai tiếp đi bro”. Phase 1/2 draft foundation implemented, **sandbox-only / not V2 sales release**: schema120 backup+transaction migration, idempotent create, optimistic update/cancel, snapshots, VND validation, no reservation or stock/ledger/file mutations, real API and inventory-to-draft UI. Scope/evidence/rollback: `V2_DRAFT_CHECKPOINT.md`. Windows steps: `WINDOWS_V2_DRAFT_TEST.md`, `RUN_WINDOWS_V2_DRAFT_TEST.bat` (isolated V2DraftSandbox/port3006).

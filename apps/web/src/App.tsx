@@ -9,6 +9,7 @@ import WarehouseImport from './WarehouseImport'
 import WarehouseNotifications from './WarehouseNotifications'
 import DisplayDensity from './DisplayDensity'
 import SalesDraftView from './SalesDraftView'
+import {useDraftConflictChoice} from './DraftConflictChoice'
 import {apiJson,useBooleanPreference} from './uiState'
 
 type Health={ok:boolean;version:string;schema:number;database:string;sandbox?:boolean;salesDrafts?:boolean}
@@ -24,6 +25,7 @@ export default function App(){
  const isDemo=useMemo(()=>location.hostname.endsWith('github.io')||new URLSearchParams(location.search).get('demo')==='1',[])
  const [health,setHealth]=useState<Health|null>(null),[active,setActive]=useState('Tổng quan')
  const nav=health?.salesDrafts&&!isDemo?[...baseNav.slice(0,-1),'Bán hàng','Cài đặt']:baseNav
+ const conflictChoice=useDraftConflictChoice()
  const [salesId,setSalesId]=useState<string|null>(null),[addToDraft,setAddToDraft]=useState<string|null>(null)
  const [menuOpen,setMenuOpen]=useState(false),[menuSearch,setMenuSearch]=useState('')
  const [darkMode,setDarkMode]=useBooleanPreference('dark-mode',false)
@@ -100,15 +102,16 @@ export default function App(){
   if(addToDraft){
    const old=await apiJson('/api/sales/drafts/'+addToDraft)
    const extra=items.filter(i=>!old.items.some((x:any)=>x.image_id===i.imageId))
-   result=extra.length?await apiJson('/api/sales/drafts/'+old.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({version:old.version,discount:old.discount,note:old.note,items:[...old.items.map((i:any)=>({imageId:i.image_id,unitPrice:i.unit_price})),...extra]})}):old
-  }else result=await apiJson('/api/sales/drafts',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify({items,discount:0,note:''})})
+   result=extra.length?await conflictChoice.submit(token=>apiJson('/api/sales/drafts/'+old.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({version:old.version,discount:old.discount,note:old.note,items:[...old.items.map((i:any)=>({imageId:i.image_id,unitPrice:i.unit_price})),...extra],conflictToken:token})})):old
+  }else result=await conflictChoice.submit(token=>apiJson('/api/sales/drafts',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify({items,discount:0,note:'',conflictToken:token})}))
   setSalesId(result.id);setAddToDraft(null);goTo('Bán hàng')
  }
  function goTo(section:string){setActive(section);setMenuOpen(false);setMenuSearch('');setDetailProductId(null)}
  return <div className={'shell '+(darkMode?'themeDark':'')+(compact?' densityCompact':' densityComfort')}>
+  {conflictChoice.dialog}
   <header className="topbar"><div className="brandIdentity"><button type="button" className="menuToggle" aria-label="Mở danh mục chức năng" aria-expanded={menuOpen} onClick={()=>setMenuOpen(true)}>☰</button><img className="brandLogo" src={`${import.meta.env.BASE_URL}brand/logo.jpg`} alt="Logo Shop Mẹ CaCao" onError={e=>{e.currentTarget.style.display="none"}}/><span className="brandMonogram">MC</span><div><p className="eyebrow">SHOP MẸ CACAO · SINCE 2023</p><h1>Quản lý kho</h1></div></div><div className="headerActions"><DisplayDensity compact={compact} onChange={setCompact}/><WarehouseNotifications isDemo={isDemo} onReview={()=>goTo('Import kho')}/><button type="button" className="themeToggle" onClick={()=>setDarkMode(v=>!v)} aria-label={darkMode?"Bật giao diện sáng":"Bật giao diện tối"}>{darkMode?"☀":"☾"}</button><span className={'badge '+(mode==='LOCAL'?'local':mode==='DEMO'?'demo':mode==='TEST SANDBOX'?'test':'offline')}>{mode}</span></div></header>
   {isWindowsSandbox&&<div className="sandboxSafetyBanner" role="status">CHẾ ĐỘ THỬ WINDOWS — Database và kho giả lập riêng. KHÔNG thao tác ghi lên D:\\1-Me CaCao Store.</div>}
-  {menuOpen&&<div className="drawerBackdrop" onClick={()=>setMenuOpen(false)}><aside className="featureDrawer" role="dialog" aria-modal="true" aria-label="Danh mục chức năng" onClick={e=>e.stopPropagation()}><div className="drawerHead"><img src={`${import.meta.env.BASE_URL}brand/logo.jpg`} alt="" /><div><b>Shop Mẹ CaCao</b><small>Danh mục chức năng</small></div><button type="button" aria-label="Đóng danh mục" onClick={()=>setMenuOpen(false)}>×</button></div><div className="drawerSearch"><span>⌕</span><input value={menuSearch} onChange={e=>setMenuSearch(e.target.value)} placeholder="Tìm chức năng..." /></div><p className="drawerSection">QUẢN LÝ CỬA HÀNG · {menuItems.length} CHỨC NĂNG</p><div className="drawerLinks">{menuItems.map((n,i)=><button type="button" key={n} className={active===n?"selected":""} onClick={()=>goTo(n)}><span className="drawerIcon">{({ "Tổng quan":"⌂","Danh mục sản phẩm":"▦","Nhập hàng":"＋","Import kho":"⇩","Tồn kho":"▤","Cài đặt":"⚙"} as Record<string,string>)[n]}</span><span>{n}</span><span className="drawerArrow">›</span></button>)}{menuItems.length===0&&<p>Không tìm thấy chức năng phù hợp.</p>}</div><div className="drawerFoot"><span className="drawerDot"/> {mode} · Since 2023</div></aside></div>}
+  {menuOpen&&<div className="drawerBackdrop" onClick={()=>setMenuOpen(false)}><aside className="featureDrawer" role="dialog" aria-modal="true" aria-label="Danh mục chức năng" onClick={e=>e.stopPropagation()}><div className="drawerHead"><img src={`${import.meta.env.BASE_URL}brand/logo.jpg`} alt="" /><div><b>Shop Mẹ CaCao</b><small>Danh mục chức năng</small></div><button type="button" aria-label="Đóng danh mục" onClick={()=>setMenuOpen(false)}>×</button></div><div className="drawerSearch"><span>⌕</span><input value={menuSearch} onChange={e=>setMenuSearch(e.target.value)} placeholder="Tìm chức năng..." /></div><p className="drawerSection">QUẢN LÝ CỬA HÀNG · {menuItems.length} CHỨC NĂNG</p><div className="drawerLinks">{menuItems.map((n,i)=><button type="button" key={n} className={active===n?"selected":""} onClick={()=>goTo(n)}><span className="drawerIcon">{({ "Tổng quan":"⌂","Danh mục sản phẩm":"▦","Nhập hàng":"＋","Import kho":"⇩","Tồn kho":"▤","Bán hàng":"▧","Cài đặt":"⚙"} as Record<string,string>)[n]}</span><span>{n}</span><span className="drawerArrow">›</span></button>)}{menuItems.length===0&&<p>Không tìm thấy chức năng phù hợp.</p>}</div><div className="drawerFoot"><span className="drawerDot"/> {mode} · Since 2023</div></aside></div>}
   <div className="layout"><nav className="sidebar">{nav.map(n=><button key={n} className={active===n?'active':''} onClick={()=>setActive(n)}><strong>{n}</strong></button>)}</nav>
   <main><nav className="pageBreadcrumb" aria-label="Vị trí hiện tại">{active==='Tổng quan'?<strong>Trang chủ · Tổng quan</strong>:<><button onClick={()=>goTo('Tổng quan')}>Tổng quan</button><span>›</span><strong>{active}</strong></>}{isDemo&&<small>DEMO · Dữ liệu minh họa</small>}</nav>
   {active==='Tổng quan'&&<div className="overview">
