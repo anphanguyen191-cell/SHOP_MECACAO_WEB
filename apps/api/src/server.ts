@@ -1,4 +1,4 @@
-import {freshDevelopment,freshWarehouse} from './freshDevelopment.js'
+import {freshDevelopment,freshWarehouse,freshRoot,customWarehouse,warehouseConfig,validateNewWarehouse,release} from './freshDevelopment.js'
 import {taskManager} from './tasks.js'
 import {taskActivity} from './taskActivity.js'
 import {salesActivity,SALES_AREA} from './salesExecution.js'
@@ -80,7 +80,7 @@ app.use('/api',(req,res,next)=>{
   if(req.path==='/store/import-batch-task')ok=Array.isArray(req.body.products)&&req.body.products.every((p:any)=>target(p.rootPath)&&(p.variants??[]).every((v:any)=>(v.images??[]).every(sandboxPathAllowed)))
   if(req.path==='/goods-receipt/inspect')ok=source(req.body.path)
   if(req.path==='/goods-receipt')ok=target(req.body.storeRoot)&&(req.body.sizes??[]).every((v:any)=>(!v.sourcePath||source(v.sourcePath))&&(v.images??[]).every(source))
-  if(!ok)return res.status(403).json({error:'Bản mới chỉ ghi vào kho riêng. Dùng Nhập hàng để COPY ảnh từ thư mục của shop.'})
+  if(!ok)return res.status(403).json({error:'Kho đích phải là kho của bản cài này. Chọn kho trên thanh phiên bản trước khi nhập dữ liệu.'})
   return next()
  }
  if(localRuntime){
@@ -138,12 +138,24 @@ app.post('/api/tasks/:id/acknowledge',(req,res)=>{if(!taskOrigin(req)||req.body.
 app.post('/api/store/import-batch-task',(req,res)=>{if(req.body.confirmed!==true||!Array.isArray(req.body.products)||!req.body.products.length||req.body.products.length>500)return res.status(400).json({error:'Cần duyệt lô từ 1–500 Product'});return asyncTask(req,res,'REGISTER_BATCH',req.body)})
 
 app.get('/api/health', (_req, res) => res.json({
-  ok: true, app: 'SHOP_MECACAO_WEB', freshDevelopment,version: freshDevelopment?'3.0.0-stage2':localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:freshDevelopment?freshWarehouse:localRuntime?.warehouse,incoming:localRuntime?.incoming,databasePath:localRuntime?.database,localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
+  ok: true, app: 'SHOP_MECACAO_WEB', freshDevelopment,customWarehouse,release: freshDevelopment?release:undefined,version: freshDevelopment?release.version:localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:freshDevelopment?freshWarehouse:localRuntime?.warehouse,incoming:localRuntime?.incoming,databasePath:localRuntime?.database,localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
 }))
+app.post('/api/local/warehouse',(req,res)=>{
+ if(!freshDevelopment)return res.status(404).json({error:'Chọn kho áp dụng cho bản main mới'})
+ try{
+  if(customWarehouse||fs.existsSync(warehouseConfig))throw Error('Kho của bản cài này đã được chọn. Bản cài mới có thể chọn kho mới.')
+  if(['products','sales_orders','shop_customers','inventory_transactions'].some(t=>db.prepare('SELECT 1 FROM '+t+' LIMIT 1').get()))throw Error('Chỉ chọn kho trước khi nhập dữ liệu. Giữ kho hiện tại hoặc giải nén bản main vào thư mục mới.')
+  const warehouse=validateNewWarehouse(req.body.warehouse)
+  const fd=fs.openSync(warehouseConfig,'wx',0o600)
+  try{fs.writeFileSync(fd,JSON.stringify({format:1,warehouse}));fs.fsyncSync(fd)}finally{fs.closeSync(fd)}
+  res.json({warehouse,restarting:true})
+  res.once('finish',()=>setTimeout(()=>process.exit(75),250))
+ }catch(e){res.status(409).json({error:e instanceof Error?e.message:String(e)})}
+})
 if(salesDraftsEnabled&&sandboxRoot)app.use('/api/sales/drafts',salesDraftRouter(db,sandboxRoot,PORT))
 else app.use('/api/sales/drafts',(_req,res)=>res.status(404).json({error:'V2 đơn nháp chưa bật; chỉ thử bằng sandbox V2 riêng.'}))
 
-if(sandboxRoot)app.use('/api/backup/restore-test',restoreTestRouter(sandboxRoot,PORT,localRuntime?.dataRoot))
+if(sandboxRoot)app.use('/api/backup/restore-test',restoreTestRouter(sandboxRoot,PORT,localRuntime?.dataRoot??(freshDevelopment&&customWarehouse?freshRoot:undefined)))
 else app.post('/api/backup/restore-test',(_req,res)=>res.status(403).json({error:'Restore thử chỉ bật trong sandbox, không thay database đang dùng.'}))
 
 app.get('/api/inventory/share/capabilities',(_req,res)=>res.json(clipboardCapabilities()))

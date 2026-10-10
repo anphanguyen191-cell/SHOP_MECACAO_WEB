@@ -1,3 +1,7 @@
+## Cập nhật v3.0.1-stage2 — 2026-10-10
+
+Giao diện sáng tăng tương phản và tách màu nhóm chức năng. `START_SHOP.bat` là launcher main thống nhất; alias chặng 2 gọi cùng launcher. Trước khi có dữ liệu, chọn thư mục kho trên UI; app tự restart, dùng kho đó trực tiếp theo layout DIRECT. DB vẫn riêng cho bản cài, không đọc/di chuyển DB cũ. Chọn kho không đăng ký hoặc thay đổi ảnh; quét/import có bước duyệt riêng. Đã có dữ liệu thì không đổi kho để tránh trộn đường dẫn. Thanh phiên bản ghi v3.0.1-stage2, main, chặng 2; chặng 3 chưa triển khai. Kiểm thử HTTP chọn kho/import/restart/bán/PNG/backup trên fixture; CI Linux và Windows 22/24 xác nhận cùng mã main.
+
 # Chặng 2 — Khách hàng, giao hàng và phiếu chốt đơn PNG
 
 Baseline chức năng: chặng 1 `aa304bc`. Đây là bản phát triển đầy đủ, khởi tạo dữ liệu riêng khi cài vào thư mục mới; không yêu cầu DB V1, gói chuyển kho hoặc dữ liệu thử của các bản trước.

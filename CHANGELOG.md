@@ -1,3 +1,9 @@
+## 3.0.1-stage2 — 2026-10-10
+- Tăng tương phản giao diện sáng, tách nhóm chức năng xanh/cam/tím, giữ palette tối.
+- Launcher Windows main thống nhất; chọn kho ngay trên UI trước khi nhập dữ liệu, tự restart.
+- DB mới theo bản cài, kho chọn DIRECT, không kế thừa DB thử cũ.
+- Hiển thị phiên bản/chặng hiện tại và phần tiếp theo chưa triển khai.
+
 # Chặng 2 — bản phát triển đầy đủ, dữ liệu mới — 2026-10-10
 
 Giữ chức năng chặng 1; thêm danh mục khách, cảnh báo điện thoại trùng, snapshot giao hàng, phí ship/miễn ship, phiếu PNG có ảnh hàng và nhiều trang. START_SHOP_CHANG_2.bat mở bản LOCAL dùng dữ liệu mới của thư mục cài, nhập ảnh từ UI bằng COPY. Cập nhật README, checkpoint và CI Linux/Windows/browser. Chưa bổ sung nghiệp vụ chặng 3.

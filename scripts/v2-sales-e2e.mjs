@@ -95,6 +95,7 @@ async function browserTest(base,id){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:768,deviceScaleFactor:1,mobile:width===390})
    await run("document.querySelector('.shell').classList.toggle('themeDark',"+dark+")")
    await sleep(150)
+   if(!dark){assert(await run("new Set(Array.from(document.querySelectorAll('.salesKpis>*')).map(e=>getComputedStyle(e).backgroundColor)).size===3"));checks++}
    if(dark){assert(await run("getComputedStyle(document.querySelector('.salesFold')).color==='rgb(255, 245, 250)'"));checks++}
    assert(await run("document.documentElement.scrollWidth<=innerWidth+2"));checks++
    const pic=await cmd('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(artifact,width+'-'+(dark?'dark':'light')+'.png'),Buffer.from(pic.data,'base64'))

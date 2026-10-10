@@ -5,6 +5,7 @@ import App from './App'
 import './styles.css'
 import './desktopExperience.css'
 import './inventorySharing.css'
+import './lightContrast.css'
 
 registerSW({ immediate: true })
 

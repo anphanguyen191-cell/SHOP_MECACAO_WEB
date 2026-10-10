@@ -37,6 +37,8 @@ jobs:
         run: node scripts/v2-drafts-e2e.mjs
       - name: V2 sales sandbox HTTP and Chromium acceptance
         run: node scripts/v2-sales-e2e.mjs
+      - name: Main Windows launcher and release UI browser smoke
+        run: node scripts/main-browser-smoke.mjs
       - name: Mobile browser smoke (390px)
         run: node scripts/mobile-browser-smoke.mjs
       - name: Upload mobile screenshots
@@ -45,6 +47,7 @@ jobs:
         with:
           name: mobile-smoke-${{ github.sha }}
           path: |
+            artifacts/main-release
             artifacts/mobile-smoke
             artifacts/v2-drafts
             artifacts/v2-sales

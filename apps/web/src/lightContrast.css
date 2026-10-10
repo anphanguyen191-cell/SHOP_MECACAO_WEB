@@ -1,0 +1,28 @@
+/* Distinct function groups; dark theme keeps its own palette. */
+.shell:not(.themeDark){--panel:#fff;--muted:#4d4050;--text:#241c29;color:#241c29;background:#f2f4fa}
+.shell:not(.themeDark) :is(p,small,label,.chartCaption,.eyebrow,.dashboardFoldEyebrow,.overviewKicker){color:#4d4050}
+.shell:not(.themeDark) :is(.panel,.overviewPanel,.warehouseWorkspace,.inventoryHeading,.salesList,.salesEditor){background:#fff;border:1px solid #a9a4b5;box-shadow:0 3px 12px #25203c0c}
+.shell:not(.themeDark) :is(input,select,textarea){background:#fff;color:#241c29;border-color:#8a8298}
+.shell:not(.themeDark) input::placeholder,.shell:not(.themeDark) textarea::placeholder{color:#696070;opacity:1}
+.shell:not(.themeDark) :is(.sidebar button,.drawerLinks button){background:#e5eafb;color:#253e76;border:1px solid #889bd0}
+.shell:not(.themeDark) :is(.sidebar button,.drawerLinks button):nth-child(3n+2){background:#cdf0e1;color:#114b38;border-color:#4d9d81}
+.shell:not(.themeDark) :is(.sidebar button,.drawerLinks button):nth-child(3n){background:#f9d9e7;color:#6c2346;border-color:#b85b85}
+.shell:not(.themeDark) :is(.sidebar button.active,.drawerLinks button.selected){background:#a33f6b;color:#fff;border:2px solid #702443}
+.shell:not(.themeDark) :is(.overviewWelcome,.dashboardFoldHeader,.catalogPanelHeading,.salesHeading){background:#e9dafa;border:1px solid #9670bd;border-radius:14px;padding:16px;color:#422460}
+.shell:not(.themeDark) :is(.overviewStats,.catalogMetrics,.inventoryMetrics,.warehouseMetrics,.receiptStats,.salesKpis)>*{background:#c9e0ff;color:#153a6e;border:1px solid #5488c5;border-top:5px solid #245da1}
+.shell:not(.themeDark) :is(.overviewStats,.catalogMetrics,.inventoryMetrics,.warehouseMetrics,.receiptStats,.salesKpis)>*:nth-child(3n+2){background:#c9efda;color:#144e34;border-color:#48936b;border-top-color:#267349}
+.shell:not(.themeDark) :is(.overviewStats,.catalogMetrics,.inventoryMetrics,.warehouseMetrics,.receiptStats,.salesKpis)>*:nth-child(3n){background:#ffdfaa;color:#683b05;border-color:#c78933;border-top-color:#975710}
+.shell:not(.themeDark) :is(.overviewStats,.catalogMetrics,.inventoryMetrics,.warehouseMetrics,.receiptStats,.salesKpis)>* :is(span,strong,b,small){color:inherit}
+.shell:not(.themeDark) .overviewStats>.warningStat{background:#ffd2d1;color:#732122;border-color:#c66865;border-top-color:#a43a36}
+.shell:not(.themeDark) :is(.inventoryFilters,.catalogSearchArea,.warehouseConfig,.contactCard){background:#dae9ff;border:1px solid #7795c3;border-left:5px solid #315f9d}
+.shell:not(.themeDark) :is(.salesTotals,.salesOrderRow.active,.warehouseConfirm,.selectionBar,.receiptHero){background:#d0efdf;color:#164d35;border:1px solid #72a78b;border-left:5px solid #28734e}
+.shell:not(.themeDark) :is(.orderSlip,.warehouseBulk,.customerForm){background:#ffe4b9;border:1px solid #ba8b46;border-left:5px solid #975710}
+.shell:not(.themeDark) :is(.salesOrderRow,.overviewShortcuts button,.flowTabs button){background:#ede1fa;color:#422460;border-color:#9670bd}
+.shell:not(.themeDark) :is(.notice.warning,.warning,.salesWarning){background:#ffe3c2;color:#793803;border-color:#bf722f}
+.shell:not(.themeDark) :is(.salesButtons button,.contactCard button,.warehouseToolbar button,.warehouseConfig button,.overviewTextAction,.clearFilter){background:#e1e9fc;color:#253e76;border:1px solid #8b9ec9;font-weight:700}
+.shell:not(.themeDark) :is(button.primary,.salesActionPrimary,.overviewAction){background:#a33f6b;color:#fff;border-color:#702443}
+.shell:not(.themeDark) button:disabled{opacity:.55}
+.shell :is(button,a,input,select,textarea):focus-visible{outline:3px solid #1768c1;outline-offset:3px}
+.releaseStatus{margin:12px 24px;padding:14px 18px;background:#dce8ff;border:1px solid #6688bf;border-left:6px solid #315f9d;border-radius:12px;color:#213d6c;overflow-wrap:anywhere}
+.releaseHeading,.releaseWarehouse{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.releaseHeading>strong{font-size:16px}.releaseHeading>span{flex:1}.releaseState{font-size:11px;border:1px solid #a66a1b;background:#ffe0aa;color:#633903;padding:5px 8px;border-radius:6px}.releaseStatus p{margin:7px 0;font-size:13px}.releaseStatus small{display:block;margin-top:8px}.releaseWarehouse>span{flex:1;min-width:160px;font-size:13px}.releaseWarehouse>button{background:#315f9d;color:#fff;border:1px solid #214779;border-radius:8px;padding:10px 12px;font-weight:700;cursor:pointer}.themeDark .releaseStatus{background:#26344a;color:#edf3ff;border-color:#7890b5}.themeDark .releaseState{background:#5a421d;color:#ffe0aa}
+@media(max-width:640px){.releaseStatus{margin:10px;padding:12px}.releaseHeading{align-items:flex-start}.releaseHeading>span{flex-basis:100%}.releaseWarehouse>button{flex:1}.releaseWarehouse>span{flex-basis:100%}}

@@ -1,3 +1,4 @@
+import ReleaseStatus from './ReleaseStatus'
 import CustomersView from './CustomersView'
 import { useEffect, useMemo, useState } from 'react'
 import InventoryOps from './InventoryOps'
@@ -14,7 +15,7 @@ import SalesDraftView from './SalesDraftView'
 import {useDraftConflictChoice} from './DraftConflictChoice'
 import {apiJson,useBooleanPreference} from './uiState'
 
-type Health={ok:boolean;version:string;schema:number;database:string;freshDevelopment?:boolean;sandbox?:boolean;localV2Review?:boolean;localV2Business?:boolean;localV2RestoreReview?:boolean;warehouse?:string;databasePath?:string;incoming?:string;salesDrafts?:boolean;salesExecution?:boolean}
+type Health={ok:boolean;version:string;schema:number;database:string;freshDevelopment?:boolean;customWarehouse?:boolean;release?:{version:string;channel:string;stage:number;status:string;next:string};sandbox?:boolean;localV2Review?:boolean;localV2Business?:boolean;localV2RestoreReview?:boolean;warehouse?:string;databasePath?:string;incoming?:string;salesDrafts?:boolean;salesExecution?:boolean}
 type ProductRow={id:number;product_code:string;name:string;category?:string;variant_count:number;total_stock:number;image_id?:number|null;filtered_stock?:number;sizes?:string[];stock_by_size?:Array<{size:string;stock:number}>}
 type CatalogSuggestion={product_id:number;product_code:string;product_name:string;variant_id:number;sku:string;size:string;stock:number}
 const demo:ProductRow[]=[
@@ -87,7 +88,7 @@ export default function App(){
  },[products,isDemo,search,catalogSize,catalogStock,catalogSort])
  function chooseCatalogSuggestion(s:CatalogSuggestion){setSearch(s.product_name);setCatalogSize(s.size);setCatalogSuggestions([])}
  const isWindowsSandbox=!!health?.sandbox&&!health?.freshDevelopment&&!isDemo
- const mode=isDemo?'DEMO':health?.ok?(health?.freshDevelopment?'CHẶNG 2 · DỮ LIỆU MỚI':health?.localV2Business?'LOCAL V2 · KHO KINH DOANH':isWindowsSandbox?'TEST SANDBOX':'LOCAL'):'LOCAL / API OFFLINE'
+ const mode=isDemo?'DEMO':health?.ok?(health?.freshDevelopment?'LOCAL · MAIN':health?.localV2Business?'LOCAL V2 · KHO KINH DOANH':isWindowsSandbox?'TEST SANDBOX':'LOCAL'):'LOCAL / API OFFLINE'
  const catalogDisplay=isDemo?{
   categoryBreakdown:[{category:'Đồ tole bé gái',count:2}],
   sizeBreakdown:[{size:'Size 1',count:2},{size:'Size 2',count:2},{size:'Size 3',count:2},{size:'Size 4',count:1}],
@@ -113,7 +114,7 @@ export default function App(){
   {conflictChoice.dialog}
   <header className="topbar"><div className="brandIdentity"><button type="button" className="menuToggle" aria-label="Mở danh mục chức năng" aria-expanded={menuOpen} onClick={()=>setMenuOpen(true)}>☰</button><img className="brandLogo" src={`${import.meta.env.BASE_URL}brand/logo.jpg`} alt="Logo Shop Mẹ CaCao" onError={e=>{e.currentTarget.style.display="none"}}/><span className="brandMonogram">MC</span><div><p className="eyebrow">SHOP MẸ CACAO · SINCE 2023</p><h1>Quản lý kho</h1></div></div><div className="headerActions"><DisplayDensity compact={compact} onChange={setCompact}/><WarehouseNotifications isDemo={isDemo} onReview={()=>goTo('Import kho')}/><button type="button" className="themeToggle" onClick={()=>setDarkMode(v=>!v)} aria-label={darkMode?"Bật giao diện sáng":"Bật giao diện tối"}>{darkMode?"☀":"☾"}</button><span className={'badge '+(mode==='LOCAL'?'local':mode==='DEMO'?'demo':mode==='TEST SANDBOX'?'test':'offline')}>{mode}</span></div></header>
   {!isDemo&&health?.ok&&<TaskProgress/>}
-  {health?.freshDevelopment&&<div className="sandboxSafetyBanner businessSafetyBanner"><b>CHẶNG 2 · BẢN PHÁT TRIỂN MỚI</b><br/>Dữ liệu riêng cho bản cài này. Vào Nhập hàng để chọn ảnh của shop; ảnh nguồn được copy.<br/>Kho: {health.warehouse}</div>}
+  {(health?.freshDevelopment||isDemo)&&<ReleaseStatus version={health?.version??'3.0.1-stage2'} release={health?.release} warehouse={health?.warehouse} custom={health?.customWarehouse} onImport={()=>goTo('Import kho')}/>}
   {health?.localV2Business&&<div className="sandboxSafetyBanner businessSafetyBanner" role="status"><b>LOCAL V2 · KHO KINH DOANH</b><br/>Kho: {health.warehouse}<br/>DB: {health.databasePath}<br/>Ảnh nhập mới: {health.incoming} · Không mở V1/Python cũ đồng thời.</div>}
   {health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">BẢN PHỤC HỒI THỬ · Không phải kho kinh doanh.</div>}
   {isWindowsSandbox&&!health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">{health?.localV2Review?'LOCAL V2 — BẢN SAO ĐỂ DUYỆT. Dữ liệu lấy từ backup V1; thao tác chỉ thay bản sao, chưa kích hoạt kho thật.':'CHẾ ĐỘ THỬ WINDOWS — Database và kho giả lập riêng. KHÔNG thao tác ghi lên D:\\1-Me CaCao Store.'}</div>}

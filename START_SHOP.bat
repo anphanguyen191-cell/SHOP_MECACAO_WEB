@@ -1,42 +1,27 @@
 @echo off
 setlocal
-set "SHOP_LOCAL_V2_CONFIG="
-set "SHOP_LOCAL_V2_RESTORE_READY="
 cd /d "%~dp0"
-title Shop Me CaCao
-
-if not exist "node_modules" (
-  echo Chua setup lan dau.
-  call scripts\SETUP_FIRST_TIME.bat
-  if errorlevel 1 exit /b 1
+title Shop Me CaCao - Main
+where node >nul 2>nul
+if errorlevel 1 (
+ echo Can cai Node.js 22.13 hoac moi hon truoc khi mo ung dung.
+ pause
+ exit /b 1
 )
-
-if not exist "apps\web\dist\index.html" (
-  echo Dang build giao dien...
-  call npm run build
-  if errorlevel 1 exit /b 1
+node -e "const [a,b]=process.versions.node.split('.').map(Number);process.exit(a>22||(a===22&&b>=13)?0:1)"
+if errorlevel 1 goto :node_error
+if not exist node_modules (
+ call npm ci
+ if errorlevel 1 goto :fail
 )
-
-echo Dang khoi dong Shop Me CaCao...
-start "Shop Me CaCao Server" cmd /k "cd /d ""%CD%"" && npm run start"
-
-set /a RETRY=0
-:wait_server
-timeout /t 1 /nobreak >nul
-powershell -NoProfile -Command "try { $r=Invoke-WebRequest -UseBasicParsing -TimeoutSec 1 http://127.0.0.1:3000/api/health; if ($r.StatusCode -eq 200) { exit 0 } } catch {}; exit 1" >nul 2>nul
-if not errorlevel 1 goto server_ready
-set /a RETRY+=1
-if %RETRY% GEQ 15 goto server_failed
-goto wait_server
-
-:server_ready
-echo Server READY - http://localhost:3000
-start "" "http://localhost:3000"
+call npm run build
+if errorlevel 1 goto :fail
+node scripts\start-stage2.mjs
+if errorlevel 1 goto :fail
 exit /b 0
-
-:server_failed
-echo.
-echo [ERROR] Server khong khoi dong duoc.
-echo Xem cua so "Shop Me CaCao Server" de lay loi va gui lai.
+:node_error
+echo Can Node.js 22.13 hoac moi hon.
+:fail
+echo Khong khoi dong duoc. Xem thong bao loi ben tren.
 pause
 exit /b 1
