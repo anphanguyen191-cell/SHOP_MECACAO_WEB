@@ -37,10 +37,11 @@ async function toBase64(file:File){
   reader.readAsDataURL(file)
  })
 }
-export default function PhonePhotoInboxView({mobile,onChanged}:{mobile:boolean;onChanged?:()=>void}){
+export default function PhonePhotoInboxView({mobile,onChanged,onBeginReceipt}:{mobile:boolean;onChanged?:()=>void;onBeginReceipt?:(folder:string)=>void}){
  const [data,setData]=useState<Listing|null>(null),[error,setError]=useState(''),[message,setMessage]=useState('')
  const [uploading,setUploading]=useState(false),[reviewing,setReviewing]=useState<string|null>(null),[progress,setProgress]=useState('')
  const [reload,setReload]=useState(0),fileRef=useRef<HTMLInputElement|null>(null)
+ const [approvedFolder,setApprovedFolder]=useState('')
  useEffect(()=>{const changed=()=>setReload(n=>n+1);window.addEventListener('mecacao-server-change',changed);return()=>window.removeEventListener('mecacao-server-change',changed)},[])
  useEffect(()=>{
   const ctrl=new AbortController()
@@ -71,12 +72,13 @@ export default function PhonePhotoInboxView({mobile,onChanged}:{mobile:boolean;o
  async function review(photo:Entry){
   if(mobile||reviewing)return
   if(!window.confirm('Đã so ảnh gốc, mã SHA-256 và chắc chắn muốn sao chép ảnh này vào thư mục nguồn chờ Nhập hàng trên Windows? Thao tác không làm tăng tồn.'))return
-  setReviewing(photo.id);setError('');setMessage('')
+  setReviewing(photo.id);setError('');setMessage('');setApprovedFolder('')
   try{
    const answer=await apiJson<{intakeFolder:string;registeredStock:false}>('/api/lan/photos/'+photo.id+'/review',{
     method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sha256:photo.sha256,confirmed:true})
    })
-   setMessage('Đã duyệt bản sao; tồn kho CHƯA thay đổi. Trên Windows mở Nhập hàng, chọn thư mục nguồn: '+answer.intakeFolder)
+   setApprovedFolder(answer.intakeFolder)
+   setMessage('Đã duyệt bản sao; tồn kho CHƯA thay đổi. Chọn nút Chuyển sang Nhập hàng để kiểm tra ảnh, mẫu, Size và giá trước khi xác nhận.')
    setReload(n=>n+1);onChanged?.()
   }catch(e){setError(e instanceof Error?e.message:String(e))}
   finally{setReviewing(null)}
@@ -93,6 +95,7 @@ export default function PhonePhotoInboxView({mobile,onChanged}:{mobile:boolean;o
   {!mobile&&<div className="phoneInboxReviewNotice"><b>Duyệt trên Windows LOCAL</b><p>Xác minh đúng ảnh và hàng thực nhận, bấm Duyệt bản sao, rồi vào Nhập hàng để chọn ảnh đã duyệt và khai báo Product/Size/giá. Không chuyển ảnh chờ thành tồn bằng thao tác này.</p></div>}
   {error&&<p role="alert" className="notice warning">{error}</p>}
   {message&&<p role="status" className="notice">{message}</p>}
+  {!mobile&&approvedFolder&&<div className="phoneInboxReviewNotice" role="status"><b>Đã chuẩn bị bản sao, chưa cộng tồn</b><p>Thư mục nguồn: <code>{approvedFolder}</code></p><button type="button" onClick={()=>onBeginReceipt?.(approvedFolder)}>Chuyển sang Nhập hàng trên Windows →</button></div>}
   {!data&&!error&&<p>Đang tải hộp ảnh...</p>}
   {data&&<><p className="phoneInboxCount">{data.rows.length} ảnh trong hộp chờ · giới hạn {data.maxCount} ảnh</p>
    {!data.rows.length&&<p>Chưa có ảnh nào gửi từ iPhone.</p>}

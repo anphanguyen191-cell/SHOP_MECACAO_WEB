@@ -72,3 +72,6 @@ Thay `192.168.1.100` bằng **IP thật trên Windows**. Cài chứng chỉ CA v
 5. Nhận hoặc duyệt ảnh **không tạo hàng tồn**. Chỉ ảnh canonical đã được nghiệp vụ Nhập hàng đăng ký thành công mới được cộng tồn. Không tự đăng ký một ảnh SOLD thành hàng hoàn trả.
 6. Giới hạn tạm thời: 200 ảnh/lượt lưu trữ trong hộp chờ, không có nút xóa tự động. Khi đầy, dừng nhận để đối soát/backup; không xóa tay dữ liệu gốc. Không đưa các tệp trong `data/stage4/lan` lên GitHub.
 7. **Chưa nghiệm thu:** HTTPS trên Safari iPhone thật, camera HEIC ngoài hiện trường, ngắt Wi-Fi khi đang gửi, UI màn nhỏ và nhập ảnh đã duyệt trên Windows thực tế. Các kiểm thử GitHub chỉ dùng tệp ảnh giả lập.
+
+### Chuyển sang biểu mẫu Nhập hàng trên Windows
+Sau khi bấm **Duyệt và sao chép nguồn** trong Ảnh iPhone, chọn **Chuyển sang Nhập hàng trên Windows** để hệ thống tự điền và quét thư mục nguồn đã duyệt. Đây chỉ là bước chuẩn bị biểu mẫu: chủ shop vẫn phải kiểm tra mẫu, Size, giá nhập, giá bán và số ảnh, rồi nhấn **XÁC NHẬN NHẬP HÀNG**. Không cộng tồn trước khi nghiệp vụ Nhập hàng hoàn tất.

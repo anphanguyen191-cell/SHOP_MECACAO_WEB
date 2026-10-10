@@ -13,13 +13,14 @@ type Progress={phase:string;percent:number;copied:number;total:number;current?:s
 const blank=():SizeRow=>({size:'',sku:'',quantity:1,costPrice:0,salePrice:0,sourcePath:'',imageCount:0})
 const labels:Record<string,string>={VALIDATE:'Kiểm tra dữ liệu',PREPARE:'Chuẩn bị thư mục kho',COPY:'Copy ảnh vào kho',VERIFY:'Kiểm tra ảnh',DB_COMMIT:'Ghi dữ liệu kho',INTEGRITY:'Kiểm tra toàn vẹn',DONE:'Hoàn tất',ROLLBACK:'Hoàn tác'}
 
-export default function GoodsReceipt({onDone}:{onDone?:()=>void}){
+export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceApplied}:{onDone?:()=>void;initialSourcePath?:string|null;onInitialSourceApplied?:()=>void}){
  const [fresh,setFresh]=useState(false)
  const [products,setProducts]=useState<Product[]>([]),[flow,setFlow]=useState<Flow>('EXISTING_SIZE'),[productId,setProductId]=useState(0),[detail,setDetail]=useState<ProductDetail|null>(null)
  const [name,setName]=useState(''),[code,setCode]=useState(''),[category,setCategory]=useState(''),[storeRoot,setStoreRoot]=useState(''),[rows,setRows]=useState<SizeRow[]>([blank()]),[note,setNote]=useState('')
  const [busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[progress,setProgress]=useState<Progress|null>(null),[productSearch,setProductSearch]=useState(''),[pick,setPick]=useState<{kind:'store'|'source';row?:number}|null>(null)
  useEffect(()=>{apiJson('/api/health').then(h=>{if(h.freshDevelopment&&h.warehouse){setFresh(true);setStoreRoot(h.warehouse);setFlow('NEW_PRODUCT')}}).catch(()=>{})},[])
  const [reading,setReading]=useState(false),[task,setTask]=useState<OperationTask|null>(null)
+ useEffect(()=>{if(initialSourcePath){void inspect(0,initialSourcePath);onInitialSourceApplied?.()}},[])
  const requestVersion=useRef(0),submitLock=useRef(false)
  useEffect(()=>{let alive=true;apiJson<Product[]>('/api/products').then(j=>{if(alive)setProducts(j)}).catch(e=>{if(alive)setMsg(e.message)});return()=>{alive=false;requestVersion.current++}},[])
  const filteredProducts=useMemo(()=>{const q=productSearch.trim().toLowerCase();return q?products.filter(p=>p.name.toLowerCase().includes(q)||p.product_code.toLowerCase().includes(q)):products},[products,productSearch])
@@ -67,7 +68,7 @@ export default function GoodsReceipt({onDone}:{onDone?:()=>void}){
  }
  const existingSizes=detail?.variants??[]
  return <section id="goods-receipt-form" className="receipt receiptV2" tabIndex={-1}>
-  <div className="receiptHero"><div><p className="eyebrow">NHẬP HÀNG</p><h3>Chọn đúng tình huống nhập kho</h3><p>Dữ liệu đã có thì chọn lại từ hệ thống; chỉ nhập tay khi tạo mới.</p></div></div>
+  <div className="receiptHero"><div><p className="eyebrow">NHẬP HÀNG</p><h3>Chọn đúng tình huống nhập kho</h3><p>Dữ liệu đã có thì chọn lại từ hệ thống; chỉ nhập tay khi tạo mới.</p>{initialSourcePath&&<p role="note"><b>Ảnh duyệt từ iPhone:</b> Đã yêu cầu quét thư mục nguồn. Phải chọn Product, Size và giá, xem đủ ảnh rồi mới xác nhận nhập hàng.</p>}</div></div>
   <fieldset className="receiptFields" disabled={busy||reading}><div className="flowTabs">
    <button className={flow==='NEW_PRODUCT'?'active':''} onClick={()=>switchFlow('NEW_PRODUCT')}><b>1. Mẫu mới hoàn toàn</b><span>Tạo Product + Size mới</span></button>
    <button className={flow==='NEW_SIZE'?'active':''} onClick={()=>switchFlow('NEW_SIZE')}><b>2. Thêm Size mới</b><span>Product đã có, Size chưa có</span></button>
