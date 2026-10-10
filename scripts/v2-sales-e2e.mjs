@@ -143,7 +143,8 @@ async function browserTest(base,id){
   assert(await run("document.querySelector('.stocktakePanel input[type=number]').value==='1'"));checks++
 
   await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Lưu số đếm').click()")
-  await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Lưu số đếm'&&b.disabled)")
+  await until("!document.querySelector('.stage4Page [role=status]')&&!document.querySelector('.stage4Page').textContent.includes('Có số đếm / ghi chú chưa lưu')&&Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Lưu số đếm'&&b.disabled)")
+  const savedCount=(await api('/api/sales/drafts/stocktakes'))[0];assert((await api('/api/sales/drafts/stocktakes/'+savedCount.id)).rows[0].counted===1);checks++
   await run("(()=>{const i=document.querySelector('input[aria-label=\"Kết luận kiểm kê\"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'Đã lưu chênh lệch, kiểm tra nhập ảnh sau');i.dispatchEvent(new Event('input',{bubbles:true}))})()")
   await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Xác nhận hoàn tất kiểm kê'&&!b.disabled)")
   await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Xác nhận hoàn tất kiểm kê').click()")
