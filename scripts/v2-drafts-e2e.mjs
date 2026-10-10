@@ -170,7 +170,8 @@ async function browserTest(base,id){
   for(const width of [1366,390])for(const dark of [false,true]){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:768,deviceScaleFactor:1,mobile:width===390})
    if(await run("document.querySelector('.shell').classList.contains('themeDark')")!==dark)await run("document.querySelector('.themeToggle').click()")
-   assert(await run('document.documentElement.scrollWidth')<=width+2,'restore overflow');checks++
+   const layout=await run("JSON.stringify({width:document.documentElement.scrollWidth,overflow:Array.from(document.querySelectorAll('body *')).map(e=>({tag:e.tagName,class:e.className,right:e.getBoundingClientRect().right,width:e.getBoundingClientRect().width})).filter(e=>e.right>innerWidth+2).slice(0,12)})")
+   assert(JSON.parse(layout).width<=width+2,'restore overflow '+width+' '+(dark?'dark':'light')+' '+layout);checks++
    const pic=await cmd('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(artifact,'restore-'+width+'-'+(dark?'dark':'light')+'.png'),Buffer.from(pic.data,'base64'))
   }
   console.log('V2_BROWSER PASS: inventory selection -> draft -> edit -> save, 1366/390px light/dark layout')
