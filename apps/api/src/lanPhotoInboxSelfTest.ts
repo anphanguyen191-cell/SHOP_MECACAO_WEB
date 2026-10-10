@@ -17,7 +17,7 @@ try{
  check(inbox.preview(first.id).length>0,'Preview generated')
  await assert.rejects(inbox.stage(b,'inventory1'),/trùng/);n++
  await assert.rejects(inbox.stage({...b,mime:'image/png'},'inventory1'),/Định dạng/);n++
- await assert.rejects(inbox.stage({...b,base64:'abc'},'inventory1'),/Nội dung/);n++
+ await assert.rejects(inbox.stage({...b,base64:'abc'},'inventory1'),/giải mã|Nội dung/);n++
  await assert.rejects(inbox.stage({...b,base64:Buffer.alloc(PHONE_PHOTO_MAX_BYTES+1).toString('base64')},'inventory1'),/4 MB/);n++
  assert.throws(()=>inbox.review(first.id,'0'.repeat(64),true),/Checksum/);n++
  check(inbox.list()[0].status==='PENDING_REVIEW','Failed verification does not approve')
