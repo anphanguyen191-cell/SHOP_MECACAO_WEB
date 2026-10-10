@@ -1,3 +1,5 @@
+import {configureLan} from './lanRuntime.js'
+import {installLanGuard,listenLan} from './lanServer.js'
 import {freshDevelopment,freshWarehouse,freshRoot,customWarehouse,warehouseConfig,validateNewWarehouse,release} from './freshDevelopment.js'
 import {taskManager} from './tasks.js'
 import {taskActivity} from './taskActivity.js'
@@ -35,6 +37,7 @@ recoverImageRenames()
 if(receiptRecovery.journals)console.log('Receipt recovery:',JSON.stringify(receiptRecovery))
 
 const app = express()
+const lan=configureLan()
 const PORT = Number(process.env.PORT ?? 3000)
 const sandboxRoot=process.env.SHOP_SANDBOX_ROOT?fs.realpathSync(path.resolve(process.env.SHOP_SANDBOX_ROOT)):null
 function sandboxPathAllowed(value:unknown){
@@ -48,8 +51,10 @@ function sandboxPathAllowed(value:unknown){
  }catch{return false}
 }
 app.use(express.json({ limit: '2mb' }))
+installLanGuard(app,lan)
 app.use('/api',(req,res,next)=>{
  if(localRuntime||freshDevelopment){
+  if(res.locals.lanUser)return next()
   if(!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress||''))return res.status(403).json({error:'LOCAL chỉ truy cập trên máy Windows này'})
   if(req.method!=='GET'&&req.method!=='HEAD'){let same=false;try{const u=new URL(req.get('origin')||'');same=u.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(u.hostname)&&Number(u.port||80)===PORT}catch{}if(!same)return res.status(403).json({error:'Thao tác LOCAL phải từ giao diện cùng máy/cùng cổng'})}
  }else if(req.path!=='/health'&&legacyWarehouseActive(db))return res.status(409).json({error:'Kho đã chuyển LOCAL V2; dừng V1 và mở START_SHOP_V2_LOCAL.bat.'})
@@ -138,6 +143,7 @@ app.post('/api/tasks/:id/acknowledge',(req,res)=>{if(!taskOrigin(req)||req.body.
 app.post('/api/store/import-batch-task',(req,res)=>{if(req.body.confirmed!==true||!Array.isArray(req.body.products)||!req.body.products.length||req.body.products.length>500)return res.status(400).json({error:'Cần duyệt lô từ 1–500 Product'});return asyncTask(req,res,'REGISTER_BATCH',req.body)})
 
 app.get('/api/health', (_req, res) => res.json({
+  lanClient:!!res.locals.lanUser,lanRole:res.locals.lanUser?.role,
   ok: true, app: 'SHOP_MECACAO_WEB', freshDevelopment,customWarehouse,release: freshDevelopment?release:undefined,version: freshDevelopment?release.version:localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:freshDevelopment?freshWarehouse:localRuntime?.warehouse,incoming:localRuntime?.incoming,databasePath:localRuntime?.database,localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
 }))
 app.post('/api/local/warehouse',(req,res)=>{
@@ -316,6 +322,7 @@ if (fs.existsSync(webDist)) {
   app.get('/', (_req, res) => res.status(503).send('Frontend chưa build. Chạy npm run build trước.'))
 }
 
+listenLan(app,lan)
 app.listen(PORT, process.env.SHOP_HOST ?? '127.0.0.1', () => {
   startWarehouseWatcher(rootPath=>{if(!tasks.pendingReview())tasks.start('SCAN',{rootPath,background:true},'watch-'+randomUUID())})
   console.log(`Shop Mẹ CaCao đang chạy: http://localhost:${PORT}`)
