@@ -94,3 +94,6 @@
 }
 @media(max-width:390px){.shell .soldRetentionCard{grid-template-columns:1fr}.shell .soldRetentionPhoto{width:100%;height:190px}.shell .overviewShortcuts button{min-height:64px}}
 @media(prefers-reduced-motion:reduce){.shell :is(button,input,select,textarea){transition:none!important}}
+
+/* Keep the original dark drawer search design: field is transparent inside its rounded shell. */
+.shell.themeDark .drawerSearch input{background:transparent!important;box-shadow:none}
