@@ -124,7 +124,8 @@ export function createPhonePhotoInbox(inboxRoot:string,approvedRoot:string,rejec
    if(fs.lstatSync(target).isSymbolicLink()||fs.realpathSync(target)!==target||sha(fs.readFileSync(target))!==r.sha256)throw new PhonePhotoError('Bản sao đã duyệt có thay đổi. Dừng xử lý.',409)
   }else{
    fs.copyFileSync(source,target,fs.constants.COPYFILE_EXCL)
-   const fd=fs.openSync(target,'r')
+   // Windows requires a writable file descriptor for FlushFileBuffers/fsync.
+   const fd=fs.openSync(target,'r+')
    try{fs.fsyncSync(fd)}finally{fs.closeSync(fd)}
    if(sha(fs.readFileSync(target))!==r.sha256)throw new PhonePhotoError('Bản sao không đạt checksum',409)
   }
