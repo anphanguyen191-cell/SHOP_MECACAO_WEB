@@ -1,3 +1,7 @@
+# Restore result regression fix — 2026-10-10
+
+Review for owner Windows instructions found schema130 restore result missing counts consumed by UI. Return verified row counts, make UI resilient, show correct V2 sales restore launcher, and add real Chromium full-backup→restore READY result coverage. Tests and exact CI must be checked on new commit. This supersedes b001faf for owner download.
+
 # Checkpoint 2026-10-10 — V2 sales sandbox130
 
 Owner requested whole-flow Windows test. Added opt-in actual sandbox sale + immutable SOLD history/relative evidence, coordinated HTTP/watch lock and recovery, role-aware full backup/portable restore and new port3007/3016 launchers. Originals retained; default110 and draft120 unchanged. Scope: `V2_SALES_SANDBOX_CHECKPOINT.md`; acceptance: `WINDOWS_V2_SALES_TEST.md`. Latest CI must be checked for final commit. Not business release/STABLE; image quality/cleanup and owner full Windows/restore acceptance pending. Historical checkpoints below describe earlier revisions.

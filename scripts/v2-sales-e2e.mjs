@@ -40,7 +40,7 @@ try{
  const ledger=await api('/api/inventory/history');assert(ledger.filter(r=>r.transaction_type==='SALE').length===2);checks++
  assert(!fs.existsSync(photos[0])&&!fs.existsSync(photos[1])&&createHash('sha256').update(fs.readFileSync(photos[2])).digest('hex')===original[2]);checks++
  const backup=await api('/api/backup/lossless','POST',{},201);assert(backup.backup.verified.soldImagesVerified===2&&backup.backup.imageCount===3);checks++
- const restored=await api('/api/backup/restore-test','POST',{directory:backup.backup.directory,warehouseRoot:store,confirmed:true});assert(restored.schema===130&&restored.status==='READY');checks++
+ const restored=await api('/api/backup/restore-test','POST',{directory:backup.backup.directory,warehouseRoot:store,confirmed:true});assert(restored.schema===130&&restored.status==='READY'&&restored.counts.sales_orders===2&&restored.counts.sales_confirmations===1);checks++
  await stop();await start(restored);assert((await api('/api/inventory/dashboard')).stock===1&&(await api('/api/sales/drafts/'+draft.id)).status==='SOLD');checks++;assert((await api('/api/sales/drafts/operations/'+key)).status==='SOLD');checks++
  await api('/api/backup/lossless','POST',{},201);await stop();await start();assert((await api('/api/inventory/dashboard')).stock===1);checks++
  const uiDraft=await api('/api/sales/drafts','POST',{items:[{imageId:ids[2],unitPrice:50000}],discount:0,note:'UI'},201,{'Idempotency-Key':'sale-http-ui-key-00001'})
@@ -95,6 +95,16 @@ async function browserTest(base,id){
   await run("Array.from(document.querySelectorAll('.salesOrderRow')).find(b=>b.textContent.includes("+JSON.stringify(id.slice(0,8).toUpperCase())+")).click()")
   await until("document.querySelector('.salesItem img')?.naturalWidth>0")
   assert(await run("document.querySelector('.salesEditorHead h3').textContent.includes('ĐÃ BÁN')"));checks++
-  console.log('V2_SALES_BROWSER PASS: preflight checkbox -> actual sandbox sale -> locked history JPEG -> reload SOLD filter; 1366/390px light/dark')
+  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()")
+  await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='BACKUP ĐẦY ĐỦ DB + ẢNH GỐC (KIỂM TRA SHA)')")
+  await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='BACKUP ĐẦY ĐỦ DB + ẢNH GỐC (KIỂM TRA SHA)').click()")
+  await until("document.querySelector('.restoreTestPanel input[readonly]')?.value.includes('sales-')")
+  await run("(()=>{const i=document.querySelector('.restorePathRow input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,"+JSON.stringify(store)+");i.dispatchEvent(new Event('input',{bubbles:true}))})()")
+  await run("document.querySelector('.restoreConfirm input').click()")
+  await until("!document.querySelector('.restorePrimary').disabled")
+  await run("document.querySelector('.restorePrimary').click()")
+  await until("document.querySelector('.restoreResult')?.textContent.includes('READY')")
+  assert(await run("document.querySelector('.restoreResult').textContent.includes('schema 130')&&document.querySelector('.restoreResult').textContent.includes('3 đơn và lịch sử')&&document.querySelector('.restoreResult').textContent.includes('RUN_WINDOWS_RESTORED_V2_SALES_TEST.bat')"));checks++
+  console.log('V2_SALES_BROWSER PASS: preflight checkbox -> actual sandbox sale -> locked history JPEG -> reload SOLD filter; 1366/390px light/dark, schema130 restore READY UI')
  }finally{ws?.close();c.kill();await sleep(300);fs.rmSync(profile,{recursive:true,force:true})}
 }
