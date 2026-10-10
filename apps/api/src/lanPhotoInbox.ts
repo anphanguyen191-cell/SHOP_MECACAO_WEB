@@ -152,13 +152,19 @@ export function createPhonePhotoInbox(inboxRoot:string,approvedRoot:string,rejec
  */
 export function requireApprovedPhoneReceiptSource(freshRoot:string,candidate:string){
  const value=path.resolve(candidate)
+ let actual=value
+ try{actual=fs.realpathSync(value)}catch{}
  const pending=path.resolve(freshRoot,'lan','phone-pending')
  const approved=path.resolve(freshRoot,'lan','phone-reviewed')
  const relative=(base:string)=>path.relative(base,value)
  const internal=(rel:string)=>rel===''||(rel!=='..'&&!rel.startsWith('..'+path.sep)&&!path.isAbsolute(rel))
- if(internal(relative(pending)))throw new PhonePhotoError('Ảnh iPhone chưa duyệt không được nhập trực tiếp vào kho',409)
- const rel=relative(approved)
- if(!internal(rel))return
+ if(internal(relative(pending))||internal(path.relative(pending,actual)))throw new PhonePhotoError('Ảnh iPhone chưa duyệt không được nhập trực tiếp vào kho',409)
+ const rel=relative(approved),actualApproved=path.relative(approved,actual)
+ if(!internal(rel)){
+  if(internal(actualApproved))throw new PhonePhotoError('Không được dùng liên kết tới ảnh duyệt thay cho đường dẫn gốc',409)
+  return undefined
+ }
+ if(actual!==value)throw new PhonePhotoError('Đường dẫn ảnh đã duyệt có liên kết hoặc bị thay đổi',409)
  const parts=rel.split(path.sep)
  if(parts.length<1||parts.length>2||!validId(parts[0]))throw new PhonePhotoError('Đường dẫn ảnh duyệt không hợp lệ',409)
  const inbox=createPhonePhotoInbox(pending,approved)
@@ -166,4 +172,5 @@ export function requireApprovedPhoneReceiptSource(freshRoot:string,candidate:str
  const verified=inbox.approvedSource(parts[0])
  const approvedFile=path.join(verified.intakeFolder,'source'+allowed[record.mime].ext)
  if(value!==verified.intakeFolder&&value!==approvedFile)throw new PhonePhotoError('Chỉ nguồn ảnh đã duyệt được dùng cho Nhập hàng',409)
+ return verified.sha256
 }

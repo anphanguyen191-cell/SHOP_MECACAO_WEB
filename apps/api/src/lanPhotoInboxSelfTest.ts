@@ -32,10 +32,17 @@ try{
  const staged=await stageInbox.stage(b,'inventory1')
  const pendingFile=path.join(stageRoot,'lan','phone-pending',staged.id+'.jpg')
  assert.throws(()=>requireApprovedPhoneReceiptSource(stageRoot,pendingFile),/chưa duyệt/);n++
+ if(process.platform!=='win32'){
+  const alias=path.join(root,'alias-to-pending.jpg')
+  fs.symlinkSync(pendingFile,alias)
+  assert.throws(()=>requireApprovedPhoneReceiptSource(stageRoot,alias),/chưa duyệt/);n++
+ }
+
  stageInbox.review(staged.id,staged.sha256,true)
  const approvedFolder=stageInbox.approvedSource(staged.id).intakeFolder
  requireApprovedPhoneReceiptSource(stageRoot,approvedFolder);n++
  requireApprovedPhoneReceiptSource(stageRoot,path.join(approvedFolder,'source.jpg'));n++
+ check(requireApprovedPhoneReceiptSource(stageRoot,approvedFolder)===staged.sha256,'Receipt sees immutable expected original hash')
  assert.throws(()=>requireApprovedPhoneReceiptSource(stageRoot,path.join(approvedFolder,'additional.jpg')),/nguồn ảnh đã duyệt/);n++
  fs.writeFileSync(path.join(approvedFolder,'source.jpg'),Buffer.from('different'))
  assert.throws(()=>requireApprovedPhoneReceiptSource(stageRoot,approvedFolder),/checksum/);n++
