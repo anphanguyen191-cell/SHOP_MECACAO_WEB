@@ -85,7 +85,7 @@ export function lanApiAllowed(role:LanRole,rawMethod:string,rawPath:string){
  if(/^\/api\/sales\/drafts\/[^/]+\/archives(\/|$)/.test(p))return false
  if(method==='GET'){
   const shared=[
-   /^\/api\/health$/, /^\/api\/products(?:\/\d+)?$/, /^\/api\/inventory\/(?:dashboard|explorer|suggestions|filter-options|share\/capabilities|share\/image\/\d+)$/,
+   /^\/api\/health$/, /^\/api\/lan\/changes$/, /^\/api\/products(?:\/\d+)?$/, /^\/api\/inventory\/(?:dashboard|explorer|suggestions|filter-options|share\/capabilities|share\/image\/\d+)$/,
    /^\/api\/catalog\/dashboard$/, /^\/api\/images\/\d+$/, /^\/api\/settings$/
   ]
   if(shared.some(re=>re.test(p)))return true

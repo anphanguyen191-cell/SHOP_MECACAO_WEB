@@ -1,3 +1,4 @@
+import {createLanChangeFeed} from './lanChangeFeed.js'
 import {configureLan} from './lanRuntime.js'
 import {installLanGuard,listenLan} from './lanServer.js'
 import {freshDevelopment,freshWarehouse,freshRoot,customWarehouse,warehouseConfig,validateNewWarehouse,release} from './freshDevelopment.js'
@@ -38,6 +39,7 @@ if(receiptRecovery.journals)console.log('Receipt recovery:',JSON.stringify(recei
 
 const app = express()
 const lan=configureLan()
+const changeFeed=createLanChangeFeed()
 const PORT = Number(process.env.PORT ?? 3000)
 const sandboxRoot=process.env.SHOP_SANDBOX_ROOT?fs.realpathSync(path.resolve(process.env.SHOP_SANDBOX_ROOT)):null
 function sandboxPathAllowed(value:unknown){
@@ -52,6 +54,7 @@ function sandboxPathAllowed(value:unknown){
 }
 app.use(express.json({ limit: '2mb' }))
 installLanGuard(app,lan)
+app.use(changeFeed.middleware)
 app.use('/api',(req,res,next)=>{
  if(localRuntime||freshDevelopment){
   if(res.locals.lanUser)return next()
@@ -60,6 +63,7 @@ app.use('/api',(req,res,next)=>{
  }else if(req.path!=='/health'&&legacyWarehouseActive(db))return res.status(409).json({error:'Kho đã chuyển LOCAL V2; dừng V1 và mở START_SHOP_V2_LOCAL.bat.'})
  next()
 })
+app.get('/api/lan/changes',(_req,res)=>res.set('Cache-Control','no-store').json(changeFeed.view()))
 // Tasks run in a separate process; fence stock reads/mutations during any task.
 app.use('/api',(req,res,next)=>{
  if(req.path==='/health'||req.path.startsWith('/tasks')||req.path==='/store/import-batch-task'||(req.get('Prefer')==='respond-async'&&['/store/scan','/goods-receipt','/backup/lossless'].includes(req.path)))return next()
