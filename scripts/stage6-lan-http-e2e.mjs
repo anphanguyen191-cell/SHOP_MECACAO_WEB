@@ -7,6 +7,7 @@ import {execFileSync} from 'node:child_process'
 import express from 'express'
 import {makeLanCredential,createLanSessionManager} from '../apps/api/src/lanSecurity.ts'
 import {installLanGuard} from '../apps/api/src/lanServer.ts'
+import {createLanAudit} from '../apps/api/src/lanAudit.ts'
 
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'mecacao-lan-http-'))
 const key=path.join(root,'key.pem'),cert=path.join(root,'cert.pem')
@@ -15,7 +16,7 @@ const test=(ok,msg)=>{assert.ok(ok,msg);checks++}
 try{
  execFileSync('openssl',['req','-x509','-nodes','-newkey','rsa:2048','-days','1','-subj','/CN=localhost','-addext','subjectAltName=IP:127.0.0.1','-keyout',key,'-out',cert],{stdio:'ignore'})
  const users=[makeLanCredential('owner','owner-test-567890','owner'),makeLanCredential('viewer','viewer-test-123456','viewer')]
- const lan={address:'127.0.0.1',port:0,key:fs.readFileSync(key),cert:fs.readFileSync(cert),sessions:createLanSessionManager(users)}
+ const lan={address:'127.0.0.1',port:0,key:fs.readFileSync(key),cert:fs.readFileSync(cert),sessions:createLanSessionManager(users),audit:createLanAudit(path.join(root,'audit.jsonl'))}
  const app=express()
  app.use(express.json())
  installLanGuard(app,lan)
@@ -53,6 +54,10 @@ try{
  test((await request('POST','/api/sales/drafts',{},viewer.cookie,origin)).status===403&&writes===1,'Viewer cannot mutate')
  test((await request('POST','/api/lan/logout',{},owner.cookie,origin)).status===200,'Owner logout')
  test((await request('GET','/api/health',{},owner.cookie)).status===401,'Revoked cookie rejected')
+ const evidence=fs.readFileSync(path.join(root,'audit.jsonl'),'utf8')
+ test(evidence.includes('WRITE_START')&&evidence.includes('WRITE_RESULT'),'Transactions are audited')
+ test(evidence.includes('ACCESS_DENIED'),'Rejected requests are audited')
+ test(!evidence.includes('owner-test-567890')&&!evidence.includes('mecacao_lan='),'Audit excludes secrets')
  console.log('STAGE6 LAN HTTPS HTTP PASS',checks)
 }finally{
  if(server)await new Promise(resolve=>server.close(resolve))
