@@ -1,5 +1,6 @@
 import https from 'node:https'
 import type {Application,Request,Response,NextFunction} from 'express'
+import {privateIP} from './lanRuntime.js'
 import {lanApiAllowed} from './lanSecurity.js'
 import type {LanRuntime} from './lanRuntime.js'
 
@@ -11,13 +12,13 @@ function token(req:Request){
  return ''
 }
 function originOK(req:Request,lan:LanRuntime){
- try{const u=new URL(req.get('origin')??'');return u.protocol==='https:'&&u.hostname===lan.address&&u.port===String(lan.port)}catch{return false}
+ try{const u=new URL(req.get('origin')??'');return u.protocol==='https:'&&u.hostname===lan.address&&u.port===String(lan.port)&&u.origin===req.get('origin')}catch{return false}
 }
-export function installLanGuard(app:Application,lan:LanRuntime|null){
- if(!lan)return
+export function installLanGuard(app:Application,runtime:LanRuntime|null|(()=>LanRuntime|null)){
  app.use('/api',(req:Request,res:Response,next:NextFunction)=>{
+  const lan=typeof runtime==='function'?runtime():runtime;if(!lan)return next()
   // Only the dedicated TLS listener, bound to one configured private IP, authorizes LAN requests.
-  if(req.socket.localAddress!==lan.address)return next()
+  if(req.socket.localAddress!==lan.address||req.socket.localPort!==lan.port)return next()
   if(!(req.socket as any).encrypted)return res.status(403).json({error:'Điện thoại chỉ truy cập qua HTTPS'})
   res.setHeader('Cache-Control','no-store')
   res.setHeader('X-Content-Type-Options','nosniff')
@@ -31,6 +32,8 @@ export function installLanGuard(app:Application,lan:LanRuntime|null){
    if(!writeAudit('ACCESS_DENIED',actor,role,status))return res.status(503).json({error:'Nhật ký kiểm toán không khả dụng; ngừng thao tác LAN'})
    return res.status(status).json({error:message})
   }
+  const peer=(req.socket.remoteAddress??'').replace(/^::ffff:/,'');if(!privateIP(peer)&&!['127.0.0.1','::1'].includes(peer))return deny(403,'Chỉ truy cập trong mạng riêng của shop')
+  if(req.get('host')!==lan.address+':'+lan.port||req.get('sec-fetch-site')==='cross-site')return deny(403,'Dùng đúng địa chỉ HTTPS LAN của Windows')
   if(req.path==='/lan/status'&&req.method==='GET')return res.json({enabled:true,requiresLogin:true})
   if(req.path==='/lan/login'&&req.method==='POST'){
    if(!originOK(req,lan))return deny(403,'Nguồn đăng nhập không hợp lệ')

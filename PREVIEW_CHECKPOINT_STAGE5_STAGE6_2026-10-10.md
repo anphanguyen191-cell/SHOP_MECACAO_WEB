@@ -1,3 +1,5 @@
+> Tài liệu lịch sử preview/kế hoạch. Trạng thái hiện tại là [checkpoint main chặng6](MAIN_CHECKPOINT_STAGE6_2026-10-11.md), runtime 3.4.0; thiết lập LAN đã chuyển lên UI.
+
 # CHECKPOINT DEV — SHOP MẸ CACAO WEB: STAGE 5A + STAGE 6A/B + GLOBAL UI REFRESH
 **Ngày:** 10/10/2026
 **Repository:** anphanguyen191-cell/SHOP_MECACAO_WEB

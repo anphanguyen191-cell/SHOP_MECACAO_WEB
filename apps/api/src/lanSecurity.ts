@@ -31,19 +31,20 @@ export function checkLanCredential(row:LanCredential,password:string){
 export function createLanSessionManager(users:readonly LanCredential[],clock:()=>number=Date.now){
  if(!users.length||users.length>100||users.some(u=>!validCredentialShape(u))||new Set(users.map(u=>u.username)).size!==users.length)throw Error('Cấu hình tài khoản LAN không hợp lệ')
  const usersByName=new Map(users.map(u=>[u.username,u]))
- const failures=new Map<string,{count:number;blockedUntil:number}>()
+ const failures=new Map<string,{count:number;blockedUntil:number;expires:number}>()
  const sessions=new Map<string,{user:LanIdentity;expires:number}>()
  const attempt=(username:string,password:string)=>{
   // Bound untrusted login-name tracking and concurrent tokens on a shop-local server.
-  if(failures.size>=maxTrackedNames&&!failures.has(username.trim().toLowerCase()))return null
+  for(const [key,value] of failures)if(value.expires<=clock())failures.delete(key)
   const name=username.trim().toLowerCase()
+  if(failures.size>=maxTrackedNames&&!failures.has(name)){if(!usersByName.has(name))return null;const other=[...failures.keys()].find(k=>!usersByName.has(k));if(other)failures.delete(other)}
   if(!usernamePattern.test(name)||typeof password!=='string'||password.length>256)return null
   const current=failures.get(name)
   if(current&&current.blockedUntil>clock())return null
   const user=usersByName.get(name)
   if(!user||!checkLanCredential(user,password)){
    const count=(current?.count??0)+1
-   failures.set(name,{count,blockedUntil:count>=5?clock()+cooldown:0})
+   failures.set(name,{count,blockedUntil:count>=5?clock()+cooldown:0,expires:clock()+cooldown})
    return null
   }
   failures.delete(name)

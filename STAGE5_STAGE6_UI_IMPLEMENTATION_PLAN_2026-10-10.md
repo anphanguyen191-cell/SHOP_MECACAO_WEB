@@ -1,3 +1,5 @@
+> Tài liệu lịch sử preview/kế hoạch. Trạng thái hiện tại là [checkpoint main chặng6](MAIN_CHECKPOINT_STAGE6_2026-10-11.md), runtime 3.4.0; thiết lập LAN đã chuyển lên UI.
+
 # CHECKPOINT THIẾT KẾ — Stage 5 + Stage 6 Mobile LAN + Global UI Refresh
 Ngày: 2026-10-10. Nền khóa: `3.2.0-stage4` / `68d7ff1853c2b20e021c02c8acba84f4c7737b3c`.
 Phạm vi được chủ shop duyệt: Stage 5, đồng bộ UI desktop/mobile, ưu tiên Stage 6 Mobile LAN cùng Wi-Fi, KHÔNG mở Internet, KHÔNG thao tác trên kho thật.

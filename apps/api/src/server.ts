@@ -1,7 +1,8 @@
 import {phonePhotoRouter} from './lanPhotoRoutes.js'
 import {createLanChangeFeed} from './lanChangeFeed.js'
 import {configureLan} from './lanRuntime.js'
-import {installLanGuard,listenLan} from './lanServer.js'
+import {createLanControl,lanControlRouter} from './lanControl.js'
+import {installLanGuard} from './lanServer.js'
 import {freshDevelopment,freshWarehouse,freshRoot,customWarehouse,warehouseConfig,validateNewWarehouse,release} from './freshDevelopment.js'
 import {taskManager} from './tasks.js'
 import {taskActivity} from './taskActivity.js'
@@ -56,7 +57,8 @@ function sandboxPathAllowed(value:unknown){
 // Photo upload is explicit, bounded separately; all existing APIs retain their 2 MB limit.
 app.use('/api/lan/photos/upload',express.json({limit:'6mb'}))
 app.use(express.json({ limit: '2mb' }))
-installLanGuard(app,lan)
+const lanControl=freshDevelopment?createLanControl(app,path.join(freshRoot,'lan'),PORT,lan):null
+installLanGuard(app,()=>lanControl?lanControl.current():lan)
 app.use(changeFeed.middleware)
 app.use('/api',(req,res,next)=>{
  if(localRuntime||freshDevelopment){
@@ -66,6 +68,7 @@ app.use('/api',(req,res,next)=>{
  }else if(req.path!=='/health'&&legacyWarehouseActive(db))return res.status(409).json({error:'Kho đã chuyển LOCAL V2; dừng V1 và mở START_SHOP_V2_LOCAL.bat.'})
  next()
 })
+if(lanControl)app.use('/api/local/lan',lanControlRouter(lanControl,PORT))
 app.get('/api/lan/changes',(_req,res)=>res.set('Cache-Control','no-store').json(changeFeed.view()))
 if(freshDevelopment)app.use('/api/lan/photos',phonePhotoRouter())
 // Tasks run in a separate process; fence stock reads/mutations during any task.
@@ -330,7 +333,7 @@ if (fs.existsSync(webDist)) {
   app.get('/', (_req, res) => res.status(503).send('Frontend chưa build. Chạy npm run build trước.'))
 }
 
-listenLan(app,lan)
+if(lanControl)void lanControl.startInitial().catch(e=>console.error('LAN không bật được; Windows LOCAL vẫn chạy:',e.message))
 app.listen(PORT, process.env.SHOP_HOST ?? '127.0.0.1', () => {
   startWarehouseWatcher(rootPath=>{if(!tasks.pendingReview())tasks.start('SCAN',{rootPath,background:true},'watch-'+randomUUID())})
   console.log(`Shop Mẹ CaCao đang chạy: http://localhost:${PORT}`)

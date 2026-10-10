@@ -46,3 +46,7 @@ Sau khi hoàn tất chặng3, chủ shop yêu cầu “Triển khai chặng ti�
 ## Cập nhật quyền chọn kho — 11/10/2026
 
 Chủ shop yêu cầu “Mình muốn test kho mình tự tạo trên lap luôn nhé, để thao tác như kho thật luôn”. Bỏ ràng buộc marker fixture khi chọn kho trên main. Chủ shop chọn thư mục vật lý của mình trong UI trước khi có dữ liệu và sử dụng nghiệp vụ bình thường. Không yêu cầu script tạo kho/DB hay nối dữ liệu cũ. Codex/CI vẫn chỉ kiểm thử ảnh/SQLite giả lập; API/transaction/recovery/backup và kiểm soát LAN giữ nguyên. Đây là MAIN TEST chưa STABLE, không mở tự xóa ảnh SOLD hoặc cloud.
+
+## Chủ shop yêu cầu hoàn thiện chặng 6 — 11/10/2026
+
+Yêu cầu “Hoàn thiện chặng 6 đi bro” cấp quyền hoàn thiện thiết lập LAN/HTTPS/tài khoản trên UI, dùng chung Windows/iPhone, kiểm thử giả lập và tích hợp main/CI. Đọc PROJECT_STATE.md cùng MAIN_CHECKPOINT_STAGE6_2026-10-11.md cho baseline hiện tại; các checkpoint chặng4/V1/V2 là lịch sử. Quy trình Windows một START_SHOP.bat; mới cài mới DB, cùng bản giữ DB; chọn kho tự tạo qua UI. Giữ TLS/role/Origin/session/audit và bất biến dữ liệu, không suy ra quyền xóa Stage5B/5C hoặc triển khai cloud Stage7. CI không thay nghiệm thu thiết bị thật/STABLE.

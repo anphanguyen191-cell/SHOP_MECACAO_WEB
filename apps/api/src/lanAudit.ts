@@ -3,7 +3,7 @@ import path from 'node:path'
 import {createHash} from 'node:crypto'
 
 export type LanAuditEvent={
- event:'LOGIN_OK'|'LOGIN_DENIED'|'ACCESS_DENIED'|'WRITE_START'|'WRITE_RESULT'|'LOGOUT';
+ event:'LOGIN_OK'|'LOGIN_DENIED'|'ACCESS_DENIED'|'WRITE_START'|'WRITE_RESULT'|'LOGOUT'|'ADMIN_START'|'ADMIN_RESULT';
  actor:string;role:string;method:string;target:string;status:number
 }
 type JournalRow=LanAuditEvent&{sequence:number;time:string;previous:string;checksum:string}

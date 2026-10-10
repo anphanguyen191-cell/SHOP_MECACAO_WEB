@@ -58,4 +58,7 @@ must(!lanApiAllowed('viewer','GET','/api/lan/photos'),'Viewer cannot inspect sta
 must(!lanApiAllowed('owner','POST','/api/lan/photos/11111111-1111-1111-1111-111111111111/review'),'LAN owner cannot review via WiFi')
 must(lanApiAllowed('inventory','GET','/api/lan/photos/11111111-1111-1111-1111-111111111111/preview'),'Authorized preview')
 must(!lanApiAllowed('owner','GET','/api/lan/photos/11111111-1111-1111-1111-111111111111/approved'),'Never expose approved Windows source paths to LAN')
+const saturated=createLanSessionManager([owner])
+for(let i=0;i<128;i++)saturated.attempt('unknown'+i,'bad-password')
+must(!!saturated.attempt('owner','test-password-567890'),'Unknown-name saturation cannot permanently block the known owner')
 console.log('STAGE6 SECURITY FOUNDATION PASS',checks)

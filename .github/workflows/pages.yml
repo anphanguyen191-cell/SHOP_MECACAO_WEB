@@ -45,6 +45,8 @@ jobs:
         run: node scripts/v2-drafts-e2e.mjs
       - name: V2 sales sandbox HTTP and Chromium acceptance
         run: node scripts/v2-sales-e2e.mjs
+      - name: Stage 6 Windows UI setup and HTTPS mobile browser acceptance
+        run: node --import tsx scripts/stage6-browser-e2e.mjs
       - name: Main Windows launcher and release UI browser smoke
         run: node scripts/main-browser-smoke.mjs
       - name: Mobile browser smoke (390px)
@@ -55,6 +57,7 @@ jobs:
         with:
           name: mobile-smoke-${{ github.sha }}
           path: |
+            artifacts/stage6-control
             artifacts/main-release
             artifacts/mobile-smoke
             artifacts/v2-drafts

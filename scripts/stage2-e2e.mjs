@@ -21,7 +21,7 @@ async function stop(child){if(child.exitCode!==null)return;await new Promise(res
 try{
  server=start();let h=await ready();eq(h.freshDevelopment,true);eq(fs.readFileSync(stage4Sentinel,'utf8'),'STAGE4_UNTOUCHED_SENTINEL');eq(fs.existsSync(path.join(project,'data','stage6-main-test','database','shop-stage6-main-test.db')),true);eq((await request('/api/products')).data.length,0)
  const second=start();await new Promise(r=>second.once('exit',r));eq(second.exitCode!==0,true)
- eq(h.release.version,'3.3.1-stage6-main-test');eq(h.release.stage,6);eq(h.release.channel,'main-test')
+ eq(h.release.version,'3.4.0-stage6-main-test');eq(h.release.stage,6);eq(h.release.channel,'main-test')
  eq((await request('/api/local/warehouse','POST',{warehouse:path.parse(base).root})).status,409)
  const own=path.join(base,'my-warehouse'),size=path.join(own,'Bộ tự tạo','Size 1');fs.mkdirSync(size,{recursive:true});const ownPhoto=path.join(size,'001.png');fs.copyFileSync(photo,ownPhoto)
  eq(fs.existsSync(path.join(own,'.mecacao-stage6-main-test.json')),false)

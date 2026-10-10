@@ -1,51 +1,30 @@
-> **MAIN TEST 3.3.1-stage6-main-test — CHƯA STABLE:** giữ đầy đủ chặng 1–4 + Stage5A/Stage6. Theo yêu cầu mới, chọn kho tự tạo trên laptop qua giao diện, không cần marker hoặc script tạo kho. Dữ liệu bản cài mới riêng; mở lại cùng bản giữ dữ liệu. Xem [hướng dẫn hiện tại](MAIN_TEST_STAGE6_RELEASE.md). Phần checkpoint chặng4 bên dưới là lịch sử.
+# SHOP MẸ CACAO WEB — main mới nhất
 
+**3.4.0-stage6-main-test · chặng 6 · chưa STABLE nghiệm thu thiết bị thật.** Giữ đầy đủ chặng 1–4 và Stage5A; hoàn thiện Mobile LAN HTTPS, tài khoản/phân quyền, cập nhật giữa Windows/điện thoại và hộp ảnh iPhone. Thiết lập HTTPS/tài khoản/bật tắt LAN ngay trên giao diện Windows, không cần lệnh tạo cert hoặc đường dẫn DB V1.
 
-# SHOP MẸ CACAO WEB — bản mới nhất trên main
+[Tải main.zip cho Windows](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip) → giải nén **thư mục mới** → Node.js 22.13+ hoặc 24 → **START_SHOP.bat**. Chọn kho tự tạo qua UI trước khi nhập dữ liệu; quét/import có duyệt hoặc nhập COPY. Bản cài mới có DB mới, mở lại cùng bản giữ dữ liệu. Không cần marker fixture hoặc nối DB thử cũ.
 
-## Bản 3.2.0-stage4: Báo cáo và kiểm kê
+- [Cách chạy Windows và checklist nghiệm thu](MAIN_TEST_STAGE6_RELEASE.md)
+- [Thiết lập iPhone cùng Wi-Fi](STAGE6_MOBILE_LAN_SETUP.md)
+- [Tổng hợp chức năng/nền tảng phát triển tiếp](MAIN_CHECKPOINT_STAGE6_2026-10-11.md)
+- [Trạng thái](PROJECT_STATE.md), [roadmap](ROADMAP.md), [nguyên tắc](DEVELOPMENT_PRINCIPLES.md), [changelog](CHANGELOG.md)
+- [Kiểm thử và giới hạn](STAGE6_TEST_REPORT.md), [CI đúng main](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/workflows/pages.yml)
 
-Giữ đầy đủ chặng 1/2/3; thêm báo cáo bán hàng/dòng tiền/công nợ hiện tại, lãi gộp snapshot và thiếu vốn, sản phẩm đã bán, CSV; phiên kiểm kê Mẫu/Size có số đếm/chênh lệch/lý do/lịch sử, bảo vệ tab cũ và kho thay đổi. Kiểm kê không tự thay tồn ảnh.
+| Phần mềm trên main | Phạm vi |
+|---|---|
+| Kho/bán/khách | Tồn theo ảnh, nhập COPY, scan/import/rename/share, nháp/preflight/SOLD/lịch sử, khách/contact snapshot, ship và PNG nhiều trang |
+| Tiền/giao/hậu mãi | Thu/cọc/hoàn/giảm, COD/chuyển khoản/tiền mặt, công nợ, vận đơn, yêu cầu/kết quả hậu mãi |
+| Báo cáo/kiểm kê | Doanh số/dòng tiền/lãi gộp/thiếu vốn/CSV, snapshot/đếm/chênh/lý do/chốt, không tự chỉnh tồn |
+| SOLD | Stage5A kiểm chứng ảnh/hash chỉ đọc, chưa move archive/delete |
+| Mobile LAN | HTTPS, 4 vai trò, session/audit, polling gần 4 giây, ảnh chờ→Windows duyệt COPY→Nhập hàng |
+| Vận hành/UI | Transaction/journal/hash/lock/recovery, backup/restore thử, tiến độ tác vụ, sáng/tối màu rõ/responsive/phiên bản |
 
-- [Chức năng và cách dùng chặng 4](STAGE4_REPORTS_STOCKTAKE.md)
-- [Kiểm thử chặng 4](STAGE4_TEST_REPORT.md)
-- [Checkpoint main đầy đủ làm nền tảng chặng tiếp](MAIN_CHECKPOINT_STAGE4_2026-10-10.md)
+LAN mặc định tắt sau mở lại ứng dụng. Mở **Mobile LAN** trên Windows để tạo HTTPS/tài khoản/bật kết nối, tải CA công khai tạm 10 phút và xem URL điện thoại. Safari cần cài và bật tin cậy đầy đủ cho CA, Windows phải chạy cùng Wi-Fi. Không mở cổng ra Internet. Chủ shop được thao tác kho tự tạo như kho thật; kiểm thử Codex/CI chỉ dữ liệu giả lập.
 
-### Nền tảng chặng 3: Thu tiền, công nợ, giao hàng và hậu mãi
+GitHub Pages là **DEMO**, không kết nối DB/kho shop. Stage7 cloud/ngoài LAN/offline queue, Stage5B/5C xóa/lưu trữ di chuyển, lợi nhuận ròng/chi phí/thuế, tự chỉnh tồn/ngân hàng/vận chuyển vẫn chưa triển khai.
 
-Giữ đầy đủ chặng 1/2; thêm COD/chuyển khoản/tiền mặt, tiền cọc và thu nhiều lần, hoàn/điều chỉnh, đã thu/còn lại trên PNG, trạng thái giao/vận đơn, Công nợ theo khách và yêu cầu hậu mãi. Hàng trả được duyệt nhập bằng ảnh mới, hàng đổi xuất bằng đơn mới; không tự mở lại ảnh SOLD.
+## Phục hồi và tài liệu nền
 
-- [Chức năng và cách dùng chặng 3](STAGE3_PAYMENTS_AFTERCARE.md)
-- [Kiểm thử chặng 3](STAGE3_TEST_REPORT.md)
+Cài đặt → Backup đầy đủ → Phục hồi thử sang vùng mới → kiểm tra READY. Không thay DB/kho đang chạy. LAN keys/tài khoản không được coi là đã di chuyển bởi backup nghiệp vụ; bản cài mới thiết lập qua UI.
 
-### Nền tảng chặng 2: Khách hàng, phí ship và phiếu chốt đơn PNG
-
-Bản đầy đủ kế thừa chức năng kho/nhập/chọn ảnh/bán hàng/backup/restore và tiến độ tác vụ chặng 1, bổ sung khách hàng, thông tin giao hàng, phí ship/miễn ship và phiếu PNG thương hiệu từ đơn đã lưu.
-
-**Cách chạy Windows:** giải nén vào thư mục mới → chạy **START_SHOP.bat** → giao diện tự mở tại http://127.0.0.1:3000. Máy cần Node.js 22.13+ hoặc 24; lần đầu cần mạng để cài thư viện.
-
-**Dữ liệu mới:** mỗi thư mục cài mới có DB mới, không tự nối dữ liệu thử cũ. Bấm **CHỌN KHO TRÊN MÁY** trước khi nhập dữ liệu để chọn kho mình tạo (`Kho/Mẫu/Size/ảnh`), rồi **QUÉT / IMPORT KHO** để duyệt và đăng ký. Hoặc giữ kho mặc định và dùng **Nhập hàng** COPY ảnh từ thư mục nguồn. Mở lại cùng bản cài giữ dữ liệu.
-
-**v3.2.0-stage4:** giao diện sáng phân biệt nhóm chức năng bằng màu/viền rõ, chữ đậm. Thanh phiên bản hiển thị main, chặng 4 hiện tại và LAN/đồng bộ chưa triển khai. Windows dùng cùng mã main và đầy đủ chức năng LOCAL; `START_SHOP_CHANG_2.bat` gọi cùng launcher chính.
-
-[Tải mã main mới nhất cho Windows](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip) — giải nén vào thư mục mới, không tải đè bản cũ.
-
-Không yêu cầu DB V1, backup V1 hoặc các launcher PREPARE/ACTIVATE để chạy bản phát triển này. Các tài liệu chuyển kho cũ là lịch sử và công cụ tương thích tùy chọn.
-
-- [Tổng hợp chức năng main, kiến trúc và nền tảng chặng tiếp](MAIN_CHECKPOINT_2026-10-10.md)
-- [Bắt đầu chặng 2](BAT_DAU_CHANG_2.txt)
-- [Chức năng, kiến trúc và quy tắc chặng 2](STAGE2_CUSTOMERS_PNG.md)
-- [Bằng chứng kiểm thử và giới hạn](STAGE2_TEST_REPORT.md)
-- [CI của đúng bản main](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/workflows/pages.yml)
-
-Ứng dụng nghiệp vụ chạy LOCAL trên máy. GitHub Pages là DEMO/PREVIEW; không kết nối DB/kho của shop. Lợi nhuận ròng/chi phí/thuế, điều chỉnh tồn tự động sau kiểm kê, ngân hàng/vận chuyển tự động, LAN và cloud chưa triển khai.
-
-## Project governance
-- `DEVELOPMENT_PRINCIPLES.md`: nguyên tắc bắt buộc về an toàn dữ liệu và hoàn thiện chức năng/giao diện cùng nhau.
-- `PROJECT_STATE.md`: source of truth.
-- `CHANGELOG.md`: lịch sử baseline/fix.
-- `ROADMAP.md`: roadmap và gate.
-
-### Phục hồi thử trên bản main
-
-Cài đặt → Backup đầy đủ → Phục hồi thử sang vùng mới → kiểm tra READY. Luồng này không thay DB/kho đang chạy. Các launcher sandbox/V1→V2 riêng còn trong source để tương thích và kiểm thử; không phải bước cài bản main. Xem [checkpoint main](MAIN_CHECKPOINT_2026-10-10.md) để biết phạm vi hiện tại và các giới hạn.
+Đặc tả các chặng: [khách/PNG](STAGE2_CUSTOMERS_PNG.md), [thu tiền/hậu mãi](STAGE3_PAYMENTS_AFTERCARE.md), [báo cáo/kiểm kê](STAGE4_REPORTS_STOCKTAKE.md). Checkpoint V1/V2/Stage1–5 và launcher migration trong source là lịch sử/công cụ tương thích tùy chọn, không phải bước khởi chạy bản mới.

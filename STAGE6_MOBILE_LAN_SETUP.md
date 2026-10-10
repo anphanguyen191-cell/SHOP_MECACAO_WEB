@@ -1,79 +1,48 @@
-# Stage 6 — Mobile LAN HTTPS (checkpoint thử nghiệm, chưa STABLE)
+# Chặng 6 — thiết lập Windows và iPhone bằng giao diện
 
-**Phạm vi phê duyệt:** cùng Wi-Fi, iPhone dùng chung React/Express/SQLite với Windows. Không cloud, không NAT/port forwarding, không mở Internet. Windows LOCAL tiếp tục ở `http://127.0.0.1:3000`; listener LAN, khi chủ shop tự bật, chạy tại `https://IP-WINDOWS:3443`.
+Bản `3.4.0-stage6-main-test`, chưa STABLE. Windows LOCAL ở `http://127.0.0.1:3000`, điện thoại dùng HTTPS riêng (mặc định cổng 3443). Cùng React/Express/SQLite/kho với Windows, không có DB thứ hai. Chỉ mạng LAN riêng tin cậy, Windows phải chạy.
 
-**TRẠNG THÁI:** mã có cổng HTTPS opt-in, tài khoản, session, chính sách quyền và giao diện đăng nhập. Chưa nghiệm thu iPhone vật lý; các bài E2E LAN giả lập đã có CI. Bản 3.3.1 cho chủ shop chọn kho tự tạo trên laptop qua giao diện, không cần marker. Codex/CI vẫn chỉ kiểm thử trên dữ liệu giả lập; chưa nghiệm thu thiết bị thật.
+## Thiết lập lần đầu
 
-## Điều kiện bắt buộc trước khi có thể bật LAN
-1. Windows cài Node.js 22.13+ hoặc Node.js 24, máy và điện thoại chung Wi-Fi tin cậy; Windows không có cổng chuyển tiếp (port forwarding) ra Internet.
-2. Địa chỉ IPv4 của adapter Windows là mạng riêng `10.x.x.x`, `172.16–31.x.x` hoặc `192.168.x.x`; không chọn IP công cộng, loopback, IP của máy khác, hoặc `0.0.0.0`.
-3. Có chứng chỉ TLS `data/stage6-main-test/lan/cert.pem`, khóa `data/stage6-main-test/lan/key.pem` với Subject Alternative Name IP đúng địa chỉ Windows và đang trong hạn sử dụng. Chứng chỉ/CA phải được tin cậy trên iPhone; không bỏ qua cảnh báo HTTPS.
-4. Windows Firewall chỉ cho phép TCP 3443 từ subnet LAN tin cậy; không mở 3000 ra ngoài. Không cấu hình router để forward TCP 3443.
-5. Tạo tài khoản bằng `SETUP_LAN_USERS.bat`. Lần đầu cấp quyền `owner`; các lần sau có thể thêm `cashier`, `inventory`, `viewer`. Mật khẩu phải có ít nhất 14 ký tự, chữ và số; script hỏi không hiện mật khẩu, chỉ ghi salt + password hash.
-6. Chỉ khi đủ các điều kiện trên mới mở `START_SHOP_LAN.bat`, nhập IP Windows đã đăng ký certificate. Script gọi cùng `START_SHOP.bat`; không tạo server/database thứ hai.
+1. Mở START_SHOP.bat, chọn kho tự tạo qua UI trước khi có dữ liệu; mở menu **Mobile LAN**.
+2. Chọn IP Wi-Fi/Ethernet Windows hiện trong danh sách (10.x, 172.16–31.x, 192.168.x). Không nhập IP công cộng, 0.0.0.0, loopback hoặc IP máy khác.
+3. Bấm **Tạo chứng chỉ HTTPS**. App tạo CA riêng và cert khớp IP; không cần cài mkcert/OpenSSL. Giao diện hiển thị ngày hết hạn và vân tay SHA-256 CA.
+4. Tạo **owner** đầu tiên (tên tài khoản chữ thường, từ 3 ký tự; mật khẩu 14+ có chữ và số). Sau đó thêm/đổi/khóa tài khoản cần mật khẩu owner; không khóa owner cuối cùng. Đổi tài khoản qua UI thu hồi mọi phiên đang chạy ngay.
+5. Xác nhận cùng mạng riêng và bấm **Bật Mobile LAN**. Sao chép URL HTTPS. Nếu cổng bận, chọn cổng khác; LOCAL vẫn chạy.
+6. Bấm **Mở tải CA trong 10 phút** (mặc định cổng 3444), sao chép URL tải CA. Chỉ `/ca.cer` công khai được phục vụ; không có API, mật khẩu, khóa hoặc dữ liệu shop. Có nút tắt ngay, tự tắt sau 10 phút hoặc khi tắt LAN.
+7. Safari iPhone mở URL tải CA → cho tải hồ sơ. Cài đặt → Hồ sơ đã tải về → cài CA Me CaCao; đối chiếu vân tay CA với Windows.
+8. Cài đặt → Cài đặt chung → Giới thiệu → Cài đặt tin cậy chứng chỉ → bật **tin cậy đầy đủ** cho CA vừa cài. [Hướng dẫn Apple](https://support.apple.com/en-us/102390): cài hồ sơ thủ công chưa tự bật SSL trust.
+9. Safari mở URL **HTTPS** và đăng nhập. Nếu báo lỗi chứng chỉ, kiểm tra CA/IP/ngày giờ; chưa gửi mật khẩu. Có thể thêm trang vào màn hình chính, vẫn cần Windows/mạng LAN hoạt động.
 
-## Cấu hình chứng chỉ cho bản phát triển
-Có thể dùng tiện ích `mkcert` do chủ shop tự cài từ nguồn tin cậy trên Windows. Tạo và tin cậy CA theo hướng dẫn của mkcert; sau đó trong thư mục `data/stage6-main-test/lan`, tạo cặp cert/key riêng cho IP Windows:
+Nếu Firewall hỏi quyền Node.js, cho phép mạng **Private** của shop. Nếu cần tạo quy tắc riêng, giới hạn cổng HTTPS và cổng CA tạm trong subnet LAN tin cậy; không mở 3000, không tắt Firewall hoặc forward router. Mạng khách/AP isolation có thể chặn hai thiết bị liên lạc. App không tự thay Firewall.
 
-```text
-mkcert -cert-file cert.pem -key-file key.pem 192.168.1.100
-```
+## Các lần sau và đổi IP
 
-Thay `192.168.1.100` bằng **IP thật trên Windows**. Cài chứng chỉ CA vào kho tin cậy của iPhone theo cơ chế iOS quản lý chứng chỉ (phải tin cậy CA đầy đủ), không bao giờ đưa private key `key.pem` lên điện thoại hoặc GitHub. Nếu IP đổi, tạo lại chứng chỉ và kiểm tra trust. Không gửi file users.json/key.pem qua Messenger/Zalo.
+Đóng/mở START_SHOP.bat: LAN mặc định **tắt**, tài khoản/chứng chỉ và dữ liệu vẫn giữ. Mở Mobile LAN, bật lại khi cần. IP đổi/chứng chỉ hết hạn: tắt LAN → chọn IP mới → tạo lại chứng chỉ → cài/tin cậy CA mới trên iPhone. CA có hạn 1 năm, cert máy chủ 90 ngày; khóa CA riêng không được lưu nên mỗi lần tạo lại là CA mới. Bundle cũ giữ để truy vết, không tự xóa.
 
-## Luồng dùng thử
-1. Trên Windows mở `START_SHOP_LAN.bat`; xác nhận cửa sổ in ra `LAN HTTPS: https://IP:3443`.
-2. Trên Safari iPhone cùng Wi-Fi nhập đúng `https://IP:3443`; màn đăng nhập phải xuất hiện. Đăng nhập bằng tài khoản Windows đã tạo.
-3. Xem Tổng quan, Danh mục, Tồn kho; thử tạo nháp, mở phiếu PNG, xác nhận SOLD thử, thu tiền, Công nợ, Báo cáo, Kiểm kê. Kiểm tra thao tác trên Windows cùng lúc. Tài khoản viewer chỉ được đọc.
-4. Tắt Wi-Fi hoặc ngắt server: tác vụ không được báo DONE khi server chưa xác nhận. Khi thao tác bị 409, cần làm mới trạng thái trước khi thử lại; idempotency key được giữ theo nghiệp vụ sẵn có.
-5. Đăng xuất từ iPhone. Restart server => phiên cũ phải hết hiệu lực.
+Khóa TLS riêng chỉ lưu trên Windows; API/UI không trả khóa/salt/hash. Không gửi users.json/key.pem hoặc thư mục LAN lên GitHub. Tài khoản dùng scrypt, session opaque trong bộ nhớ, cookie Secure/HttpOnly/SameSite=Strict, timeout 8 giờ; restart/tắt LAN/đổi tài khoản thu hồi phiên. Login sai bị giới hạn; saturate tên giả không khóa vĩnh viễn chủ shop. Host/Origin/mạng riêng/allowlist được kiểm ở API.
 
-## Những phần bị khóa trên iPhone trong checkpoint này
-- Chọn thư mục ổ đĩa Windows, Import kho trực tiếp qua file system, đổi tên ảnh vật lý, native Windows clipboard, backup/restore, phục hồi giao dịch bằng lệnh đặc quyền, dọn ảnh SOLD.
-- Đã có luồng nhận ảnh iPhone vào khu chờ riêng và Windows duyệt bản sao. **Chưa** tự đưa vào tồn: phải nhập phiếu Nhập hàng từ ảnh đã duyệt trên Windows; iPhone không có quyền duyệt hoặc nhập trực tiếp vào SQLite.
-- Cloud/offline queue ghi giao dịch và truy cập ngoài Wi-Fi thuộc Stage 7.
+## Quyền và màn hình
 
-## Quyền API bước đầu
-- owner: xem và thao tác bán/khách/tiền/kiểm kê qua API có allowlist; vẫn không được mở endpoint file system/restore từ mobile.
-- cashier: đơn nháp/SOLD, thanh toán, khách hàng, hậu mãi.
-- inventory: kiểm kê và xem tồn.
-- viewer: chỉ đọc dữ liệu được cho phép; không ghi.
-- Mọi API không liệt kê được từ chối (403); điều kiện login/TLS và Origin kiểm tra ở máy chủ, không chỉ dựa menu.
-- Phiên giữ trong bộ nhớ, timeout sau 8 giờ, hết hiệu lực khi server restart. Cookie HttpOnly+Secure+SameSite=Strict; hành động ghi kiểm Origin HTTPS nội bộ và Content-Type JSON.
+| Vai trò | Tác vụ LAN |
+|---|---|
+| owner | Tồn/khách/bán/PNG/tiền/công nợ/hậu mãi, báo cáo, kiểm kê, kiểm chứng SOLD, gửi ảnh |
+| cashier | Tồn/khách/bán/PNG/tiền/công nợ/hậu mãi; không kiểm kê/báo cáo/SOLD audit |
+| inventory | Tồn, kiểm kê và gửi ảnh; không bán/tiền/khách |
+| viewer | Đọc tồn/danh mục; không ghi nghiệp vụ |
 
-## Gate chưa đạt (phải làm trước nghiệm thu)
-- CI Windows Node 22/24, Linux typecheck + full regression + Stage5 + Stage6 security;
-- LAN HTTP/TLS service integration test: 401/403/role/Origin/session/restart/multiple simultaneous confirm;
-- Chromium/Safari real 390px + Windows đồng thời, PNG, share, stocktake, backup/restore trên fixture;
-- Kiểm thử chứng chỉ và firewall theo cấu hình Windows thực tế.
+Chọn ổ đĩa/import vật lý/rename/clipboard native/backup/restore/recovery/duyệt ảnh/tài khoản đều trên Windows LOCAL, kể cả owner điện thoại không được phép. Route không nằm allowlist bị 403. Đổi quyền/phiên hết hạn xóa màn nghiệp vụ, về đăng nhập rồi tải lại theo quyền mới.
 
-**CI PASS không đồng nghĩa Windows PASS hoặc STABLE. Mặc định START_SHOP.bat vẫn không mở LAN; chỉ bật qua biến môi trường opt-in và config TLS/credentials.**
+## Cập nhật và mất kết nối
 
-## Quản trị tài khoản và audit (cập nhật checkpoint)
-- Mở `SETUP_LAN_USERS.bat` trên Windows. Nếu đã có chủ shop, chọn **1 — Thêm**, **2 — Đổi mật khẩu**, hoặc **3 — Khóa tài khoản**. Phải xác thực bằng tên và mật khẩu owner hiện hành. Không cho khóa owner cuối cùng.
-- **Luôn dừng và mở lại `START_SHOP_LAN.bat`** sau khi thêm/đổi/khóa tài khoản, vì server nạp tài khoản khi khởi động; restart cũng thu hồi toàn bộ phiên đăng nhập đã cấp.
-- Nhật ký kiểm toán nằm ở `data/stage6-main-test/lan/audit.jsonl` (hash-chain, không có mật khẩu/token hoặc nội dung request). Đừng xóa/sửa tay; nếu lỗi integrity, server sẽ từ chối bật LAN cho đến khi đối soát. Chưa có xoay vòng archive được xác nhận.
-- Vai trò viewer xem thông tin tồn chung; cashier xem và ghi đơn/tiền/khách, không kiểm kê; inventory quản lý phiên kiểm kê, không bán; owner truy cập các tác vụ nghiệp vụ trên LAN **trừ những tác vụ bắt buộc Windows như backup/FS/recovery**.
-- Dữ liệu stage4/lan thuộc thư mục ứng dụng thử riêng. Không đưa key.pem, users.json hoặc audit.jsonl lên GitHub.
+`/api/lan/changes` chỉ trả epoch/revision/changedAt, không trả khách hàng. Kiểm tra khoảng 3,5 giây, khi online/quay lại tab. Revision tăng khi API ghi trả 2xx, không tăng khi thất bại/login/logout/thiết lập LAN; epoch đổi sau restart. Tồn/dashboard/danh mục/đơn/khách/công nợ/báo cáo/SOLD đọc lại; biểu mẫu đơn/kiểm kê chưa lưu được giữ và nhắc đối chiếu. Đây là polling, chưa bảo đảm tín hiệu cho mọi thay đổi ngoài API/watcher.
 
-## Checkpoint 6D — Server-confirmed live refresh (bản phát triển)
-- Windows/iPhone dùng `GET /api/lan/changes`; LAN yêu cầu session. Không trả dữ liệu khách hàng, chỉ có `epoch/revision/changedAt`.
-- Revision tăng sau khi API ghi trả 2xx; không tăng do 409, 4xx/5xx hoặc login/logout. Epoch đổi sau restart.
-- Trình duyệt kiểm tra mỗi 3,5 giây, khi online hoặc quay lại tab. Đây là polling gần thời gian thực, không phải push tức thời.
-- Dashboard, Danh mục, Tồn, Đơn hàng, Khách hàng, Công nợ, Báo cáo và Ảnh SOLD tự đọc lại. Đơn/kiểm kê chưa lưu được giữ, báo cảnh báo đối chiếu.
-- Không coi tín hiệu phiên bản là xác nhận giao dịch. Khi mất Wi-Fi thông báo mất kết nối; không có offline queue ghi.
-- Chưa chứng minh đủ thay đổi ngoài API (watcher) hay hoạt động trên Safari thực tế. Không gọi STABLE.
+Mất mạng báo mất kết nối; không có offline queue ghi hoặc tự báo DONE. GET có thời hạn chờ 20 giây; ghi nghiệp vụ không tự hủy theo timeout. Khi chưa biết kết quả, đọc lại đơn/operation hoặc tiếp tục pending request cùng mã, không tạo giao dịch mới. Hai thiết bị bán cùng ảnh vẫn dùng transaction/version/request key hiện có, chỉ một SOLD.
 
-## Checkpoint 6C — Hộp ảnh iPhone chờ duyệt (PREVIEW, không STABLE)
-1. Trên iPhone Safari đã đăng nhập bằng `owner` hoặc `inventory`, mở **Ảnh iPhone**. Chọn/chụp tối đa 12 ảnh mỗi lượt; mỗi ảnh được gửi tối đa 4 MB (JPEG/PNG/WebP; HEIC hoặc ảnh quá lớn có thể được Safari chuyển/nén JPEG, phải kiểm tra lại màu và họa tiết).
-2. Server kiểm tra giải mã, kích thước, SHA-256; từ chối nội dung trùng ảnh trong hộp chờ, ảnh đã đăng ký và hash ảnh SOLD. Chỉ sau khi thành công ảnh mới được lưu tại `data/stage6-main-test/lan/phone-pending/` trên máy Windows.
-3. Chủ shop **trên Windows LOCAL**, mở **Ảnh iPhone**, đối chiếu ảnh, kích thước và tên tệp. Nhấn **Duyệt và sao chép nguồn**; API chỉ chấp nhận thao tác này trên `localhost:3000`, từ chối kể cả tài khoản owner ở LAN.
-4. Bản sao đã duyệt nằm ở `data/stage6-main-test/lan/phone-reviewed/<uuid>/source.jpg` (hoặc PNG/WebP). Ảnh gốc và bản preview ở thư mục `phone-pending` **không bị xóa/di chuyển**. Tại màn **Nhập hàng** trên Windows, chọn đúng thư mục nguồn vừa duyệt, khai báo Product/Size/giá và số lượng ảnh, rồi xác nhận theo quy trình nhập hàng hiện hành.
-5. Nhận hoặc duyệt ảnh **không tạo hàng tồn**. Chỉ ảnh canonical đã được nghiệp vụ Nhập hàng đăng ký thành công mới được cộng tồn. Không tự đăng ký một ảnh SOLD thành hàng hoàn trả.
-6. Giới hạn tạm thời: 200 ảnh/lượt lưu trữ trong hộp chờ, không có nút xóa tự động. Khi đầy, dừng nhận để đối soát/backup; không xóa tay dữ liệu gốc. Không đưa các tệp trong `data/stage6-main-test/lan` lên GitHub.
-7. **Chưa nghiệm thu:** HTTPS trên Safari iPhone thật, camera HEIC ngoài hiện trường, ngắt Wi-Fi khi đang gửi, UI màn nhỏ và nhập ảnh đã duyệt trên Windows thực tế. Các kiểm thử GitHub chỉ dùng tệp ảnh giả lập.
+## Ảnh iPhone
 
-### Chuyển sang biểu mẫu Nhập hàng trên Windows
-Sau khi bấm **Duyệt và sao chép nguồn** trong Ảnh iPhone, chọn **Chuyển sang Nhập hàng trên Windows** để hệ thống tự điền và quét thư mục nguồn đã duyệt. Đây chỉ là bước chuẩn bị biểu mẫu: chủ shop vẫn phải kiểm tra mẫu, Size, giá nhập, giá bán và số ảnh, rồi nhấn **XÁC NHẬN NHẬP HÀNG**. Không cộng tồn trước khi nghiệp vụ Nhập hàng hoàn tất.
+Owner/inventory mở **Ảnh iPhone**, chọn/chụp tối đa 12 ảnh/lượt. JPEG/PNG/WebP tối đa 4 MB/ảnh; HEIC/ảnh lớn có thể chuyển/nén JPEG trên trình duyệt, cần kiểm tra màu/họa tiết. Server giải mã/kiểm kích thước/hash, chặn trùng inbox/ảnh đăng ký/hash SOLD; hộp chờ giới hạn 200 ảnh.
 
-**Lưu ý khi chuyển Product/Size:** Thư mục ảnh nguồn đã duyệt được giữ khi chủ shop đổi giữa Mẫu mới / Thêm Size / Nhập thêm Size và khi chọn một Size hiện có. Mỗi lần đổi hệ thống quét lại số ảnh; chủ shop vẫn phải kiểm tra số lượng, giá và nhấn Xác nhận. Nếu chọn thư mục nguồn khác thủ công, nguồn iPhone cũ không còn được tự điền.
+Ảnh vào `data/stage6-main-test/lan/phone-pending/`, chưa thành tồn. Windows mở **Ảnh iPhone** → **Duyệt và sao chép nguồn** → **Chuyển sang Nhập hàng trên Windows**. Thư mục `phone-reviewed/<uuid>` tự điền vào Nhập hàng, chủ shop kiểm mẫu/Size/giá/số ảnh rồi **XÁC NHẬN NHẬP HÀNG**. Đổi Product/Size giữ nguồn ảnh đã duyệt; chọn nguồn khác thủ công sẽ thay nguồn đó. Duyệt không xóa gốc hoặc tăng tồn; chỉ nghiệp vụ Nhập hàng thành công mới tăng tồn. Inbox không tự dọn; không nhập lại ảnh SOLD thành tồn.
+
+Nhật ký `data/stage6-main-test/lan/audit.jsonl` hash-chain, không ghi password/token/request body; integrity hỏng thì chặn LAN. Các endpoint mới quản trị start/stop/cert/account được audit. Full backup nghiệp vụ giữ DB/kho theo cơ chế hiện có; **không coi backup này là sao lưu/di chuyển khóa và tài khoản LAN**. Bản cài mới tạo lại LAN qua UI. Nghiệm thu thiết bị vật lý/CA/Firewall/camera/share chưa được thay bằng CI.

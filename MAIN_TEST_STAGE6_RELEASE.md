@@ -1,26 +1,37 @@
-# MAIN TEST — Stage 5A + Stage 6 (bản thử Windows/iPhone)
+# Bản main mới — 3.4.0-stage6-main-test
 
-**Phiên bản:** `3.3.1-stage6-main-test`. Đây là phiên bản MAIN TEST để chủ shop nghiệm thu, **chưa STABLE**.
+Đầy đủ các chức năng đã triển khai chặng 1–4, Stage5A và Stage6; chưa STABLE nghiệm thu thiết bị thật. Không cần chạy đường dẫn DB V1 hoặc nối dữ liệu thử cũ.
 
-## Chạy trên Windows
-1. Sau khi CI trên main đạt, tải ZIP: https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip.
-2. Giải nén vào **thư mục hoàn toàn mới**; không chép đè bản Stage 4, không tự nối SQLite các bản thử trước.
-3. Cài Node.js 22.13+ hoặc Node 24. Mở `START_SHOP.bat`; kiểm tra trên giao diện hiện nhãn MAIN TEST và phiên bản `3.3.1-stage6-main-test`.
-4. Tạo thư mục kho trên laptop, ví dụ `D:\KhoTestMeCaCao\Bộ gái hoa\Size 1\001.jpg`. Có thể bắt đầu kho trống rồi dùng Nhập hàng COPY ảnh từ nguồn. `CREATE_MAIN_TEST_WAREHOUSE.bat` chỉ là lựa chọn tạo ảnh demo nhanh, không bắt buộc.
-5. Trên giao diện bấm **CHỌN KHO TRÊN MÁY** trước khi có dữ liệu → chọn thư mục kho tự tạo. App tự khởi động lại. Quét/import có duyệt để đăng ký ảnh sẵn có, hoặc nhập COPY từ nguồn; rồi thao tác nháp, PNG, SOLD, tiền, báo cáo, kiểm kê và backup/restore như nghiệp vụ bình thường. Không cần marker.
-6. DB thử của release nằm trong `data/stage6-main-test/database/shop-stage6-main-test.db`, tách biệt `data/stage4`. Kho đã chọn là nơi ứng dụng thao tác nhập/đổi tên/bán khi người dùng duyệt. Chọn kho trên UI không tự import ảnh. API vẫn chặn cả ổ đĩa, thư mục dữ liệu app, liên kết và kho đang thuộc bản cài khác.
+## Chạy trên laptop Windows
 
-## Bật Mobile LAN HTTPS để thử trên iPhone cùng Wi-Fi
-1. Mở `SETUP_LAN_USERS.bat` để tạo tài khoản. Chuẩn bị `data/stage6-main-test/lan/cert.pem` và `key.pem` khớp với IP Wi-Fi Windows; CA phải được tin cậy trên iPhone.
-2. Chỉ khi firewall giới hạn TCP 3443 trong LAN, không cấu hình router port forwarding, mới chạy `START_SHOP_LAN.bat`.
-3. Safari iPhone mở `https://IP-WINDOWS:3443`; đăng nhập. Kiểm tra Tồn kho, Khách hàng, Bán hàng, Công nợ, Kiểm kê và gửi ảnh test. Xem ảnh vừa gửi trong hộp chờ Windows → Duyệt bản sao → chuyển Nhập hàng. Bước duyệt không tự cộng tồn.
-4. Thử mất Wi-Fi giữa lúc xác nhận, đổi tài khoản owner/cashier/inventory/viewer, restart và kiểm tra chống bán trùng.
+1. Kiểm tra CI đúng bản main tại [Actions](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/workflows/pages.yml), tải [main.zip](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip).
+2. Giải nén vào thư mục mới. Cài Node.js 22.13+ hoặc Node 24, mở **START_SHOP.bat**. Giao diện phải hiện **3.4.0-stage6-main-test · MAIN TEST · chặng 6**.
+3. Tạo kho của mình trên laptop, ví dụ `D:\KhoMeCaCao\Bộ gái hoa\Size 1\001.jpg`. Có thể kho trống rồi Nhập hàng COPY. Không cần marker hoặc script tạo kho mẫu.
+4. Bấm **CHỌN KHO TRÊN MÁY** trước khi có dữ liệu → chọn kho. Ứng dụng tự mở lại. **Chọn kho chưa import ảnh**: quét/import có duyệt, hoặc Nhập hàng COPY ảnh từ nguồn.
+5. Dùng đầy đủ tồn, nháp, khách/ship/PNG, xác nhận SOLD, tiền/công nợ, báo cáo/kiểm kê và backup/restore. Nhập COPY giữ nguồn; xác nhận SOLD theo cơ chế journal, không xóa ảnh SOLD.
 
-## Điều kiện chấp nhận
-- CI Linux, Windows Node 22/24 và trình duyệt PASS cho đúng commit release.
-- Đủ chức năng trên thiết bị Windows/iPhone thật với kho thử và dữ liệu giả.
-- Nhập COPY giữ ảnh nguồn; xác nhận bán chuyển ảnh canonical sang vùng SOLD theo cơ chế đã có, giảm tồn đúng một lần; Stage5A không có thao tác dọn/xóa ảnh gốc. Không đổi DB Stage4.
-- Đối chiếu UI màu sắc, card, biểu mẫu, màn hình sáng/tối, iPhone không tràn ngang.
-- Chủ shop được chọn kho tự tạo để nghiệm thu; bản vẫn đang phát triển, chưa STABLE. Mọi kiểm thử tự động của Codex/CI chỉ dùng ảnh và DB giả lập.
+Bản cài mới bắt đầu DB mới; đóng/mở cùng bản giữ DB/kho. DB `data/stage6-main-test/database/shop-stage6-main-test.db` không tự đọc stage4/V1. Giữ chặn root ổ đĩa, app-data, liên kết và kho đang thuộc bản cài khác. Không xóa hoặc tải đè bản cũ.
 
-Chi tiết: [hướng dẫn LAN](STAGE6_MOBILE_LAN_SETUP.md), [checkpoint](PREVIEW_CHECKPOINT_STAGE5_STAGE6_2026-10-10.md).
+## Điện thoại cùng Wi-Fi
+
+Chỉ cần launcher Windows ở trên. Mở **Mobile LAN** trong menu Windows:
+
+1. Chọn IP mạng hiện tại, bấm **Tạo chứng chỉ HTTPS**.
+2. Tạo tài khoản chủ shop (mật khẩu 14+ ký tự có chữ và số); thêm vai trò nếu cần.
+3. Xác nhận mạng riêng và bấm **Bật Mobile LAN**. Giao diện hiện URL HTTPS để copy.
+4. Bấm **Mở tải CA trong 10 phút**, mở URL tải CA trên Safari; cài và bật tin cậy đầy đủ cho CA. Xem [hướng dẫn iPhone/Firewall](STAGE6_MOBILE_LAN_SETUP.md).
+5. Mở URL HTTPS trên điện thoại và đăng nhập. Giữ Windows chạy. Không mở router port forwarding ra Internet.
+
+Không cần mkcert, lệnh tạo khóa, SETUP_LAN_USERS.bat hoặc START_SHOP_LAN.bat cho quy trình thông thường. START_SHOP_LAN.bat nay là alias mở cùng bản Windows và hướng dẫn dùng UI.
+
+## Checklist nghiệm thu kho tự tạo
+
+- Windows nhập COPY, scan/import, tồn/ảnh, nháp/contact/ship/PNG nhiều trang/SOLD, thu/cọc/hoàn, công nợ, báo cáo/CSV, kiểm kê và backup/phục hồi thử.
+- iPhone tin cậy CA và mở HTTPS; owner/cashier/inventory/viewer có đúng quyền và menu; không truy cập chọn ổ đĩa/backup/restore/duyệt ảnh qua LAN.
+- Hai thiết bị thấy thay đổi sau khoảng 4 giây. Cùng bán một ảnh: chỉ một SOLD; đơn thất bại không tự trừ thêm tồn.
+- Ngắt Wi-Fi giữa thao tác: không báo thành công khi chưa được Windows xác nhận; đọc lại/tiếp tục cùng mã yêu cầu, tránh tạo yêu cầu mới khi kết quả còn chưa rõ.
+- Gửi ảnh từ iPhone → hộp chờ Windows → duyệt bản sao → chuyển Nhập hàng và xác nhận. Nhận/duyệt ảnh chưa tăng tồn.
+- Đổi/khóa tài khoản qua Windows: phiên điện thoại hết hiệu lực ngay. Tắt LAN ngắt điện thoại nhưng Windows vẫn dùng; mở lại ứng dụng LAN mặc định tắt.
+- Sáng/tối, khối màu/biểu mẫu rõ và iPhone không tràn ngang. Nghiệm thu CA/Firewall/camera/chia sẻ trên thiết bị thật riêng với CI.
+
+[Tổng hợp nền tảng](MAIN_CHECKPOINT_STAGE6_2026-10-11.md) · [Bằng chứng và giới hạn](STAGE6_TEST_REPORT.md).
