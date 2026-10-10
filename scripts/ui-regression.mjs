@@ -59,3 +59,8 @@ must(photoUi.includes('registeredStock:false')||photoUi.includes('chưa tăng t�
 must(photoApi.includes('allowedOrigin(req)')&&photoApi.includes('lanUser'),'Photo review must require Windows LOCAL')
 must(stockSecurity.includes("p==='/api/lan/photos/upload'"),'LAN photo upload must be explicitly allowlisted by role')
 must(read('apps/api/src/server.ts').includes("phonePhotoRouter()"),'Phone inbox router must be mounted')
+
+const inboxUI=read('apps/web/src/PhonePhotoInboxView.tsx')
+must(inboxUI.includes("'/api/lan/photos/'+photo.id+'/approved'"),'Previously reviewed photos can be reopened with server verification')
+must(inboxUI.includes('onBeginReceipt?.(approvedFolder)'),'Photo handoff must be explicit, not auto-stock')
+must(read('apps/api/src/lanPhotoRoutes.ts').includes('allowedLocalGet(req)'),'Approved source path restricted to Windows localhost')

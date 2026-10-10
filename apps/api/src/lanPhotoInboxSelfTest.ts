@@ -26,6 +26,11 @@ try{
  check(fs.existsSync(path.join(reviewed.intakeFolder,'source.jpg')),'Approved copy available to Windows receipt')
  check(fs.existsSync(path.join(root,'inbox',first.id+'.jpg')),'Immutable staged source retained')
  check(inbox.review(first.id,first.sha256,true).registeredStock===false,'Review retry idempotent')
+ check(inbox.approvedSource(first.id).intakeFolder===reviewed.intakeFolder,'Previously approved source can be reopened after review')
+ assert.throws(()=>inbox.approvedSource('not-an-id'),/Mã ảnh/);n++
+ const reopen=createPhonePhotoInbox(path.join(root,'inbox'),path.join(root,'approved'))
+ check(reopen.approvedSource(first.id).sha256===first.sha256,'Approved source available after application restart')
+
  const bytes2=await sharp({create:{width:500,height:500,channels:3,background:'#d3e1f3'}}).jpeg().toBuffer()
  const concur={filename:'second.jpg',mime:'image/jpeg',base64:bytes2.toString('base64')}
  const concurrent=await Promise.allSettled([inbox.stage(concur,'inventory1'),inbox.stage(concur,'inventory1')])
@@ -34,6 +39,13 @@ try{
  check(inbox.list().length===2,'Only two unique photos staged')
 
  check(fs.readdirSync(reviewed.intakeFolder).length===1,'One approved physical image')
+ const copy=path.join(reviewed.intakeFolder,'source.jpg')
+ const originalCopy=fs.readFileSync(copy)
+ fs.writeFileSync(copy,Buffer.from('tampered'))
+ assert.throws(()=>inbox.approvedSource(first.id),/checksum/);n++
+ fs.writeFileSync(copy,originalCopy)
+ check(inbox.approvedSource(first.id).registeredStock===false,'Reopening approval never registers inventory')
+
  const sold=createPhonePhotoInbox(path.join(root,'sold-inbox'),path.join(root,'sold-approved'),()=>{throw Error('Ảnh SOLD')})
  await assert.rejects(sold.stage(b,'inventory1'),/SOLD/);n++
  check(sold.list().length===0,'Sold image not staged')

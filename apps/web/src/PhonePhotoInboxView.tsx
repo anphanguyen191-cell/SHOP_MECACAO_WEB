@@ -69,6 +69,16 @@ export default function PhonePhotoInboxView({mobile,onChanged,onBeginReceipt}:{m
    setError((e instanceof Error?e.message:String(e))+' Đã nhận '+ok+'/'+files.length+' ảnh. Nếu mất mạng, xem danh sách trước khi thử lại để tránh gửi trùng.')
   }finally{setProgress('');setUploading(false);if(fileRef.current)fileRef.current.value=''}
  }
+ async function reopenApproved(photo:Entry){
+  if(mobile||reviewing)return
+  setReviewing(photo.id);setError('');setMessage('')
+  try{
+   const found=await apiJson<{intakeFolder:string;registeredStock:false}>('/api/lan/photos/'+photo.id+'/approved')
+   setApprovedFolder(found.intakeFolder)
+   setMessage('Đã kiểm chứng lại ảnh gốc và bản sao. Chưa tăng tồn. Chọn nút Chuyển sang Nhập hàng.')
+  }catch(e){setError(e instanceof Error?e.message:String(e))}
+  finally{setReviewing(null)}
+ }
  async function review(photo:Entry){
   if(mobile||reviewing)return
   if(!window.confirm('Đã so ảnh gốc, mã SHA-256 và chắc chắn muốn sao chép ảnh này vào thư mục nguồn chờ Nhập hàng trên Windows? Thao tác không làm tăng tồn.'))return
@@ -103,7 +113,7 @@ export default function PhonePhotoInboxView({mobile,onChanged,onBeginReceipt}:{m
     <img loading="lazy" src={'/api/lan/photos/'+photo.id+'/preview'} alt={'Ảnh cần kiểm tra '+photo.sourceName}/>
     <div><b title={photo.sourceName}>{photo.sourceName}</b><small>{photo.width} × {photo.height} · {bytes(photo.bytes)} · {new Date(photo.receivedAt).toLocaleString('vi-VN')}</small><small>Người gửi: {photo.receivedBy}</small><small>SHA-256: {photo.sha256.slice(0,16)}…</small>
     <strong>{photo.status==='PENDING_REVIEW'?'CHỜ DUYỆT · CHƯA TÍNH TỒN':'ĐÃ DUYỆT BẢN SAO · CHƯA TÍNH TỒN'}</strong>
-    {!mobile&&photo.status==='PENDING_REVIEW'&&<button type="button" disabled={reviewing!==null} onClick={()=>void review(photo)}>{reviewing===photo.id?'Đang xác minh...':'Duyệt và sao chép nguồn'}</button>}</div>
+    {!mobile&&<button type="button" disabled={reviewing!==null} onClick={()=>void (photo.status==='PENDING_REVIEW'?review(photo):reopenApproved(photo))}>{reviewing===photo.id?'Đang xác minh...':photo.status==='PENDING_REVIEW'?'Duyệt và sao chép nguồn':'Dùng ảnh đã duyệt để nhập hàng'}</button>}</div>
    </article>)}</div>
   </>}
  </section>

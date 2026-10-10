@@ -114,6 +114,17 @@ export function createPhonePhotoInbox(inboxRoot:string,approvedRoot:string,rejec
   if(!fs.existsSync(file)||fs.lstatSync(file).isSymbolicLink()||fs.realpathSync(file)!==file)throw new PhonePhotoError('Ảnh xem trước không còn',409)
   return fs.readFileSync(file)
  }
+ function approvedSource(id:string){
+  const record=get(id)
+  if(record.status!=='REVIEWED_NOT_REGISTERED')throw new PhonePhotoError('Ảnh chưa được duyệt trên Windows',409)
+  const src=sourcePath(record)
+  if(sha(fs.readFileSync(src))!==record.sha256)throw new PhonePhotoError('Ảnh chờ đã thay đổi sau khi duyệt; dừng Nhập hàng',409)
+  const folder=path.join(approved,record.id)
+  if(!fs.existsSync(folder)||fs.lstatSync(folder).isSymbolicLink()||fs.realpathSync(folder)!==folder)throw new PhonePhotoError('Thư mục bản sao đã duyệt không còn nguyên vẹn',409)
+  const file=path.join(folder,'source'+allowed[record.mime].ext)
+  if(!fs.existsSync(file)||fs.lstatSync(file).isSymbolicLink()||fs.realpathSync(file)!==file||sha(fs.readFileSync(file))!==record.sha256)throw new PhonePhotoError('Bản sao đã duyệt thiếu hoặc sai checksum',409)
+  return {id,sha256:record.sha256,intakeFolder:folder,registeredStock:false as const}
+ }
  function review(id:string,hash:string,confirmed:boolean){
   if(confirmed!==true)throw new PhonePhotoError('Cần xác nhận đối chiếu ảnh trên Windows')
   const r=get(id),source=sourcePath(r)
@@ -132,5 +143,5 @@ export function createPhonePhotoInbox(inboxRoot:string,approvedRoot:string,rejec
   if(r.status==='PENDING_REVIEW'){r.status='REVIEWED_NOT_REGISTERED';r.reviewedAt=new Date().toISOString();writeMeta(r,false)}
   return {...r,intakeFolder:destDir,registeredStock:false}
  }
- return {stage,list,get,preview,review}
+ return {stage,list,get,preview,review,approvedSource}
 }

@@ -57,4 +57,5 @@ must(!lanApiAllowed('cashier','POST','/api/lan/photos/upload'),'Cashier cannot u
 must(!lanApiAllowed('viewer','GET','/api/lan/photos'),'Viewer cannot inspect staging')
 must(!lanApiAllowed('owner','POST','/api/lan/photos/11111111-1111-1111-1111-111111111111/review'),'LAN owner cannot review via WiFi')
 must(lanApiAllowed('inventory','GET','/api/lan/photos/11111111-1111-1111-1111-111111111111/preview'),'Authorized preview')
+must(!lanApiAllowed('owner','GET','/api/lan/photos/11111111-1111-1111-1111-111111111111/approved'),'Never expose approved Windows source paths to LAN')
 console.log('STAGE6 SECURITY FOUNDATION PASS',checks)

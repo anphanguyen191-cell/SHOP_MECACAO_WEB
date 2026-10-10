@@ -8,6 +8,12 @@ import {rejectSoldSource} from './soldSource.js'
 import {createPhonePhotoInbox,PhonePhotoError} from './lanPhotoInbox.js'
 
 const sha=(p:string)=>createHash('sha256').update(fs.readFileSync(p)).digest('hex')
+const allowedLocalGet=(req:express.Request)=>{
+ if(!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress??''))return false
+ if(req.res?.locals.lanUser)return false
+ const port=Number(process.env.PORT??3000)
+ return req.socket.localPort===port&&['localhost','127.0.0.1','[::1]'].includes(req.hostname)
+}
 const allowedOrigin=(req:express.Request)=>{
  const local=['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress??'')
  if(!local)return false
@@ -39,6 +45,11 @@ export function phonePhotoRouter(){
   return res.status(status).json({error:e instanceof Error?e.message:'Không xử lý được ảnh từ điện thoại'})
  }
  router.get('/',(_req,res)=>{try{res.setHeader('Cache-Control','no-store');res.json({rows:inbox.list(),maxBytes:4*1024*1024,maxCount:200,registrationAutomatic:false})}catch(e){handle(res,e)}})
+ router.get('/:id/approved',(req,res)=>{
+  if(!allowedLocalGet(req))return res.status(403).json({error:'Chỉ Windows LOCAL được lấy nguồn ảnh đã duyệt'})
+  try{res.setHeader('Cache-Control','no-store');res.json(inbox.approvedSource(req.params.id))}
+  catch(e){handle(res,e)}
+ })
  router.get('/:id/preview',(req,res)=>{try{res.setHeader('Cache-Control','no-store');res.type('jpeg').send(inbox.preview(req.params.id))}catch(e){handle(res,e)}})
  router.post('/upload',(req,res)=>{
   void inbox.stage(req.body,who(req)??'windows').then(row=>res.status(201).json({photo:row,registeredStock:false})).catch(e=>handle(res,e))
