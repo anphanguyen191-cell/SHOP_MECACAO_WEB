@@ -114,3 +114,16 @@
 .shell .shopSyncStatus.offline .shopSyncDot{background:#bd684f;box-shadow:0 0 0 4px #bd684f22}
 .shell .shopSyncStatus button{border-radius:12px;background:transparent;color:inherit;border:1px solid currentColor;font:inherit;font-weight:700;padding:7px 12px;cursor:pointer}
 @media(max-width:760px){.shell .shopSyncStatus{margin:10px 12px 0;width:calc(100% - 24px);padding:11px 13px}}
+
+/* Mobile primary business navigation: same feature permissions as desktop sidebar. */
+.shell .mobileQuickNav{display:none}
+@media(max-width:760px){
+ .shell{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+ .shell .mobileQuickNav{display:flex;position:fixed;z-index:60;bottom:0;left:0;right:0;align-items:stretch;gap:4px;overflow-x:auto;overscroll-behavior-x:contain;padding:7px 10px calc(7px + env(safe-area-inset-bottom,0px));background:var(--mc-surface,#fff);border-top:1px solid var(--mc-border,#ded5e1);box-shadow:0 -6px 24px #39223c18;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+ .shell .mobileQuickNav::-webkit-scrollbar{display:none}
+ .shell .mobileQuickNav button{flex:1 0 64px;min-width:64px;max-width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;border-radius:14px;border:1px solid transparent;background:transparent;color:var(--mc-subtle,#615667);font:inherit;min-height:52px}
+ .shell .mobileQuickNav button span{font-size:22px;line-height:24px}
+ .shell .mobileQuickNav button small{font-size:10px;font-weight:750;line-height:14px}
+ .shell .mobileQuickNav button.selected{border-color:var(--mc-border,#ddd);background:var(--mc-soft,#fbf7fc);color:var(--mc-accent-strong,#763754)}
+ .shell .mobileQuickNav button:focus-visible{outline:3px solid var(--mc-accent,#944c75);outline-offset:-3px}
+}
