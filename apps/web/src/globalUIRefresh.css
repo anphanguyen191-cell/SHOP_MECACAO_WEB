@@ -1,0 +1,13 @@
+/* Shop Mẹ CaCao UI checkpoint 1 — visual-only desktop/mobile */
+.shell{--ui-pink:#b44f82;--ui-blue:#3989c5;--ui-amber:#bd872b;--ui-green:#348764;--ui-violet:#8862bb}
+.shell :is(.overviewStat,.catalogMetrics article,.inventoryMetrics article,.card,.inventoryCard){border:1px solid var(--mc-border);border-radius:18px;box-shadow:var(--mc-shadow);min-width:0}
+.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics)>*:nth-child(5n+1){border-left:5px solid var(--ui-pink)}
+.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics)>*:nth-child(5n+2){border-left:5px solid var(--ui-blue)}
+.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics)>*:nth-child(5n+3){border-left:5px solid var(--ui-amber)}
+.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics)>*:nth-child(5n+4){border-left:5px solid var(--ui-green)}
+.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics)>*:nth-child(5n){border-left:5px solid var(--ui-violet)}
+.shell.themeDark :is(.overviewStats,.catalogMetrics,.inventoryMetrics)>*{background:var(--mc-surface)!important;color:var(--mc-ink)!important}
+.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics) :is(strong,small,span){overflow-wrap:anywhere}
+.shell :is(.catalogPanel,.inventoryFilters,.inventoryHeading,.inventoryCard,.overviewPanel){border-color:var(--mc-border);color:var(--mc-ink)}
+.shell .inventoryCard:hover,.shell .product:hover{border-color:var(--mc-accent);box-shadow:0 8px 25px #3f233919}
+@media(max-width:760px){.shell :is(.overviewStats,.catalogMetrics,.inventoryMetrics){grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.shell :is(.inventoryHeading,.catalogPanelHeading){flex-wrap:wrap;gap:12px}}
