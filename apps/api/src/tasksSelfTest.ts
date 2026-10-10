@@ -50,7 +50,7 @@ try{
  let lock=JSON.parse(fs.readFileSync(path.join(root,'database','operation-tasks','active.json'),'utf8'))
  for(let i=0;i<100&&lock.pid===child!.pid;i++){await sleep(10);lock=JSON.parse(fs.readFileSync(path.join(root,'database','operation-tasks','active.json'),'utf8'))}
  assert.notEqual(lock.pid,child!.pid,'Only kill the sealed worker PID, never the server');process.kill(lock.pid,'SIGKILL')
- eq((await done(interrupted.data.task.id)).status,'REVIEW_REQUIRED');eq((await post('/api/backup/lossless',{},'tasks-blocked-key-0001')).status,409)
+ eq((await done(interrupted.data.task.id)).status,'REVIEW_REQUIRED');const blocked=await post('/api/backup/lossless',{},'tasks-blocked-key-0001');eq(blocked.status,409);eq(blocked.data.notAccepted,true)
  eq((await fetch(base+'/api/settings/low-stock-threshold',{method:'PUT',headers,body:JSON.stringify({value:3})})).status,409)
  await stop();await start();eq((await (await fetch(base+'/api/tasks/'+interrupted.data.task.id)).json() as any).status,'REVIEW_REQUIRED')
  const ack=await fetch(base+'/api/tasks/'+interrupted.data.task.id+'/acknowledge',{method:'POST',headers,body:JSON.stringify({confirmed:true})});eq(ack.status,200)

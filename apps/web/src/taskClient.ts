@@ -20,7 +20,7 @@ export async function runTask(url:string,payload:unknown,onUpdate:(t:OperationTa
  if(!pending){pending={key:'task-'+crypto.randomUUID(),payload:serialized};localStorage.setItem(storage,JSON.stringify(pending))}
  const request=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Prefer:'respond-async','Idempotency-Key':pending.key},body:serialized})
  const response=await request.json()
- if(!request.ok){if([400,403].includes(request.status))localStorage.removeItem(storage);throw Error(response.error||'Chưa xác minh được yêu cầu. Kiểm tra lịch sử tác vụ trước khi thử lại.')}
+ if(!request.ok){if([400,403].includes(request.status)||response.notAccepted===true)localStorage.removeItem(storage);throw Error(response.error||'Chưa xác minh được yêu cầu. Kiểm tra lịch sử tác vụ trước khi thử lại.')}
  const t=await followTask(response.task.id,onUpdate)
  if(t.status==='REVIEW_REQUIRED')throw Error(t.error||'Tác vụ cần đối soát')
  localStorage.removeItem(storage)

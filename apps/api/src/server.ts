@@ -107,7 +107,7 @@ app.use('/api',(req,res,next)=>{
 function taskOrigin(req:express.Request){let ok=false;try{const u=new URL(req.get('origin')||'');ok=u.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(u.hostname)&&Number(u.port||80)===PORT}catch{}return ok&&['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress||'')}
 function asyncTask(req:express.Request,res:express.Response,kind:'SCAN'|'RECEIPT'|'BACKUP'|'REGISTER_BATCH',payload:unknown){
  if(!taskOrigin(req))return res.status(403).json({error:'Tác vụ chỉ tạo từ giao diện cùng máy/cùng cổng'})
- try{return res.status(202).json({task:tasks.start(kind,payload,req.get('Idempotency-Key')||'')})}catch(e){return res.status(409).json({error:e instanceof Error?e.message:String(e)})}
+ try{return res.status(202).json({task:tasks.start(kind,payload,req.get('Idempotency-Key')||'')})}catch(e){return res.status(409).json({error:e instanceof Error?e.message:String(e),notAccepted:!tasks.list().some(t=>t.key===req.get('Idempotency-Key'))})}
 }
 app.get('/api/tasks',(_req,res)=>res.json(tasks.list().slice(0,30)))
 app.get('/api/tasks/:id',(req,res)=>{try{res.json(tasks.read(req.params.id))}catch(e){res.status(404).json({error:String(e)})}})
