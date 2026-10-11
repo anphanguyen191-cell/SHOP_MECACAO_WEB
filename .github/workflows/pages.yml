@@ -21,6 +21,10 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
+      - name: Build V7 browser fixture
+        run: npm --workspace apps/web run build
+      - name: V7 Cloud mobile browser and durable lost-response retry (fake transport)
+        run: node scripts/cloud-browser-e2e.mjs
       - name: Dependency security audit
         run: npm audit --omit=dev --audit-level=critical
       - name: Stage 6 HTTPS LAN isolated auth and role acceptance
@@ -33,8 +37,6 @@ jobs:
         run: npm run test:cloud
       - name: V1 internal gate
         run: npm run test:gate
-      - name: V7 Cloud mobile browser and durable lost-response retry (fake transport)
-        run: node scripts/cloud-browser-e2e.mjs
       - name: Stage 2 fresh release HTTP and PNG acceptance
         run: node scripts/stage2-e2e.mjs
       - name: First-time setup inherited V2 environment regression
