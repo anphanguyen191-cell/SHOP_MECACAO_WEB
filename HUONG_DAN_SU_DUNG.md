@@ -7,7 +7,7 @@
 3. Cài Node.js 22.13+ hoặc 24 nếu chưa có. Chạy START_SHOP.bat và giữ cửa sổ đó mở.
 4. Trong trang localhost/127.0.0.1 vừa mở, chọn kho trên máy. Đăng nhập Cloud không phải điều kiện để quét/import kho local.
 5. Import kho → CHỌN THƯ MỤC → chọn kho gốc có Mẫu/Product → Size → ảnh → QUÉT KHO → duyệt giá và kết quả → xác nhận lưu. Hoặc Nhập hàng để nhập ảnh mới.
-6. Cài đặt → Cloud → nhập email tài khoản shop được cấp quyền → Gửi email đăng nhập → xác nhận email/mã → Đồng bộ / Tiếp tục. Mở giao diện nghiệp vụ Cloud trên máy này.
+6. Cài đặt → Cloud → nhập email và mật khẩu Cloud → Đăng nhập → Đồng bộ / Tiếp tục. Mật khẩu Cloud riêng với tài khoản LAN. Nếu chưa biết mật khẩu Cloud: mở Xác nhận email để thiết lập mật khẩu Cloud, xác nhận email một lần, rồi nhập hai ô mật khẩu mới và Lưu mật khẩu Cloud. Không cần đăng nhập Dashboard. Mở giao diện nghiệp vụ Cloud trên máy này.
 7. iPhone hoặc máy khác: mở https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1, đăng nhập cùng tài khoản shop. Trang Internet không quét ổ đĩa laptop. Ảnh đã đồng bộ và dữ liệu Cloud dùng được khi laptop tắt.
 
 ## Mở trực tiếp trên Windows
