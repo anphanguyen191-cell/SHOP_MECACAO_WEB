@@ -22,7 +22,8 @@ const root=path.resolve('apps/web/dist'),server=http.createServer((req,res)=>{
 })
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url='http://127.0.0.1:'+server.address().port+'/?cloud=1'
 const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/chromium'].find(fs.existsSync);assert(chrome,'Chromium required')
-const browser=spawn(chrome,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-proxy-server','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{stdio:'ignore'})
+const browser=spawn(chrome,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-proxy-server','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{stdio:['ignore','ignore','pipe']})
+let browserLog='';browser.stderr.on('data',b=>browserLog+=b)
 let ws,next=0;const pending=new Map(),failures=[],trace=[]
 function cmd(method,params={}){return new Promise((resolve,reject)=>{const id=++next,t=setTimeout(()=>{pending.delete(id);reject(Error(method+' timeout'))},20000);pending.set(id,{resolve:r=>{clearTimeout(t);resolve(r)},reject});ws.send(JSON.stringify({id,method,params}))})}
 async function run(expression){const r=await cmd('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value}
@@ -49,7 +50,8 @@ async function intercept(p){trace.push({url:p.request.url,method:p.request.metho
  await cmd('Fetch.fulfillRequest',{requestId:p.requestId,responseCode:status,responseHeaders:[{name:'Content-Type',value:mime},{name:'Access-Control-Allow-Origin',value:'*'},{name:'Access-Control-Allow-Headers',value:'*'}],body:(binary||Buffer.from(JSON.stringify(response))).toString('base64')})
 }
 try{
- for(let n=0;n<150&&!fs.existsSync(path.join(profile,'DevToolsActivePort'));n++)await delay(100)
+ for(let n=0;n<450&&!fs.existsSync(path.join(profile,'DevToolsActivePort'));n++){if(browser.exitCode!==null)throw Error('Chromium exited '+browser.exitCode+' '+browserLog);await delay(100)}
+ assert(fs.existsSync(path.join(profile,'DevToolsActivePort')),'Chromium startup timed out: '+browserLog)
  const port=Number(fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0]),targets=await fetch('http://127.0.0.1:'+port+'/json/list').then(r=>r.json());ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl)
  await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true})})
  ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}else if(m.method==='Fetch.requestPaused')void intercept(m.params).catch(e=>failures.push(e));else if(m.method==='Page.javascriptDialogOpening')void cmd('Page.handleJavaScriptDialog',{accept:true})})
@@ -70,4 +72,4 @@ try{
  await click('Giao diện tối');assert(await run("document.querySelector('.cloudWorkspace').classList.contains('themeDark')"))
  await cmd('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});await until("document.body.innerText.includes('Mất mạng')");assert(await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đọc lại').disabled"))
  assert.deepEqual(failures,[]);console.log('PASS Cloud browser fake transport: mobile layout/density/theme, lost-response durable retry, single draft, real banner PNG without stock mutation, SOLD removal and offline guard')
-}catch(error){console.error('Cloud browser failure:',error);console.error('Transport failures:',failures);console.error('Transport trace:',trace);try{console.error(await run('document.body.innerText'));const shot=await cmd('Page.captureScreenshot',{format:'png'});fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/failure.png',Buffer.from(shot.data,'base64'))}catch{}throw error}finally{ws?.close();if(browser.exitCode===null){browser.kill();await new Promise(r=>browser.once('exit',r))}await new Promise(r=>server.close(r));try{fs.rmSync(temp,{recursive:true,force:true,maxRetries:10,retryDelay:100})}catch(error){console.warn('Browser temporary cleanup:',error.code)}}
+}catch(error){console.error('Cloud browser failure:',error);console.error('Transport failures:',failures);console.error('Transport trace:',trace);try{console.error(await run('document.body.innerText'));const shot=await cmd('Page.captureScreenshot',{format:'png'});fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/failure.png',Buffer.from(shot.data,'base64'))}catch{}throw error}finally{if(ws?.readyState===1)try{await cmd('Browser.close')}catch{}ws?.close();if(browser.exitCode===null){browser.kill();await new Promise(r=>browser.once('exit',r))}await new Promise(r=>server.close(r));try{fs.rmSync(temp,{recursive:true,force:true,maxRetries:10,retryDelay:100})}catch(error){console.warn('Browser temporary cleanup:',error.code)}}
