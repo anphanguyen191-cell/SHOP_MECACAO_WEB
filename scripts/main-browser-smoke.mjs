@@ -15,7 +15,7 @@ const profile=path.join(tmp,'profile'),browser=spawn(chrome,['--headless=new','-
 let ws,n=0;const pending=new Map()
 function cmd(method,params={}){return new Promise((resolve,reject)=>{const id=++n,t=setTimeout(()=>{pending.delete(id);reject(Error(method+' timeout'))},15000);pending.set(id,{resolve:r=>{clearTimeout(t);resolve(r)},reject});ws.send(JSON.stringify({id,method,params}))})}
 async function run(expression){const r=await cmd('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value}
-async function until(expression){for(let i=0;i<100;i++){if(await run(expression))return;await sleep(100)}throw Error(expression)}
+async function until(expression){for(let i=0;i<100;i++){if(await run(expression))return;await sleep(100)}throw Error(expression+"\n"+await run("document.querySelector('main')?.innerText")+"\n"+logs)}
 async function stop(p){if(p.exitCode!==null)return;await new Promise(r=>{p.once('exit',r);p.kill()})}
 try{
  for(let i=0;i<120;i++){if(app.exitCode!==null)throw Error(logs);try{const h=await fetch('http://127.0.0.1:3000/api/health').then(r=>r.json());if(h.freshDevelopment)break}catch{}await sleep(100)}
@@ -30,7 +30,10 @@ try{
  const own=path.join(tmp,'my-test-warehouse');fs.mkdirSync(own)
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Import kho').click()")
  await until("!!document.querySelector('.warehouseConfig input')")
- await run("(()=>{const input=document.querySelector('.warehouseConfig input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,"+JSON.stringify(own)+");input.dispatchEvent(new Event('input',{bubbles:true}))})()")
+ await until("!document.querySelector('.warehouseConfig').disabled")
+ await run("document.querySelector('.warehouseConfig input').focus();document.querySelector('.warehouseConfig input').select()")
+ await cmd('Input.insertText',{text:own})
+ await until("document.querySelector('.warehouseConfig input').value==="+JSON.stringify(own))
  const accept=async e=>{const m=JSON.parse(e.data);if(m.method==='Page.javascriptDialogOpening')await cmd('Page.handleJavaScriptDialog',{accept:true})}
  ws.addEventListener('message',accept)
  await run("Array.from(document.querySelectorAll('.warehouseConfig button')).find(b=>b.textContent==='QUÉT KHO').click()")
