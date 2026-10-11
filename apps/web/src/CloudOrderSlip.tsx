@@ -1,7 +1,7 @@
 import {useEffect,useState} from 'react'
 import {cloudRpc} from './cloudClient'
 const money=(v:number)=>v.toLocaleString('vi-VN')+' ₫'
-export default function CloudOrderSlip({order,items,contact,urls}:{order:any;items:any[];contact:any;urls:Record<string,string>}){
+export default function CloudOrderSlip({order,items,contact,urls,disabled=false}:{disabled?:boolean;order:any;items:any[];contact:any;urls:Record<string,string>}){
  const [files,setFiles]=useState<File[]>([]),[links,setLinks]=useState<string[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState('')
  useEffect(()=>{const urls=files.map(f=>URL.createObjectURL(f));setLinks(urls);return()=>urls.forEach(u=>URL.revokeObjectURL(u))},[files])
  async function make(){setBusy(true);try{
@@ -13,5 +13,5 @@ export default function CloudOrderSlip({order,items,contact,urls}:{order:any;ite
   }}finally{banner.close()}
   const after=await cloudRpc('mc_v7_finance',{p_id:order.id});if(after.orderVersion!==before.orderVersion||after.version!==before.version)throw Error('Đơn hoặc tiền đã đổi trong lúc tạo phiếu. Tạo lại để dùng số mới.');setFiles(generated)
  }catch(e){setError((e as Error).message);setFiles([])}finally{setBusy(false)}}
- return <div><p role="status">{error}</p><button disabled={busy||!navigator.onLine} onClick={()=>void make()}>{busy?'Đang tạo…':'Tạo phiếu PNG'}</button>{files.map((file,i)=><a key={file.name} download={file.name} href={links[i]}>Tải trang {i+1}</a>)}{files.length>0&&navigator.canShare?.({files})&&<button onClick={()=>void navigator.share({files,title:'Shop Mẹ Ca Cao'}).catch(e=>{if(e.name!=='AbortError')setError(e.message)})}>Chia sẻ PNG</button>}</div>
+ return <div className="salesButtons"><p role="status">{error}</p><button className="salesAction salesActionPrimary" disabled={disabled||busy||!navigator.onLine} onClick={()=>void make()}>{busy?'Đang tạo…':'Tạo phiếu PNG'}</button>{files.map((file,i)=><a key={file.name} download={file.name} href={links[i]}>Tải trang {i+1}</a>)}{files.length>0&&navigator.canShare?.({files})&&<button onClick={()=>void navigator.share({files,title:'Shop Mẹ Ca Cao'}).catch(e=>{if(e.name!=='AbortError')setError(e.message)})}>Chia sẻ PNG</button>}</div>
 }

@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 export const freshDevelopment=process.env.SHOP_FRESH_DEVELOPMENT==='1'
-export const release={version:'7.1.2',channel:'release',stage:7,status:'RELEASED',next:'Windows và iPhone dùng chung dữ liệu Cloud'}
+export const release={version:'7.1.3',channel:'release',stage:7,status:'RELEASED',next:'Windows và iPhone dùng chung dữ liệu Cloud'}
 export const freshRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../../data/stage6-main-test')
 export const warehouseConfig=path.join(freshRoot,'warehouse-config.json')
 function contains(a:string,b:string){const r=path.relative(a,b);return r===''||(!path.isAbsolute(r)&&r!=='..'&&!r.startsWith('..'+path.sep))}

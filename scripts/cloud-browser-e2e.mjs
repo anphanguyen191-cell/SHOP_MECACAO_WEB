@@ -9,10 +9,10 @@ import assert from 'node:assert/strict'
 import sharp from 'sharp'
 import {setTimeout as delay} from 'node:timers/promises'
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'mc-cloud-browser-')),profile=path.join(temp,'profile'),image=await sharp({create:{width:100,height:140,channels:3,background:'#923e71'}}).jpeg().toBuffer()
-const state={sequence:0,orders:[],items:[],confirmations:[],reconciled:[],requests:new Map(),lost:false}
+const state={sequence:0,orders:[],items:[],confirmations:[],reconciled:[],requests:new Map(),lost:false,customers:[{id:'fake-customer',name:'FAKE Khách',phone:'0900000000',address:'FAKE địa chỉ',note:'',version:1}],counts:[{session_id:'fake-count',variant_id:1,counted:null,note:'',snapshot:JSON.stringify({productCode:'FAKE1',productName:'FAKE áo thử',size:'S1',sku:'FAKE1-S1',physical:1,ledger:1})}],countVersion:1}
 const product={id:1,product_code:'FAKE1',name:'FAKE áo thử',status:'active',cloud_revision:1},variant={id:1,product_id:1,sku:'FAKE1-S1',size:'S1',status:'active',sale_price:50000,cost_price:10000,cloud_revision:1}
-function rows(table){return ({products:[product],product_variants:[variant],product_images:[{id:1,product_id:1,variant_id:1}],cloud_image_assets:[{image_id:1,object_path:'fake1.jpg',ready:true,sha256:'a'.repeat(64)}],sales_orders:state.orders,sales_order_images:state.items,sales_confirmations:state.confirmations,sales_units:state.confirmations.length?[{image_id:1,order_id:state.orders[0].id,variant_id:1,snapshot:JSON.stringify(state.items[0])}]:[]})[table]||[]}
-function finance(id){return {orderId:id,orderVersion:1,orderStatus:state.confirmations.length?'SOLD':'DRAFT',version:0,method:'COD',delivery:'NEW',tracking:'',adjustedTotal:50000,netCollected:0,due:50000,originalTotal:50000,refundDue:0}}
+function rows(table){return ({shop_customers:state.customers,stocktake_sessions:[{id:'fake-count',status:'OPEN',title:'FAKE Kiểm kê',version:state.countVersion}],stocktake_rows:state.counts,products:[product],product_variants:[variant],product_images:[{id:1,product_id:1,variant_id:1}],cloud_image_assets:[{image_id:1,object_path:'fake1.jpg',ready:true,sha256:'a'.repeat(64)}],sales_orders:state.orders,sales_order_images:state.items,sales_confirmations:state.confirmations,sales_units:state.confirmations.length?[{image_id:1,order_id:state.orders[0].id,variant_id:1,snapshot:JSON.stringify(state.items[0])}]:[]})[table]||[]}
+function finance(id){return {orderId:id,orderVersion:state.orders.find(o=>o.id===id)?.version||1,recipientName:'FAKE Khách',phone:'0900000000',customerId:'fake-customer',orderStatus:state.confirmations.length?'SOLD':'DRAFT',version:0,method:'COD',delivery:'NEW',tracking:'',adjustedTotal:50000,netCollected:0,due:50000,originalTotal:50000,refundDue:0}}
 const user={id:'11111111-1111-4111-8111-111111111111',aud:'authenticated',role:'authenticated',email:'fake@example.invalid',app_metadata:{provider:'email',providers:['email']},user_metadata:{},created_at:new Date().toISOString()}
 const enc=v=>Buffer.from(JSON.stringify(v)).toString('base64url'),token=enc({alg:'HS256',typ:'JWT'})+'.'+enc({sub:user.id,exp:Math.floor(Date.now()/1000)+3600,role:'authenticated',aud:'authenticated'})+'.fake'
 const session={access_token:token,refresh_token:'fake-only-refresh',expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,token_type:'bearer',user}
@@ -37,11 +37,16 @@ async function intercept(p){trace.push({url:p.request.url,method:p.request.metho
   if(endpoint==='mc_v7_health')response={contract:1,schema:130,role:'owner',status:'CLOUD_TEST_READY',instance:'fake',sequence:state.sequence}
   else if(endpoint==='mc_v7_rows'){const all=rows(body.p_table),offset=Number(body.p_after||0);response={rows:all.slice(offset,offset+body.p_limit),nextOffset:offset+body.p_limit}}
   else if(endpoint==='mc_v7_finance')response=finance(body.p_id)
+  else if(endpoint==='mc_v7_debts')response=state.orders.map(o=>finance(o.id))
+  else if(endpoint==='mc_v7_storage_usage')response={objects:1,bytes:10000,readyStock:state.confirmations.length?0:1,soldKept:state.confirmations.length}
+  else if(endpoint==='mc_v7_report')response={range:{from:body.p_from,to:body.p_to},generatedAt:new Date().toISOString(),totals:{orders:state.confirmations.length,quantity:state.confirmations.length,goodsTotal:'50000',shipping:'0',receipts:'0',refunds:'0',netCash:'0',dueNow:'50000',refundDueNow:'0',knownCost:'10000',grossMargin:'40000',unknownCosts:0,subtotal:'50000',discount:'0',payableTotal:'50000',credits:'0'},orders:state.confirmations.length?[{id:state.orders[0].id,recipientName:'FAKE Khách',soldAt:new Date().toISOString(),quantity:1,goodsTotal:'50000',shipping:'0',knownCost:'10000',grossMargin:'40000',unknownCosts:0,dueNow:'50000',refundDueNow:'0'}]:[],entries:[],products:[]}
+  else if(endpoint==='mc_v7_stocktake'){if(body.p_action!=='stocktake.row')throw Error('FAKE unsupported stocktake action');assert.equal(body.p_payload.version,state.countVersion);state.counts[0].counted=body.p_payload.counted;state.counts[0].note=body.p_payload.note;state.countVersion++;state.sequence++;response={id:'fake-count',version:state.countVersion}}
+
   else if(endpoint==='mc_v7_command'){
    const old=state.requests.get(body.p_request)
    if(old){if(!state.allowRetry&&body.p_action==='draft.save'){await cmd('Fetch.failRequest',{requestId:p.requestId,errorReason:'ConnectionClosed'});return}response=old}
    else if(body.p_action==='draft.save'){const o=body.p_payload;state.orders.push({id:o.id,status:'DRAFT',version:1,discount:o.discount||0,note:''});state.items.push({order_id:o.id,image_id:1,product_id:1,variant_id:1,product_name:product.name,product_code:product.product_code,size:variant.size,sku:variant.sku,unit_price:50000,unit_cost:10000});response={id:o.id,version:1};state.requests.set(body.p_request,response);state.sequence++;if(!state.lost){state.lost=true;await cmd('Fetch.failRequest',{requestId:p.requestId,errorReason:'ConnectionClosed'});return}}
-   else if(body.p_action==='sale.confirm'){state.confirmations.push({order_id:body.p_payload.id,version:1});response={id:body.p_payload.id,status:'SOLD',version:1};state.requests.set(body.p_request,response);state.sequence++}
+   else if(body.p_action==='sale.confirm'){state.orders.find(o=>o.id===body.p_payload.id).status='SOLD';state.orders.find(o=>o.id===body.p_payload.id).version++;state.confirmations.push({order_id:body.p_payload.id,version:1});response={id:body.p_payload.id,status:'SOLD',version:1};state.requests.set(body.p_request,response);state.sequence++}
    else {status=400;response={code:'P0001',message:'FAKE unsupported action'}}
   }
  }else if(u.pathname==='/storage/v1/object/sign/shop-mobile-images')response=body.paths.map(p=>({path:p,signedURL:'/object/sign/shop-mobile-images/'+p+'?token=fake'}))
@@ -57,7 +62,7 @@ try{
  ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}else if(m.method==='Fetch.requestPaused')void intercept(m.params).catch(e=>failures.push(e));else if(m.method==='Page.javascriptDialogOpening')void cmd('Page.handleJavaScriptDialog',{accept:true})})
  await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Network.enable');await cmd('Network.setBypassServiceWorker',{bypass:true});await cmd('Network.setBlockedURLs',{urls:['wss://eyckwoewpomssjjggslr.supabase.co/*']});await cmd('Fetch.enable',{patterns:[{urlPattern:'https://eyckwoewpomssjjggslr.supabase.co/*'}]})
  await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`localStorage.setItem('mecacao-v7-auth',${JSON.stringify(JSON.stringify(session))});localStorage.setItem('mecacao-ui-cloud-auto-sync','false')`})
- await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await cmd('Page.navigate',{url});await until("!!document.querySelector('.cloudCard img')&&document.querySelector('.cloudCard img').complete")
+ await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await cmd('Page.navigate',{url});await until("!!document.querySelector('.treeProductHead')");await run("document.querySelector('.treeProductHead').click()");await until("!!document.querySelector('.treeVariantHead')");await run("document.querySelector('.treeVariantHead').click()");await until("!!document.querySelector('.stockImageSelect img')&&document.querySelector('.stockImageSelect img').complete")
  assert.equal(await run('document.documentElement.scrollWidth<=innerWidth+2'),true)
  assert(await run("!!document.querySelector('.topbar .brandLogo')&&!!document.querySelector('.sidebar')&&!!document.querySelector('.mobileQuickNav')"))
  await run("document.querySelector('[aria-label=\"Mở thêm chức năng\"]').click()");await until("!!document.querySelector('.featureDrawer')")
@@ -66,21 +71,49 @@ try{
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tổng quan').click()")
  await until("!!document.querySelector('.overviewStats')")
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tồn kho').click()")
- await until("!!document.querySelector('.cloudCard')")
+ await until("!!document.querySelector('.treeProductHead')");await run("document.querySelector('.treeProductHead').click()");await until("!!document.querySelector('.treeVariantHead')");await run("document.querySelector('.treeVariantHead').click()");await until("!!document.querySelector('.stockImageSelect')")
  fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/shared-mobile.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
 
- await run("document.querySelector('.cloudCard').click()");await click('Mở thao tác');assert(await run("(()=>{const r=document.querySelector('.cloudSelection').getBoundingClientRect();const dock=document.querySelector('.mobileQuickNav').getBoundingClientRect();return r.right<=innerWidth&&r.bottom<dock.top&&r.left>0})()"))
+ await run("document.querySelector('.stockImageSelect').click()");assert(await run("(()=>{const r=document.querySelector('.floatingActions').getBoundingClientRect();const dock=document.querySelector('.mobileQuickNav').getBoundingClientRect();return r.right<=innerWidth&&r.bottom<dock.top&&r.left>0})()"))
  await run("(()=>{window.fakeLockHeld=false;void navigator.locks.request('mecacao-v7-command',async()=>{window.fakeLockHeld=true;await new Promise(r=>window.fakeReleaseLock=r);window.fakeLockHeld=false});return true})()");await until('window.fakeLockHeld')
- await click('Tạo đơn nháp');await until("document.body.innerText.includes('Tab khác đang gửi thao tác Cloud')");assert.equal(state.orders.length,0);assert.equal(await run("localStorage.getItem('mecacao-v7-pending-command')"),null)
+ await click('TẠO ĐƠN NHÁP');await until("document.body.innerText.includes('Tab khác đang gửi thao tác Cloud')");assert.equal(state.orders.length,0);assert.equal(await run("localStorage.getItem('mecacao-v7-pending-command')"),null)
  await run('window.fakeReleaseLock();true');await until('!window.fakeLockHeld')
- await run("(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Tạo đơn nháp');b.click();b.click()})()");await until("!!localStorage.getItem('mecacao-v7-pending-command')")
+ await run("(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='TẠO ĐƠN NHÁP');b.click();b.click()})()");await until("!!localStorage.getItem('mecacao-v7-pending-command')")
  await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Kiểm tra thao tác trước'&&!b.disabled)");state.allowRetry=true;await click('Kiểm tra thao tác trước');await until("document.body.innerText.includes('bản 1')&&!!document.querySelector('.cloudOrder')")
  assert.equal(state.orders.length,1);assert.equal(await run("localStorage.getItem('mecacao-v7-pending-command')"),null)
+
+ const recipient=await run("Array.from(document.querySelectorAll('.contactCard .formGrid label')).find(l=>l.textContent.startsWith('Người nhận')).querySelector('input').focus();true")
+ await cmd('Input.insertText',{text:'FAKE chưa lưu'});await until("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Lưu thay đổi'&&!b.disabled)")
+ assert(await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Chốt SOLD').disabled&&Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Tạo phiếu PNG').disabled"))
+ await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tồn kho').click()")
+ assert(await run("!!document.querySelector('.salesEditor')"),'Unsaved draft must block navigation')
+ await click('Đọc lại đơn');await until("!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Chốt SOLD').disabled")
  await click('Tạo phiếu PNG');await until("!!document.querySelector('a[download$=\".png\"]')")
  const png=await run("fetch(document.querySelector('a[download$=\".png\"]').href).then(r=>r.blob()).then(b=>createImageBitmap(b)).then(b=>({width:b.width,height:b.height}))");assert.equal(png.width,1000);assert(png.height>600);assert.equal(state.confirmations.length,0)
  await click('Chốt SOLD');await until("document.body.innerText.includes('SOLD')&&!Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Chốt SOLD')")
  assert.equal(state.confirmations.length,1)
- await click('Tồn kho');await until("document.body.innerText.includes('0 ảnh tồn sẵn sàng Cloud')")
+ await click('Tồn kho');await until("document.querySelector('.inventoryMetrics article strong')?.textContent==='0'")
+
+ const pages=[['Tồn kho','.inventoryPage'],['Danh mục sản phẩm','.catalogPage'],['Bán hàng','.salesWorkspace'],['Khách hàng','.contactCard'],['Công nợ','.financeMetrics'],['Báo cáo','.stage4Metrics'],['Kiểm kê','.stocktakePanel'],['Ảnh SOLD','.soldRetentionPage'],['Ảnh iPhone','.phoneInbox'],['Cài đặt','.displayPreferences']]
+ for(const width of [1366,390])for(const dark of [false,true]){
+  await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:900,deviceScaleFactor:1,mobile:width===390})
+  await run("document.querySelector('.shell').classList.toggle('themeDark',"+dark+")")
+  for(const [label,selector] of pages){
+   await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==="+JSON.stringify(label)+").click();window.scrollTo(0,0)")
+   await until("!!document.querySelector("+JSON.stringify(selector)+")")
+   await delay(100);assert(await run('document.documentElement.scrollWidth<=innerWidth+2'),'Cloud overflow: '+label+' '+width+' '+dark)
+   fs.writeFileSync('artifacts/cloud-browser/'+width+'-'+(dark?'dark':'light')+'-'+pages.findIndex(p=>p[0]===label)+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
+  }
+ }
+ await run("document.querySelector('.shell').classList.remove('themeDark');Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Kiểm kê').click()")
+ await until("!!document.querySelector('.stocktakePanel input[aria-label^=\"Số đếm\"]')")
+ await run("document.querySelector('.stocktakePanel input[aria-label^=\"Số đếm\"]').focus()")
+ await cmd('Input.insertText',{text:'1'});await until("document.body.innerText.includes('Có số đếm chưa lưu')")
+ await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tồn kho').click()")
+ assert(await run("!!document.querySelector('.stocktakePanel')"),'Unsaved count must block navigation')
+ await click('Lưu số đếm');await until("Array.from(document.querySelectorAll('.stage4Metrics article')).find(a=>a.textContent.includes('Chưa đếm')).querySelector('b').textContent==='0'")
+ await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tồn kho').click()")
+ await until("!!document.querySelector('.inventoryPage')")
  for(const label of ['Nhỏ','Vừa','Lớn']){await click(label);assert(await run('document.documentElement.scrollWidth<=innerWidth+2'))}
  await run("document.querySelector('[aria-label=\"Bật giao diện tối\"]').click()");assert(await run("document.querySelector('.cloudWorkspace').classList.contains('themeDark')"))
  await cmd('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});await until("document.body.innerText.includes('Mất mạng')");assert(await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đọc lại').disabled"))

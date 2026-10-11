@@ -1,6 +1,6 @@
 # SHOP MẸ CACAO WEB — main mới nhất
 
-**V7.1.2 — bản phát hành Windows và Cloud.** Schema 130. Giao diện chung trên laptop và iPhone; phiên bản/kho đang dùng hiển thị gọn, không đưa tiến độ phát triển vào màn hình nghiệp vụ.
+**V7.1.3 — bản phát hành Windows và Cloud.** Schema 130. Giao diện chung trên laptop và iPhone; phiên bản/kho đang dùng hiển thị gọn, không đưa tiến độ phát triển vào màn hình nghiệp vụ.
 
 [Hướng dẫn sử dụng và cập nhật](HUONG_DAN_SU_DUNG.md) · [Mở web Cloud](https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1) · [Tải Windows từ main](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip).
 

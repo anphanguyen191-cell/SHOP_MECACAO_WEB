@@ -1,3 +1,11 @@
+## V7.1.3 — đồng nhất màn hình nghiệp vụ — 11/10/2026
+
+- Cloud dùng trực tiếp InventoryView, CustomersView, DebtsView và BusinessReports của laptop thông qua nguồn dữ liệu Cloud. Giữ bộ lọc, dashboard, cây Mẫu/Size/ảnh, ảnh lớn, popup chọn ảnh, danh sách/biểu mẫu khách, nhóm công nợ và bảng/CSV báo cáo.
+- Bán hàng Cloud dùng danh sách/chi tiết đơn, ảnh/giá/người nhận/ship/giảm, nút thao tác và PNG cùng bố cục laptop. Chặn chuyển chức năng, SOLD và PNG khi đơn có thay đổi chưa lưu; giữ nội dung và yêu cầu đọc lại khi phiên bản khác thay đổi.
+- Kiểm kê dùng bảng và thống kê như laptop; số đếm chưa lưu chặn chuyển trang/chốt. Tài chính, danh mục, SOLD, ảnh iPhone và Cài đặt dùng cùng các lớp giao diện, form/card/table và mật độ.
+- Windows Cloud giữ màn hình nhập/import, duyệt ảnh, lưu trữ và cài đặt/sao lưu local. Cloud và local giữ giao thức/quyền/version/idempotency hiện có; không reset dữ liệu hoặc thay schema 130.
+- Bổ sung kiểm tra trình duyệt các màn nghiệp vụ ở 1366/390px, sáng/tối, dữ liệu giả lập, thao tác chưa lưu và số đếm. Lỗi đăng nhập trên thiết bị chủ shop chưa có thông báo để xác định nguyên nhân; bản này không tuyên bố đã sửa lỗi đó.
+
 ## V7.1.2 — 11/10/2026
 
 - Chuyển nhãn phát hành sang V7.1.2/release; bỏ MAIN TEST, tiến độ phát triển và trạng thái nghiệm thu khỏi màn hình nghiệp vụ và launcher.

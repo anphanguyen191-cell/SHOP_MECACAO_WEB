@@ -5,23 +5,25 @@ import InventorySharing,{InventoryImageViewer,type ChosenImage} from './Inventor
 
 type Img={id:number;file_name:string;file_path:string;exists:boolean}
 type Variant={variant_status?:string;variant_id:number;sku:string;size:string;cost_price:number;sale_price:number;ledger_stock:number;stock:number;images:Img[]}
-type Product={product_id:number;product_code:string;product_name:string;category?:string|null;product_status:string;stock:number;variants:Variant[]}
-type Dash={stock:number;products:number;productsInStock:number;skus:number;sizes:number;outOfStock:number;mismatches:number;topProducts:Array<{product_id:number;product_name:string;stock:number}>;lowProducts:Array<{product_id:number;product_name:string;stock:number}>;sizeStock:Array<{size:string;stock:number}>}
+export type InventoryProduct={product_id:number;product_code:string;product_name:string;category?:string|null;product_status:string;stock:number;variants:Variant[]}
+export type InventoryDashboard={stock:number;products:number;productsInStock:number;skus:number;sizes:number;outOfStock:number;mismatches:number;topProducts:Array<{product_id:number;product_name:string;stock:number}>;lowProducts:Array<{product_id:number;product_name:string;stock:number}>;sizeStock:Array<{size:string;stock:number}>}
 type Suggestion={product_id:number;product_code:string;product_name:string;variant_id:number;sku:string;size:string;stock:number}
 const demoVariants=(productId:number,code:string,counts:Array<[string,number]>):Variant[]=>counts.map(([size,stock],i)=>({variant_id:productId*10+i+1,sku:code+'-'+size.replace(' ',''),size,cost_price:0,sale_price:0,ledger_stock:stock,stock,images:[]}))
-const DEMO_PRODUCTS:Product[]=[
+const DEMO_PRODUCTS:InventoryProduct[]=[
  {product_id:1,product_code:'LG0001',product_name:'Lửng gái T5',category:'Đồ tole bé gái',product_status:'active',stock:12,variants:demoVariants(1,'LG0001',[['Size 1',5],['Size 2',4],['Size 3',3]])},
  {product_id:2,product_code:'BG0001',product_name:'Bộ gái hoa',category:'Đồ tole bé gái',product_status:'active',stock:7,variants:demoVariants(2,'BG0001',[['Size 1',2],['Size 2',1],['Size 3',1],['Size 4',3]])}
 ]
-const DEMO_DASH:Dash={stock:19,products:2,productsInStock:2,skus:7,sizes:4,outOfStock:0,mismatches:0,topProducts:[{product_id:1,product_name:'Lửng gái T5',stock:12},{product_id:2,product_name:'Bộ gái hoa',stock:7}],lowProducts:[{product_id:2,product_name:'Bộ gái hoa',stock:7},{product_id:1,product_name:'Lửng gái T5',stock:12}],sizeStock:[{size:'Size 1',stock:7},{size:'Size 2',stock:5},{size:'Size 3',stock:4},{size:'Size 4',stock:3}]}
+const DEMO_DASH:InventoryDashboard={stock:19,products:2,productsInStock:2,skus:7,sizes:4,outOfStock:0,mismatches:0,topProducts:[{product_id:1,product_name:'Lửng gái T5',stock:12},{product_id:2,product_name:'Bộ gái hoa',stock:7}],lowProducts:[{product_id:2,product_name:'Bộ gái hoa',stock:7},{product_id:1,product_name:'Lửng gái T5',stock:12}],sizeStock:[{size:'Size 1',stock:7},{size:'Size 2',stock:5},{size:'Size 3',stock:4},{size:'Size 4',stock:3}]}
 
-export default function InventoryView({isDemo=false,onDraft,draftLabel}:{isDemo?:boolean;onDraft?:(ids:number[],key:string)=>Promise<void>;draftLabel?:string}){
- const [search,setSearch]=useState(''),[category,setCategory]=useState(''),[size,setSize]=useState(''),[products,setProducts]=useState<Product[]>(isDemo?DEMO_PRODUCTS:[]),[dashboard,setDashboard]=useState<Dash|null>(isDemo?DEMO_DASH:null),[categories,setCategories]=useState<string[]>([]),[sizes,setSizes]=useState<string[]>([]),[expandedProducts,setExpandedProducts]=useState<Set<number>>(new Set()),[expandedVariants,setExpandedVariants]=useState<Set<number>>(new Set()),[selectedImages,setSelectedImages]=useState<Set<number>>(new Set()),[suggestions,setSuggestions]=useState<Suggestion[]>([]),[detailProductId,setDetailProductId]=useState<number|null>(null)
+export type InventorySource={products:InventoryProduct[];dashboard:InventoryDashboard;urls:Record<string,string>;refresh:()=>Promise<void>;share?:(images:ChosenImage[])=>React.ReactNode}
+export default function InventoryView({isDemo=false,onDraft,draftLabel,source}:{isDemo?:boolean;onDraft?:(ids:number[],key:string)=>Promise<void>;draftLabel?:string;source?:InventorySource}){
+ const [search,setSearch]=useState(''),[category,setCategory]=useState(''),[size,setSize]=useState(''),[products,setProducts]=useState<InventoryProduct[]>(isDemo?DEMO_PRODUCTS:[]),[dashboard,setDashboard]=useState<InventoryDashboard|null>(isDemo?DEMO_DASH:null),[categories,setCategories]=useState<string[]>([]),[sizes,setSizes]=useState<string[]>([]),[expandedProducts,setExpandedProducts]=useState<Set<number>>(new Set()),[expandedVariants,setExpandedVariants]=useState<Set<number>>(new Set()),[selectedImages,setSelectedImages]=useState<Set<number>>(new Set()),[suggestions,setSuggestions]=useState<Suggestion[]>([]),[detailProductId,setDetailProductId]=useState<number|null>(null)
  const [stockState,setStockState]=useState<'all'|'in'|'out'|'low'>('all'),[sort,setSort]=useState<'stock_desc'|'stock_asc'|'name'>('stock_desc'),[threshold,setThreshold]=useState(2),[loadError,setLoadError]=useState('')
  const [dashboardExpanded,setDashboardExpanded]=useBooleanPreference('inventory-expanded',true)
  useEffect(()=>{const changed=()=>setReload(n=>n+1);window.addEventListener('mecacao-server-change',changed);return()=>window.removeEventListener('mecacao-server-change',changed)},[])
- const [loading,setLoading]=useState(!isDemo),[reload,setReload]=useState(0)
+ const [loading,setLoading]=useState(!isDemo&&!source),[reload,setReload]=useState(0)
  useEffect(()=>{
+  if(source){const q=search.trim().toLocaleLowerCase('vi');setProducts(source.products.map(p=>{const vs=p.variants.filter(v=>(!size||v.size===size)&&(!q||[p.product_name,p.product_code,v.size,v.sku].join(' ').toLocaleLowerCase('vi').includes(q)));return {...p,variants:vs,stock:vs.reduce((n,v)=>n+v.stock,0)}}).filter(p=>p.variants.length&&(!category||p.category===category)));setDashboard(source.dashboard);setLoadError('');setLoading(false);return}
   if(isDemo){
    const q=search.trim().toLocaleLowerCase('vi')
    const filtered=DEMO_PRODUCTS.map(p=>{
@@ -44,15 +46,17 @@ export default function InventoryView({isDemo=false,onDraft,draftLabel}:{isDemo?
    ]).then(([tree,dash])=>{if(!cancelled){setProducts(Array.isArray(tree)?tree:[]);setDashboard(dash);setLoadError('')}}).catch(e=>{if(!cancelled){setLoadError(e instanceof Error?e.message:'Không đọc được dữ liệu');setProducts([]);setDashboard(null)}}).finally(()=>{if(!cancelled)setLoading(false)})
   },180)
   return()=>{cancelled=true;controller.abort();clearTimeout(timer)}
- },[search,category,size,isDemo,reload])
+ },[search,category,size,isDemo,reload,source])
  useEffect(()=>{
+  if(source){setCategories([...new Set(source.products.map(p=>p.category).filter((c):c is string=>!!c))]);setSizes([...new Set(source.products.flatMap(p=>p.variants.map(v=>v.size)))]);return}
   if(isDemo){setCategories(['Đồ tole bé gái']);setSizes(['Size 1','Size 2','Size 3','Size 4']);return}
   let cancelled=false
   fetch('/api/inventory/filter-options').then(r=>r.json()).then(j=>{if(!cancelled){setCategories(j.categories??[]);setSizes(j.sizes??[])}}).catch(()=>{})
   fetch('/api/settings').then(r=>r.json()).then(j=>{if(!cancelled&&Number.isInteger(j.lowStockThreshold))setThreshold(j.lowStockThreshold)}).catch(()=>{})
   return()=>{cancelled=true}
- },[isDemo])
+ },[isDemo,source])
  useEffect(()=>{
+  if(source){const q=search.trim().toLocaleLowerCase('vi');setSuggestions(q?source.products.flatMap(p=>p.variants.map(v=>({product_id:p.product_id,product_code:p.product_code,product_name:p.product_name,variant_id:v.variant_id,sku:v.sku,size:v.size,stock:v.stock}))).filter(v=>[v.product_name,v.product_code,v.sku,v.size].join(' ').toLocaleLowerCase('vi').includes(q)).slice(0,12):[]);return}
   if(search.trim().length<1){setSuggestions([]);return}
   let cancelled=false
   const t=setTimeout(()=>{
@@ -65,7 +69,7 @@ export default function InventoryView({isDemo=false,onDraft,draftLabel}:{isDemo?
    }
   },220)
   return()=>{cancelled=true;clearTimeout(t)}
- },[search,isDemo])
+ },[search,isDemo,source])
  const maxProduct=useMemo(()=>Math.max(1,...(dashboard?.topProducts??[]).map(x=>x.stock)),[dashboard])
  const visibleProducts=useMemo(()=>{
   const rows=products.filter(p=>stockState==='all'||(stockState==='in'&&p.stock>0)||(stockState==='out'&&p.stock===0)||(stockState==='low'&&p.stock>0&&p.stock<=threshold))
@@ -78,6 +82,7 @@ export default function InventoryView({isDemo=false,onDraft,draftLabel}:{isDemo?
  function chooseSuggestion(s:Suggestion){setSearch(s.product_name);setSize(s.size);setExpandedProducts(new Set([s.product_id]));setExpandedVariants(new Set([s.variant_id]));setSuggestions([])}
  const chosen=useRef(new Map<number,ChosenImage>()),anchor=useRef<{variant:number;id:number}|null>(null)
  const [sending,setSending]=useState(false),[selectionError,setSelectionError]=useState(''),[viewer,setViewer]=useState<{images:ChosenImage[];index:number}|null>(null)
+ useEffect(()=>{if(!source)return;const valid=new Set(source.products.flatMap(p=>p.variants.filter(v=>v.variant_status!=='inactive').flatMap(v=>v.images.filter(i=>i.exists).map(i=>i.id))));setSelectedImages(old=>new Set([...old].filter(id=>valid.has(id))))},[source])
  const allVisible=visibleProducts.flatMap(p=>p.variants.filter(v=>v.variant_status!=='inactive').flatMap(v=>v.images.filter(i=>i.exists).map(i=>({...i,product:p.product_name,size:v.size}))))
  function selectGroup(images:ChosenImage[]){
   const next=new Set(selectedImages);for(const image of images){next.add(image.id);chosen.current.set(image.id,image)}
@@ -91,15 +96,16 @@ export default function InventoryView({isDemo=false,onDraft,draftLabel}:{isDemo?
   if(!selectedImages.has(image.id)&&selectedImages.size>=100){setSelectionError('Một nhóm copy tối đa 100 ảnh.');return}
   setSelectionError('');toggle(selectedImages,image.id,setSelectedImages)
  }
- async function selectProduct(p:Product){
+ async function selectProduct(p:InventoryProduct){
   if(sending)return;setSending(true);setSelectionError('')
   try{let product=p
-   if(size||search){const r=await fetch('/api/inventory/explorer?'+new URLSearchParams({search:p.product_code,status:'active'}));const rows=await r.json();if(!r.ok)throw Error(rows.error||'Không đọc được ảnh của mẫu');product=rows.find((x:Product)=>x.product_id===p.product_id);if(!product)throw Error('Mẫu không còn tồn hợp lệ.')}
+   if(source){product=source.products.find(x=>x.product_id===p.product_id)!}
+   else if(size||search){const r=await fetch('/api/inventory/explorer?'+new URLSearchParams({search:p.product_code,status:'active'}));const rows=await r.json();if(!r.ok)throw Error(rows.error||'Không đọc được ảnh của mẫu');product=rows.find((x:InventoryProduct)=>x.product_id===p.product_id);if(!product)throw Error('Mẫu không còn tồn hợp lệ.')}
    selectGroup(product.variants.filter(v=>v.variant_status!=='inactive').flatMap(v=>v.images.filter(i=>i.exists).map(i=>({...i,product:product.product_name,size:v.size}))))
   }catch(e){setSelectionError(e instanceof Error?e.message:'Không chọn được mẫu')}finally{setSending(false)}
  }
  return <section className={"inventoryPage"+(selectedImages.size?" hasImageSelection":"")}>
-  <div className="inventoryHeading"><div><p className="eyebrow">{isDemo?'DỮ LIỆU MINH HỌA · DEMO':'KHO HÀNG THỰC TẾ'}</p><h2>Tồn kho</h2><p>{isDemo?'Số liệu mẫu để kiểm tra giao diện, không phải tồn hàng của Shop. LOCAL mới kết nối kho ảnh.':'Tồn thực tế đếm ảnh hợp lệ theo từng Size. Chọn sản phẩm để xem ảnh và đối soát.'}</p></div>{isDemo?<span className="okPill">BẢN XEM THỬ</span>:!dashboard?<span className="reconcileAlert">Đang tải / không có dữ liệu kho</span>:dashboard.mismatches?<span className="reconcileAlert">⚠ {dashboard.mismatches} Size lệch ledger/ảnh</span>:<span className="okPill">✓ Đã so sánh ảnh và sổ</span>}</div>
+  <div className="inventoryHeading"><div><p className="eyebrow">{isDemo?'DỮ LIỆU MINH HỌA · DEMO':'KHO HÀNG THỰC TẾ'}</p><h2>Tồn kho</h2><p>{isDemo?'Số liệu mẫu để kiểm tra giao diện, không phải tồn hàng của Shop. LOCAL mới kết nối kho ảnh.':source?'Tồn đã đồng bộ theo từng Mẫu / Size. Chọn ảnh để tạo đơn hoặc gửi khách.':'Tồn thực tế đếm ảnh hợp lệ theo từng Size. Chọn sản phẩm để xem ảnh và đối soát.'}</p></div>{isDemo?<span className="okPill">BẢN XEM THỬ</span>:!dashboard?<span className="reconcileAlert">Đang tải / không có dữ liệu kho</span>:dashboard.mismatches?<span className="reconcileAlert">⚠ {dashboard.mismatches} Size lệch ledger/ảnh</span>:<span className="okPill">{source?'✓ Đã đồng bộ Cloud':'✓ Đã so sánh ảnh và sổ'}</span>}</div>
   {loadError&&<p className="notice warning" role="alert">{loadError} <button onClick={()=>setReload(x=>x+1)}>THỬ LẠI</button></p>}
   <section className="inventoryDashboardBlock" aria-label="Dashboard tồn kho">
    <div className="dashboardFoldHeader">
@@ -129,17 +135,17 @@ export default function InventoryView({isDemo=false,onDraft,draftLabel}:{isDemo?
    {(search||category||size||stockState!=='all'||sort!=='stock_desc')&&<button className="clearFilter" onClick={()=>{setSearch('');setCategory('');setSize('');setStockState('all');setSort('stock_desc');setSuggestions([])}}>XÓA LỌC</button>}
   </div>
 
-  <div className="inventoryToolbar"><button className="refreshInventory" disabled={loading&&!isDemo} onClick={()=>setReload(x=>x+1)}>↻ LÀM MỚI TỒN ẢNH</button></div><p className="inventoryResultCount">{loading&&!isDemo?'Đang đọc kho...':visibleProducts.length+' mẫu'} phù hợp bộ lọc{size?' · '+size:''}{isDemo?' · dữ liệu minh họa':''}</p>
+  <div className="inventoryToolbar"><button className="refreshInventory" disabled={loading&&!isDemo} onClick={()=>source?void source.refresh().catch(e=>setLoadError(e.message)):setReload(x=>x+1)}>↻ LÀM MỚI TỒN ẢNH</button></div><p className="inventoryResultCount">{loading&&!isDemo?'Đang đọc kho...':visibleProducts.length+' mẫu'} phù hợp bộ lọc{size?' · '+size:''}{isDemo?' · dữ liệu minh họa':''}</p>
   {!isDemo&&<div className="quickImageSelection"><button disabled={sending||loading||!allVisible.length} onClick={()=>selectGroup(allVisible)}>CHỌN KẾT QUẢ ĐANG LỌC ({allVisible.length} ảnh)</button><span>Chọn ảnh để gửi khách · chưa giữ hàng hay trừ tồn</span></div>}
   {selectionError&&<p role="alert" className="notice warning">{selectionError}</p>}
-  <InventorySharing onDraft={onDraft} draftLabel={draftLabel} selectionBusy={sending} images={Array.from(selectedImages).map(id=>chosen.current.get(id)!)} hidden={Array.from(selectedImages).filter(id=>!allVisible.some(i=>i.id===id)).length} onBusy={setSending} onClear={()=>{setSelectedImages(new Set());anchor.current=null;setSelectionError('')}}/>
+  <InventorySharing share={source?.share} onDraft={onDraft} draftLabel={draftLabel} selectionBusy={sending} images={Array.from(selectedImages).map(id=>chosen.current.get(id)!)} hidden={Array.from(selectedImages).filter(id=>!allVisible.some(i=>i.id===id)).length} onBusy={setSending} onClear={()=>{setSelectedImages(new Set());anchor.current=null;setSelectionError('')}}/>
   <div className="inventoryTree">{visibleProducts.map(p=>{const open=expandedProducts.has(p.product_id);return <article className="treeProduct" key={p.product_id}>
    <button className="treeProductHead" onClick={()=>toggle(expandedProducts,p.product_id,setExpandedProducts)}><span className="chev">{open?'▼':'▶'}</span><span className="folderIcon">●</span><span className="treeName"><b>{p.product_name}</b><small>{p.product_code} · {p.category||'Chưa phân loại'} · {p.variants.length} Size</small></span><strong>{p.stock}<small> tồn</small></strong></button>
    {!isDemo&&<div className="productSelectRow"><button disabled={sending||loading} onClick={()=>void selectProduct(p)}>CHỌN TOÀN BỘ MẪU</button></div>}{open&&<div className="treeSizes">{p.variants.map(v=>{const vOpen=expandedVariants.has(v.variant_id);return <div className="treeVariant" key={v.variant_id}><button className="treeVariantHead" onClick={()=>toggle(expandedVariants,v.variant_id,setExpandedVariants)}><span className="chev">{vOpen?'▼':'▶'}</span><span className="sizeFolder">{v.size}{v.variant_status==='inactive'?' · Đã ngưng':''}</span><small>{v.sku}</small><span className={v.stock===0?'stockZero':'stockGood'}>{v.stock} sản phẩm</span></button>
-    {vOpen&&<div className="variantGallery"><div className="galleryMeta"><button className="selectSizeImages" disabled={sending||loading||!v.stock||isDemo||v.variant_status==='inactive'} onClick={()=>selectGroup(v.images.filter(i=>i.exists).map(i=>({...i,product:p.product_name,size:v.size})))}>CHỌN NHÓM SIZE</button><span><b>{v.stock}</b> {isDemo?'bộ minh họa':'ảnh hàng thực tế'}</span>{v.ledger_stock!==v.stock&&<span className="warning">Ledger {v.ledger_stock} · Ảnh {v.stock}</span>}<button onClick={()=>setDetailProductId(p.product_id)}>CHI TIẾT SẢN PHẨM</button></div><div className="selectableGallery">{v.images.filter(img=>img.exists).map(img=><article key={img.id} className={'inventoryImage'+(selectedImages.has(img.id)?' selected':'')}><button className="stockImageSelect" type="button" disabled={sending||v.variant_status==='inactive'} aria-pressed={selectedImages.has(img.id)} aria-label={'Chọn ảnh '+img.file_name} onClick={e=>chooseImage({...img,product:p.product_name,size:v.size},v.variant_id,v.images.filter(i=>i.exists).map(i=>({...i,product:p.product_name,size:v.size})),e.shiftKey)}><img loading="lazy" decoding="async" src={'/api/images/'+img.id} alt={p.product_name+' '+v.size}/><span className="imageCheck">{selectedImages.has(img.id)?'✓':''}</span><small title={img.file_name}>{img.file_name}</small></button><button type="button" className="viewStockImage" disabled={v.variant_status==='inactive'} onClick={()=>setViewer({images:v.images.filter(i=>i.exists).map(i=>({...i,product:p.product_name,size:v.size})),index:v.images.filter(i=>i.exists).findIndex(i=>i.id===img.id)})}>XEM LỚN</button></article>)}{(v.stock===0||isDemo)&&<div className="emptySize">{isDemo?'DEMO không có ảnh kho thật.':'Size này hiện không còn ảnh hàng trong kho.'}</div>}</div></div>}
+    {vOpen&&<div className="variantGallery"><div className="galleryMeta"><button className="selectSizeImages" disabled={sending||loading||!v.stock||isDemo||v.variant_status==='inactive'} onClick={()=>selectGroup(v.images.filter(i=>i.exists).map(i=>({...i,product:p.product_name,size:v.size})))}>CHỌN NHÓM SIZE</button><span><b>{v.stock}</b> {isDemo?'bộ minh họa':'ảnh hàng thực tế'}</span>{v.ledger_stock!==v.stock&&<span className="warning">Ledger {v.ledger_stock} · Ảnh {v.stock}</span>}<button onClick={()=>source?setViewer({images:v.images.filter(i=>i.exists).map(i=>({...i,product:p.product_name,size:v.size})),index:0}):setDetailProductId(p.product_id)}>{source?'XEM ẢNH SẢN PHẨM':'CHI TIẾT SẢN PHẨM'}</button></div><div className="selectableGallery">{v.images.filter(img=>img.exists).map(img=><article key={img.id} className={'inventoryImage'+(selectedImages.has(img.id)?' selected':'')}><button className="stockImageSelect" type="button" disabled={sending||v.variant_status==='inactive'} aria-pressed={selectedImages.has(img.id)} aria-label={'Chọn ảnh '+img.file_name} onClick={e=>chooseImage({...img,product:p.product_name,size:v.size},v.variant_id,v.images.filter(i=>i.exists).map(i=>({...i,product:p.product_name,size:v.size})),e.shiftKey)}><img loading="lazy" decoding="async" src={source?source.urls[img.id]:'/api/images/'+img.id} alt={p.product_name+' '+v.size}/><span className="imageCheck">{selectedImages.has(img.id)?'✓':''}</span><small title={img.file_name}>{img.file_name}</small></button><button type="button" className="viewStockImage" disabled={v.variant_status==='inactive'} onClick={()=>setViewer({images:v.images.filter(i=>i.exists).map(i=>({...i,product:p.product_name,size:v.size})),index:v.images.filter(i=>i.exists).findIndex(i=>i.id===img.id)})}>XEM LỚN</button></article>)}{(v.stock===0||isDemo)&&<div className="emptySize">{isDemo?'DEMO không có ảnh kho thật.':'Size này hiện không còn ảnh hàng trong kho.'}</div>}</div></div>}
    </div>})}</div>}
   </article>})}{loading&&!isDemo&&<p className="loadingState" role="status">Đang kiểm tra ảnh vật lý...</p>}{!loading&&!loadError&&visibleProducts.length===0&&<div className="emptyTree">Không tìm thấy sản phẩm phù hợp bộ lọc.</div>}</div>
-  {viewer&&<InventoryImageViewer images={viewer.images} index={viewer.index} onIndex={index=>setViewer({...viewer,index})} onClose={()=>setViewer(null)}/> }
+  {viewer&&<InventoryImageViewer urls={source?.urls} images={viewer.images} index={viewer.index} onIndex={index=>setViewer({...viewer,index})} onClose={()=>setViewer(null)}/> }
   {detailProductId&&<ProductDetail productId={detailProductId} onClose={()=>setDetailProductId(null)}/>}
  </section>
 }

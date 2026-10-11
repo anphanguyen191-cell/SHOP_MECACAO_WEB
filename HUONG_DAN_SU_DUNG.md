@@ -1,4 +1,4 @@
-# Shop Mẹ CaCao V7.1.2
+# Shop Mẹ CaCao V7.1.3
 
 ## Cài lần đầu
 
@@ -19,10 +19,10 @@ Windows nhập kho và đối soát tại bản localhost chạy bằng START_SH
 1. Dừng ứng dụng đang chạy và dùng chức năng sao lưu hiện có trước khi thay mã.
 2. Giải nén ZIP mới vào nơi tạm. Chép nội dung thư mục chứa START_SHOP.bat vào đúng thư mục cài đang dùng, thay các file mã nguồn khi được hỏi.
 3. Giữ nguyên thư mục data, ảnh nguồn, cấu hình và database hiện có. ZIP source không chứa kho của bạn; không xóa thư mục data hoặc chạy SQL reset.
-4. Chạy START_SHOP.bat từ thư mục cài cũ. Kiểm tra Kho đang dùng trước khi nhập hoặc bán tiếp. Tải lại trang Cloud để thấy V7.1.2.
+4. Chạy START_SHOP.bat từ thư mục cài cũ. Kiểm tra Kho đang dùng trước khi nhập hoặc bán tiếp. Tải lại trang Cloud để thấy V7.1.3.
 
 Dữ liệu nằm trong bản cài hiện tại; giải nén riêng thành một bản cài khác sẽ có database riêng. Vì Cloud gắn một instance Windows, không đổi sang bản cài/database mới khi muốn tiếp tục cùng shop. Luôn cập nhật bản cài đang dùng.
 
 ## Khi gặp lỗi
 
-Giữ cửa sổ chương trình mở, chụp thông báo lỗi và địa chỉ trang. Không gửi mã đăng nhập, liên kết email hoặc Secret Key. Phát hành V7.1.2 thay nhãn/khởi động và giữ dữ liệu; lỗi đăng nhập Cloud trên laptop đã được báo nhưng chưa có thông báo cụ thể để xác minh. Không tự xóa kho hoặc reset Cloud để thử đăng nhập.
+Giữ cửa sổ chương trình mở, chụp thông báo lỗi và địa chỉ trang. Không gửi mã đăng nhập, liên kết email hoặc Secret Key. Phát hành V7.1.3 thay nhãn/khởi động và giữ dữ liệu; lỗi đăng nhập Cloud trên laptop đã được báo nhưng chưa có thông báo cụ thể để xác minh. Không tự xóa kho hoặc reset Cloud để thử đăng nhập.
