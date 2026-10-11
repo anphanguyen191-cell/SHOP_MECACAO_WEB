@@ -17,7 +17,7 @@ for(;;){
   await new Promise(r=>setTimeout(r,500))
  }
  if(!ready){child.kill();await ended;throw Error('Server khong san sang; giu nguyen du lieu de kiem tra.')}
- if(!opened&&process.platform==='win32'){spawn('cmd.exe',['/d','/c','start','',url],{stdio:'ignore'});opened=true}
+ if(!opened&&process.platform==='win32'&&process.env.SHOP_NO_BROWSER!=='1'){spawn('cmd.exe',['/d','/c','start','',url],{stdio:'ignore'});opened=true}
  const code=await ended
  if(code!==75){process.exitCode=code;break}
  console.log('Dang mo kho vua chon...')

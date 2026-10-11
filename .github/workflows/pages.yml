@@ -88,6 +88,8 @@ jobs:
         run: npm run test:cloud
       - name: Windows internal gate (isolated fixtures)
         run: npm run test:gate
+      - name: Windows direct desktop launcher acceptance (isolated install)
+        run: node scripts/desktop-launcher-e2e.mjs
       - name: Windows Stage 2 fresh release HTTP and PNG acceptance
         run: node scripts/stage2-e2e.mjs
       - name: Windows first-time setup inherited V2 environment regression

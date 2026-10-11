@@ -10,6 +10,14 @@
 6. Cài đặt → Cloud → nhập email tài khoản shop được cấp quyền → Gửi email đăng nhập → xác nhận email/mã → Đồng bộ / Tiếp tục. Mở giao diện nghiệp vụ Cloud trên máy này.
 7. iPhone hoặc máy khác: mở https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1, đăng nhập cùng tài khoản shop. Trang Internet không quét ổ đĩa laptop. Ảnh đã đồng bộ và dữ liệu Cloud dùng được khi laptop tắt.
 
+## Mở trực tiếp trên Windows
+
+- Sau khi đặt bản cài tại thư mục cố định và có Node.js, nhấp đúp MO_SHOP.vbs một lần. Ứng dụng tạo biểu tượng Shop Me CaCao trên Desktop và mở giao diện; bộ chạy hoạt động ẩn.
+- Lần sau nhấp biểu tượng Desktop. Nếu bản cài đang chạy, chỉ mở lại giao diện. Nếu mã chưa đổi, dùng bản build đã chuẩn bị, không build lại mỗi lần.
+- Sau cập nhật source, lần mở kế tiếp tự chuẩn bị build mới. Giữ nguyên thư mục cài/data/kho; không xóa database.
+- Nếu Windows chặn VBS hoặc không mở được, dùng START_SHOP.bat để xem lỗi; thông báo lỗi của launcher chỉ dẫn data/launcher.log. Biểu tượng phụ thuộc đường dẫn bản cài, nên không di chuyển thư mục sau khi tạo.
+- Đóng tab trình duyệt không dừng bộ chạy ẩn. Khởi động lại Windows sẽ dừng; đây chưa phải ứng dụng EXE có khay hệ thống.
+
 ## Dùng hằng ngày
 
 Windows nhập kho và đối soát tại bản localhost chạy bằng START_SHOP.bat. Cloud là nguồn tồn/giá/đơn/tiền dùng chung sau khi kích hoạt. Bán hàng trên giao diện Cloud ở cả Windows và iPhone. Cloud cần Internet để ghi. Nháp và PNG không trừ tồn; SOLD ghi giao dịch. Ảnh nguồn laptop giữ nguyên; Cloud dùng một JPEG ≤150000 bytes. Hộp ảnh iPhone chưa tăng tồn cho tới khi Windows duyệt/nhập và đồng bộ. Dọn ảnh SOLD chỉ sau khi archive local được xác minh.

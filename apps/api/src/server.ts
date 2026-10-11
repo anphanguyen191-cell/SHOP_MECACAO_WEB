@@ -14,7 +14,7 @@ import {restoreTestRouter} from './restoreRoutes.js'
 import express from 'express'
 import path from 'node:path'
 import fs from 'node:fs'
-import {randomUUID} from 'node:crypto'
+import {randomUUID,createHash} from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { db,dbPath,salesDraftsEnabled,salesExecutionEnabled } from './db.js'
 import {readSchemaVersion} from './schema.js'
@@ -156,7 +156,7 @@ app.post('/api/store/import-batch-task',(req,res)=>{if(req.body.confirmed!==true
 
 app.get('/api/health', (_req, res) => res.json({
   lanClient:!!res.locals.lanUser,lanRole:res.locals.lanUser?.role,
-  ok: true, app: 'SHOP_MECACAO_WEB', cloudAuthority:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(), freshDevelopment,customWarehouse,release: freshDevelopment?release:undefined,version: freshDevelopment?release.version:localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:res.locals.lanUser?undefined:(freshDevelopment?freshWarehouse:localRuntime?.warehouse),incoming:res.locals.lanUser?undefined:localRuntime?.incoming,databasePath:res.locals.lanUser?undefined:localRuntime?.database,localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
+  ok: true, app: 'SHOP_MECACAO_WEB', installationId:res.locals.lanUser?undefined:createHash('sha256').update(path.resolve(process.cwd())).digest('hex'), cloudAuthority:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(), freshDevelopment,customWarehouse,release: freshDevelopment?release:undefined,version: freshDevelopment?release.version:localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:res.locals.lanUser?undefined:(freshDevelopment?freshWarehouse:localRuntime?.warehouse),incoming:res.locals.lanUser?undefined:localRuntime?.incoming,databasePath:res.locals.lanUser?undefined:localRuntime?.database,localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
 }))
 app.post('/api/local/warehouse',(req,res)=>{
  if(!freshDevelopment)return res.status(404).json({error:'Chọn kho áp dụng cho bản main mới'})

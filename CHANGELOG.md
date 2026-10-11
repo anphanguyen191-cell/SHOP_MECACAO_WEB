@@ -1,3 +1,8 @@
+## V7.1.3 — mở trực tiếp Windows — 11/10/2026
+
+- MO_SHOP.vbs tạo shortcut Desktop và mở giao diện với bộ chạy ẩn. Launcher chuẩn bị dependencies/build một lần, dùng lại build khi source không đổi và mở lại đúng instance đang chạy.
+- Khi port 3000 thuộc bản cài khác, dừng và báo lỗi; giữ START_SHOP.bat để chẩn đoán. Không đổi database/kho/Cloud binding.
+
 ## V7.1.3 — gọn màn hình bản chính thức — 11/10/2026
 
 - Chuyển khối phiên bản/chọn kho/quét kho vào Cài đặt, không chiếm màn hình nghiệp vụ. Đường dẫn đầy đủ nằm trong mục mở rộng, tên kho hiển thị gọn.
