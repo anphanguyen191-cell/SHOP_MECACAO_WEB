@@ -28,7 +28,17 @@ try{
  await run("document.querySelector('.releaseWarehouse button').click()");await until("!!document.querySelector('.folderModal')");await run("document.querySelector('[aria-label=\"Đóng chọn thư mục\"]').click()")
  // Real folder selection, automatic launcher restart, and UI reload without manual scripts.
  const own=path.join(tmp,'my-test-warehouse');fs.mkdirSync(own)
- await run("fetch('/api/local/warehouse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({warehouse:"+JSON.stringify(own)+"})}).then(r=>r.json())")
+ await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Import kho').click()")
+ await until("!!document.querySelector('.warehouseConfig input')")
+ await run("(()=>{const input=document.querySelector('.warehouseConfig input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,"+JSON.stringify(own)+");input.dispatchEvent(new Event('input',{bubbles:true}))})()")
+ const accept=async e=>{const m=JSON.parse(e.data);if(m.method==='Page.javascriptDialogOpening')await cmd('Page.handleJavaScriptDialog',{accept:true})}
+ ws.addEventListener('message',accept)
+ await run("Array.from(document.querySelectorAll('.warehouseConfig button')).find(b=>b.textContent==='QUÉT KHO').click()")
+ await until("document.querySelector('main').textContent.includes('Quét xong;')")
+ ws.removeEventListener('message',accept)
+ const bound=await fetch('http://127.0.0.1:3000/api/health').then(r=>r.json());assert.equal(bound.warehouse,own)
+ assert.equal((await fetch('http://127.0.0.1:3000/api/products').then(r=>r.json())).length,0,'Scan must not register stock')
+ const other=await fetch('http://127.0.0.1:3000/api/store/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rootPath:tmp})});assert.equal(other.status,403,'Another folder must remain blocked')
  for(let i=0;i<100;i++){try{const h=await fetch('http://127.0.0.1:3000/api/health').then(r=>r.json());if(h.customWarehouse)break}catch{}await sleep(100)}
  await cmd('Page.reload');await until("!!document.querySelector('.overviewStats')");assert(await run("!document.querySelector('.releaseStatus')"));await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("document.querySelector('.releaseStatus')?.textContent.includes("+JSON.stringify(own)+")")
  assert(await run("!Array.from(document.querySelectorAll('.releaseWarehouse button')).some(b=>b.textContent.includes('CHỌN KHO'))"))

@@ -15,10 +15,24 @@ export default function WarehouseImport({isDemo,onChanged}:{isDemo:boolean;onCha
  const [expanded,setExpanded]=useBooleanPreference('import-expanded',true),lock=useRef(false)
  useEffect(()=>{if(isDemo)return;const c=new AbortController();apiJson('/api/warehouse/settings',{signal:c.signal}).then(async config=>{if(c.signal.aborted)return;setConfig(config);if(config.rootPath){lock.current=true;setBusy(true);const s=await runTask('/api/store/scan',{rootPath:config.rootPath},setTask);if(!c.signal.aborted){setConfig(c=>({...c,rootPath:s.rootPath}));setSnapshot(s);setProducts(s.products.map((p:any)=>({...p,sizes:p.sizes.map((v:any)=>({...v,selected:v.pendingImages.length>0,sku:v.suggestedSku,cost:v.costPrice??0,sale:v.salePrice??0}))})))}}}).catch(e=>{if(!c.signal.aborted)setError(e.message)}).finally(()=>{if(!c.signal.aborted){lock.current=false;setBusy(false)}});return()=>c.abort()},[isDemo])
  const json=(body:unknown)=>({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
- async function scan(){if(isDemo||lock.current)return;lock.current=true;setBusy(true);setError('');setConfirm(false)
-  try{const s=await runTask('/api/store/scan',{rootPath:config.rootPath},setTask);setSnapshot(s);setProducts(s.products.map((p:any)=>({...p,sizes:p.sizes.map((v:any)=>({...v,selected:v.pendingImages.length>0,sku:v.suggestedSku,cost:v.costPrice??0,sale:v.salePrice??0}))})));setMessage('Quét xong; chỉ đọc folder, chưa ghi đăng ký hoặc giao dịch nhập.')}catch(e){setSnapshot(null);setProducts([]);setError(e instanceof Error?e.message:'Quét thất bại')}finally{lock.current=false;setBusy(false)}
+ async function ensureWarehouse(){
+  const h=await apiJson('/api/health')
+  if(!h.freshDevelopment||h.warehouse===config.rootPath)return true
+  if(h.customWarehouse)throw Error('Kho đang dùng là '+h.warehouse+'. Hãy chọn đúng thư mục này để quét; không đổi kho của dữ liệu đã lưu.')
+  if(!config.rootPath.trim())throw Error('Chọn thư mục kho trước khi quét.')
+  if(!window.confirm('Dùng thư mục này làm kho của shop?\n'+config.rootPath+'\nThiết lập được nhớ cho lần mở sau. Ảnh chỉ được đọc khi quét; tồn kho chưa được ghi cho đến khi bạn duyệt.'))return false
+  setMessage('Đang xác lập kho và mở lại kết nối…')
+  const selected=await apiJson('/api/local/warehouse',json({warehouse:config.rootPath}))
+  for(let n=0;n<60;n++){
+   await new Promise(r=>setTimeout(r,500))
+   try{const ready=await apiJson('/api/health');if(ready.customWarehouse&&ready.warehouse===selected.warehouse){setConfig(c=>({...c,rootPath:selected.warehouse}));return true}}catch{}
+  }
+  throw Error('Kho đã được lưu nhưng ứng dụng chưa kết nối lại. Đóng rồi mở lại ứng dụng và quét kho; không cần chọn kho lần nữa.')
  }
- async function saveConfig(){if(lock.current)return;lock.current=true;setBusy(true);setError('');try{const c=await apiJson('/api/warehouse/settings',{...json(config),method:'PUT'});setConfig(c);setMessage('Đã nhớ kho gốc và cấu hình. Auto rename chỉ áp dụng bản COPY nhập mới.')}catch(e){setError(e instanceof Error?e.message:'Không lưu được')}finally{lock.current=false;setBusy(false)}}
+ async function scan(){if(isDemo||lock.current)return;lock.current=true;setBusy(true);setError('');setConfirm(false)
+  try{if(!await ensureWarehouse())return;const s=await runTask('/api/store/scan',{rootPath:config.rootPath},setTask);setSnapshot(s);setProducts(s.products.map((p:any)=>({...p,sizes:p.sizes.map((v:any)=>({...v,selected:v.pendingImages.length>0,sku:v.suggestedSku,cost:v.costPrice??0,sale:v.salePrice??0}))})));setMessage('Quét xong; chỉ đọc folder, chưa ghi đăng ký hoặc giao dịch nhập.')}catch(e){setSnapshot(null);setProducts([]);setError(e instanceof Error?e.message:'Quét thất bại')}finally{lock.current=false;setBusy(false)}
+ }
+ async function saveConfig(){if(lock.current)return;lock.current=true;setBusy(true);setError('');try{if(!await ensureWarehouse())return;const c=await apiJson('/api/warehouse/settings',{...json(config),method:'PUT'});setConfig(c);setMessage('Đã nhớ kho gốc và cấu hình. Auto rename chỉ áp dụng bản COPY nhập mới.')}catch(e){setError(e instanceof Error?e.message:'Không lưu được')}finally{lock.current=false;setBusy(false)}}
  const visible=products.map((p,i)=>({p,i})).filter(({p})=>(!search||[p.name,p.suggestedProductCode,...p.sizes.flatMap(s=>[s.size,s.sku])].some(x=>x.toLocaleLowerCase('vi').includes(search.toLocaleLowerCase('vi'))))&&(filter==='all'||filter==='new'&&!p.existingProductId||filter==='pending'&&p.sizes.some(s=>s.pendingImages.length)||filter==='registered'&&p.sizes.some(s=>s.registeredImages.length)||filter==='warning'&&p.warnings.length))
  const selected=products.map(p=>({...p,sizes:p.sizes.filter(s=>s.selected&&s.images.length)})).filter(p=>p.sizes.length),selectedSizes=selected.flatMap(p=>p.sizes),pending=selectedSizes.reduce((n,s)=>n+s.pendingImages.length,0)
  function patch(i:number,j:number,values:Partial<Size>){setConfirm(false);setProducts(ps=>ps.map((p,x)=>x===i?{...p,sizes:p.sizes.map((s,y)=>y===j?{...s,...values}:s)}:p))}

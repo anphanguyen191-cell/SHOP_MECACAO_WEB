@@ -97,7 +97,7 @@ app.use('/api',(req,res,next)=>{
   if(req.path==='/store/import-batch-task')ok=Array.isArray(req.body.products)&&req.body.products.every((p:any)=>target(p.rootPath)&&(p.variants??[]).every((v:any)=>(v.images??[]).every(sandboxPathAllowed)))
   if(req.path==='/goods-receipt/inspect')ok=source(req.body.path)
   if(req.path==='/goods-receipt')ok=target(req.body.storeRoot)&&(req.body.sizes??[]).every((v:any)=>(!v.sourcePath||source(v.sourcePath))&&(v.images??[]).every(source))
-  if(!ok)return res.status(403).json({error:'Kho đích phải là kho của bản cài này. Chọn kho trên thanh phiên bản trước khi nhập dữ liệu.'})
+  if(!ok)return res.status(403).json({error:'Thư mục này chưa phải kho đang dùng. Vào Import kho, chọn thư mục rồi bấm Quét kho để xác lập lần đầu; hoặc xem kho hiện tại trong Cài đặt.'})
   return next()
  }
  if(localRuntime){

@@ -1,3 +1,8 @@
+## V7.1.3 — xác lập kho ngay tại Import — 11/10/2026
+
+- Chọn thư mục rồi Quét kho hoặc Nhớ kho sẽ xác lập kho lần đầu ngay tại Import, chờ ứng dụng tự khởi động lại và tiếp tục thao tác. Không phải tìm thanh phiên bản trong Cài đặt.
+- Giữ chặn đổi kho đã gắn với dữ liệu; quét không tự đăng ký tồn. Kiểm thử trình duyệt thao tác thật xác lập, restart, quét và chặn thư mục khác.
+
 ## V7.1.3 — sửa mở lại khi cổng đang chạy — 11/10/2026
 
 - START_SHOP.bat dùng cùng open-shop với VBS: mở lại đúng bản cài đang chạy, không build hoặc tạo server thứ hai. Giữ chặn cổng thuộc bản cài khác.

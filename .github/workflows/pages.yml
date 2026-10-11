@@ -22,7 +22,9 @@ jobs:
           node-version: 22
       - run: npm ci
       - name: Build V7 browser fixture
-        run: npm --workspace apps/web run build
+        run: npm run build
+      - name: Main Windows launcher and release UI browser smoke
+        run: node scripts/main-browser-smoke.mjs
       - name: V7 Cloud mobile browser and durable lost-response retry (fake transport)
         run: node scripts/cloud-browser-e2e.mjs
       - name: Dependency security audit
@@ -53,8 +55,6 @@ jobs:
         run: node scripts/v2-sales-e2e.mjs
       - name: Stage 6 Windows UI setup and HTTPS mobile browser acceptance
         run: node --import tsx scripts/stage6-browser-e2e.mjs
-      - name: Main Windows launcher and release UI browser smoke
-        run: node scripts/main-browser-smoke.mjs
       - name: Mobile browser smoke (390px)
         run: node scripts/mobile-browser-smoke.mjs
       - name: Upload mobile screenshots
