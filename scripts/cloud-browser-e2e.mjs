@@ -59,7 +59,17 @@ try{
  await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`localStorage.setItem('mecacao-v7-auth',${JSON.stringify(JSON.stringify(session))});localStorage.setItem('mecacao-ui-cloud-auto-sync','false')`})
  await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await cmd('Page.navigate',{url});await until("!!document.querySelector('.cloudCard img')&&document.querySelector('.cloudCard img').complete")
  assert.equal(await run('document.documentElement.scrollWidth<=innerWidth+2'),true)
- await run("document.querySelector('.cloudCard').click()");await click('Mở thao tác');assert(await run("(()=>{const r=document.querySelector('.cloudSelection').getBoundingClientRect();return r.right<=innerWidth&&r.bottom<=innerHeight&&r.left>0})()"))
+ assert(await run("!!document.querySelector('.topbar .brandLogo')&&!!document.querySelector('.sidebar')&&!!document.querySelector('.mobileQuickNav')"))
+ await run("document.querySelector('[aria-label=\"Mở thêm chức năng\"]').click()");await until("!!document.querySelector('.featureDrawer')")
+ assert(await run("document.querySelector('.featureDrawer').innerText.includes('Danh mục sản phẩm')&&document.querySelector('.featureDrawer').innerText.includes('Import kho')"))
+ await run("document.querySelector('[aria-label=\"Đóng danh mục\"]').click()")
+ await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tổng quan').click()")
+ await until("!!document.querySelector('.overviewStats')")
+ await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tồn kho').click()")
+ await until("!!document.querySelector('.cloudCard')")
+ fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/shared-mobile.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
+
+ await run("document.querySelector('.cloudCard').click()");await click('Mở thao tác');assert(await run("(()=>{const r=document.querySelector('.cloudSelection').getBoundingClientRect();const dock=document.querySelector('.mobileQuickNav').getBoundingClientRect();return r.right<=innerWidth&&r.bottom<dock.top&&r.left>0})()"))
  await run("(()=>{window.fakeLockHeld=false;void navigator.locks.request('mecacao-v7-command',async()=>{window.fakeLockHeld=true;await new Promise(r=>window.fakeReleaseLock=r);window.fakeLockHeld=false});return true})()");await until('window.fakeLockHeld')
  await click('Tạo đơn nháp');await until("document.body.innerText.includes('Tab khác đang gửi thao tác Cloud')");assert.equal(state.orders.length,0);assert.equal(await run("localStorage.getItem('mecacao-v7-pending-command')"),null)
  await run('window.fakeReleaseLock();true');await until('!window.fakeLockHeld')
@@ -72,7 +82,7 @@ try{
  assert.equal(state.confirmations.length,1)
  await click('Tồn kho');await until("document.body.innerText.includes('0 ảnh tồn sẵn sàng Cloud')")
  for(const label of ['Nhỏ','Vừa','Lớn']){await click(label);assert(await run('document.documentElement.scrollWidth<=innerWidth+2'))}
- await click('Giao diện tối');assert(await run("document.querySelector('.cloudWorkspace').classList.contains('themeDark')"))
+ await run("document.querySelector('[aria-label=\"Bật giao diện tối\"]').click()");assert(await run("document.querySelector('.cloudWorkspace').classList.contains('themeDark')"))
  await cmd('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});await until("document.body.innerText.includes('Mất mạng')");assert(await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đọc lại').disabled"))
  assert.deepEqual(failures,[]);console.log('PASS Cloud browser fake transport: mobile layout/density/theme, lost-response durable retry, single draft, real banner PNG without stock mutation, SOLD removal and offline guard')
 }catch(error){console.error('Cloud browser failure:',error);console.error('Transport failures:',failures);console.error('Transport trace:',trace);try{console.error(await run('document.body.innerText'));const shot=await cmd('Page.captureScreenshot',{format:'png'});fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/failure.png',Buffer.from(shot.data,'base64'))}catch{}throw error}finally{if(ws?.readyState===1)try{await cmd('Browser.close')}catch{}ws?.close();if(browser.exitCode===null){browser.kill();await new Promise(r=>browser.once('exit',r))}await new Promise(r=>server.close(r));try{fs.rmSync(temp,{recursive:true,force:true,maxRetries:10,retryDelay:100})}catch(error){console.warn('Browser temporary cleanup:',error.code)}}
