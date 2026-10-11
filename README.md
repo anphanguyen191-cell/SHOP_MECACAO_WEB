@@ -1,10 +1,12 @@
 # SHOP MẸ CACAO WEB — main mới nhất
 
-**V7.1.0-cloud-main-test · chặng 7 · chờ nghiệm thu Windows/iPhone, chưa STABLE.** Core local schema 130 và chức năng các chặng trước được giữ trong source. V7 bổ sung Supabase Cloud: một JPEG ≤150KB, đồng bộ Windows, tồn/giá realtime trên iPhone, đơn/PNG/SOLD, khách hàng, tiền/công nợ, báo cáo/kiểm kê và hộp ảnh iPhone.
+**V7.1.2 — bản phát hành Windows và Cloud.** Schema 130. Giao diện chung trên laptop và iPhone; phiên bản/kho đang dùng hiển thị gọn, không đưa tiến độ phát triển vào màn hình nghiệp vụ.
 
-[Hướng dẫn test V7](V7_TEST_GUIDE.md) · [Đặc tả và tiến độ V7](V7_CORE_FINAL_SPEC.md) · [Mở Cloud Mobile từ main](https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1).
+[Hướng dẫn sử dụng và cập nhật](HUONG_DAN_SU_DUNG.md) · [Mở web Cloud](https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1) · [Tải Windows từ main](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip).
 
-[Tải main.zip cho Windows](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip) → giải nén **thư mục mới** → Node.js 22.13+ hoặc 24 → **START_SHOP.bat**. Chọn kho tự tạo qua UI trước khi nhập dữ liệu; quét/import có duyệt hoặc nhập COPY. Bản cài mới có DB mới, mở lại cùng bản giữ dữ liệu. Không cần marker fixture hoặc nối DB thử cũ.
+Windows: Node.js 22.13+ hoặc 24 → **START_SHOP.bat** → chọn kho trên giao diện → nhập/quét kho → Cài đặt Cloud → đăng nhập → Đồng bộ / Tiếp tục. Internet: mở web Cloud và đăng nhập cùng tài khoản shop. Cài lần đầu vào một thư mục cố định; khi cập nhật thay mã trong thư mục đó và giữ nguyên thư mục `data`, cấu hình, database, ảnh. Không giải nén thành bản cài rỗng mới nếu muốn tiếp tục kho hiện có. Đường dẫn dữ liệu nội bộ cũ giữ nguyên để không làm mất liên kết kho.
+
+Các tài liệu chặng bên dưới là lịch sử phát triển; hướng dẫn vận hành hiện tại ở HUONG_DAN_SU_DUNG.md.
 
 - [Cách chạy Windows và checklist nghiệm thu](MAIN_TEST_STAGE6_RELEASE.md)
 - [Thiết lập iPhone cùng Wi-Fi](STAGE6_MOBILE_LAN_SETUP.md)

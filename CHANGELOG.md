@@ -1,3 +1,10 @@
+## V7.1.2 — 11/10/2026
+
+- Chuyển nhãn phát hành sang V7.1.2/release; bỏ MAIN TEST, tiến độ phát triển và trạng thái nghiệm thu khỏi màn hình nghiệp vụ và launcher.
+- Giữ phiên bản, kho đang dùng và chọn/quét kho; Windows và Cloud dùng khung giao diện chung từ V7.1.1.
+- Giữ nguyên schema 130, đường dẫn database/cấu hình/kho đang dùng, Cloud binding, transaction/recovery và nghiệp vụ. Không reset hoặc tạo bản sao kho khi cập nhật tại cùng thư mục.
+- Hướng dẫn cài và cập nhật trong HUONG_DAN_SU_DUNG.md. Hai báo cáo từ thiết bị chủ shop về quét kho/đăng nhập Cloud chưa đủ thông tin để xác minh nguyên nhân; phát hành này không tuyên bố đã sửa lỗi đăng nhập.
+
 ## 3.5.0-stage6-main-test — UI Checkpoint 6.1–6.6 — 2026-10-11
 
 ## V7.1.0-cloud-main-test — 11/10/2026

@@ -1,3 +1,3 @@
-export const CLOUD_RELEASE='V7.1.1-cloud-main-test'
+export const CLOUD_RELEASE='V7.1.2'
 export const CLOUD_MOBILE_URL='https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1'
-export const CLOUD_PROGRESS='7.8 · kiểm thử tích hợp · chờ nghiệm thu Windows/iPhone'
+export const CLOUD_PROGRESS='Windows và iPhone · dữ liệu dùng chung trên Cloud'

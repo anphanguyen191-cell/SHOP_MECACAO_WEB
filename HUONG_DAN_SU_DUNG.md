@@ -1,0 +1,28 @@
+# Shop Mẹ CaCao V7.1.2
+
+## Cài lần đầu
+
+1. Tải main.zip tại https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip.
+2. Giải nén một lần vào thư mục cố định. Mở thư mục có START_SHOP.bat; không lồng thêm thư mục bản cài mỗi lần mở.
+3. Cài Node.js 22.13+ hoặc 24 nếu chưa có. Chạy START_SHOP.bat và giữ cửa sổ đó mở.
+4. Trong trang localhost/127.0.0.1 vừa mở, chọn kho trên máy. Đăng nhập Cloud không phải điều kiện để quét/import kho local.
+5. Import kho → CHỌN THƯ MỤC → chọn kho gốc có Mẫu/Product → Size → ảnh → QUÉT KHO → duyệt giá và kết quả → xác nhận lưu. Hoặc Nhập hàng để nhập ảnh mới.
+6. Cài đặt → Cloud → nhập email tài khoản shop được cấp quyền → Gửi email đăng nhập → xác nhận email/mã → Đồng bộ / Tiếp tục. Mở giao diện nghiệp vụ Cloud trên máy này.
+7. iPhone hoặc máy khác: mở https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1, đăng nhập cùng tài khoản shop. Trang Internet không quét ổ đĩa laptop. Ảnh đã đồng bộ và dữ liệu Cloud dùng được khi laptop tắt.
+
+## Dùng hằng ngày
+
+Windows nhập kho và đối soát tại bản localhost chạy bằng START_SHOP.bat. Cloud là nguồn tồn/giá/đơn/tiền dùng chung sau khi kích hoạt. Bán hàng trên giao diện Cloud ở cả Windows và iPhone. Cloud cần Internet để ghi. Nháp và PNG không trừ tồn; SOLD ghi giao dịch. Ảnh nguồn laptop giữ nguyên; Cloud dùng một JPEG ≤150000 bytes. Hộp ảnh iPhone chưa tăng tồn cho tới khi Windows duyệt/nhập và đồng bộ. Dọn ảnh SOLD chỉ sau khi archive local được xác minh.
+
+## Cập nhật để giữ kho hiện có
+
+1. Dừng ứng dụng đang chạy và dùng chức năng sao lưu hiện có trước khi thay mã.
+2. Giải nén ZIP mới vào nơi tạm. Chép nội dung thư mục chứa START_SHOP.bat vào đúng thư mục cài đang dùng, thay các file mã nguồn khi được hỏi.
+3. Giữ nguyên thư mục data, ảnh nguồn, cấu hình và database hiện có. ZIP source không chứa kho của bạn; không xóa thư mục data hoặc chạy SQL reset.
+4. Chạy START_SHOP.bat từ thư mục cài cũ. Kiểm tra Kho đang dùng trước khi nhập hoặc bán tiếp. Tải lại trang Cloud để thấy V7.1.2.
+
+Dữ liệu nằm trong bản cài hiện tại; giải nén riêng thành một bản cài khác sẽ có database riêng. Vì Cloud gắn một instance Windows, không đổi sang bản cài/database mới khi muốn tiếp tục cùng shop. Luôn cập nhật bản cài đang dùng.
+
+## Khi gặp lỗi
+
+Giữ cửa sổ chương trình mở, chụp thông báo lỗi và địa chỉ trang. Không gửi mã đăng nhập, liên kết email hoặc Secret Key. Phát hành V7.1.2 thay nhãn/khởi động và giữ dữ liệu; lỗi đăng nhập Cloud trên laptop đã được báo nhưng chưa có thông báo cụ thể để xác minh. Không tự xóa kho hoặc reset Cloud để thử đăng nhập.

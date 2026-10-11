@@ -3,7 +3,7 @@ import {useCallback,useEffect,useRef,useState} from 'react'
 import CloudSettings from './CloudSettings'
 import {cloud,cloudRpc,cloudRows,cloudCommand,retryCloudCommand,pendingCloudCommand,CloudRpcError} from './cloudClient'
 import './cloudWorkspace.css'
-import {CLOUD_RELEASE,CLOUD_PROGRESS} from './cloudRelease'
+import {CLOUD_RELEASE} from './cloudRelease'
 import CloudDebts from './CloudDebts'
 import CloudShare from './CloudShare'
 import CloudSold from './CloudSold'
@@ -98,7 +98,7 @@ export default function CloudWorkspace(){
  {menuOpen&&<ShopDrawer sections={sections} active={tab} onNavigate={navigate} onClose={()=>setMenuOpen(false)} search={menuSearch} onSearch={setMenuSearch} density={density} onDensity={setDensity} mode="CLOUD"/>}
  <div className="layout"><nav className="sidebar" aria-label="Danh mục chức năng Cloud">{sections.map(s=><button key={s.key} className={tab===s.key?'active':''} onClick={()=>navigate(s.key)}><strong>{s.label}</strong></button>)}</nav><main>
  <nav className="pageBreadcrumb" aria-label="Vị trí hiện tại"><button onClick={()=>navigate('overview')}>Tổng quan</button><span>›</span><strong>{sections.find(s=>s.key===tab)?.label||'Shop Mẹ CaCao'}</strong></nav>
- <p className="muted">{CLOUD_RELEASE} · Core schema 130 · {CLOUD_PROGRESS}</p>
+ <p className="muted">Shop Mẹ CaCao · {CLOUD_RELEASE}</p>
  <div className={'shopSyncStatus'+(!online?' offline':'')} role="status"><span className="shopSyncDot"/><span>{online?status:'Mất mạng. Chỉ xem dữ liệu đã đọc; kết nối lại để thao tác.'}</span><button disabled={!signed||busy||!online} onClick={()=>void load()}>Đọc lại</button></div>
  {tab==='overview'&&<section className="overview"><div className="overviewWelcome"><div><span className="overviewKicker">TỔNG QUAN KHO HÀNG</span><h2>Hôm nay ở Shop Mẹ CaCao</h2><p>{signed?'Dữ liệu Cloud dùng chung trên Windows và iPhone':'Đăng nhập tại Cài đặt để xem dữ liệu shop'}</p></div>{desktop&&<button className="overviewAction" onClick={()=>navigate('receipt')}>＋ Nhập hàng</button>}</div>{signed&&<section className="overviewStats"><button className="overviewStat mainStat" onClick={()=>navigate('inventory')}><span>TỔNG TỒN SẴN SÀNG CLOUD</span><strong>{allCards.length}</strong><small>Bộ có ảnh sẵn sàng, chưa SOLD</small></button><button className="overviewStat" onClick={()=>navigate('catalog')}><span>MẪU SẢN PHẨM</span><strong>{(data.products||[]).length}</strong></button><button className="overviewStat" onClick={()=>navigate('catalog')}><span>SIZE / SKU</span><strong>{(data.product_variants||[]).length}</strong></button><button className="overviewStat" onClick={()=>navigate('orders')}><span>ĐƠN NHÁP</span><strong>{(data.sales_orders||[]).filter(o=>o.status==='DRAFT').length}</strong></button></section>}</section>}
 

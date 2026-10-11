@@ -47,7 +47,7 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
   await apiJson('/api/cloud/prices',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:'{}'})
   const assets=await cloudRows('cloud_image_assets'),inbox=await cloudRows('cloud_photo_inbox')
   for(const photo of inbox.filter(p=>p.status==='LOCAL_READY'&&assets.some(a=>a.ready&&a.sha256===p.sha256))){await cloudCommand('inbox.consume',{id:photo.id});const {error}=await cloud.storage.from(CLOUD_BUCKET).remove([photo.object_path]);if(error)throw Error('Ảnh đã vào tồn. File hộp chờ chưa dọn được; dọn tại Ảnh Cloud.')}
-  setStatus('Danh mục/ảnh đã đồng bộ và đã bật kho Cloud để kiểm thử. Mở giao diện Cloud trên Windows và mobile để bán cùng dữ liệu.')
+  setStatus('Danh mục/ảnh đã đồng bộ và đã bật kho Cloud. Mở giao diện Cloud trên Windows và mobile để bán cùng dữ liệu.')
  })}
  latestSync.current=sync
  function saveMobile(){try{const url=new URL(mobile);if(url.protocol!=='https:')throw Error('Link Mobile phải là HTTPS');url.searchParams.set('cloud','1');localStorage.setItem('mecacao-v7-mobile-url',url.href);setMobile(url.href);setStatus('Đã lưu link Mobile.')}catch(e){setStatus(e instanceof Error?e.message:'Link không hợp lệ')}}
