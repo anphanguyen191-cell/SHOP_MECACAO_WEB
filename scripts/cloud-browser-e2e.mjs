@@ -27,7 +27,7 @@ let browserLog='';browser.stderr.on('data',b=>browserLog+=b)
 let ws,next=0;const pending=new Map(),failures=[],trace=[]
 function cmd(method,params={}){return new Promise((resolve,reject)=>{const id=++next,t=setTimeout(()=>{pending.delete(id);reject(Error(method+' timeout'))},20000);pending.set(id,{resolve:r=>{clearTimeout(t);resolve(r)},reject});ws.send(JSON.stringify({id,method,params}))})}
 async function run(expression){const r=await cmd('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value}
-async function until(expression){for(let n=0;n<150;n++){if(await run(expression))return;await delay(100)}throw Error(expression+'\n'+await run('document.body.innerText'))}
+async function until(expression){for(let n=0;n<150;n++){if(await run("Boolean("+expression+")"))return;await delay(100)}throw Error(expression+'\n'+await run('document.body.innerText'))}
 async function click(label){await run(`(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${JSON.stringify(label)});if(!b||b.disabled)throw Error('Button unavailable');b.click()})()`)}
 async function intercept(p){trace.push({url:p.request.url,method:p.request.method,body:p.request.postData});
  if(p.request.method==='OPTIONS'){await cmd('Fetch.fulfillRequest',{requestId:p.requestId,responseCode:200,responseHeaders:[{name:'Access-Control-Allow-Origin',value:'*'},{name:'Access-Control-Allow-Headers',value:Object.entries(p.request.headers).find(([key])=>key.toLowerCase()==='access-control-request-headers')?.[1]||'authorization,apikey,x-client-info,content-type,x-supabase-api-version'},{name:'Access-Control-Allow-Methods',value:'GET,POST,PUT,DELETE,OPTIONS'}],body:'e30='});return}
@@ -75,6 +75,9 @@ try{
  fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/shared-mobile.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
 
  await run("document.querySelector('.stockImageSelect').click()");assert(await run("(()=>{const r=document.querySelector('.floatingActions').getBoundingClientRect();const dock=document.querySelector('.mobileQuickNav').getBoundingClientRect();return r.right<=innerWidth&&r.bottom<dock.top&&r.left>0})()"))
+ await click('Chuẩn bị chia sẻ');await until("!!document.querySelector('a[download$=\".jpg\"]')")
+ const shared=await run("(()=>{const a=document.querySelector('a[download$=\".jpg\"]');return fetch(a.href).then(r=>r.blob()).then(b=>({name:a.download,bytes:b.size}))})()")
+ assert(shared.name.includes('S1-1'));assert(shared.bytes>0&&shared.bytes<=150000)
  await run("(()=>{window.fakeLockHeld=false;void navigator.locks.request('mecacao-v7-command',async()=>{window.fakeLockHeld=true;await new Promise(r=>window.fakeReleaseLock=r);window.fakeLockHeld=false});return true})()");await until('window.fakeLockHeld')
  await click('TẠO ĐƠN NHÁP');await until("document.body.innerText.includes('Tab khác đang gửi thao tác Cloud')");assert.equal(state.orders.length,0);assert.equal(await run("localStorage.getItem('mecacao-v7-pending-command')"),null)
  await run('window.fakeReleaseLock();true');await until('!window.fakeLockHeld')
