@@ -1,3 +1,8 @@
+## V7.1.3 — sửa mở lại khi cổng đang chạy — 11/10/2026
+
+- START_SHOP.bat dùng cùng open-shop với VBS: mở lại đúng bản cài đang chạy, không build hoặc tạo server thứ hai. Giữ chặn cổng thuộc bản cài khác.
+- Mở trình duyệt qua Windows start; bổ sung Windows BAT/VBS acceptance trong đường dẫn có khoảng trắng.
+
 ## V7.1.3 — mở trực tiếp Windows — 11/10/2026
 
 - MO_SHOP.vbs tạo shortcut Desktop và mở giao diện với bộ chạy ẩn. Launcher chuẩn bị dependencies/build một lần, dùng lại build khi source không đổi và mở lại đúng instance đang chạy.

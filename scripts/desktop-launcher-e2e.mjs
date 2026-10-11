@@ -4,9 +4,9 @@ import path from 'node:path'
 import assert from 'node:assert/strict'
 import {createHash} from 'node:crypto'
 import {spawn} from 'node:child_process'
-const base=fs.mkdtempSync(path.join(os.tmpdir(),'mc-desktop-')),project=path.join(base,'release'),url='http://127.0.0.1:3000'
+const base=fs.mkdtempSync(path.join(os.tmpdir(),'mc-desktop-')),project=path.join(base,'Ban cai Shop Me CaCao co khoang trang'),url='http://127.0.0.1:3000'
 fs.mkdirSync(project);fs.mkdirSync(path.join(project,'scripts'));fs.mkdirSync(path.join(project,'data'))
-for(const file of ['package.json','package-lock.json','MO_SHOP.vbs'])fs.copyFileSync(file,path.join(project,file))
+for(const file of ['package.json','package-lock.json','MO_SHOP.vbs','START_SHOP.bat'])fs.copyFileSync(file,path.join(project,file))
 fs.cpSync('apps',path.join(project,'apps'),{recursive:true,filter:p=>!p.split(path.sep).includes('node_modules')})
 for(const file of ['open-shop.mjs','start-stage2.mjs','copy-api-assets.mjs'])fs.copyFileSync('scripts/'+file,path.join(project,'scripts',file))
 fs.symlinkSync(path.resolve('node_modules'),path.join(project,'node_modules'),'junction')
@@ -25,9 +25,10 @@ try{
  const db=path.join(project,'data/stage6-main-test/database/shop-stage6-main-test.db');assert(fs.existsSync(db))
  assert((await run(['--no-browser'])).includes('OPEN_EXISTING'));assert(app.exitCode===null)
  if(process.platform==='win32'){
-  const vbs=spawn('cscript.exe',['//Nologo','MO_SHOP.vbs'],{cwd:project,env,stdio:'pipe'});let out='';vbs.stdout.on('data',b=>out+=b);vbs.stderr.on('data',b=>out+=b);assert.equal(await new Promise(r=>vbs.once('exit',r)),0,out)
+  const bat=spawn('cmd.exe',['/d','/c','START_SHOP.bat'],{cwd:project,env,stdio:'pipe'});let batOut='';bat.stdout.on('data',b=>batOut+=b);bat.stderr.on('data',b=>batOut+=b);const batTimer=setTimeout(()=>bat.kill(),30000);const batCode=await new Promise(r=>bat.once('exit',r));clearTimeout(batTimer);assert.equal(batCode,0,batOut);assert(batOut.includes('OPEN_EXISTING'));assert(!batOut.includes('BUILD_REQUIRED'))
+  const vbs=spawn('cscript.exe',['//Nologo','MO_SHOP.vbs'],{cwd:project,env,stdio:'pipe'});let out='';vbs.stdout.on('data',b=>out+=b);vbs.stderr.on('data',b=>out+=b);const timer=setTimeout(()=>vbs.kill(),30000);const code=await new Promise(r=>vbs.once('exit',r));clearTimeout(timer);assert.equal(code,0,out)
  }
- console.log('PASS Desktop: first build, cached repeat, isolated real database, same-install reuse, Windows VBS entry')
+ console.log('PASS Desktop: first build, cached repeat, isolated real database, same-install reuse, Windows VBS/BAT entry with spaces')
 }finally{
  if(app&&app.exitCode===null){if(process.platform==='win32'){const p=spawn('taskkill',['/PID',String(app.pid),'/T','/F'],{stdio:'ignore'});await new Promise(r=>p.once('exit',r))}else{app.kill();await new Promise(r=>app.once('exit',r))}}
  fs.rmSync(base,{recursive:true,force:true,maxRetries:10,retryDelay:100})
