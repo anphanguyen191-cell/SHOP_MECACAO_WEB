@@ -1,3 +1,4 @@
+import CloudSoldMaintenance from './CloudSoldMaintenance'
 import {ShopHeader,ShopDrawer} from './ShopChrome'
 import PhonePhotoInboxView from './PhonePhotoInboxView'
 import ShopSyncStatus from './ShopSyncStatus'
@@ -140,6 +141,7 @@ export default function App(){
   <ShopHeader density={density} onDensity={setDensity} dark={darkMode} onTheme={()=>setDarkMode(v=>!v)} onMenu={()=>setMenuOpen(true)} menuOpen={menuOpen} mode={mode}>{!health?.lanClient&&<WarehouseNotifications isDemo={isDemo} onReview={()=>goTo('Import kho')}/>}{health?.lanClient&&<button type="button" className="lanLogout" onClick={()=>{const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);void fetch('/api/lan/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',signal:controller.signal}).catch(()=>setHealthError('Chưa xác nhận đăng xuất ở Windows vì mất kết nối. Kết nối lại hoặc tắt LAN trên Windows để thu hồi phiên.')).finally(()=>{clearTimeout(timer);window.dispatchEvent(new Event('mecacao-lan-expired'))})}}>Đăng xuất</button>}</ShopHeader>
   {!isDemo&&health?.ok&&!health?.lanClient&&<TaskProgress/>}
   <ShopSyncStatus enabled={!isDemo&&!!health?.ok}/>
+  {!isDemo&&health?.freshDevelopment&&!health?.lanClient&&<CloudSoldMaintenance/>}
   {health?.lanClient&&<div className="lanSafetyBanner" role="status"><b>LAN NỘI BỘ · BẢN THỬ NGHIỆM</b><span>Tài khoản {health.lanRole??'chưa xác định'} · Dùng kho đã chọn trên Windows; Windows xác nhận mọi giao dịch. Chưa nghiệm thu vận hành thật.</span></div>}
   {active==='Cài đặt'&&(health?.freshDevelopment||isDemo)&&<ReleaseStatus version={health?.version??'3.5.0-stage6-main-test'} release={health?.release} warehouse={health?.lanClient?undefined:health?.warehouse} custom={health?.customWarehouse} onImport={()=>goTo('Import kho')}/>}
   {health?.localV2Business&&<div className="sandboxSafetyBanner businessSafetyBanner" role="status"><b>LOCAL V2 · KHO KINH DOANH</b><br/>Kho: {health.warehouse}<br/>DB: {health.databasePath}<br/>Ảnh nhập mới: {health.incoming} · Không mở V1/Python cũ đồng thời.</div>}

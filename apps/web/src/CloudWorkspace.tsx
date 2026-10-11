@@ -1,3 +1,4 @@
+import CloudSoldMaintenance from './CloudSoldMaintenance'
 import CloudOrders from './CloudOrders'
 import SettingsView from './SettingsView'
 import InventoryView,{type InventorySource} from './InventoryView'
@@ -73,8 +74,8 @@ export default function CloudWorkspace(){
   void load()
   const channel=cloud.channel('v7-business').on('postgres_changes',{event:'INSERT',schema:'public',table:'cloud_sync_events'},()=>void load()).subscribe(state=>{if(state==='SUBSCRIBED')void load();if(state==='CHANNEL_ERROR'||state==='TIMED_OUT')setStatus('Realtime đang kết nối lại; tự đọc lại định kỳ.')})
   const interval=setInterval(()=>{if(navigator.onLine&&document.visibilityState==='visible')void load()},30000)
-  const visible=()=>{if(document.visibilityState==='visible')void load()};document.addEventListener('visibilitychange',visible)
-  return()=>{clearInterval(interval);document.removeEventListener('visibilitychange',visible);void cloud.removeChannel(channel)}
+  const visible=()=>{if(document.visibilityState==='visible')void load()};window.addEventListener('mecacao-cloud-sold-cleaned',load);document.addEventListener('visibilitychange',visible)
+  return()=>{clearInterval(interval);window.removeEventListener('mecacao-cloud-sold-cleaned',load);document.removeEventListener('visibilitychange',visible);void cloud.removeChannel(channel)}
  },[signed,load])
  useEffect(()=>{
   let cancelled=false;const token=generation.current
@@ -95,7 +96,7 @@ export default function CloudWorkspace(){
  useEffect(()=>{const valid=new Set(allCards.map(i=>Number(i.id)));setSelection(old=>old.filter(id=>valid.has(id)))},[data])
  const selected=allCards.filter(i=>selection.includes(Number(i.id)))
  const canSell=role==='owner'||role==='cashier'
- async function confirmSale(o:any){const items=(data.sales_order_images||[]).filter(i=>i.order_id===o.id),total=items.reduce((n,i)=>n+i.unit_price,0)-o.discount;const zero=items.some(i=>i.unit_price===0);if(!window.confirm('Chốt SOLD '+items.length+' ảnh, tiền hàng '+money(total)+(zero?' · có ảnh giá 0 ₫':'')+'? Thao tác sẽ trừ tồn Cloud.'))return;await command('sale.confirm',{id:o.id,version:o.version,confirmed:true,acknowledgeZeroPrice:zero});setStatus('Đã chốt SOLD trên Cloud. Windows sẽ đối soát ảnh gốc khi kết nối.')}
+ async function confirmSale(o:any){const items=(data.sales_order_images||[]).filter(i=>i.order_id===o.id),total=items.reduce((n,i)=>n+i.unit_price,0)-o.discount;const zero=items.some(i=>i.unit_price===0);if(!window.confirm('Chốt SOLD '+items.length+' ảnh, tiền hàng '+money(total)+(zero?' · có ảnh giá 0 ₫':'')+'? Thao tác sẽ trừ tồn Cloud.'))return;await command('sale.confirm',{id:o.id,version:o.version,confirmed:true,acknowledgeZeroPrice:zero});window.dispatchEvent(new Event('mecacao-cloud-sold-check'));setStatus('Đã chốt SOLD. Laptop sẽ xác minh ảnh lưu và tự dọn ảnh Cloud khi kết nối.')}
  async function createDraft(){const id=crypto.randomUUID();await command('draft.save',{id,version:0,items:selected.map(i=>({imageId:i.id,unitPrice:i.variant.sale_price})),discount:Number(discount),contact:{customerId:customerId||null,recipientName:recipient,phone,address,shippingFee:Number(shipping)}});setSelection([]);setCurrent(id);setTab('orders');setStatus('Đã lưu đơn nháp Cloud. Chưa trừ tồn.')}
  async function openFinance(id:string){setCurrent(id);setFinance(await cloudRpc('mc_v7_finance',{p_id:id}));setTab('finance')}
  const sections:ShopSection[]=[{key:'overview',label:'Tổng quan',icon:'⌂'},{key:'catalog',label:'Danh mục sản phẩm',icon:'▦'},...(desktop?[{key:'receipt',label:'Nhập hàng',icon:'＋'},{key:'import',label:'Import kho',icon:'⇩'}]:[]),{key:'inventory',label:'Tồn kho',icon:'▤'},{key:'customers',label:'Khách hàng',icon:'♧'},{key:'orders',label:'Bán hàng',icon:'▧'},{key:'finance',label:'Công nợ',icon:'₫'},{key:'reports',label:'Báo cáo',icon:'▥'},{key:'stocktake',label:'Kiểm kê',icon:'✓'},{key:'soldCloud',label:'Ảnh SOLD',icon:'▧'},{key:'photos',label:'Ảnh iPhone',icon:'▧'},...(desktop?[{key:'phone',label:'Duyệt ảnh trên máy',icon:'▧'},{key:'sold',label:'Lưu trữ SOLD trên máy',icon:'▧'}]:[]),{key:'settings',label:'Cài đặt',icon:'⚙'}].filter(s=>role!=='inventory'||['overview','inventory','catalog','stocktake','photos','settings'].includes(s.key))
@@ -112,6 +113,7 @@ export default function CloudWorkspace(){
  {signed&&<button className="salesAction salesActionSecondary" disabled={busy||!online} onClick={()=>run(async()=>{const pending=await pendingCloudCommand();const result=await retryCloudCommand();if(result&&pending?.action==='draft.save')setSelection([]);if(result&&pending?.action.startsWith('finance.'))await openFinance(pending.payload.id);setStatus(result?'Đã xác minh thao tác trước. Đọc lại đơn trước khi tiếp tục.':'Không có thao tác đang chờ xác minh.');if(result?.id&&pending?.action==='customer.save')setTab('customers');else if(result?.id&&pending?.action.startsWith('draft.')){setCurrent(result.id);setTab('orders')}})}>Kiểm tra thao tác trước</button>}
  <div hidden={signed&&tab!=='settings'}><details open><summary>{['localhost','127.0.0.1'].includes(location.hostname)?'Đồng bộ Windows: '+syncStatus:'Kết nối Cloud'}</summary><CloudSettings autoSync desktop={desktop}/></details></div>
  {tab==='settings'&&<><section className="displayPreferences"><div><h3>Cài đặt giao diện · Mật độ hiển thị</h3><p>Nhỏ để xem bao quát, Vừa để dùng hằng ngày, Lớn để dễ đọc và chạm.</p></div><DisplayDensity value={density} onChange={setDensity}/></section>{desktop&&<SettingsView showCloud={false}/>}</>}
+ {desktop&&signed&&<CloudSoldMaintenance/>}
  {signed&&tab==='inventory'&&<InventoryView source={inventorySource} onDraft={canSell?inventoryDraft:undefined}/>}
  {signed&&tab==='orders'&&<CloudOrders orders={data.sales_orders||[]} items={data.sales_order_images||[]} contacts={data.order_contacts||[]} confirmations={data.sales_confirmations||[]} customers={data.shop_customers||[]} urls={urls} current={current} onPick={id=>{if(window.dispatchEvent(new Event('mecacao-before-navigate',{cancelable:true})))setCurrent(id)}} onInventory={()=>navigate('inventory')} onFinance={id=>void run(()=>openFinance(id))} onConfirm={o=>void run(()=>confirmSale(o))} onCancel={(id,version)=>{if(window.confirm('Hủy đơn nháp này?'))void run(async()=>{await command('draft.cancel',{id,version})})}} onChanged={load} editable={canSell} busy={busy} online={online} ready={cloudReady}/>}
 

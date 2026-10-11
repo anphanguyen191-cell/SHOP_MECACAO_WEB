@@ -20,7 +20,7 @@
 
 ## Dùng hằng ngày
 
-Windows nhập kho và đối soát tại bản localhost chạy bằng START_SHOP.bat. Cloud là nguồn tồn/giá/đơn/tiền dùng chung sau khi kích hoạt. Bán hàng trên giao diện Cloud ở cả Windows và iPhone. Cloud cần Internet để ghi. Nháp và PNG không trừ tồn; SOLD ghi giao dịch. Ảnh nguồn laptop giữ nguyên; Cloud dùng một JPEG ≤150000 bytes. Hộp ảnh iPhone chưa tăng tồn cho tới khi Windows duyệt/nhập và đồng bộ. Dọn ảnh SOLD chỉ sau khi archive local được xác minh.
+Windows nhập kho và đối soát tại bản localhost chạy bằng START_SHOP.bat. Cloud là nguồn tồn/giá/đơn/tiền dùng chung sau khi kích hoạt. Bán hàng trên giao diện Cloud ở cả Windows và iPhone. Cloud cần Internet để ghi. Nháp và PNG không trừ tồn; SOLD ghi giao dịch. Ảnh nguồn laptop giữ nguyên; Cloud dùng một JPEG ≤150000 bytes. Hộp ảnh iPhone chưa tăng tồn cho tới khi Windows duyệt/nhập và đồng bộ. Ảnh SOLD tự dọn khỏi Supabase khi laptop mở giao diện localhost và đăng nhập Cloud bằng tài khoản chủ shop, sau khi ảnh lưu local được xác minh. Tự kiểm tra khi mở ứng dụng, khi có sự kiện Cloud và mỗi 30 giây; tab bị trình duyệt cho ngủ sẽ tiếp tục khi hoạt động lại. Nếu laptop tắt, mất mạng hoặc ảnh local sai checksum thì ảnh Cloud vẫn giữ, tự tiếp tục khi đủ điều kiện. Không cần bấm dọn; chức năng dọn thủ công vẫn có trong Ảnh SOLD. Lịch sử đơn và tiền giữ nguyên.
 
 ## Cập nhật để giữ kho hiện có
 

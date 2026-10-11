@@ -30,5 +30,11 @@ try{
  assert.equal(plan.units[0].snapshot.unit_cost,10000);assert.equal(db.prepare('SELECT cost_price FROM product_variants WHERE id=1').get()?.cost_price,20000)
  assert.equal((await salesExecutionService(db,root).status('cloud-sale-fake-cloud-order')).sold,true)
  await assert.rejects(()=>reconcileCloudSale(db,root,{...proof,order:{...proof.order,note:'changed'}}))
+ // Automatic cleanup must recheck originals even after the order was reconciled.
+ const original=path.join(root,plan.units[0].staged),saved=fs.readFileSync(original)
+ fs.writeFileSync(original,'FAKE_CORRUPT_ORIGINAL')
+ await assert.rejects(()=>reconcileCloudSale(db,root,proof),/phục hồi/)
+ fs.writeFileSync(original,saved)
+ assert.equal((await reconcileCloudSale(db,root,proof)).sold,true)
  console.log('PASS Cloud SOLD reconciliation: original evidence, atomic core archive, retry, instance and source guards')
 }finally{db.close();fs.rmSync(root,{recursive:true,force:true})}

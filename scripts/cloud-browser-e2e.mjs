@@ -9,15 +9,15 @@ import assert from 'node:assert/strict'
 import sharp from 'sharp'
 import {setTimeout as delay} from 'node:timers/promises'
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'mc-cloud-browser-')),profile=path.join(temp,'profile'),image=await sharp({create:{width:100,height:140,channels:3,background:'#923e71'}}).jpeg().toBuffer()
-const state={sequence:0,orders:[],items:[],confirmations:[],reconciled:[],requests:new Map(),lost:false,customers:[{id:'fake-customer',name:'FAKE Khách',phone:'0900000000',address:'FAKE địa chỉ',note:'',version:1}],counts:[{session_id:'fake-count',variant_id:1,counted:null,note:'',snapshot:JSON.stringify({productCode:'FAKE1',productName:'FAKE áo thử',size:'S1',sku:'FAKE1-S1',physical:1,ledger:1})}],countVersion:1}
+const state={autoEnabled:false,archiveValid:true,filePresent:true,deletedAt:null,prepared:false,allowCleanupRetry:true,sequence:0,orders:[],items:[],confirmations:[],reconciled:[],requests:new Map(),lost:false,customers:[{id:'fake-customer',name:'FAKE Khách',phone:'0900000000',address:'FAKE địa chỉ',note:'',version:1}],counts:[{session_id:'fake-count',variant_id:1,counted:null,note:'',snapshot:JSON.stringify({productCode:'FAKE1',productName:'FAKE áo thử',size:'S1',sku:'FAKE1-S1',physical:1,ledger:1})}],countVersion:1}
 const product={id:1,product_code:'FAKE1',name:'FAKE áo thử',status:'active',cloud_revision:1},variant={id:1,product_id:1,sku:'FAKE1-S1',size:'S1',status:'active',sale_price:50000,cost_price:10000,cloud_revision:1}
-function rows(table){return ({shop_customers:state.customers,stocktake_sessions:[{id:'fake-count',status:'OPEN',title:'FAKE Kiểm kê',version:state.countVersion}],stocktake_rows:state.counts,products:[product],product_variants:[variant],product_images:[{id:1,product_id:1,variant_id:1}],cloud_image_assets:[{image_id:1,object_path:'fake1.jpg',ready:true,sha256:'a'.repeat(64)}],sales_orders:state.orders,sales_order_images:state.items,sales_confirmations:state.confirmations,sales_units:state.confirmations.length?[{image_id:1,order_id:state.orders[0].id,variant_id:1,snapshot:JSON.stringify(state.items[0])}]:[]})[table]||[]}
+function rows(table){return ({shop_customers:state.customers,stocktake_sessions:[{id:'fake-count',status:'OPEN',title:'FAKE Kiểm kê',version:state.countVersion}],stocktake_rows:state.counts,products:[product],product_variants:[variant],product_images:[{id:1,product_id:1,variant_id:1}],cloud_image_assets:[{image_id:1,object_path:'fake1.jpg',ready:!state.deletedAt,cleanup_requested:state.prepared,deleted_at:state.deletedAt,sha256:'a'.repeat(64)}],sales_orders:state.orders,sales_order_images:state.items,sales_confirmations:state.confirmations,sales_units:state.confirmations.length?[{image_id:1,order_id:state.orders[0].id,variant_id:1,snapshot:JSON.stringify(state.items[0])}]:[]})[table]||[]}
 function finance(id){return {orderId:id,orderVersion:state.orders.find(o=>o.id===id)?.version||1,recipientName:'FAKE Khách',phone:'0900000000',customerId:'fake-customer',orderStatus:state.confirmations.length?'SOLD':'DRAFT',version:0,method:'COD',delivery:'NEW',tracking:'',adjustedTotal:50000,netCollected:0,due:50000,originalTotal:50000,refundDue:0}}
 const user={id:'11111111-1111-4111-8111-111111111111',aud:'authenticated',role:'authenticated',email:'fake@example.invalid',app_metadata:{provider:'email',providers:['email']},user_metadata:{},created_at:new Date().toISOString()}
 const enc=v=>Buffer.from(JSON.stringify(v)).toString('base64url'),token=enc({alg:'HS256',typ:'JWT'})+'.'+enc({sub:user.id,exp:Math.floor(Date.now()/1000)+3600,role:'authenticated',aud:'authenticated'})+'.fake'
 const session={access_token:token,refresh_token:'fake-only-refresh',expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,token_type:'bearer',user}
 const root=path.resolve('apps/web/dist'),server=http.createServer((req,res)=>{
- if(req.url.startsWith('/api/')){let body='';req.on('data',b=>body+=b);req.on('end',()=>{res.setHeader('Content-Type','application/json');if(req.url==='/api/cloud/state')res.end(JSON.stringify({instance:'fake',enabled:false,reconciled:state.reconciled}));else if(req.url==='/api/cloud/reconcile'){state.reconciled.push(...JSON.parse(body).orders);res.end('{"results":[]}')}else res.end('{}')});return}
+ if(req.url.startsWith('/api/')){let body='';req.on('data',b=>body+=b);req.on('end',()=>{res.setHeader('Content-Type','application/json');if(req.url==='/api/cloud/state')res.end(JSON.stringify({instance:'fake',enabled:state.autoEnabled,reconciled:state.reconciled}));else if(req.url==='/api/cloud/reconcile'){if(!state.archiveValid){res.statusCode=409;res.end('{"error":"FAKE archive corrupt"}');return}state.reconciled.push(...JSON.parse(body).orders);res.end('{"results":[]}')}else res.end('{}')});return}
  const name=new URL(req.url,'http://fake').pathname,file=path.resolve(root,'.'+(name==='/'?'/index.html':name));if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return}try{res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.jpg')?'image/jpeg':file.endsWith('.svg')?'image/svg+xml':'text/html');res.end(fs.readFileSync(file))}catch{res.writeHead(404);res.end()}
 })
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url='http://127.0.0.1:'+server.address().port+'/?cloud=1'
@@ -38,6 +38,12 @@ async function intercept(p){trace.push({url:p.request.url,method:p.request.metho
   else if(endpoint==='mc_v7_rows'){const all=rows(body.p_table),offset=Number(body.p_after||0);response={rows:all.slice(offset,offset+body.p_limit),nextOffset:offset+body.p_limit}}
   else if(endpoint==='mc_v7_finance')response=finance(body.p_id)
   else if(endpoint==='mc_v7_debts')response=state.orders.map(o=>finance(o.id))
+  else if(endpoint==='mc_v7_sold_cleanup'){
+   assert.deepEqual(body.p_images,[1]);assert(state.archiveValid&&state.reconciled.includes(state.orders[0].id),'Fresh laptop proof must precede cleanup');
+   if(body.p_action==='prepare')state.prepared=true;
+   else {assert.equal(body.p_action,'finalize');assert(state.prepared&&!state.filePresent);state.deletedAt='FAKE verified';state.sequence++}
+   response={images:[{imageId:1,path:'fake1.jpg',deletedAt:state.deletedAt}]}
+  }
   else if(endpoint==='mc_v7_storage_usage')response={objects:1,bytes:10000,readyStock:state.confirmations.length?0:1,soldKept:state.confirmations.length}
   else if(endpoint==='mc_v7_report')response={range:{from:body.p_from,to:body.p_to},generatedAt:new Date().toISOString(),totals:{orders:state.confirmations.length,quantity:state.confirmations.length,goodsTotal:'50000',shipping:'0',receipts:'0',refunds:'0',netCash:'0',dueNow:'50000',refundDueNow:'0',knownCost:'10000',grossMargin:'40000',unknownCosts:0,subtotal:'50000',discount:'0',payableTotal:'50000',credits:'0'},orders:state.confirmations.length?[{id:state.orders[0].id,recipientName:'FAKE Khách',soldAt:new Date().toISOString(),quantity:1,goodsTotal:'50000',shipping:'0',knownCost:'10000',grossMargin:'40000',unknownCosts:0,dueNow:'50000',refundDueNow:'0'}]:[],entries:[],products:[]}
   else if(endpoint==='mc_v7_stocktake'){if(body.p_action!=='stocktake.row')throw Error('FAKE unsupported stocktake action');assert.equal(body.p_payload.version,state.countVersion);state.counts[0].counted=body.p_payload.counted;state.counts[0].note=body.p_payload.note;state.countVersion++;state.sequence++;response={id:'fake-count',version:state.countVersion}}
@@ -49,6 +55,10 @@ async function intercept(p){trace.push({url:p.request.url,method:p.request.metho
    else if(body.p_action==='sale.confirm'){state.orders.find(o=>o.id===body.p_payload.id).status='SOLD';state.orders.find(o=>o.id===body.p_payload.id).version++;state.confirmations.push({order_id:body.p_payload.id,version:1});response={id:body.p_payload.id,status:'SOLD',version:1};state.requests.set(body.p_request,response);state.sequence++}
    else {status=400;response={code:'P0001',message:'FAKE unsupported action'}}
   }
+ }else if(u.pathname==='/storage/v1/object/shop-mobile-images'&&p.request.method==='DELETE'){
+  assert.deepEqual(body.prefixes,['fake1.jpg']);assert(state.prepared&&state.archiveValid);state.filePresent=false;
+  if(!state.allowCleanupRetry){await cmd('Fetch.failRequest',{requestId:p.requestId,errorReason:'ConnectionClosed'});return}
+  response=[{name:'fake1.jpg'}]
  }else if(u.pathname==='/storage/v1/object/sign/shop-mobile-images')response=body.paths.map(p=>({path:p,signedURL:'/object/sign/shop-mobile-images/'+p+'?token=fake'}))
  else if(u.pathname.startsWith('/storage/v1/object/sign/')){binary=image;mime='image/jpeg'}
  else {status=400;response={message:'FAKE unsupported endpoint'}}
@@ -97,6 +107,23 @@ try{
  assert.equal(state.confirmations.length,1)
  await click('Tồn kho');await until("document.querySelector('.inventoryMetrics article strong')?.textContent==='0'")
 
+ // Automatic cleanup works away from SOLD/Settings and independently of auto-sync.
+ state.autoEnabled=true;state.archiveValid=false;
+ await run("window.dispatchEvent(new Event('mecacao-cloud-sold-check'))")
+ await until("document.body.innerText.includes('FAKE archive corrupt')")
+ assert(state.filePresent);assert(!trace.some(t=>t.method==='DELETE'),'Corrupt local proof must block all Storage deletion')
+ state.archiveValid=true;state.allowCleanupRetry=false;
+ await run("window.dispatchEvent(new Event('mecacao-cloud-sold-check'))")
+ await until("document.body.innerText.includes('Tự dọn ảnh SOLD đang chờ')&&!document.body.innerText.includes('FAKE archive corrupt')")
+ assert(!state.filePresent&&!state.deletedAt,'Lost delete response leaves finalization pending')
+ state.allowCleanupRetry=true;
+ await run("window.dispatchEvent(new Event('mecacao-cloud-sold-check'))")
+ await until("document.body.innerText.includes('Đã tự dọn 1 ảnh SOLD')")
+ assert(state.deletedAt);assert.equal(state.orders[0].status,'SOLD');assert.equal(state.confirmations.length,1,'History must remain')
+ const deletes=trace.filter(t=>t.method==='DELETE').length;
+ await run("window.dispatchEvent(new Event('mecacao-cloud-sold-check'))");await delay(500);
+ assert.equal(trace.filter(t=>t.method==='DELETE').length,deletes,'Completed cleanup must not repeat deletion')
+
  const pages=[['Tồn kho','.inventoryPage'],['Danh mục sản phẩm','.catalogPage'],['Bán hàng','.salesWorkspace'],['Khách hàng','.contactCard'],['Công nợ','.financeMetrics'],['Báo cáo','.stage4Metrics'],['Kiểm kê','.stocktakePanel'],['Ảnh SOLD','.soldRetentionPage'],['Ảnh iPhone','.phoneInbox'],['Cài đặt','.displayPreferences']]
  for(const width of [1366,390])for(const dark of [false,true]){
   await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:900,deviceScaleFactor:1,mobile:width===390})
@@ -120,5 +147,5 @@ try{
  for(const label of ['Nhỏ','Vừa','Lớn']){await click(label);assert(await run('document.documentElement.scrollWidth<=innerWidth+2'))}
  await run("document.querySelector('[aria-label=\"Bật giao diện tối\"]').click()");assert(await run("document.querySelector('.cloudWorkspace').classList.contains('themeDark')"))
  await cmd('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});await until("document.body.innerText.includes('Mất mạng')");assert(await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đọc lại').disabled"))
- assert.deepEqual(failures,[]);console.log('PASS Cloud browser fake transport: mobile layout/density/theme, lost-response durable retry, single draft, real banner PNG without stock mutation, SOLD removal and offline guard')
+ assert.deepEqual(failures,[]);console.log('PASS Cloud browser fake transport: mobile layout/density/theme, lost-response durable retry, single draft, real banner PNG without stock mutation, SOLD removal, automatic verified cleanup away from Settings, corrupt archive refusal, lost Storage response retry and offline guard')
 }catch(error){console.error('Cloud browser failure:',error);console.error('Transport failures:',failures);console.error('Transport trace:',trace);try{console.error(await run('document.body.innerText'));const shot=await cmd('Page.captureScreenshot',{format:'png'});fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/failure.png',Buffer.from(shot.data,'base64'))}catch{}throw error}finally{if(ws?.readyState===1)try{await cmd('Browser.close')}catch{}ws?.close();if(browser.exitCode===null){browser.kill();await new Promise(r=>browser.once('exit',r))}await new Promise(r=>server.close(r));try{fs.rmSync(temp,{recursive:true,force:true,maxRetries:10,retryDelay:100})}catch(error){console.warn('Browser temporary cleanup:',error.code)}}

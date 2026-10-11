@@ -1,3 +1,10 @@
+## V7.1.3 — tự dọn ảnh SOLD Cloud — 11/10/2026
+
+- Laptop chủ shop tự kiểm tra khi mở, nhận sự kiện Cloud và mỗi 30 giây; chạy trên mọi màn hình local và Cloud localhost. Không cần mở màn hình Ảnh SOLD hoặc bật đồng bộ ảnh định kỳ.
+- Mỗi lô ≤100 ảnh phải đối soát và xác minh mới ảnh lưu laptop, rồi prepare / xóa qua Storage API / finalize xác minh file đã mất. Giữ ảnh còn tồn, lịch sử đơn và tiền.
+- Tắt laptop/mất mạng/ảnh local không khớp: giữ ảnh Cloud, thử lại khi đủ điều kiện. Lần sau đọc lại trạng thái để tiếp tục sau mất phản hồi, không upload lại ảnh đã SOLD.
+- Dùng RPC và RLS hiện hữu; không migration/reset dữ liệu Cloud. Kiểm thử toàn bộ bằng fake transport/kho giả lập.
+
 ## V7.1.3 — xác lập kho ngay tại Import — 11/10/2026
 
 - Chọn thư mục rồi Quét kho hoặc Nhớ kho sẽ xác lập kho lần đầu ngay tại Import, chờ ứng dụng tự khởi động lại và tiếp tục thao tác. Không phải tìm thanh phiên bản trong Cài đặt.
