@@ -118,7 +118,7 @@ try{
  assert(!state.filePresent&&!state.deletedAt,'Lost delete response leaves finalization pending')
  state.allowCleanupRetry=true;
  await run("window.dispatchEvent(new Event('mecacao-cloud-sold-check'))")
- await until("document.body.innerText.includes('Đã tự dọn 1 ảnh SOLD')")
+ await until("document.body.textContent.includes('Đã tự dọn 1 ảnh SOLD')")
  assert(state.deletedAt);assert.equal(state.orders[0].status,'SOLD');assert.equal(state.confirmations.length,1,'History must remain')
  const deletes=trace.filter(t=>t.method==='DELETE').length;
  await run("window.dispatchEvent(new Event('mecacao-cloud-sold-check'))");await delay(500);
