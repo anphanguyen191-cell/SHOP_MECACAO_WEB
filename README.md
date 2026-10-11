@@ -1,6 +1,8 @@
 # SHOP MẸ CACAO WEB — main mới nhất
 
-**3.5.0-stage6-main-test · chặng 6 · chưa STABLE nghiệm thu thiết bị thật.** Giữ đầy đủ chặng 1–4 và Stage5A; hoàn thiện Mobile LAN HTTPS, tài khoản/phân quyền, cập nhật giữa Windows/điện thoại và hộp ảnh iPhone. Thiết lập HTTPS/tài khoản/bật tắt LAN ngay trên giao diện Windows, không cần lệnh tạo cert hoặc đường dẫn DB V1.
+**V7.1.0-cloud-main-test · chặng 7 · chờ nghiệm thu Windows/iPhone, chưa STABLE.** Core local schema 130 và chức năng các chặng trước được giữ trong source. V7 bổ sung Supabase Cloud: một JPEG ≤150KB, đồng bộ Windows, tồn/giá realtime trên iPhone, đơn/PNG/SOLD, khách hàng, tiền/công nợ, báo cáo/kiểm kê và hộp ảnh iPhone.
+
+[Hướng dẫn test V7](V7_TEST_GUIDE.md) · [Đặc tả và tiến độ V7](V7_CORE_FINAL_SPEC.md) · [Mở Cloud Mobile từ main](https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1).
 
 [Tải main.zip cho Windows](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip) → giải nén **thư mục mới** → Node.js 22.13+ hoặc 24 → **START_SHOP.bat**. Chọn kho tự tạo qua UI trước khi nhập dữ liệu; quét/import có duyệt hoặc nhập COPY. Bản cài mới có DB mới, mở lại cùng bản giữ dữ liệu. Không cần marker fixture hoặc nối DB thử cũ.
 
@@ -15,18 +17,20 @@
 | Kho/bán/khách | Tồn theo ảnh, nhập COPY, scan/import/rename/share, nháp/preflight/SOLD/lịch sử, khách/contact snapshot, ship và PNG nhiều trang |
 | Tiền/giao/hậu mãi | Thu/cọc/hoàn/giảm, COD/chuyển khoản/tiền mặt, công nợ, vận đơn, yêu cầu/kết quả hậu mãi |
 | Báo cáo/kiểm kê | Doanh số/dòng tiền/lãi gộp/thiếu vốn/CSV, snapshot/đếm/chênh/lý do/chốt, không tự chỉnh tồn |
-| SOLD | Stage5A kiểm chứng ảnh/hash chỉ đọc, chưa move archive/delete |
+| SOLD | Core archive nguyên tử; đối soát SOLD Cloud; dọn ảnh Cloud qua Storage API sau xác minh archive Windows, giữ đơn và bút toán |
 | Mobile LAN | HTTPS, 4 vai trò, session/audit, polling gần 4 giây, ảnh chờ→Windows duyệt COPY→Nhập hàng |
 | Vận hành/UI | Transaction/journal/hash/lock/recovery, backup/restore thử, tiến độ tác vụ, sáng/tối màu rõ/responsive/phiên bản |
 
 LAN mặc định tắt sau mở lại ứng dụng. Mở **Mobile LAN** trên Windows để tạo HTTPS/tài khoản/bật kết nối, tải CA công khai tạm 10 phút và xem URL điện thoại. Safari cần cài và bật tin cậy đầy đủ cho CA, Windows phải chạy cùng Wi-Fi. Không mở cổng ra Internet. Chủ shop được thao tác kho tự tạo như kho thật; kiểm thử Codex/CI chỉ dữ liệu giả lập.
 
-GitHub Pages là **DEMO**, không kết nối DB/kho shop. Stage7 cloud/ngoài LAN/offline queue, Stage5B/5C xóa/lưu trữ di chuyển, lợi nhuận ròng/chi phí/thuế, tự chỉnh tồn/ngân hàng/vận chuyển vẫn chưa triển khai.
+GitHub Pages mặc định mở **Cloud V7**; đăng nhập tài khoản shop để xem dữ liệu đã đồng bộ ngay cả khi laptop tắt. Demo cũ chỉ mở khi thêm `?demo=1`. Cloud cần Internet để ghi; chưa hỗ trợ bán offline, lợi nhuận ròng/chi phí/thuế, tự chỉnh tồn hoặc tích hợp ngân hàng/vận chuyển. Luồng Cloud không cần Wi-Fi chung hay chứng chỉ CA; hướng dẫn LAN bên trên chỉ dành cho module LAN cũ.
 
 UI Checkpoint 6.1–6.6: panel chọn ảnh góc phải có thu gọn/mở rộng, nav gọn, phiếu PNG theo banner shop và cỡ Nhỏ/Vừa/Lớn trên toàn giao diện. Mặc định Vừa, lưu theo thiết bị; đổi trong Cài đặt giao diện hoặc menu ☰. [Checkpoint UI](UI_CHECKPOINT6_2026-10-11.md).
 
-## Phục hồi và tài liệu nền
+## Phục hồi và tài liệu nền local
 
 Cài đặt → Backup đầy đủ → Phục hồi thử sang vùng mới → kiểm tra READY. Không thay DB/kho đang chạy. LAN keys/tài khoản không được coi là đã di chuyển bởi backup nghiệp vụ; bản cài mới thiết lập qua UI.
 
 Đặc tả các chặng: [khách/PNG](STAGE2_CUSTOMERS_PNG.md), [thu tiền/hậu mãi](STAGE3_PAYMENTS_AFTERCARE.md), [báo cáo/kiểm kê](STAGE4_REPORTS_STOCKTAKE.md). Checkpoint V1/V2/Stage1–5 và launcher migration trong source là lịch sử/công cụ tương thích tùy chọn, không phải bước khởi chạy bản mới.
+
+Lịch sử 23 migration V7 trong source đã khớp phiên bản thực tế trên Supabase; chỉ đổi tên file để khớp history, không chạy lại reset.

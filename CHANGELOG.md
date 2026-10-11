@@ -1,5 +1,14 @@
 ## 3.5.0-stage6-main-test — UI Checkpoint 6.1–6.6 — 2026-10-11
 
+## V7.1.0-cloud-main-test — 11/10/2026
+
+- Supabase V7: authenticated role/version/idempotency RPCs, private JPEG ≤150000 bytes, Windows sync and realtime mobile inventory/prices.
+- Cloud drafts, customer selection, banner PNG/share, atomic SOLD/local reconciliation, finance/debts/COD/aftercare, reports and stocktake.
+- iPhone inbox → Windows review/import; verified SOLD Storage cleanup preserves immutable business history.
+- Small/Medium/Large density, light/dark, right floating panel, safe area and compact mobile navigation.
+- Isolated core/image/replay/SQL/browser acceptance; Windows Node 22/24 and Linux CI. Physical email login/Storage/device acceptance remains pending; not STABLE.
+- Migration filenames match applied Supabase history; reset is not replayed. See V7_TEST_GUIDE.md.
+
 - Panel ảnh nổi góc phải, thu gọn/mở rộng, số ảnh/bộ và nhóm Product/Size; đo chiều cao để không che ảnh cuối hoặc thanh điều hướng.
 - Nhỏ/Vừa/Lớn toàn bộ giao diện, mặc định Vừa, lưu theo thiết bị; menu cho mọi vai trò LAN. Chữ, spacing, controls, card/table/thumb/popup/nav đổi theo mức; mobile giữ vùng chạm 44px trở lên.
 - Bottom nav gọn tối đa bốn mục, Thêm mở đủ chức năng theo quyền; safe area và sáng/tối.
