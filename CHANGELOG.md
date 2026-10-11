@@ -1,3 +1,8 @@
+## V7.1.3 — gọn màn hình bản chính thức — 11/10/2026
+
+- Chuyển khối phiên bản/chọn kho/quét kho vào Cài đặt, không chiếm màn hình nghiệp vụ. Đường dẫn đầy đủ nằm trong mục mở rộng, tên kho hiển thị gọn.
+- Kết nối bình thường chạy nền; giữ thông báo kiểm tra/mất kết nối và nút đọc lại khi cần. Không đổi kho, đường dẫn database hoặc cơ chế đồng bộ.
+
 ## V7.1.3 — đồng nhất màn hình nghiệp vụ — 11/10/2026
 
 - Cloud dùng trực tiếp InventoryView, CustomersView, DebtsView và BusinessReports của laptop thông qua nguồn dữ liệu Cloud. Giữ bộ lọc, dashboard, cây Mẫu/Size/ảnh, ảnh lớn, popup chọn ảnh, danh sách/biểu mẫu khách, nhóm công nợ và bảng/CSV báo cáo.

@@ -54,7 +54,7 @@ try{
  assert.equal(await run("fetch('/api/local/lan').then(r=>r.status)"),403);checks++
  const pic=await cmd('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(artifact,'390-viewer-dashboard.png'),Buffer.from(pic.data,'base64'))
  await cmd('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});await until("document.querySelector('.shopSyncStatus')?.textContent.includes('Mất kết nối Windows')");assert(await run("document.querySelector('.overviewStat.mainStat strong').textContent==='1'"));checks++
- await cmd('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});await until("document.querySelector('.shopSyncStatus')?.textContent.includes('Đã kết nối')")
+ await cmd('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});await until("!document.querySelector('.shopSyncStatus')")
  const d=await api('/api/sales/drafts',{items:[{imageId:1,unitPrice:50000}],discount:0,note:'LAN refresh'},'stage6-browser-create-001'),pre=await api('/api/sales/drafts/'+d.id+'/preflight',{version:1});await api('/api/sales/drafts/'+d.id+'/confirm',{version:1,token:pre.token,confirmed:true,acknowledgeZeroPrice:false},'stage6-browser-confirm-001');await until("document.querySelector('.overviewStat.mainStat strong')?.textContent==='0'");checks++
  await api('/api/local/lan/accounts',{action:'reset',username:'viewer',password:'viewer-new-password-123456',actor:'owner',ownerPassword:'owner-password-123456'});await until("!!document.querySelector('.lanLoginCard')&&!document.querySelector('.overviewStat')");checks++
  await api('/api/local/lan/disable',{});assert.equal(control.view().enabled,false);checks++

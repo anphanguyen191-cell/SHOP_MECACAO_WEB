@@ -39,10 +39,10 @@ export default function ShopSyncStatus({enabled}:{enabled:boolean}){
   document.addEventListener('visibilitychange',visibility)
   return()=>{active=false;controller?.abort();clearInterval(interval);window.removeEventListener('offline',offline);window.removeEventListener('online',visibility);document.removeEventListener('visibilitychange',visibility);previous.current=null}
  },[enabled])
- if(!enabled)return null
+ if(!enabled||status==='connected')return null
  return <div className={'shopSyncStatus '+(status==='offline'?'offline':'')} role="status" aria-live="polite">
   <span className="shopSyncDot" aria-hidden="true"/>
-  <span>{status==='offline'?'Mất kết nối Windows. Dữ liệu hiển thị có thể đã cũ; giao dịch chưa được xác nhận không được coi là hoàn tất.':status==='checking'?'Đang kiểm tra kết nối máy chủ...':'Đã kết nối · kiểm tra thay đổi khoảng 4 giây/lần.'}</span>
+  <span>{status==='offline'?'Mất kết nối Windows. Dữ liệu hiển thị có thể đã cũ; giao dịch chưa được xác nhận không được coi là hoàn tất.':status==='checking'?'Đang kiểm tra kết nối máy chủ...':'Đã kết nối'}</span>
   <button type="button" onClick={()=>window.dispatchEvent(new Event('mecacao-server-change'))}>Đọc lại dữ liệu</button>
  </div>
 }
