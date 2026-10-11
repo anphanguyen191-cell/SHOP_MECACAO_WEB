@@ -33,6 +33,9 @@ async function intercept(p){trace.push({url:p.request.url,method:p.request.metho
  if(p.request.method==='OPTIONS'){await cmd('Fetch.fulfillRequest',{requestId:p.requestId,responseCode:200,responseHeaders:[{name:'Access-Control-Allow-Origin',value:'*'},{name:'Access-Control-Allow-Headers',value:Object.entries(p.request.headers).find(([key])=>key.toLowerCase()==='access-control-request-headers')?.[1]||'authorization,apikey,x-client-info,content-type,x-supabase-api-version'},{name:'Access-Control-Allow-Methods',value:'GET,POST,PUT,DELETE,OPTIONS'}],body:'e30='});return}
  const u=new URL(p.request.url),body=p.request.postData?JSON.parse(p.request.postData):{},endpoint=u.pathname.split('/').pop();let response={},status=200,mime='application/json',binary
  if(u.pathname==='/auth/v1/user')response=user
+ else if(u.pathname==='/auth/v1/logout')response={}
+ else if(u.pathname==='/auth/v1/otp'){assert.equal(body.email,user.email);assert.equal(u.searchParams.get('redirect_to'),'https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1');response={}}
+ else if(u.pathname==='/auth/v1/verify'){assert.equal(body.token_hash,'fake-unopened-link');assert.equal(body.type,'email');response=session}
  else if(u.pathname.includes('/rest/v1/rpc/')){
   if(endpoint==='mc_v7_health')response={contract:1,schema:130,role:'owner',status:'CLOUD_TEST_READY',instance:'fake',sequence:state.sequence}
   else if(endpoint==='mc_v7_rows'){const all=rows(body.p_table),offset=Number(body.p_after||0);response={rows:all.slice(offset,offset+body.p_limit),nextOffset:offset+body.p_limit}}
@@ -147,5 +150,17 @@ try{
  for(const label of ['Nhỏ','Vừa','Lớn']){await click(label);assert(await run('document.documentElement.scrollWidth<=innerWidth+2'))}
  await run("document.querySelector('[aria-label=\"Bật giao diện tối\"]').click()");assert(await run("document.querySelector('.cloudWorkspace').classList.contains('themeDark')"))
  await cmd('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});await until("document.body.innerText.includes('Mất mạng')");assert(await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đọc lại').disabled"))
+ await cmd('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
+ await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("!!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đăng xuất')")
+ await click('Đăng xuất');await until("!!document.querySelector('.cloudDirectLogin input')")
+ assert(await run("document.querySelector('.cloudDirectLogin').getBoundingClientRect().height>0"),'Direct login is visible before requesting email')
+ await run("document.querySelector('input[type=email]').focus()");await cmd('Input.insertText',{text:user.email});await click('Gửi email đăng nhập');await until("document.body.textContent.includes('Đã yêu cầu email đăng nhập')")
+ await run("document.querySelector('.cloudDirectLogin input').focus()");await cmd('Input.insertText',{text:'https://evil.example/auth/v1/verify?token=fake-unopened-link&type=magiclink'});await click('Đăng nhập trên thiết bị này');await until("document.body.textContent.includes('Dán liên kết đăng nhập Supabase')")
+ assert(!trace.some(t=>t.url.includes('/auth/v1/verify')),'Foreign link must not reach auth')
+ await run("document.querySelector('.cloudDirectLogin input').focus();document.querySelector('.cloudDirectLogin input').select()");await cmd('Input.insertText',{text:'https://eyckwoewpomssjjggslr.supabase.co/auth/v1/verify?token=fake-unopened-link&type=magiclink&redirect_to=http%3A%2F%2Flocalhost%3A3000'});await click('Đăng nhập trên thiết bị này')
+ await until("!!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đăng xuất')")
+ assert(trace.some(t=>t.url.includes('/auth/v1/verify')&&t.method==='POST'),'Login verifies in app instead of following localhost redirect')
+ assert.equal(await run('location.href'),url)
+ assert.equal(await run('document.documentElement.scrollWidth<=innerWidth+2'),true)
  assert.deepEqual(failures,[]);console.log('PASS Cloud browser fake transport: mobile layout/density/theme, lost-response durable retry, single draft, real banner PNG without stock mutation, SOLD removal, automatic verified cleanup away from Settings, corrupt archive refusal, lost Storage response retry and offline guard')
 }catch(error){console.error('Cloud browser failure:',error);console.error('Transport failures:',failures);console.error('Transport trace:',trace);try{console.error(await run('document.body.innerText'));const shot=await cmd('Page.captureScreenshot',{format:'png'});fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/failure.png',Buffer.from(shot.data,'base64'))}catch{}throw error}finally{if(ws?.readyState===1)try{await cmd('Browser.close')}catch{}ws?.close();if(browser.exitCode===null){browser.kill();await new Promise(r=>browser.once('exit',r))}await new Promise(r=>server.close(r));try{fs.rmSync(temp,{recursive:true,force:true,maxRetries:10,retryDelay:100})}catch(error){console.warn('Browser temporary cleanup:',error.code)}}
