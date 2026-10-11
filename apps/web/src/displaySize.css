@@ -45,3 +45,7 @@
 
 .shell :is(.phoneInboxGrid,.soldRetentionGrid){grid-template-columns:repeat(auto-fill,minmax(min(calc(var(--ui-thumb) + 100px),100%),1fr))}
 .shell :is(.phoneInboxPhoto,.soldRetentionPhoto){height:calc(var(--ui-thumb) * 1.2)}
+/* Explicit caption color: the light theme's global small-text rule must not override selected navigation. */
+.shell:not(.themeDark) .mobileQuickNav button.selected small{color:#fff}
+.shell.themeDark .mobileQuickNav button.selected small{color:#281d29}
+.shell .drawerLinks button{font-size:var(--ui-font)!important;min-height:var(--ui-control)}

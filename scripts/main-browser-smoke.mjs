@@ -50,6 +50,7 @@ try{
    await sleep(120)
    assert(await run('document.documentElement.scrollWidth<=innerWidth+2'),'Main overflow: '+label+' '+width+' '+size+' '+dark)
    assert(await run("document.querySelector('main').textContent.trim().length>0"),'Empty main: '+label)
+   if(width===390)assert(await run("(()=>{const b=document.querySelector('.mobileQuickNav button.selected');if(!b)return true;const l=c=>{const a=c.match(/[\\d.]+/g).slice(0,3).map(v=>{const x=Number(v)/255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4});return a[0]*.2126+a[1]*.7152+a[2]*.0722};const x=l(getComputedStyle(b.querySelector('small')).color),y=l(getComputedStyle(b).backgroundColor);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)>=4.5})()"),'Selected mobile label contrast: '+label+' '+dark)
    const pic=await cmd('Page.captureScreenshot',{format:'png'})
    fs.writeFileSync(path.join(out,width+'-'+size+'-'+(dark?'dark':'light')+'-'+labels.indexOf(label)+'.png'),Buffer.from(pic.data,'base64'))
   }
