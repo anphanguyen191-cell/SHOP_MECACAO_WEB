@@ -1,6 +1,6 @@
-# Trạng thái hiện tại — MAIN TEST 3.4.0-stage6-main-test
+# Trạng thái hiện tại — MAIN TEST 3.5.0-stage6-main-test
 
-Chặng 6 đã được hoàn thiện phần mềm: quản lý HTTPS/tài khoản/bật tắt LAN ngay trên Windows, giao diện dùng chung trên điện thoại, quyền API, cập nhật gần thời gian thực và hộp ảnh iPhone. Chưa STABLE: cần nghiệm thu Windows/iPhone vật lý, CA và Firewall trên mạng shop.
+Bổ sung UI Checkpoint 6.1–6.6 theo spec chủ shop; [chi tiết](UI_CHECKPOINT6_2026-10-11.md). Chặng 6 LAN đã được hoàn thiện phần mềm: quản lý HTTPS/tài khoản/bật tắt LAN ngay trên Windows, giao diện dùng chung trên điện thoại, quyền API, cập nhật gần thời gian thực và hộp ảnh iPhone. Chưa STABLE: cần nghiệm thu Windows/iPhone vật lý, CA và Firewall trên mạng shop.
 
 Nguồn nền tảng phát triển tiếp: [checkpoint tổng hợp](MAIN_CHECKPOINT_STAGE6_2026-10-11.md). Cách tải/chạy: [hướng dẫn bản main](MAIN_TEST_STAGE6_RELEASE.md). Thiết lập điện thoại: [hướng dẫn LAN](STAGE6_MOBILE_LAN_SETUP.md). Bằng chứng: [test report](STAGE6_TEST_REPORT.md), [Actions](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/workflows/pages.yml).
 
@@ -13,7 +13,7 @@ Nguồn nền tảng phát triển tiếp: [checkpoint tổng hợp](MAIN_CHECKP
 | Chặng 6 | HTTPS cùng LAN, 4 vai trò, session/audit, polling, ảnh chờ; toàn bộ thiết lập thông thường bằng UI |
 | Windows | START_SHOP.bat; chọn kho tự tạo trên UI trước dữ liệu; đầy đủ chức năng LOCAL của main |
 | Dữ liệu | Thư mục cài mới có DB mới; mở lại cùng bản giữ DB/kho; không bắt nối dữ liệu thử cũ |
-| Giao diện | Khối chức năng sáng/tối có màu rõ, responsive, phiên bản và tiến độ hiển thị |
+| UI 6.1–6.6 | Panel chọn ảnh góc phải thu gọn/mở rộng, nhóm Product/Size, tránh bottom nav; 3 mức Nhỏ/Vừa/Lớn toàn bộ màn hình, mặc định Vừa và lưu tại thiết bị; nav 4 mục + Thêm; PNG theo banner shop; sáng/tối/safe area |
 | Chưa triển khai | Cloud/truy cập ngoài LAN/offline queue, Stage5B/5C, tự chỉnh tồn, ngân hàng/vận chuyển tự động |
 
 DB của bản này vẫn là `data/stage6-main-test/database/shop-stage6-main-test.db`. LAN mặc định tắt mỗi lần mở ứng dụng, bật trên giao diện khi cần. TLS dùng chung Express/SQLite với LOCAL, không tạo kho hoặc DB thứ hai. Tài khoản/chứng chỉ giữ trong bản cài; đổi tài khoản qua UI thu hồi mọi phiên điện thoại ngay.

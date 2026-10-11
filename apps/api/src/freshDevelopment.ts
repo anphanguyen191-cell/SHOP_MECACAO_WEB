@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 export const freshDevelopment=process.env.SHOP_FRESH_DEVELOPMENT==='1'
-export const release={version:'3.4.0-stage6-main-test',channel:'main-test',stage:6,status:'MAIN TEST — Stage 5A + Stage 6 đầy đủ thiết lập LAN; chưa STABLE',next:'Mobile LAN: thiết lập HTTPS/tài khoản/bật tắt trên giao diện; chờ nghiệm thu Windows/iPhone thật.'}
+export const release={version:'3.5.0-stage6-main-test',channel:'main-test',stage:6,status:'MAIN TEST — Stage 5A + Stage 6 LAN + UI Checkpoint 6.1–6.6; chưa STABLE',next:'UI 6: panel góc phải, ba cỡ hiển thị, điều hướng gọn, phiếu banner; chờ nghiệm thu Windows/iPhone thật.'}
 export const freshRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../../data/stage6-main-test')
 export const warehouseConfig=path.join(freshRoot,'warehouse-config.json')
 function contains(a:string,b:string){const r=path.relative(a,b);return r===''||(!path.isAbsolute(r)&&r!=='..'&&!r.startsWith('..'+path.sep))}

@@ -9,6 +9,14 @@ export function useBooleanPreference(key:string,fallback:boolean){
  return [value,setValue] as const
 }
 
+export type DisplaySize='small'|'medium'|'large'
+/** Device-local UI setting, independent of shop data and account permissions. */
+export function useDisplaySize(){
+ const [value,setValue]=useState<DisplaySize>(()=>{try{const v=localStorage.getItem('mecacao-ui-display-size');return v==='small'||v==='large'?v:'medium'}catch{return 'medium'}})
+ useEffect(()=>{try{localStorage.setItem('mecacao-ui-display-size',value)}catch{}},[value])
+ return [value,setValue] as const
+}
+
 export class ApiError extends Error{constructor(message:string,public status:number,public data:any){super(message)}}
 export async function apiJson<T=any>(url:string,options?:RequestInit):Promise<T>{
  const reading=!options?.method||['GET','HEAD'].includes(options.method.toUpperCase())

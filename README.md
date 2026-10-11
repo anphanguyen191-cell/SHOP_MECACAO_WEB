@@ -1,6 +1,6 @@
 # SHOP MẸ CACAO WEB — main mới nhất
 
-**3.4.0-stage6-main-test · chặng 6 · chưa STABLE nghiệm thu thiết bị thật.** Giữ đầy đủ chặng 1–4 và Stage5A; hoàn thiện Mobile LAN HTTPS, tài khoản/phân quyền, cập nhật giữa Windows/điện thoại và hộp ảnh iPhone. Thiết lập HTTPS/tài khoản/bật tắt LAN ngay trên giao diện Windows, không cần lệnh tạo cert hoặc đường dẫn DB V1.
+**3.5.0-stage6-main-test · chặng 6 · chưa STABLE nghiệm thu thiết bị thật.** Giữ đầy đủ chặng 1–4 và Stage5A; hoàn thiện Mobile LAN HTTPS, tài khoản/phân quyền, cập nhật giữa Windows/điện thoại và hộp ảnh iPhone. Thiết lập HTTPS/tài khoản/bật tắt LAN ngay trên giao diện Windows, không cần lệnh tạo cert hoặc đường dẫn DB V1.
 
 [Tải main.zip cho Windows](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip) → giải nén **thư mục mới** → Node.js 22.13+ hoặc 24 → **START_SHOP.bat**. Chọn kho tự tạo qua UI trước khi nhập dữ liệu; quét/import có duyệt hoặc nhập COPY. Bản cài mới có DB mới, mở lại cùng bản giữ dữ liệu. Không cần marker fixture hoặc nối DB thử cũ.
 
@@ -22,6 +22,8 @@
 LAN mặc định tắt sau mở lại ứng dụng. Mở **Mobile LAN** trên Windows để tạo HTTPS/tài khoản/bật kết nối, tải CA công khai tạm 10 phút và xem URL điện thoại. Safari cần cài và bật tin cậy đầy đủ cho CA, Windows phải chạy cùng Wi-Fi. Không mở cổng ra Internet. Chủ shop được thao tác kho tự tạo như kho thật; kiểm thử Codex/CI chỉ dữ liệu giả lập.
 
 GitHub Pages là **DEMO**, không kết nối DB/kho shop. Stage7 cloud/ngoài LAN/offline queue, Stage5B/5C xóa/lưu trữ di chuyển, lợi nhuận ròng/chi phí/thuế, tự chỉnh tồn/ngân hàng/vận chuyển vẫn chưa triển khai.
+
+UI Checkpoint 6.1–6.6: panel chọn ảnh góc phải có thu gọn/mở rộng, nav gọn, phiếu PNG theo banner shop và cỡ Nhỏ/Vừa/Lớn trên toàn giao diện. Mặc định Vừa, lưu theo thiết bị; đổi trong Cài đặt giao diện hoặc menu ☰. [Checkpoint UI](UI_CHECKPOINT6_2026-10-11.md).
 
 ## Phục hồi và tài liệu nền
 

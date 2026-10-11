@@ -1,3 +1,11 @@
+## 3.5.0-stage6-main-test — UI Checkpoint 6.1–6.6 — 2026-10-11
+
+- Panel ảnh nổi góc phải, thu gọn/mở rộng, số ảnh/bộ và nhóm Product/Size; đo chiều cao để không che ảnh cuối hoặc thanh điều hướng.
+- Nhỏ/Vừa/Lớn toàn bộ giao diện, mặc định Vừa, lưu theo thiết bị; menu cho mọi vai trò LAN. Chữ, spacing, controls, card/table/thumb/popup/nav đổi theo mức; mobile giữ vùng chạm 44px trở lên.
+- Bottom nav gọn tối đa bốn mục, Thêm mở đủ chức năng theo quyền; safe area và sáng/tối.
+- PNG nháp/SOLD nhúng banner shop, khối tổng tiền rõ; bundle asset trong API build, không cần Internet khi xuất/xem.
+- Giữ nguyên transaction/request key/version/stock/SOLD/finance/backup/LAN; mở rộng browser acceptance ba cỡ, mọi mục main, role viewer và panel.
+
 ## 3.4.0-stage6-main-test — hoàn thiện chặng 6 — 2026-10-11
 - Windows Mobile LAN UI: IP/cổng, tự tạo HTTPS/CA, tài khoản/đổi/khóa, bật/tắt, URL copy và cài trust iPhone; không cần mkcert hoặc CLI thông thường.
 - CA-only bootstrap 10 phút, cert bundle atomic, khóa CA riêng không lưu; cert 90 ngày/CA 1 năm, tạo lại cần trust CA mới. Tắt LAN đóng TLS/CA, LOCAL vẫn chạy; restart mặc định tắt.

@@ -1,6 +1,6 @@
 # Chặng 6 — thiết lập Windows và iPhone bằng giao diện
 
-Bản `3.4.0-stage6-main-test`, chưa STABLE. Windows LOCAL ở `http://127.0.0.1:3000`, điện thoại dùng HTTPS riêng (mặc định cổng 3443). Cùng React/Express/SQLite/kho với Windows, không có DB thứ hai. Chỉ mạng LAN riêng tin cậy, Windows phải chạy.
+Bản `3.5.0-stage6-main-test`, chưa STABLE. Windows LOCAL ở `http://127.0.0.1:3000`, điện thoại dùng HTTPS riêng (mặc định cổng 3443). Cùng React/Express/SQLite/kho với Windows, không có DB thứ hai. Chỉ mạng LAN riêng tin cậy, Windows phải chạy.
 
 ## Thiết lập lần đầu
 

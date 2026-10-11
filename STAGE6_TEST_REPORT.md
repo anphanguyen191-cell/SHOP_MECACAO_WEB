@@ -1,3 +1,7 @@
+# UI 6 — bổ sung kiểm thử 3.5.0-stage6-main-test
+
+Full local gate PASS; PNG Stage2 27 checks gồm nhúng banner đúng pixel, snapshot/version/SOLD/restore. Bổ sung browser ba cỡ và toàn bộ mục main ở 390/1366 sáng/tối; panel tại 320/390/768/1366, collapse/selection/no overlap, quyền viewer không đổi. Chỉ dữ liệu giả lập. Đối chiếu CI đúng commit 3.5 trên [Actions](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/workflows/pages.yml); báo cáo 3.4 bên dưới là bằng chứng lịch sử. iPhone vật lý vẫn chờ nghiệm thu.
+
 # Chặng 6 — kiểm thử bản 3.4.0-stage6-main-test
 
 Mọi bài tự động dùng DB/ảnh/thư mục tạm giả lập; không kiểm thử trên kho thật của shop.

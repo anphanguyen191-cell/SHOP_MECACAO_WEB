@@ -40,7 +40,7 @@ must(goods.includes('row.sourcePath===p')&&goods.includes('requestVersion.curren
 must(goods.includes('submitLock.current')&&goods.includes('onDone?.()'),'Receipt must block double submit and refresh dashboard after commit')
 must(read('apps/web/src/FolderPicker.tsx').includes('AbortController'),'Folder picker must reject stale/network-failed results')
 must(read('RUN_WINDOWS_V1_SAFE_TEST.bat').includes("$r.sandbox -eq $true"),'Windows launcher must verify backend sandbox identity')
-must(app.includes("useBooleanPreference('compact-mode',true)")&&app.includes('DisplayDensity'),'Desktop density must persist as a presentation preference')
+must(app.includes("useDisplaySize()")&&app.includes('DisplayDensity'),'Desktop density must persist as a presentation preference')
 const experience=read('apps/web/src/desktopExperience.css')
 must(experience.includes('@media(min-width:1000px)')&&experience.includes('.densityCompact'),'Compact rules must be scoped to desktop')
 must(experience.includes('.warehouseConfirm{position:static')&&experience.includes('prefers-reduced-motion'),'Compact confirmation must not cover controls and motion must honor user preferences')

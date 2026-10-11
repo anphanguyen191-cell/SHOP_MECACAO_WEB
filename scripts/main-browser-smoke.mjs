@@ -23,7 +23,7 @@ try{
  const port=Number(fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0]),targets=await fetch('http://127.0.0.1:'+port+'/json/list').then(r=>r.json())
  ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true})});ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}})
  await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Page.navigate',{url:'http://127.0.0.1:3000'});await until("!!document.querySelector('.releaseWarehouse button')")
- assert(await run("document.querySelector('.releaseStatus').textContent.includes('3.4.0-stage6-main-test')"))
+ assert(await run("document.querySelector('.releaseStatus').textContent.includes('3.5.0-stage6-main-test')"))
  assert.equal((await fetch('http://127.0.0.1:3000/api/local/lan').then(r=>r.json())).enabled,false)
  await run("document.querySelector('.releaseWarehouse button').click()");await until("!!document.querySelector('.folderModal')");await run("document.querySelector('[aria-label=\"Đóng chọn thư mục\"]').click()")
  // Real folder selection, automatic launcher restart, and UI reload without manual scripts.
@@ -39,5 +39,28 @@ try{
   if(!dark)assert(await run("new Set(Array.from(document.querySelectorAll('.overviewStat')).map(e=>getComputedStyle(e).backgroundColor)).size>=3"))
   const pic=await cmd('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(out,width+'-'+(dark?'dark':'light')+'.png'),Buffer.from(pic.data,'base64'))
  }
- console.log('MAIN_BROWSER PASS: canonical launcher, version/progress, picker, own warehouse, automatic restart, 1366/390px light/dark')
+ // Canonical main: every navigation destination in all display sizes and both themes.
+ const labels=await run("Array.from(document.querySelectorAll('.sidebar button')).map(b=>b.textContent)")
+ assert(labels.includes('Bán hàng')&&labels.includes('Ảnh iPhone')&&labels.includes('Mobile LAN'))
+ for(const width of [1366,390])for(const size of [0,1,2])for(const dark of [false,true]){
+  await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:900,deviceScaleFactor:1,mobile:width===390})
+  await run("document.querySelectorAll('.headerActions .densitySwitch button')["+size+"].click();document.querySelector('.shell').classList.toggle('themeDark',"+dark+")")
+  for(const label of labels){
+   await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==="+JSON.stringify(label)+").click();window.scrollTo(0,0)")
+   await sleep(120)
+   assert(await run('document.documentElement.scrollWidth<=innerWidth+2'),'Main overflow: '+label+' '+width+' '+size+' '+dark)
+   assert(await run("document.querySelector('main').textContent.trim().length>0"),'Empty main: '+label)
+   const pic=await cmd('Page.captureScreenshot',{format:'png'})
+   fs.writeFileSync(path.join(out,width+'-'+size+'-'+(dark?'dark':'light')+'-'+labels.indexOf(label)+'.png'),Buffer.from(pic.data,'base64'))
+  }
+ }
+ // Mobile settings must be reachable with an actual visible tap, and survive reload.
+ await run("document.querySelector('[aria-label=\"Mở thêm chức năng\"]').click()")
+ await until("!!document.querySelector('.drawerDisplay')")
+ assert.equal(await run("document.querySelectorAll('.drawerDisplay button').length"),3)
+ await run("document.querySelectorAll('.drawerDisplay button')[2].click()")
+ assert(await run("document.querySelector('.shell').classList.contains('densityLarge')"))
+ await cmd('Page.reload');await until("!!document.querySelector('.overviewStats')")
+ assert(await run("document.querySelector('.shell').classList.contains('densityLarge')"),'Device preference persistence')
+ console.log('MAIN_BROWSER PASS: canonical launcher, version/progress, picker, own warehouse, automatic restart, 1366/390px all modules, three sizes, light/dark, mobile preference persistence')
 }finally{ws?.close();await stop(browser);await stop(app);fs.rmSync(tmp,{recursive:true,force:true})}

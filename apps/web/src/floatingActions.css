@@ -1,0 +1,24 @@
+.shell .floatingActions{position:fixed;z-index:70;left:auto!important;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(var(--mobile-nav-offset,0px) + max(12px,env(safe-area-inset-bottom,0px)));transform:none!important;width:min(360px,calc(100vw - 24px))!important;max-height:calc(100dvh - var(--mobile-nav-offset,0px) - 110px);overflow:auto;display:grid;gap:var(--ui-gap);padding:var(--ui-pad);border-radius:24px;background:#fff6fb;color:#352337;border:2px solid #a44970;box-shadow:0 12px 38px #37213a35}
+.shell.themeDark .floatingActions{background:#35283a;color:#fff0f8;border-color:#f3a2c8;box-shadow:0 12px 38px #0006}
+.shell .floatingActions [hidden]{display:none!important}
+.shell .floatingActions.collapsed{width:auto!important;max-width:calc(100vw - 24px);padding:6px 10px;gap:5px;border-radius:22px}
+.shell .floatingActions .selectionToggle{display:flex;align-items:center;gap:9px;justify-content:space-between;background:transparent;color:inherit;border:0;padding:4px 2px;cursor:pointer;min-height:44px;text-align:left}
+.shell .selectionToggle strong{font-size:var(--ui-font)}
+.shell .selectionToggle>span{display:grid;place-items:center;width:30px;height:30px;border-radius:12px;background:#793751;color:white;font-size:21px}
+.shell.themeDark .selectionToggle>span{background:#f1a5ca;color:#281d29}
+.shell .floatingActions .imageSendSummary{display:grid;gap:6px;min-width:0}
+.shell .floatingActions .imageSendSummary b{font-size:calc(var(--ui-font) + 1px)}
+.shell .floatingActions :is(.imageSendSummary span,p){color:#65435b;font-size:var(--ui-caption);line-height:1.45;overflow-wrap:anywhere}
+.shell.themeDark .floatingActions :is(.imageSendSummary span,p){color:#ead3e3}
+.shell .selectedGroupChips{display:flex;flex-wrap:wrap;gap:5px;max-height:90px;overflow:auto}
+.shell .selectedGroupChips small{padding:5px 8px;border-radius:9px;background:#ead5e2;color:#4e2440;overflow-wrap:anywhere;max-width:100%}
+.shell.themeDark .selectedGroupChips small{background:#60415d;color:#fff0f8}
+.shell .floatingActions .imageSendActions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%;min-width:0}
+.shell .floatingActions .imageSendActions button{min-width:0;min-height:max(44px,var(--ui-control));padding:9px 5px;font-size:var(--ui-caption);white-space:normal;overflow-wrap:anywhere;border:1px solid #b27998;background:#fff;color:#71324f}
+.shell .floatingActions .imageSendActions .draftSelectedImages{background:#793751;border-color:#793751;color:#fff}
+.shell .floatingActions .imageSendActions .copySelectedImages{background:#116f68;border-color:#116f68;color:#fff}
+.shell.themeDark .floatingActions .imageSendActions button{background:#473046;color:#ffeaf7;border-color:#a87d99}
+.shell.themeDark .floatingActions .imageSendActions .draftSelectedImages{background:#eea1c7;color:#302031}
+.shell.themeDark .floatingActions .imageSendActions .copySelectedImages{background:#80d9c7;color:#163c36}
+.shell .floatingActions p{margin:0}
+.shell .hasImageSelection{padding-bottom:calc(var(--selection-panel-height,330px) + var(--mobile-nav-offset,0px) + 32px)}

@@ -1,16 +1,20 @@
-# Bản main mới — 3.4.0-stage6-main-test
+# Bản main mới — 3.5.0-stage6-main-test
 
 Đầy đủ các chức năng đã triển khai chặng 1–4, Stage5A và Stage6; chưa STABLE nghiệm thu thiết bị thật. Không cần chạy đường dẫn DB V1 hoặc nối dữ liệu thử cũ.
 
 ## Chạy trên laptop Windows
 
 1. Kiểm tra CI đúng bản main tại [Actions](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/workflows/pages.yml), tải [main.zip](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip).
-2. Giải nén vào thư mục mới. Cài Node.js 22.13+ hoặc Node 24, mở **START_SHOP.bat**. Giao diện phải hiện **3.4.0-stage6-main-test · MAIN TEST · chặng 6**.
+2. Giải nén vào thư mục mới. Cài Node.js 22.13+ hoặc Node 24, mở **START_SHOP.bat**. Giao diện phải hiện **3.5.0-stage6-main-test · MAIN TEST · chặng 6**.
 3. Tạo kho của mình trên laptop, ví dụ `D:\KhoMeCaCao\Bộ gái hoa\Size 1\001.jpg`. Có thể kho trống rồi Nhập hàng COPY. Không cần marker hoặc script tạo kho mẫu.
 4. Bấm **CHỌN KHO TRÊN MÁY** trước khi có dữ liệu → chọn kho. Ứng dụng tự mở lại. **Chọn kho chưa import ảnh**: quét/import có duyệt, hoặc Nhập hàng COPY ảnh từ nguồn.
 5. Dùng đầy đủ tồn, nháp, khách/ship/PNG, xác nhận SOLD, tiền/công nợ, báo cáo/kiểm kê và backup/restore. Nhập COPY giữ nguồn; xác nhận SOLD theo cơ chế journal, không xóa ảnh SOLD.
 
 Bản cài mới bắt đầu DB mới; đóng/mở cùng bản giữ DB/kho. DB `data/stage6-main-test/database/shop-stage6-main-test.db` không tự đọc stage4/V1. Giữ chặn root ổ đĩa, app-data, liên kết và kho đang thuộc bản cài khác. Không xóa hoặc tải đè bản cũ.
+
+## Giao diện mới
+
+Menu **Thêm / ☰ → Cỡ hiển thị**, hoặc **Cài đặt → Mật độ hiển thị**: Nhỏ / Vừa / Lớn; mặc định Vừa. Lưu riêng trên trình duyệt này. Khi chọn ảnh, panel góc phải có số ảnh/bộ và nhóm Product/Size; bấm biểu tượng để thu gọn/mở rộng. Tạo đơn và chia sẻ vẫn theo luồng hiện có; Windows chia sẻ bằng COPY rồi Ctrl+V. Phiếu PNG nháp/SOLD đều dùng banner shop.
 
 ## Điện thoại cùng Wi-Fi
 

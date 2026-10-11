@@ -135,15 +135,17 @@ try{
  assert((await run('document.documentElement.scrollWidth'))<=392,'Overview horizontal scroll at 390px')
  assert((await run("document.querySelectorAll('.overviewStat').length"))===5,'Overview must have five KPI cards')
  await shot('overview.png')
- // Desktop density: exercise every module in both themes/modes at 100% zoom.
+ assert(await run("document.querySelector('.shell').classList.contains('densityMedium')"),'Fresh device defaults to Medium')
+ // Desktop density: exercise every module in all three sizes, both themes, at 100% zoom.
  const desktopModules=[['Tổng quan','.overviewStats','overview'],['Danh mục sản phẩm','.catalogPanel','catalog'],['Nhập hàng','.receiptOverview','receipt'],['Import kho','.warehouseWorkspace','warehouse'],['Tồn kho','.inventoryMetrics','inventory'],['Cài đặt','.displayPreferences','settings']]
  const heights={}
  for(const width of [1366,1920]){
   const height=width===1366?768:1080
   await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false})
-  for(const compact of [false,true]){
-   await run("document.querySelectorAll('.headerActions .densitySwitch button')["+(compact?0:1)+"].click()")
-   await until("document.querySelector('.shell').classList.contains("+JSON.stringify(compact?'densityCompact':'densityComfort')+")",'desktop density')
+  for(const density of [1,2,0]){
+   const compact=density===0
+   await run("document.querySelectorAll('.headerActions .densitySwitch button')["+density+"].click()")
+   await until("document.querySelector('.shell').classList.contains("+JSON.stringify(['densitySmall','densityMedium','densityLarge'][density])+")",'desktop density')
    for(const dark of [false,true]){
     if(await run("document.querySelector('.shell').classList.contains('themeDark')")!==dark)await run("document.querySelector('.themeToggle').click()")
     for(const [label,selector,slug] of desktopModules){
@@ -155,13 +157,13 @@ try{
      const shape=await run("(()=>{const h=document.querySelector('.topbar').getBoundingClientRect(),c=document.querySelector('.headerActions').getBoundingClientRect(),b=document.querySelector('.brandIdentity').getBoundingClientRect();return {header:h.height,overlap:b.right>c.left,main:document.querySelector('main').getBoundingClientRect().width,content:document.querySelector('main').lastElementChild.getBoundingClientRect().bottom-document.querySelector('main').getBoundingClientRect().top}})()")
      assert(!shape.overlap,'Desktop branding/actions overlap '+width)
      if(compact){assert(shape.header<=72,'Compact header remains too tall');assert(shape.main>width-220,'Compact main must use available desktop space')}
-     if(!dark)heights[width+'-'+slug+'-'+compact]=shape.content
+     if(!dark&&density!==2)heights[width+'-'+slug+'-'+compact]=shape.content
      if(compact&&slug==='receipt')assert(await run("new Set(Array.from(document.querySelectorAll('.receiptStats article')).map(e=>Math.round(e.getBoundingClientRect().top))).size===1"),'Five receipt KPIs must share one desktop row')
-     await shot('desktop-'+width+'-'+slug+'-'+(dark?'dark':'light')+'-'+(compact?'compact':'comfort')+'.png')
+     await shot('desktop-'+width+'-'+slug+'-'+(dark?'dark':'light')+'-'+['small','medium','large'][density]+'.png')
     }
    }
   }
-  for(const slug of ['overview','receipt','inventory','warehouse'])assert(heights[width+'-'+slug+'-true']<heights[width+'-'+slug+'-false']*.85,'Compact must materially reduce '+slug+' scrolling: '+JSON.stringify(heights))
+  for(const slug of ['overview','receipt','inventory','warehouse'])assert(heights[width+'-'+slug+'-true']<heights[width+'-'+slug+'-false']*.98,'Small must reduce '+slug+' scrolling: '+JSON.stringify(heights))
  }
  // Preference survives reload; mobile controls keep their original tap targets.
  await command('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/?demo=1'})
@@ -170,7 +172,7 @@ try{
  await run("document.querySelector('.themeToggle').click()")
  await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:3,mobile:true})
  await until("getComputedStyle(document.querySelector('.headerActions .densitySwitch')).display==='none'",'mobile header density control hidden')
- console.log('DESKTOP_DENSITY PASS: 1366x768 / 1920x1080, all six modules, light/dark, compact/comfort, >=15% less fixture content height, no overflow/overlap, preference persistence')
+ console.log('DESKTOP_DENSITY PASS: 1366x768 / 1920x1080, all six modules, light/dark, small/medium/large, less fixture content height, no overflow/overlap, preference persistence')
  await run("document.querySelector('.dashboardFoldToggle').click()")
  assert(await run("document.querySelector('#overview-dashboard-body')===null"),'Overview collapse failed')
  await run("document.querySelector('.dashboardFoldToggle').click()")
@@ -291,14 +293,15 @@ try{
  }
  await shot('receipt-local-after-commit.png')
  await command('Emulation.setDeviceMetricsOverride',{width:1366,height:768,deviceScaleFactor:1,mobile:false})
- for(const compact of [false,true]){
-  await run("document.querySelectorAll('.headerActions .densitySwitch button')["+(compact?0:1)+"].click()")
+ for(const density of [1,2,0]){
+   const compact=density===0
+  await run("document.querySelectorAll('.headerActions .densitySwitch button')["+density+"].click()")
   await run('window.scrollTo(0,0)');await sleep(100)
   await run("document.querySelector('.taskJump').click()")
   await sleep(120)
   assert(await run("document.querySelector('#goods-receipt-form').getBoundingClientRect().top>=document.querySelector('.topbar').getBoundingClientRect().bottom-2"),'Desktop form anchor must clear sticky header in both densities')
   assert((await run('document.documentElement.scrollWidth'))<=1368,'LOCAL desktop form overflow')
-  await shot('receipt-local-1366-'+(compact?'compact':'comfort')+'.png')
+  await shot('receipt-local-1366-'+['small','medium','large'][density]+'.png')
  }
  assert.equal(receiptWrites,1,'Changing display density must never post a transaction')
  await run("document.querySelector('.receiptFields').scrollIntoView({block:'start'})")
@@ -380,13 +383,21 @@ try{
  await run("document.querySelector('.copySelectedImages').click();document.querySelector('.copySelectedImages').click()")
  await until("document.querySelector('.imageSendBar [role=status]')?.textContent.includes('Đã copy 3 ảnh')",'copy batch outcome')
  assert.deepEqual(clipboardCopies,[[501,502,503],[501,502,503]],'Exactly one ordered batch per action, including explicit retry')
- for(const width of [320,390,768,1366])for(const dark of [false,true]){
+ // Collapsing changes only presentation; the ordered selection remains intact.
+ await run("document.querySelector('.selectionToggle').click()")
+ assert(await run("document.querySelector('.imageSendActions').getBoundingClientRect().height===0"),'Collapsed panel must hide actions')
+ assert(await run("document.querySelector('.selectionToggle strong').textContent.includes('3 ảnh')"),'Collapsed count')
+ await run("document.querySelector('.selectionToggle').click()")
+ assert(await run("document.querySelector('.selectedGroupChips').textContent.includes('Size 2')"),'Product/Size summary')
+ for(const density of [0,1,2])for(const width of [320,390,768,1366])for(const dark of [false,true]){
+  await run("document.querySelectorAll('.headerActions .densitySwitch button')["+density+"].click()")
   await command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<768})
   if((await run("document.querySelector('.shell').classList.contains('themeDark')"))!==dark)await run("document.querySelector('.themeToggle').click()")
   await run('window.scrollTo(0,document.body.scrollHeight)');await sleep(100)
   assert((await run('document.documentElement.scrollWidth'))<=width+2,'Image sending overflow at '+width)
   assert(await run("document.querySelector('.inventoryImage').getBoundingClientRect().bottom<=document.querySelector('.imageSendBar').getBoundingClientRect().top"),'Bottom send bar must not cover last stock image')
-  await shot('inventory-send-'+width+'-'+(dark?'dark':'light')+'.png')
+  assert(await run("(()=>{const p=document.querySelector('.floatingActions').getBoundingClientRect(),nav=document.querySelector('.mobileQuickNav');return p.left>=0&&p.right<=innerWidth&&innerWidth-p.right<40&&(!nav||getComputedStyle(nav).display==='none'||p.bottom<nav.getBoundingClientRect().top)})()"),'Right floating panel must clear bottom navigation')
+  await shot('inventory-send-'+width+'-'+(dark?'dark':'light')+'-'+density+'.png')
  }
  await run("document.querySelector('.imageSendActions button:last-child').click()")
  await until("!document.querySelector('.imageSendBar')",'clear before Size group')

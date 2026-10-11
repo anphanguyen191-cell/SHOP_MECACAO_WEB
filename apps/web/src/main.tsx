@@ -7,6 +7,8 @@ import './desktopExperience.css'
 import './inventorySharing.css'
 import './lightContrast.css'
 import './uiRefresh.css'
+import './displaySize.css'
+import './floatingActions.css'
 
 registerSW({ immediate: true })
 

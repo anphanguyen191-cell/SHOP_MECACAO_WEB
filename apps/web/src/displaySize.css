@@ -1,0 +1,47 @@
+/* Device preference: dimensions change without scaling the viewport or business data. */
+.shell.densitySmall{--ui-font:13px;--ui-caption:11px;--ui-title:23px;--ui-pad:12px;--ui-gap:8px;--ui-control:36px;--ui-row:8px;--ui-thumb:100px;--ui-nav:46px}
+.shell.densityMedium{--ui-font:14px;--ui-caption:12px;--ui-title:27px;--ui-pad:18px;--ui-gap:12px;--ui-control:42px;--ui-row:12px;--ui-thumb:124px;--ui-nav:50px}
+.shell.densityLarge{--ui-font:16px;--ui-caption:14px;--ui-title:31px;--ui-pad:24px;--ui-gap:16px;--ui-control:50px;--ui-row:16px;--ui-thumb:150px;--ui-nav:58px}
+.shell{font-size:var(--ui-font);--mobile-nav-offset:0px}
+.shell :is(input,select,textarea,button){font-size:var(--ui-font);max-width:100%}
+.shell :is(button,input:not([type=checkbox]):not([type=radio]):not([type=file]),select){min-height:var(--ui-control)}
+.shell :is(input[type=checkbox],input[type=radio]){flex-shrink:0}
+.shell :is(h2,.inventoryHeading h2){font-size:var(--ui-title);overflow-wrap:anywhere}
+.shell :is(h3,.inventoryInfo>b){font-size:calc(var(--ui-font) + 3px)}
+.shell :is(small,.card span,.inventoryMetrics span,.inventoryMetrics small,.receiptStats span,.overviewStat span,.galleryMeta){font-size:var(--ui-caption)}
+.shell :is(.card,.panel,.insightCard,.inventoryMetrics article,.overviewStat,.receiptStats article,.displayPreferences,.stage4Metrics article,.phoneInboxCard,.phoneInboxReviewNotice,.soldRetentionCard,.financePanel,.customerCard,.lanSettingsView article){padding:var(--ui-pad)}
+.shell :is(.grid,.inventoryMetrics,.inventoryInsights,.inventoryCards,.overviewStats,.receiptStats,.formGrid,.inventoryTree,.selectableGallery,.productGallery,.stage4Metrics,.phoneInboxGrid,.soldRetentionGrid,.salesList){gap:var(--ui-gap)}
+.shell :is(td,th,.detailTable>div,.history>div,.batchRow){padding-top:var(--ui-row);padding-bottom:var(--ui-row);font-size:var(--ui-font)}
+.shell :is(.treeProductHead,.treeVariantHead){padding-top:var(--ui-row);padding-bottom:var(--ui-row)}
+.shell :is(.selectableGallery,.productGallery){grid-template-columns:repeat(auto-fill,minmax(min(var(--ui-thumb),100%),1fr))}
+.shell .inventoryThumb{width:calc(var(--ui-thumb) * .65);height:calc(var(--ui-thumb) * .8)}
+.shell .treeName{min-width:0;overflow-wrap:anywhere}
+.shell :is(.treeVariantHead,.treeProductHead,.galleryMeta,.inventoryFilters){flex-wrap:wrap}
+.shell .treeProductHead>strong{white-space:nowrap}
+.shell .treeVariantHead small{min-width:0;overflow-wrap:anywhere}
+.shell .sizeFolder{min-width:0;overflow-wrap:anywhere}
+.shell .densitySwitch{flex-shrink:0;gap:3px}
+.shell .densitySwitch button{padding:7px 11px;min-height:36px;white-space:nowrap}
+.shell .densitySwitch button[aria-pressed=true]{background:#793751;color:#fff;border-color:#793751}
+.shell.themeDark .densitySwitch button[aria-pressed=true]{background:#f2a2ca;color:#281d29;border-color:#f2a2ca}
+.shell .drawerDisplay{padding:10px 16px;border-top:1px solid var(--mc-border,#dac5d1);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0}
+.shell .drawerDisplay button{min-height:44px}
+.shell .drawerLinks{min-height:0;overflow-y:auto}
+@media(max-width:760px){
+ .shell{--ui-control:44px;--mobile-nav-offset:calc(90px + env(safe-area-inset-bottom,0px))}
+ .shell.densityLarge{--ui-control:50px}
+ .shell :is(input:not([type=checkbox]):not([type=radio]),select,textarea){font-size:max(16px,var(--ui-font))}
+ .shell :is(.treeSizes,.variantGallery){padding-left:var(--ui-gap);padding-right:var(--ui-gap)}
+ .shell .mobileQuickNav{left:max(10px,env(safe-area-inset-left,0px));right:max(10px,env(safe-area-inset-right,0px));bottom:max(8px,env(safe-area-inset-bottom,0px));padding:5px;gap:4px;border:1px solid var(--mc-border,#dac5d1);border-radius:22px;overflow:visible;box-shadow:0 8px 28px #24152730}
+ .shell .mobileQuickNav button{flex:1 1 0;min-width:0;min-height:var(--ui-nav);border-radius:17px;padding:4px 2px}
+ .shell .mobileQuickNav button small{font-size:var(--ui-caption);line-height:1.3}
+ .shell .mobileQuickNav button.selected{background:#793751;color:#fff;border-color:#793751}
+ .shell.themeDark .mobileQuickNav button.selected{background:#efacd0;color:#281d29;border-color:#efacd0}
+ .shell main{padding-bottom:calc(var(--mobile-nav-offset) + 20px)}
+ .shell .displayPreferences{flex-wrap:wrap}
+ .shell .drawerDisplay{padding:10px;gap:4px}
+}
+@media(prefers-reduced-motion:no-preference){.shell .mobileQuickNav button{transition:background-color .15s}}
+
+.shell :is(.phoneInboxGrid,.soldRetentionGrid){grid-template-columns:repeat(auto-fill,minmax(min(calc(var(--ui-thumb) + 100px),100%),1fr))}
+.shell :is(.phoneInboxPhoto,.soldRetentionPhoto){height:calc(var(--ui-thumb) * 1.2)}

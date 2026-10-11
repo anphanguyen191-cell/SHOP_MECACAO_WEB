@@ -1,6 +1,6 @@
 # Roadmap — main chặng 6
 
-Đọc [checkpoint hiện tại](MAIN_CHECKPOINT_STAGE6_2026-10-11.md) và [nguyên tắc](DEVELOPMENT_PRINCIPLES.md). Bản hiện tại `3.4.0-stage6-main-test`, chưa STABLE.
+Đọc [checkpoint hiện tại](MAIN_CHECKPOINT_STAGE6_2026-10-11.md) và [nguyên tắc](DEVELOPMENT_PRINCIPLES.md). Bản hiện tại `3.5.0-stage6-main-test`, chưa STABLE.
 
 | Chặng | Phạm vi | Tiến độ |
 |---|---|---|
@@ -11,6 +11,7 @@
 | 5A | Kiểm chứng ảnh SOLD chỉ đọc | Đã tích hợp main |
 | 5B/5C | Lưu trữ di chuyển và xóa ảnh SOLD | Chưa triển khai; cần phạm vi/duyệt riêng |
 | 6 | Windows + điện thoại chung LAN: HTTPS, quyền, cập nhật, ảnh chờ và thiết lập UI | Hoàn thiện phần mềm; chờ nghiệm thu thiết bị thật |
+| UI 6.1–6.6 | Chọn ảnh/panel/nav/PNG/banner, ba mức hiển thị toàn bộ màn hình, safe area/sáng tối | Đã tích hợp main; kiểm thử giả lập, chờ iPhone vật lý |
 | 7 | Cloud, dùng ngoài Wi-Fi, đồng bộ/offline queue | Chưa triển khai; cần thiết kế và duyệt riêng |
 
 Bước hiện tại là nghiệm thu bản cài mới trên laptop/kho tự tạo và iPhone cùng Wi-Fi theo [checklist](MAIN_TEST_STAGE6_RELEASE.md). Sửa lỗi thực tế trước khi mở rộng Stage7; không coi CI là STABLE.
