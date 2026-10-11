@@ -34,6 +34,7 @@ async function intercept(p){trace.push({url:p.request.url,method:p.request.metho
  const u=new URL(p.request.url),body=p.request.postData?JSON.parse(p.request.postData):{},endpoint=u.pathname.split('/').pop();let response={},status=200,mime='application/json',binary
  if(u.pathname==='/auth/v1/user')response=user
  else if(u.pathname==='/auth/v1/logout')response={}
+ else if(u.pathname==='/auth/v1/token'&&u.searchParams.get('grant_type')==='password'){assert.equal(body.email,user.email);if(body.password==='fake-correct-password')response=session;else {status=400;response={code:'invalid_credentials',msg:'Invalid login credentials'}}}
  else if(u.pathname==='/auth/v1/otp'){assert.equal(body.email,user.email);assert.equal(u.searchParams.get('redirect_to'),'https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1');response={}}
  else if(u.pathname==='/auth/v1/verify'){assert.equal(body.token_hash,'fake-unopened-link');assert.equal(body.type,'email');response=session}
  else if(u.pathname.includes('/rest/v1/rpc/')){
@@ -74,7 +75,7 @@ try{
  await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true})})
  ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}else if(m.method==='Fetch.requestPaused')void intercept(m.params).catch(e=>failures.push(e));else if(m.method==='Page.javascriptDialogOpening')void cmd('Page.handleJavaScriptDialog',{accept:true})})
  await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Network.enable');await cmd('Network.setBypassServiceWorker',{bypass:true});await cmd('Network.setBlockedURLs',{urls:['wss://eyckwoewpomssjjggslr.supabase.co/*']});await cmd('Fetch.enable',{patterns:[{urlPattern:'https://eyckwoewpomssjjggslr.supabase.co/*'}]})
- await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`localStorage.setItem('mecacao-v7-auth',${JSON.stringify(JSON.stringify(session))});localStorage.setItem('mecacao-ui-cloud-auto-sync','false')`})
+ const authInit=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`localStorage.setItem('mecacao-v7-auth',${JSON.stringify(JSON.stringify(session))});localStorage.setItem('mecacao-ui-cloud-auto-sync','false')`})
  await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await cmd('Page.navigate',{url});await until("!!document.querySelector('.treeProductHead')");await run("document.querySelector('.treeProductHead').click()");await until("!!document.querySelector('.treeVariantHead')");await run("document.querySelector('.treeVariantHead').click()");await until("!!document.querySelector('.stockImageSelect img')&&document.querySelector('.stockImageSelect img').complete")
  assert.equal(await run('document.documentElement.scrollWidth<=innerWidth+2'),true)
  assert(await run("!!document.querySelector('.topbar .brandLogo')&&!!document.querySelector('.sidebar')&&!!document.querySelector('.mobileQuickNav')"))
@@ -152,8 +153,8 @@ try{
  await cmd('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});await until("document.body.innerText.includes('Mất mạng')");assert(await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đọc lại').disabled"))
  await cmd('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("!!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đăng xuất')")
- await click('Đăng xuất');await until("!!document.querySelector('.cloudDirectLogin input')")
- assert(await run("document.querySelector('.cloudDirectLogin').getBoundingClientRect().height>0"),'Direct login is visible before requesting email')
+ await cmd('Page.removeScriptToEvaluateOnNewDocument',{identifier:authInit.identifier});await click('Đăng xuất');await until("!!document.querySelector('.cloudDirectLogin input')")
+ assert(await run("document.querySelector('input[type=password]').getBoundingClientRect().height>0"),'Password login must be visible first');assert(await run("!document.querySelector('.cloudEmailLogin').open"),'Email flow is secondary');await run("document.querySelector('.cloudEmailLogin').open=true")
  await run("document.querySelector('input[type=email]').focus()");await cmd('Input.insertText',{text:user.email});await click('Gửi email đăng nhập');await until("document.body.textContent.includes('Đã yêu cầu email đăng nhập')")
  await run("document.querySelector('.cloudDirectLogin input').focus()");await cmd('Input.insertText',{text:'https://evil.example/auth/v1/verify?token=fake-unopened-link&type=magiclink'});await click('Đăng nhập trên thiết bị này');await until("document.body.textContent.includes('Dán liên kết đăng nhập Supabase')")
  assert(!trace.some(t=>t.url.includes('/auth/v1/verify')),'Foreign link must not reach auth')
@@ -162,5 +163,13 @@ try{
  assert(trace.some(t=>t.url.includes('/auth/v1/verify')&&t.method==='POST'),'Login verifies in app instead of following localhost redirect')
  assert.equal(await run('location.href'),url)
  assert.equal(await run('document.documentElement.scrollWidth<=innerWidth+2'),true)
+ await click('Đăng xuất');await until("!!document.querySelector('input[type=password]')")
+ const authStart=trace.length;
+ await run("document.querySelector('input[type=email]').focus()");await cmd('Input.insertText',{text:user.email});await run("document.querySelector('input[type=password]').focus()");await cmd('Input.insertText',{text:'fake-wrong-password'});await click('Đăng nhập');await until("document.body.textContent.includes('Email hoặc mật khẩu tài khoản shop chưa đúng')")
+ assert(!await run("!!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đăng xuất')"),'Wrong password must not sign in')
+ await run("document.querySelector('input[type=password]').focus();document.querySelector('input[type=password]').select()");await cmd('Input.insertText',{text:'fake-correct-password'});await click('Đăng nhập');await until("!!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đăng xuất')")
+ assert(!trace.slice(authStart).some(t=>t.url.includes('/auth/v1/otp')||t.url.includes('/auth/v1/verify')),'Password login must not send emails or use links');assert.equal(await run('location.href'),url)
+ assert(!await run("JSON.stringify(localStorage).includes('fake-correct-password')"),'Do not store raw password')
+ await cmd('Page.reload');await until("!!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đăng xuất')")
  assert.deepEqual(failures,[]);console.log('PASS Cloud browser fake transport: mobile layout/density/theme, lost-response durable retry, single draft, real banner PNG without stock mutation, SOLD removal, automatic verified cleanup away from Settings, corrupt archive refusal, lost Storage response retry and offline guard')
 }catch(error){console.error('Cloud browser failure:',error);console.error('Transport failures:',failures);console.error('Transport trace:',trace);try{console.error(await run('document.body.innerText'));const shot=await cmd('Page.captureScreenshot',{format:'png'});fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/failure.png',Buffer.from(shot.data,'base64'))}catch{}throw error}finally{if(ws?.readyState===1)try{await cmd('Browser.close')}catch{}ws?.close();if(browser.exitCode===null){browser.kill();await new Promise(r=>browser.once('exit',r))}await new Promise(r=>server.close(r));try{fs.rmSync(temp,{recursive:true,force:true,maxRetries:10,retryDelay:100})}catch(error){console.warn('Browser temporary cleanup:',error.code)}}
