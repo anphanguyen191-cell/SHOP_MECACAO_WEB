@@ -19,7 +19,7 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
  async function sync(){await action(async()=>{
   await check();paused.current=false;setProgress({registered:0,uploaded:0,skipped:0});let offset=0,registered=0,uploaded=0,skipped=0
   const session=(await cloud.auth.getSession()).data.session;if(!session)throw Error('Phiên Cloud đã hết hạn.')
-  await apiJson('/api/cloud/catalog?offset=0')
+  const initial=await apiJson('/api/cloud/catalog?offset=0');await cloudRpc('mc_v7_catalog',{p_instance:initial.instance,p_request:'bootstrap:'+initial.instance+':'+session.user.id,p_payload:{}})
   const state=await apiJson('/api/cloud/state'),sold=(await cloudRows('sales_confirmations')).map(c=>c.order_id).filter(id=>!state.reconciled.includes(id))
   for(let start=0;start<sold.length;start+=100)await apiJson('/api/cloud/reconcile',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify({orders:sold.slice(start,start+100)})})
   const ready=new Map((await cloudRows('cloud_image_assets')).filter(a=>a.ready).map(a=>[Number(a.image_id),a.sha256]))
