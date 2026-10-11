@@ -35,7 +35,8 @@
     "test:stage6-audit": "node --import tsx apps/api/src/lanAuditSelfTest.ts",
     "test:stage6-sync": "node --import tsx apps/api/src/lanChangeFeedSelfTest.ts",
     "test:stage6-photos": "node --import tsx apps/api/src/lanPhotoInboxSelfTest.ts",
-    "test:stage6-control": "node --import tsx apps/api/src/lanControlSelfTest.ts"
+    "test:stage6-control": "node --import tsx apps/api/src/lanControlSelfTest.ts",
+    "test:cloud": "node --import tsx apps/api/src/cloudImagesSelfTest.ts && node --import tsx apps/api/src/cloudReconcileSelfTest.ts"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

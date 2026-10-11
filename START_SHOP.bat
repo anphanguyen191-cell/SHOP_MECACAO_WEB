@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title Shop Me CaCao - MAIN TEST Stage6
+title Shop Me CaCao - MAIN TEST V7 Cloud
 where node >nul 2>nul
 if errorlevel 1 (
  echo Can cai Node.js 22.13 hoac moi hon truoc khi mo ung dung.

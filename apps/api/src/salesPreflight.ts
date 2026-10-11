@@ -7,8 +7,8 @@ import {SalesError,salesDraftService} from './salesDrafts.js'
 
 const hash=(bytes:Buffer|string)=>createHash('sha256').update(bytes).digest('hex')
 /** Read-only sale gate: evidence is a point-in-time check, never a claim or permission to sell. */
-export function salesPreflightService(db:DatabaseSync,sandboxRoot:string){
- const root=fs.realpathSync(sandboxRoot),drafts=salesDraftService(db,root)
+export function salesPreflightService(db:DatabaseSync,sandboxRoot:string,confirmedCloudReplay=false){
+ const root=fs.realpathSync(sandboxRoot),drafts=salesDraftService(db,root,confirmedCloudReplay)
  let busy=false
  function current(id:string,version:number){
   if(!Number.isSafeInteger(version)||version<1)throw new SalesError('Thiếu phiên bản đơn hợp lệ')

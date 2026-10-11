@@ -1,0 +1,26 @@
+BEGIN;
+SELECT set_config('request.jwt.claim.sub',(SELECT id::text FROM auth.users LIMIT 1),true);
+SET LOCAL ROLE authenticated;
+SELECT mc_v7_health();
+SELECT mc_v7_catalog('fake-request-71','11111111-1111-4111-8111-111111111111','{"products":[{"id":901,"product_code":"FAKE901","name":"FAKE","sale_price":50000}],"variants":[{"id":901,"product_id":901,"sku":"FAKE901-1","size":"1"}],"images":[{"id":901,"product_id":901,"variant_id":901}]}');
+SELECT mc_v7_catalog_command('fake-price-edit-0001','variant.price','{"id":901,"version":1,"costPrice":10000,"salePrice":60000}');
+SELECT mc_v7_catalog('fake-request-stale-price','11111111-1111-4111-8111-111111111111','{"variants":[{"id":901,"product_id":901,"sku":"FAKE901-1","size":"1","cost_price":1,"sale_price":1}]}');
+SELECT mc_v7_ledger('fake-ledger-request','11111111-1111-4111-8111-111111111111','[{"id":901,"variant_id":901,"transaction_type":"OPENING","quantity":1,"unit_cost":10000,"note":"FAKE"}]');
+SELECT mc_v7_ledger('fake-ledger-request','11111111-1111-4111-8111-111111111111','[{"id":901,"variant_id":901,"transaction_type":"OPENING","quantity":1,"unit_cost":10000,"note":"FAKE"}]');
+SELECT mc_v7_catalog('fake-request-71','11111111-1111-4111-8111-111111111111','{"products":[{"id":901,"product_code":"FAKE901","name":"FAKE","sale_price":50000}],"variants":[{"id":901,"product_id":901,"sku":"FAKE901-1","size":"1"}],"images":[{"id":901,"product_id":901,"variant_id":901}]}');
+DO $$ BEGIN
+ IF (SELECT sale_price FROM product_variants WHERE id=901)<>60000 THEN RAISE EXCEPTION 'STALE_LAPTOP_OVERWROTE_PRICE'; END IF;
+ IF (SELECT stock FROM inventory_stock WHERE variant_id=901)<>1 THEN RAISE EXCEPTION 'LEDGER_RETRY_DUPLICATE'; END IF;
+ BEGIN PERFORM mc_v7_catalog_command('fake-price-stale-001','variant.price','{"id":901,"version":1,"costPrice":1,"salePrice":1}');RAISE EXCEPTION 'TEST_FAILED';EXCEPTION WHEN OTHERS THEN IF SQLERRM<>'CLOUD_VERSION_CONFLICT' THEN RAISE;END IF;END;
+ BEGIN PERFORM mc_v7_catalog('fake-request-71','11111111-1111-4111-8111-111111111111','{}'); RAISE EXCEPTION 'TEST_FAILED'; EXCEPTION WHEN OTHERS THEN IF SQLERRM<>'CLOUD_REQUEST_CONFLICT' THEN RAISE; END IF; END;
+ BEGIN PERFORM mc_v7_catalog('fake-request-72','22222222-2222-4222-8222-222222222222','{}'); RAISE EXCEPTION 'TEST_FAILED'; EXCEPTION WHEN OTHERS THEN IF SQLERRM<>'CLOUD_WAREHOUSE_MISMATCH' THEN RAISE; END IF; END;
+ IF (SELECT count(*) FROM products WHERE id=901)<>1 THEN RAISE EXCEPTION 'RETRY_DUPLICATE'; END IF;
+ IF (mc_v7_rows('products','',20)->'rows'->0->>'name')<>'FAKE' THEN RAISE EXCEPTION 'READ_FAILED'; END IF;
+END $$;
+RESET ROLE;
+SELECT set_config('request.jwt.claim.sub','',true);
+SET LOCAL ROLE authenticated;
+DO $$ BEGIN BEGIN PERFORM mc_v7_health(); RAISE EXCEPTION 'TEST_FAILED'; EXCEPTION WHEN insufficient_privilege THEN NULL; END; END $$;
+RESET ROLE;
+SELECT 'PASS health, authenticated catalog, duplicate retry, conflict, warehouse binding, RLS' AS verified;
+ROLLBACK;
