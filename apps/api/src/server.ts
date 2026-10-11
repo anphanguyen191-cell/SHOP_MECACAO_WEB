@@ -1,3 +1,4 @@
+import {cloudRouter} from './cloudRoutes.js'
 import {phonePhotoRouter} from './lanPhotoRoutes.js'
 import {createLanChangeFeed} from './lanChangeFeed.js'
 import {configureLan} from './lanRuntime.js'
@@ -79,7 +80,7 @@ app.use('/api',(req,res,next)=>{
 })
 // Coordinate all HTTP reads/writes while async sale preparation/staging runs.
 app.use('/api',(req,res,next)=>{
- if(!salesExecutionEnabled||!sandboxRoot||req.path==='/health'||req.path.startsWith('/tasks')||req.path==='/sales/drafts/recover'||/^\/sales\/drafts\/operations\//.test(req.path)||/\/confirm$/.test(req.path))return next()
+ if(!salesExecutionEnabled||!sandboxRoot||req.path==='/health'||req.path==='/cloud/reconcile'||req.path.startsWith('/tasks')||req.path==='/sales/drafts/recover'||/^\/sales\/drafts\/operations\//.test(req.path)||/\/confirm$/.test(req.path))return next()
  if(salesActivity.busy||fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json'))||db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get())return res.status(409).json({error:'Giao dịch bán đang xử lý hoặc cần phục hồi. Vào Bán hàng kiểm tra trạng thái.',code:'SALE_RECOVERY_REQUIRED'})
  salesActivity.readers++;let done=false;const release=()=>{if(!done){done=true;salesActivity.readers--}};res.once('finish',release);res.once('close',release);next()
 })
@@ -155,7 +156,7 @@ app.post('/api/store/import-batch-task',(req,res)=>{if(req.body.confirmed!==true
 
 app.get('/api/health', (_req, res) => res.json({
   lanClient:!!res.locals.lanUser,lanRole:res.locals.lanUser?.role,
-  ok: true, app: 'SHOP_MECACAO_WEB', freshDevelopment,customWarehouse,release: freshDevelopment?release:undefined,version: freshDevelopment?release.version:localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:res.locals.lanUser?undefined:(freshDevelopment?freshWarehouse:localRuntime?.warehouse),incoming:res.locals.lanUser?undefined:localRuntime?.incoming,databasePath:res.locals.lanUser?undefined:localRuntime?.database,localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
+  ok: true, app: 'SHOP_MECACAO_WEB', cloudAuthority:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(), freshDevelopment,customWarehouse,release: freshDevelopment?release:undefined,version: freshDevelopment?release.version:localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:res.locals.lanUser?undefined:(freshDevelopment?freshWarehouse:localRuntime?.warehouse),incoming:res.locals.lanUser?undefined:localRuntime?.incoming,databasePath:res.locals.lanUser?undefined:localRuntime?.database,localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
 }))
 app.post('/api/local/warehouse',(req,res)=>{
  if(!freshDevelopment)return res.status(404).json({error:'Chọn kho áp dụng cho bản main mới'})
@@ -168,6 +169,11 @@ app.post('/api/local/warehouse',(req,res)=>{
   res.json({warehouse,restarting:true})
   res.once('finish',()=>setTimeout(()=>process.exit(75),250))
  }catch(e){res.status(409).json({error:e instanceof Error?e.message:String(e)})}
+})
+if(salesExecutionEnabled&&sandboxRoot)app.use('/api/cloud',cloudRouter(db,sandboxRoot))
+app.use('/api/sales/drafts',(req,res,next)=>{
+ if(!['GET','HEAD'].includes(req.method)&&req.path!=='/recover'&&db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())return res.status(409).json({error:'Kho đang dùng Cloud. Mở giao diện Cloud để tạo đơn, bán, cập nhật tiền và khách hàng.',code:'CLOUD_AUTHORITY_REQUIRED'})
+ next()
 })
 if(salesDraftsEnabled&&sandboxRoot)app.use('/api/sales/drafts',salesDraftRouter(db,sandboxRoot,PORT))
 else app.use('/api/sales/drafts',(_req,res)=>res.status(404).json({error:'V2 đơn nháp chưa bật; chỉ thử bằng sandbox V2 riêng.'}))
@@ -251,6 +257,7 @@ app.get('/api/inventory/explorer', (req,res)=>{try{res.json(inventoryExplorer({s
 app.get('/api/inventory/suggestions', (req,res)=>{try{res.json(inventorySuggestions(String(req.query.search??'')))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể gợi ý sản phẩm'})}})
 app.get('/api/inventory/history', (req,res) => res.json(inventoryHistory(Number(req.query.limit??200))))
 app.patch('/api/products/:id/status', (req,res) => {
+ if(db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())return res.status(409).json({error:'Đổi trạng thái Product tại Danh mục Cloud.'})
   try { res.json(setProductStatus(Number(req.params.id), req.body.status)) }
   catch(e){ res.status(400).json({ error:e instanceof Error?e.message:'Không thể đổi trạng thái sản phẩm' }) }
 })
@@ -261,7 +268,7 @@ app.get('/api/products/:id', (req, res) => {
   if (!data) return res.status(404).json({ error: 'Không tìm thấy sản phẩm' })
   res.json(data)
 })
-app.patch('/api/variants/:id/pricing', (req,res)=>{try{res.json(updateVariantPricing(Number(req.params.id),Number(req.body.costPrice),Number(req.body.salePrice)))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể cập nhật giá'})}})
+app.patch('/api/variants/:id/pricing', (req,res)=>{if(db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())return res.status(409).json({error:'Sửa giá tại Danh mục / Giá Cloud để dùng chung trên Windows và mobile.'});try{res.json(updateVariantPricing(Number(req.params.id),Number(req.body.costPrice),Number(req.body.salePrice)))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể cập nhật giá'})}})
 app.post('/api/products', (req, res) => {
   try { res.status(201).json(createProduct(req.body)) }
   catch (e) { res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể tạo sản phẩm' }) }

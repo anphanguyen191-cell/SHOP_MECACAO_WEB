@@ -1,0 +1,16 @@
+ALTER FUNCTION public.mc_v7_activate(uuid) SET SCHEMA private;
+CREATE FUNCTION public.mc_v7_activate(p_instance uuid) RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private.mc_v7_activate(p_instance) $$;
+REVOKE ALL ON FUNCTION public.mc_v7_activate(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.mc_v7_activate(uuid) TO authenticated;
+ALTER FUNCTION public.mc_v7_stocktake(text,text,jsonb) SET SCHEMA private;
+CREATE FUNCTION public.mc_v7_stocktake(p_request text,p_action text,p_payload jsonb) RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private.mc_v7_stocktake(p_request,p_action,p_payload) $$;
+REVOKE ALL ON FUNCTION public.mc_v7_stocktake(text,text,jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.mc_v7_stocktake(text,text,jsonb) TO authenticated;
+ALTER FUNCTION public.mc_v7_ledger(text,uuid,jsonb) SET SCHEMA private;
+CREATE FUNCTION public.mc_v7_ledger(p_request text,p_instance uuid,p_rows jsonb) RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private.mc_v7_ledger(p_request,p_instance,p_rows) $$;
+REVOKE ALL ON FUNCTION public.mc_v7_ledger(text,uuid,jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.mc_v7_ledger(text,uuid,jsonb) TO authenticated;
+ALTER FUNCTION public.mc_v7_catalog_command(text,text,jsonb) SET SCHEMA private;
+CREATE FUNCTION public.mc_v7_catalog_command(p_request text,p_action text,p_payload jsonb) RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private.mc_v7_catalog_command(p_request,p_action,p_payload) $$;
+REVOKE ALL ON FUNCTION public.mc_v7_catalog_command(text,text,jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.mc_v7_catalog_command(text,text,jsonb) TO authenticated;

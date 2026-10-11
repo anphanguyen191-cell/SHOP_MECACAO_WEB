@@ -1,0 +1,253 @@
+[
+  {
+    "table": "app_metadata",
+    "columns": [
+      "key",
+      "value",
+      "updated_at"
+    ]
+  },
+  {
+    "table": "categories",
+    "columns": [
+      "id",
+      "name",
+      "status",
+      "created_at",
+      "updated_at"
+    ]
+  },
+  {
+    "table": "products",
+    "columns": [
+      "id",
+      "product_code",
+      "name",
+      "category_id",
+      "cost_price",
+      "sale_price",
+      "description",
+      "status",
+      "created_at",
+      "updated_at"
+    ]
+  },
+  {
+    "table": "product_variants",
+    "columns": [
+      "id",
+      "product_id",
+      "sku",
+      "size",
+      "status",
+      "created_at",
+      "updated_at",
+      "cost_price",
+      "sale_price"
+    ]
+  },
+  {
+    "table": "product_images",
+    "columns": [
+      "id",
+      "product_id",
+      "variant_id",
+      "file_path",
+      "sort_order",
+      "is_primary",
+      "created_at"
+    ]
+  },
+  {
+    "table": "inventory_transactions",
+    "columns": [
+      "id",
+      "variant_id",
+      "transaction_type",
+      "quantity",
+      "unit_cost",
+      "note",
+      "created_at"
+    ]
+  },
+  {
+    "table": "app_settings",
+    "columns": [
+      "key",
+      "value",
+      "updated_at"
+    ]
+  },
+  {
+    "table": "sales_orders",
+    "columns": [
+      "id",
+      "request_key",
+      "request_hash",
+      "status",
+      "version",
+      "discount",
+      "note",
+      "created_at",
+      "updated_at"
+    ]
+  },
+  {
+    "table": "sales_order_images",
+    "columns": [
+      "order_id",
+      "image_id",
+      "product_id",
+      "variant_id",
+      "product_name",
+      "product_code",
+      "size",
+      "sku",
+      "unit_price",
+      "unit_cost",
+      "position"
+    ]
+  },
+  {
+    "table": "sales_operations",
+    "columns": [
+      "id",
+      "request_key",
+      "input_hash",
+      "payload",
+      "payload_hash",
+      "status",
+      "created_at"
+    ]
+  },
+  {
+    "table": "sales_confirmations",
+    "columns": [
+      "order_id",
+      "operation_id",
+      "version",
+      "subtotal",
+      "discount",
+      "total",
+      "note",
+      "created_at"
+    ]
+  },
+  {
+    "table": "sales_units",
+    "columns": [
+      "image_id",
+      "order_id",
+      "variant_id",
+      "snapshot",
+      "source_hash",
+      "archive_path",
+      "archive_hash"
+    ]
+  },
+  {
+    "table": "sales_ledger",
+    "columns": [
+      "image_id",
+      "order_id",
+      "variant_id",
+      "transaction_type",
+      "quantity",
+      "unit_cost",
+      "created_at"
+    ]
+  },
+  {
+    "table": "shop_customers",
+    "columns": [
+      "id",
+      "name",
+      "phone",
+      "phone_key",
+      "address",
+      "note",
+      "version",
+      "created_at",
+      "updated_at"
+    ]
+  },
+  {
+    "table": "order_contacts",
+    "columns": [
+      "order_id",
+      "customer_id",
+      "recipient_name",
+      "phone",
+      "address",
+      "shipping_fee"
+    ]
+  },
+  {
+    "table": "order_finance",
+    "columns": [
+      "order_id",
+      "version",
+      "method",
+      "delivery",
+      "tracking"
+    ]
+  },
+  {
+    "table": "finance_entries",
+    "columns": [
+      "id",
+      "order_id",
+      "request_key",
+      "input_hash",
+      "payload",
+      "sequence",
+      "kind",
+      "amount",
+      "method",
+      "note",
+      "created_at"
+    ]
+  },
+  {
+    "table": "aftercare_cases",
+    "columns": [
+      "id",
+      "order_id",
+      "request_key",
+      "input_hash",
+      "kind",
+      "note",
+      "status",
+      "resolution",
+      "version",
+      "created_at",
+      "updated_at"
+    ]
+  },
+  {
+    "table": "stocktake_sessions",
+    "columns": [
+      "id",
+      "request_key",
+      "input_hash",
+      "title",
+      "status",
+      "version",
+      "fingerprint",
+      "snapshot_hash",
+      "created_at",
+      "closed_at",
+      "conclusion"
+    ]
+  },
+  {
+    "table": "stocktake_rows",
+    "columns": [
+      "session_id",
+      "variant_id",
+      "snapshot",
+      "counted",
+      "note"
+    ]
+  }
+]

@@ -1,0 +1,11 @@
+CREATE INDEX idx_cloud_fk_order_contacts_customer_id ON public.order_contacts(customer_id);
+CREATE INDEX idx_cloud_fk_product_images_variant_id ON public.product_images(variant_id);
+CREATE INDEX idx_cloud_fk_products_category_id ON public.products(category_id);
+CREATE INDEX idx_cloud_fk_sales_ledger_order_id ON public.sales_ledger(order_id);
+CREATE INDEX idx_cloud_fk_sales_ledger_variant_id ON public.sales_ledger(variant_id);
+CREATE INDEX idx_cloud_fk_sales_order_images_image_id ON public.sales_order_images(image_id);
+CREATE INDEX idx_cloud_fk_sales_order_images_product_id ON public.sales_order_images(product_id);
+CREATE INDEX idx_cloud_fk_sales_order_images_variant_id ON public.sales_order_images(variant_id);
+CREATE INDEX idx_cloud_fk_sales_units_order_id ON public.sales_units(order_id);
+CREATE INDEX idx_cloud_fk_sales_units_variant_id ON public.sales_units(variant_id);
+CREATE INDEX idx_cloud_fk_stocktake_rows_variant_id ON public.stocktake_rows(variant_id);

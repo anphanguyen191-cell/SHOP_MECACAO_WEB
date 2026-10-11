@@ -28,7 +28,7 @@ function validate(raw:any):Input{
 }
 
 /** Drafts have no filesystem writes, inventory transactions, image claims or reservations. */
-export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
+export function salesDraftService(db:DatabaseSync,sandboxRoot:string,confirmedCloudReplay=false){
  bootstrapCustomers(db);bootstrapFinance(db)
  const root=fs.realpathSync(sandboxRoot),sales=!!db.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_confirmations'").get()
  const sold=(id:number)=>sales&&!!db.prepare('SELECT 1 FROM sales_units WHERE image_id=?').get(id)
@@ -38,7 +38,7 @@ export function salesDraftService(db:DatabaseSync,sandboxRoot:string){
   if(!row)return 'Ảnh không còn đăng ký'
   if(sold(row.image_id))return 'Bộ hàng đã bán'
   if(row.file_path.split(/[\\/]/).some(s=>s.startsWith('.mecacao-')))return 'Ảnh không thuộc kho đang bán'
-  if(row.product_status!=='active'||row.variant_status!=='active')return 'Product/Size đã ngừng hoạt động'
+  if(!confirmedCloudReplay&&(row.product_status!=='active'||row.variant_status!=='active'))return 'Product/Size đã ngừng hoạt động'
   if(!['.jpg','.jpeg','.png','.webp','.heic'].includes(path.extname(row.file_path).toLowerCase()))return 'Định dạng không phải ảnh tồn'
   try{
    const rel=path.relative(root,fs.realpathSync(row.file_path))

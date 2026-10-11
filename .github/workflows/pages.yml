@@ -29,8 +29,12 @@ jobs:
         run: node --import tsx scripts/stage6-lan-real-sale-e2e.mjs
       - name: Stage 6 real HTTPS iPhone photo upload and localhost review
         run: node --import tsx scripts/stage6-photo-http-e2e.mjs
+      - name: V7 isolated Cloud image and replay acceptance
+        run: npm run test:cloud
       - name: V1 internal gate
         run: npm run test:gate
+      - name: V7 Cloud mobile browser and durable lost-response retry (fake transport)
+        run: node scripts/cloud-browser-e2e.mjs
       - name: Stage 2 fresh release HTTP and PNG acceptance
         run: node scripts/stage2-e2e.mjs
       - name: First-time setup inherited V2 environment regression
@@ -77,6 +81,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: npm ci
+      - name: Windows V7 Cloud image and SOLD replay acceptance
+        run: npm run test:cloud
       - name: Windows internal gate (isolated fixtures)
         run: npm run test:gate
       - name: Windows Stage 2 fresh release HTTP and PNG acceptance
