@@ -59,7 +59,7 @@ try{
  assert.equal(await run('document.documentElement.scrollWidth<=innerWidth+2'),true)
  await run("document.querySelector('.cloudCard').click()");await click('Mở thao tác');assert(await run("(()=>{const r=document.querySelector('.cloudSelection').getBoundingClientRect();return r.right<=innerWidth&&r.bottom<=innerHeight&&r.left>0})()"))
  await click('Tạo đơn nháp');await until("!!localStorage.getItem('mecacao-v7-pending-command')")
- state.allowRetry=true;await click('Kiểm tra thao tác trước');await until("document.body.innerText.includes('FAKE')&&document.body.innerText.includes('bản 1')")
+ await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Kiểm tra thao tác trước'&&!b.disabled)");state.allowRetry=true;await click('Kiểm tra thao tác trước');await until("document.body.innerText.includes('FAKE')&&document.body.innerText.includes('bản 1')")
  assert.equal(state.orders.length,1);assert.equal(await run("localStorage.getItem('mecacao-v7-pending-command')"),null)
  await click('Tạo phiếu PNG');await until("!!document.querySelector('a[download$=\".png\"]')")
  const png=await run("fetch(document.querySelector('a[download$=\".png\"]').href).then(r=>r.blob()).then(b=>createImageBitmap(b)).then(b=>({width:b.width,height:b.height}))");assert.equal(png.width,1000);assert(png.height>600);assert.equal(state.confirmations.length,0)
@@ -70,4 +70,4 @@ try{
  await click('Giao diện tối');assert(await run("document.querySelector('.cloudWorkspace').classList.contains('themeDark')"))
  await cmd('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});await until("document.body.innerText.includes('Mất mạng')");assert(await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đọc lại').disabled"))
  assert.deepEqual(failures,[]);console.log('PASS Cloud browser fake transport: mobile layout/density/theme, lost-response durable retry, single draft, real banner PNG without stock mutation, SOLD removal and offline guard')
-}finally{ws?.close();if(browser.exitCode===null){browser.kill();await new Promise(r=>browser.once('exit',r))}await new Promise(r=>server.close(r));fs.rmSync(temp,{recursive:true,force:true})}
+}catch(error){console.error('Cloud browser failure:',error);console.error('Transport failures:',failures);try{console.error(await run('document.body.innerText'));const shot=await cmd('Page.captureScreenshot',{format:'png'});fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/failure.png',Buffer.from(shot.data,'base64'))}catch{}throw error}finally{ws?.close();if(browser.exitCode===null){browser.kill();await new Promise(r=>browser.once('exit',r))}await new Promise(r=>server.close(r));fs.rmSync(temp,{recursive:true,force:true,maxRetries:10,retryDelay:100})}

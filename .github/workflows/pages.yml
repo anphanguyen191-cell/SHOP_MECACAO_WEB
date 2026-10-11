@@ -61,6 +61,7 @@ jobs:
         with:
           name: mobile-smoke-${{ github.sha }}
           path: |
+            artifacts/cloud-browser
             artifacts/stage6-control
             artifacts/main-release
             artifacts/mobile-smoke
