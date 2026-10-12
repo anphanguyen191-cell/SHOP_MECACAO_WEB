@@ -190,6 +190,7 @@ try{
  // A link opened from email loads a fresh document, not a hash-only navigation.
  await cmd('Page.navigate',{url:'about:blank'});await until("location.href==='about:blank'");
  await cmd('Page.navigate',{url:url+'#'+recoveryHash});await until("!!document.querySelector('.cloudPasswordSetup input')&&document.querySelector('.cloudPasswordSetup input').getBoundingClientRect().height>0")
+ assert.equal(await run("document.querySelector('.cloudSettings [role=status]').textContent"),'Đã đăng nhập Cloud','Recovery session must not be labeled signed out');
  await run("localStorage.removeItem('mecacao-v7-auth');document.querySelectorAll('.cloudPasswordSetup input')[0].focus()");await cmd('Input.insertText',{text:'fake-new-cloud-password'});await run("document.querySelectorAll('.cloudPasswordSetup input')[1].focus()");await cmd('Input.insertText',{text:'fake-new-cloud-password'});await click('Lưu mật khẩu Cloud');await until("document.body.textContent.includes('Đã lưu mật khẩu Cloud')")
  assert(trace.slice(recoveryStart).some(t=>t.url.includes('/auth/v1/user')&&t.method==='PUT'),'Recovery must permit authenticated password update');
  await click('Đăng xuất');await until("!!document.querySelector('input[autocomplete=current-password]')");
