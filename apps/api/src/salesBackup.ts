@@ -39,7 +39,7 @@ export function createSalesBackup(db:DatabaseSync,dbPath:string,rootInput:string
  const direct=db.prepare("SELECT value FROM app_metadata WHERE key='warehouse_layout'").get()?.value==='DIRECT'
  const files=sources.map(p=>({relative:relative(root,p),backup_path:path.join('files',relative(root,p)),sha256:digest(exactFile(p)),size:fs.statSync(p).size})),m:Manifest={version:direct?4:3,mode:'lossless-recovery',database:'shop.db',database_sha256:'',sourceRoot:root,records,files}
  validate(db,m,r=>exactFile(resolve(root,r)))
- const parent=path.join(path.dirname(dbPath),'backups');fs.mkdirSync(parent,{recursive:true});if(fs.realpathSync(parent)!==parent)throw Error('Backup parent không an toàn');const dir=path.join(parent,'sales-'+randomUUID());fs.mkdirSync(dir)
+ const parent=process.env.SHOP_MANAGED_HOME?path.join(process.env.SHOP_MANAGED_HOME,'backups'):path.join(path.dirname(dbPath),'backups');fs.mkdirSync(parent,{recursive:true});if(fs.realpathSync(parent)!==parent)throw Error('Backup parent không an toàn');const dir=path.join(parent,'sales-'+randomUUID());fs.mkdirSync(dir)
  const snapshot=path.join(dir,'shop.db');db.exec("VACUUM INTO '"+snapshot.replace(/'/g,"''")+"'");m.database_sha256=digest(exactFile(snapshot));for(let i=0;i<files.length;i++){copy(sources[i],path.join(dir,files[i].backup_path),files[i].sha256);onProgress?.({phase:'BACKUP_COPY',completed:i+1,total:files.length,current:files[i].relative})}
  onProgress?.({phase:'BACKUP_VERIFY',completed:files.length,total:files.length})
  writeDurable(path.join(dir,'lossless-manifest.json'),JSON.stringify(m));const verified=verifySalesBackup(dir)

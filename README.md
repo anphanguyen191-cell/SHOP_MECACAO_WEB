@@ -4,6 +4,8 @@
 
 [Hướng dẫn sử dụng và cập nhật](HUONG_DAN_SU_DUNG.md) · [Mở web Cloud](https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1) · [Tải Windows từ main](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip).
 
+Windows có thêm [thiết lập dữ liệu cố định và cập nhật một nút](WINDOWS_CAP_NHAT_MOT_NUT.md). Công cụ chuyển một lần giữ đúng database/kho Cloud và giữ bản gốc; cần nghiệm thu laptop thật.
+
 Windows: Node.js 22.13+ hoặc 24 → **START_SHOP.bat** → chọn kho trên giao diện → nhập/quét kho → Cài đặt Cloud → đăng nhập → Đồng bộ / Tiếp tục. Internet: mở web Cloud và đăng nhập cùng tài khoản shop. Cài lần đầu vào một thư mục cố định; khi cập nhật thay mã trong thư mục đó và giữ nguyên thư mục `data`, cấu hình, database, ảnh. Không giải nén thành bản cài rỗng mới nếu muốn tiếp tục kho hiện có. Đường dẫn dữ liệu nội bộ cũ giữ nguyên để không làm mất liên kết kho.
 
 Các tài liệu chặng bên dưới là lịch sử phát triển; hướng dẫn vận hành hiện tại ở HUONG_DAN_SU_DUNG.md.

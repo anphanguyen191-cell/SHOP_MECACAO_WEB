@@ -3,7 +3,14 @@ import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 export const freshDevelopment=process.env.SHOP_FRESH_DEVELOPMENT==='1'
 export const release={version:'7.1.3',channel:'release',stage:7,status:'RELEASED',next:'Windows và iPhone dùng chung dữ liệu Cloud'}
-export const freshRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../../data/stage6-main-test')
+const legacyRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../../data/stage6-main-test')
+export const managedHome=process.env.SHOP_MANAGED_HOME?path.resolve(process.env.SHOP_MANAGED_HOME):null
+export const freshRoot=managedHome?path.join(managedHome,'data','stage6-main-test'):legacyRoot
+if(freshDevelopment&&managedHome){
+ const c=JSON.parse(fs.readFileSync(path.join(managedHome,'installation.json'),'utf8'))
+ if(c.format!==1||c.home!==managedHome||c.data!==path.join(managedHome,'data')||c.schema!=='130'||!fs.existsSync(path.join(freshRoot,'database','shop-stage6-main-test.db')))throw Error('Dữ liệu cố định chưa được xác minh. Không tạo database rỗng.')
+}
+if(freshDevelopment&&!managedHome&&fs.existsSync(path.join(legacyRoot,'managed-installation.json')))throw Error('Dữ liệu đã chuyển sang vùng cố định. Mở biểu tượng Shop hoặc START_SHOP mới.')
 export const warehouseConfig=path.join(freshRoot,'warehouse-config.json')
 function contains(a:string,b:string){const r=path.relative(a,b);return r===''||(!path.isAbsolute(r)&&r!=='..'&&!r.startsWith('..'+path.sep))}
 export function validateNewWarehouse(value:unknown){

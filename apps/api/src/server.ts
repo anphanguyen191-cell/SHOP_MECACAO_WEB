@@ -4,7 +4,7 @@ import {createLanChangeFeed} from './lanChangeFeed.js'
 import {configureLan} from './lanRuntime.js'
 import {createLanControl,lanControlRouter} from './lanControl.js'
 import {installLanGuard} from './lanServer.js'
-import {freshDevelopment,freshWarehouse,freshRoot,customWarehouse,warehouseConfig,validateNewWarehouse,release} from './freshDevelopment.js'
+import {freshDevelopment,freshWarehouse,freshRoot,managedHome,customWarehouse,warehouseConfig,validateNewWarehouse,release} from './freshDevelopment.js'
 import {taskManager} from './tasks.js'
 import {taskActivity} from './taskActivity.js'
 import {salesActivity,SALES_AREA} from './salesExecution.js'
@@ -41,6 +41,22 @@ recoverImageRenames()
 if(receiptRecovery.journals)console.log('Receipt recovery:',JSON.stringify(receiptRecovery))
 
 const app = express()
+let updateFence=process.env.SHOP_UPDATE_STARTING==='1',updateWrites=0
+const updateProbe=process.env.SHOP_UPDATE_PROBE==='1'
+if(managedHome&&process.send)process.on('message',message=>{
+ const m=message as {type?:string}
+ if(m?.type==='managed:enable'&&!updateProbe)updateFence=false
+ if(m?.type==='managed:quiesce'){
+  updateFence=true;const until=Date.now()+45000
+  const check=()=>{
+   const unresolved=tasks.pendingReview()||fs.existsSync(path.join(sandboxRoot!,SALES_AREA+'-pending.json'))||db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get()
+   if(unresolved){updateFence=false;process.send?.({type:'managed:refused',error:'Có giao dịch/tác vụ cần phục hồi hoặc đối soát. Cập nhật đã dừng.'});return}
+   if(!taskActivity.busy&&!salesActivity.busy&&updateWrites===0){process.send?.({type:'managed:quiesced'});return}
+   if(Date.now()>until){updateFence=false;process.send?.({type:'managed:refused',error:'Tác vụ chưa kết thúc. Chờ hoàn tất rồi cập nhật.'});return}
+   setTimeout(check,200)
+  };check()
+ }
+})
 const lan=configureLan()
 const changeFeed=createLanChangeFeed()
 const PORT = Number(process.env.PORT ?? 3000)
@@ -68,6 +84,23 @@ app.use('/api',(req,res,next)=>{
   if(req.method!=='GET'&&req.method!=='HEAD'){let same=false;try{const u=new URL(req.get('origin')||'');same=u.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(u.hostname)&&Number(u.port||80)===PORT}catch{}if(!same)return res.status(403).json({error:'Thao tác LOCAL phải từ giao diện cùng máy/cùng cổng'})}
  }else if(req.path!=='/health'&&legacyWarehouseActive(db))return res.status(409).json({error:'Kho đã chuyển LOCAL V2; dừng V1 và mở START_SHOP_V2_LOCAL.bat.'})
  next()
+})
+app.get('/api/local/update',(_req,res)=>{
+ if(res.locals.lanUser)return res.status(403).json({error:'Chỉ cập nhật tại Windows của shop'})
+ let state:any=null;if(managedHome){try{state=JSON.parse(fs.readFileSync(path.join(managedHome,'update-status.json'),'utf8'))}catch{}}
+ let active:any=null;if(managedHome){try{active=JSON.parse(fs.readFileSync(path.join(managedHome,'active.json'),'utf8'))}catch{}}
+ res.set('Cache-Control','no-store').json({managed:!!managedHome&&!!process.send,home:managedHome,database:managedHome?dbPath:undefined,active:active?.commit,state})
+})
+app.post('/api/local/update',(_req,res)=>{
+ if(res.locals.lanUser||!managedHome||!process.send||updateProbe)return res.status(403).json({error:'Cần thiết lập dữ liệu cố định trên Windows trước'})
+ const state=JSON.parse(fs.readFileSync(path.join(managedHome,'update-status.json'),'utf8'))
+ if(['CHECKING','DOWNLOADING','BUILDING','STOPPING','BACKUP','VERIFYING'].includes(state.phase))return res.status(409).json({error:'Cập nhật đang chạy'})
+ process.send({type:'managed:update'});res.status(202).json({accepted:true})
+})
+app.use('/api',(req,res,next)=>{
+ if(['GET','HEAD'].includes(req.method))return next()
+ if(updateFence||updateProbe)return res.status(503).json({error:'Shop đang xác minh/cập nhật; chờ mở lại đúng kho.'})
+ updateWrites++;let done=false;const finish=()=>{if(!done){done=true;updateWrites--}};res.once('finish',finish);res.once('close',finish);next()
 })
 if(lanControl)app.use('/api/local/lan',lanControlRouter(lanControl,PORT))
 app.get('/api/lan/changes',(_req,res)=>res.set('Cache-Control','no-store').json(changeFeed.view()))
@@ -156,7 +189,7 @@ app.post('/api/store/import-batch-task',(req,res)=>{if(req.body.confirmed!==true
 
 app.get('/api/health', (_req, res) => res.json({
   lanClient:!!res.locals.lanUser,lanRole:res.locals.lanUser?.role,
-  ok: true, app: 'SHOP_MECACAO_WEB', installationId:res.locals.lanUser?undefined:createHash('sha256').update(path.resolve(process.cwd())).digest('hex'), cloudAuthority:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(), freshDevelopment,customWarehouse,release: freshDevelopment?release:undefined,version: freshDevelopment?release.version:localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:res.locals.lanUser?undefined:(freshDevelopment?freshWarehouse:localRuntime?.warehouse),incoming:res.locals.lanUser?undefined:localRuntime?.incoming,databasePath:res.locals.lanUser?undefined:localRuntime?.database,localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
+  ok: true, app: 'SHOP_MECACAO_WEB', installationId:res.locals.lanUser?undefined:createHash('sha256').update(managedHome??path.resolve(process.cwd())).digest('hex'), cloudAuthority:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(), freshDevelopment,customWarehouse,release: freshDevelopment?release:undefined,version: freshDevelopment?release.version:localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:res.locals.lanUser?undefined:(freshDevelopment?freshWarehouse:localRuntime?.warehouse),incoming:res.locals.lanUser?undefined:localRuntime?.incoming,databasePath:res.locals.lanUser?undefined:(managedHome?dbPath:localRuntime?.database),localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
 }))
 app.post('/api/local/warehouse',(req,res)=>{
  if(!freshDevelopment)return res.status(404).json({error:'Chọn kho áp dụng cho bản main mới'})
@@ -342,7 +375,7 @@ if (fs.existsSync(webDist)) {
 
 if(lanControl)void lanControl.startInitial().catch(e=>console.error('LAN không bật được; Windows LOCAL vẫn chạy:',e.message))
 app.listen(PORT, process.env.SHOP_HOST ?? '127.0.0.1', () => {
-  startWarehouseWatcher(rootPath=>{if(!tasks.pendingReview())tasks.start('SCAN',{rootPath,background:true},'watch-'+randomUUID())})
+  startWarehouseWatcher(rootPath=>{if(!updateFence&&!updateProbe&&!tasks.pendingReview())tasks.start('SCAN',{rootPath,background:true},'watch-'+randomUUID())})
   console.log(`Shop Mẹ CaCao đang chạy: http://localhost:${PORT}`)
   console.log(`Database: ${dbPath}`)
 })

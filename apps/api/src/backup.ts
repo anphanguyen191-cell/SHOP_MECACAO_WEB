@@ -12,7 +12,7 @@ import { db, dbPath } from './db.js'
 import {isInternalWarehousePath} from './warehouseAreas.js'
 
 export function createBackup(){
- const root=path.dirname(dbPath),dir=path.join(root,'backups')
+ const root=path.dirname(dbPath),dir=process.env.SHOP_MANAGED_HOME?path.join(process.env.SHOP_MANAGED_HOME,'backups'):path.join(root,'backups')
  fs.mkdirSync(dir,{recursive:true})
  const stamp=new Date().toISOString().replace(/[:.]/g,'-'),backupDir=path.join(dir,'backup-'+stamp)
  fs.mkdirSync(backupDir,{recursive:true})
@@ -26,7 +26,7 @@ export function createBackup(){
 }
 
 export async function createOptimizedImageBackup(){
- const root=path.dirname(dbPath),dir=path.join(root,'backups')
+ const root=path.dirname(dbPath),dir=process.env.SHOP_MANAGED_HOME?path.join(process.env.SHOP_MANAGED_HOME,'backups'):path.join(root,'backups')
  fs.mkdirSync(dir,{recursive:true})
  const stamp=new Date().toISOString().replace(/[:.]/g,'-'),backupDir=path.join(dir,'images-'+stamp),imagesDir=path.join(backupDir,'images')
  fs.mkdirSync(imagesDir,{recursive:true})

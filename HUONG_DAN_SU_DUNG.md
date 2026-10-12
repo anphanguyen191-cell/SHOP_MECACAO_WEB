@@ -22,7 +22,11 @@
 
 Windows nhập kho và đối soát tại bản localhost chạy bằng START_SHOP.bat. Cloud là nguồn tồn/giá/đơn/tiền dùng chung sau khi kích hoạt. Bán hàng trên giao diện Cloud ở cả Windows và iPhone. Cloud cần Internet để ghi. Nháp và PNG không trừ tồn; SOLD ghi giao dịch. Ảnh nguồn laptop giữ nguyên; Cloud dùng một JPEG ≤150000 bytes. Hộp ảnh iPhone chưa tăng tồn cho tới khi Windows duyệt/nhập và đồng bộ. Ảnh SOLD tự dọn khỏi Supabase khi laptop mở giao diện localhost và đăng nhập Cloud bằng tài khoản chủ shop, sau khi ảnh lưu local được xác minh. Tự kiểm tra khi mở ứng dụng, khi có sự kiện Cloud và mỗi 30 giây; tab bị trình duyệt cho ngủ sẽ tiếp tục khi hoạt động lại. Nếu laptop tắt, mất mạng hoặc ảnh local sai checksum thì ảnh Cloud vẫn giữ, tự tiếp tục khi đủ điều kiện. Không cần bấm dọn; chức năng dọn thủ công vẫn có trong Ảnh SOLD. Lịch sử đơn và tiền giữ nguyên.
 
-## Cập nhật để giữ kho hiện có
+## Cập nhật một nút và dữ liệu cố định
+
+Khuyến nghị dùng gói bàn giao có `CAI_DU_LIEU_CO_DINH.bat` để thiết lập một lần. Sau đó cập nhật ngay trong Cài đặt, không chép đè thủ công. Xem [hướng dẫn dữ liệu cố định](WINDOWS_CAP_NHAT_MOT_NUT.md). Kho ảnh giữ nguyên, database/config nằm tại vùng dữ liệu cố định của tài khoản Windows. Gói chuyển yêu cầu kho main schema 130 đã chọn thư mục kho riêng. Không tự chuyển database phiên bản khác.
+
+## Cập nhật thủ công khi chưa thiết lập dữ liệu cố định
 
 1. Dừng ứng dụng đang chạy và dùng chức năng sao lưu hiện có trước khi thay mã.
 2. Giải nén ZIP mới vào nơi tạm. Chép nội dung thư mục chứa START_SHOP.bat vào đúng thư mục cài đang dùng, thay các file mã nguồn khi được hỏi.
