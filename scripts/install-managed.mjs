@@ -7,7 +7,14 @@ import {probe,launch} from './managed-runtime.mjs'
 export async function migrate(source,home,program,commit,{prepareProgram=prepare,probeProgram=probe}={}){
  source=physical(source,true);program=physical(program,true);home=path.resolve(home);
  if(!/^[a-f0-9]{40}$/.test(commit)||inside(source,home)||inside(home,source)||inside(program,home)||inside(home,program))throw Error('Chọn vùng dữ liệu riêng ngoài thư mục chương trình');
- if(fs.existsSync(home))throw Error('Vùng dữ liệu cố định đã tồn tại. Không ghi đè; kiểm tra cấu hình cũ.');
+ if(fs.existsSync(home)){
+  const failed=path.join(home,'transfer-failed.json'),cfile=path.join(home,'installation.json');
+  if(!fs.existsSync(failed)||!fs.existsSync(cfile)||read(failed).originalRetained!==true||read(cfile).sourceInstallation!==source)throw Error('Vùng dữ liệu cố định đã tồn tại. Không ghi đè; kiểm tra cấu hình cũ.');
+  const runtime=path.join(home,'runtime.json');if(fs.existsSync(runtime)){try{process.kill(read(runtime).pid,0);throw Error('Bản chuyển trước vẫn đang chạy')}catch(e){if(e.code!=='ESRCH')throw e}}
+  // Preserve the failed attempt for review; a retry starts from the current
+  // original installation, never from an uncertain partial destination.
+  fs.renameSync(home,home+'-failed-'+Date.now());
+ }
  const oldData=physical(path.join(source,'data'),true),oldRoot=physical(path.join(oldData,'stage6-main-test'),true),oldDb=physical(path.join(oldRoot,'database','shop-stage6-main-test.db'));
  const cfg=path.join(oldRoot,'warehouse-config.json');if(!fs.existsSync(cfg))throw Error('Công cụ chuyển hiện yêu cầu kho ảnh riêng đã được chọn trên giao diện. Không tự đổi đường dẫn kho mặc định.');
  const warehouseConfig=read(cfg);if(warehouseConfig.format!==1)throw Error('Cấu hình kho không hợp lệ');const warehouse=physical(warehouseConfig.warehouse,true);if(inside(warehouse,home)||inside(home,warehouse))throw Error('Dữ liệu cố định phải tách khỏi kho ảnh');assertNoRuntime(warehouse,oldDb);assertNoRuntime(oldRoot,oldDb);

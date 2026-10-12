@@ -10,6 +10,8 @@ Chức năng mới dành cho bản main schema 130 đang dùng kho ảnh riêng 
 4. Chạy `CAI_DU_LIEU_CO_DINH.bat`. Hộp chọn thư mục yêu cầu chọn thư mục Shop CŨ đang dùng, nơi có `START_SHOP.bat` và `data`.
 5. Công cụ nhận diện đúng database `data/stage6-main-test/database/shop-stage6-main-test.db`, kiểm tra schema/integrity/lịch sử và mã kho Cloud, sao chép toàn bộ data theo SHA-256, rồi kiểm thử bản mới trên bản sao.
 6. Chỉ khi kiểm tra đạt, công cụ nối các launcher cũ sang nơi mới và tạo lại biểu tượng Shop trên Desktop. Database gốc và kho ảnh không bị xóa. Không chạy database gốc và mới luân phiên.
+Nếu lần chuyển thất bại do tải/build, có thể chạy lại công cụ. Bản chuyển thất bại được giữ riêng để kiểm tra; lần thử lại lấy dữ liệu từ bản cài gốc đang dùng, không lấy bản đích dở dang.
+
 7. Kiểm tra Kho đang dùng, tồn, lịch sử bán và kết nối Cloud. Chênh lệch 18 bộ đang được đối soát riêng; công cụ cập nhật không sửa số tồn để ép khớp Cloud.
 
 Mặc định vùng cố định nằm tại `%LOCALAPPDATA%\ShopMeCaCao\Managed` của tài khoản Windows hiện tại:
