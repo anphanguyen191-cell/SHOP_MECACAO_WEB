@@ -7,7 +7,7 @@ import './salesDrafts.css'
 import {ShopHeader,ShopDrawer,type ShopSection} from './ShopChrome'
 import {useCallback,useEffect,useRef,useState} from 'react'
 import CloudSettings from './CloudSettings'
-import {cloud,cloudRpc,cloudRows,cloudCommand,retryCloudCommand,pendingCloudCommand,CloudRpcError} from './cloudClient'
+import {cloudRecoveryRequested,cloud,cloudRpc,cloudRows,cloudCommand,retryCloudCommand,pendingCloudCommand,CloudRpcError} from './cloudClient'
 import './cloudWorkspace.css'
 import {CLOUD_RELEASE} from './cloudRelease'
 import CloudDebts from './CloudDebts'
@@ -33,7 +33,7 @@ type Snapshot=Record<string,any[]>
 const tables=['products','product_variants','product_images','cloud_image_assets','sales_units','sales_orders','sales_order_images','sales_confirmations','order_contacts','shop_customers','stocktake_sessions','stocktake_rows','cloud_photo_inbox','finance_entries','aftercare_cases']
 const money=(n:number)=>new Intl.NumberFormat('vi-VN').format(n)+' ₫'
 export default function CloudWorkspace(){
- const [signed,setSigned]=useState(false),[data,setData]=useState<Snapshot>({}),[urls,setUrls]=useState<Record<string,string>>({}),[status,setStatus]=useState('Đang kiểm tra đăng nhập…'),[tab,setTab]=useState('inventory'),[busy,setBusy]=useState(false),[selection,setSelection]=useState<number[]>([]),[query,setQuery]=useState(''),[customerId,setCustomerId]=useState(''),[recipient,setRecipient]=useState(''),[phone,setPhone]=useState(''),[address,setAddress]=useState(''),[shipping,setShipping]=useState('0'),[discount,setDiscount]=useState('0'),[finance,setFinance]=useState<any>(null),[current,setCurrent]=useState(''),[role,setRole]=useState(''),[online,setOnline]=useState(navigator.onLine),[cloudReady,setCloudReady]=useState(false),[receiptSource,setReceiptSource]=useState<string|null>(null),[syncStatus,setSyncStatus]=useState('Đồng bộ lần đầu tại Kết nối')
+ const [signed,setSigned]=useState(false),[data,setData]=useState<Snapshot>({}),[urls,setUrls]=useState<Record<string,string>>({}),[status,setStatus]=useState('Đang kiểm tra đăng nhập…'),[tab,setTab]=useState(cloudRecoveryRequested?'settings':'inventory'),[busy,setBusy]=useState(false),[selection,setSelection]=useState<number[]>([]),[query,setQuery]=useState(''),[customerId,setCustomerId]=useState(''),[recipient,setRecipient]=useState(''),[phone,setPhone]=useState(''),[address,setAddress]=useState(''),[shipping,setShipping]=useState('0'),[discount,setDiscount]=useState('0'),[finance,setFinance]=useState<any>(null),[current,setCurrent]=useState(''),[role,setRole]=useState(''),[online,setOnline]=useState(navigator.onLine),[cloudReady,setCloudReady]=useState(false),[receiptSource,setReceiptSource]=useState<string|null>(null),[syncStatus,setSyncStatus]=useState('Đồng bộ lần đầu tại Kết nối')
  const [density,setDensity]=useDisplaySize(),[dark,setDark]=useBooleanPreference('dark-mode',false),[expanded,setExpanded]=useState(false)
  const [menuOpen,setMenuOpen]=useState(false),[menuSearch,setMenuSearch]=useState('')
  const desktop=['localhost','127.0.0.1'].includes(location.hostname)
@@ -63,7 +63,7 @@ export default function CloudWorkspace(){
  },[])
  useEffect(()=>{
   active.current=true;void cloud.auth.getSession().then(({data})=>setSigned(!!data.session))
-  const {data:auth}=cloud.auth.onAuthStateChange((_event,session)=>{generation.current++;setSigned(!!session);if(!session){setData({});setUrls({});urlCache.current.clear();setSelection([]);setFinance(null);setRole('')}})
+  const {data:auth}=cloud.auth.onAuthStateChange((event,session)=>{generation.current++;setSigned(!!session);if(event==='PASSWORD_RECOVERY'&&session)setTab('settings');if(!session){setData({});setUrls({});urlCache.current.clear();setSelection([]);setFinance(null);setRole('')}})
   const connected=()=>{setOnline(navigator.onLine);if(navigator.onLine)void load()}
   const sync=(event:Event)=>setSyncStatus((event as CustomEvent<string>).detail);window.addEventListener('mecacao-cloud-sync-status',sync);
   window.addEventListener('online',connected);window.addEventListener('offline',connected)

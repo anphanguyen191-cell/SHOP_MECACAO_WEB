@@ -1,6 +1,9 @@
 import {createClient} from '@supabase/supabase-js'
 export const CLOUD_URL='https://eyckwoewpomssjjggslr.supabase.co'
 export const CLOUD_BUCKET='shop-mobile-images'
+// Capture only the recovery intent before the SDK consumes and clears the URL.
+// This flag routes the UI; only a validated SDK session permits password updates.
+export const cloudRecoveryRequested=new URLSearchParams(location.hash.slice(1)).get('type')==='recovery'
 export const cloud=createClient(CLOUD_URL,'sb_publishable_iyEI25gFfU4pXxmdFJ823Q_YYG-ViGJ',{auth:{storageKey:'mecacao-v7-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}})
 export class CloudRpcError extends Error {constructor(message:string,public code:string){super(message)}}
 export async function cloudRpc<T=any>(name:string,args:Record<string,unknown>={}){const {data,error}=await cloud.rpc(name,args);if(error)throw new CloudRpcError(cloudError(error.message),error.code);return data as T}

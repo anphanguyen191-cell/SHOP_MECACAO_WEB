@@ -35,6 +35,7 @@ async function intercept(p){trace.push({url:p.request.url,method:p.request.metho
  if(u.pathname==='/auth/v1/user'){if(p.request.method==='PUT'){assert.equal(body.password,'fake-new-cloud-password');state.loginPassword=body.password}response=user}
  else if(u.pathname==='/auth/v1/logout')response={}
  else if(u.pathname==='/auth/v1/token'&&u.searchParams.get('grant_type')==='password'){assert.equal(body.email,user.email);if(body.password===state.loginPassword)response=session;else {status=400;response={code:'invalid_credentials',msg:'Invalid login credentials'}}}
+ else if(u.pathname==='/auth/v1/recover'){assert.equal(body.email,user.email);assert.equal(u.searchParams.get('redirect_to'),'https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1');response={}}
  else if(u.pathname==='/auth/v1/otp'){assert.equal(body.email,user.email);assert.equal(u.searchParams.get('redirect_to'),'https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1');response={}}
  else if(u.pathname==='/auth/v1/verify'){assert.equal(body.token_hash,'fake-unopened-link');assert.equal(body.type,'email');response=session}
  else if(u.pathname.includes('/rest/v1/rpc/')){
@@ -183,10 +184,16 @@ try{
  // Recovery callback must persist a session before opening password settings.
  await click('Đăng xuất');await until("!!document.querySelector('input[autocomplete=current-password]')")
  const recoveryStart=trace.length;
+ await click('Quên mật khẩu Cloud? Gửi email đặt lại');await until("document.body.textContent.includes('Supabase đã tiếp nhận yêu cầu khôi phục mật khẩu')");
+ assert(trace.slice(recoveryStart).some(t=>t.url.includes('/auth/v1/recover')&&t.method==='POST'),'Reset must use the supported recovery endpoint');
  const recoveryHash=new URLSearchParams({access_token:token,refresh_token:session.refresh_token,expires_in:'3600',expires_at:String(session.expires_at),token_type:'bearer',type:'recovery'});
- await cmd('Page.navigate',{url:url+'#'+recoveryHash});await until("!!document.querySelector('.treeProductHead')")
- await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("!!document.querySelector('.cloudPasswordSetup input')")
+ // A link opened from email loads a fresh document, not a hash-only navigation.
+ await cmd('Page.navigate',{url:'about:blank'});await until("location.href==='about:blank'");
+ await cmd('Page.navigate',{url:url+'#'+recoveryHash});await until("!!document.querySelector('.cloudPasswordSetup input')&&document.querySelector('.cloudPasswordSetup input').getBoundingClientRect().height>0")
  await run("localStorage.removeItem('mecacao-v7-auth');document.querySelectorAll('.cloudPasswordSetup input')[0].focus()");await cmd('Input.insertText',{text:'fake-new-cloud-password'});await run("document.querySelectorAll('.cloudPasswordSetup input')[1].focus()");await cmd('Input.insertText',{text:'fake-new-cloud-password'});await click('Lưu mật khẩu Cloud');await until("document.body.textContent.includes('Đã lưu mật khẩu Cloud')")
  assert(trace.slice(recoveryStart).some(t=>t.url.includes('/auth/v1/user')&&t.method==='PUT'),'Recovery must permit authenticated password update');
- assert.deepEqual(failures,[]);console.log('PASS Cloud browser fake transport: mobile layout/density/theme, lost-response durable retry, single draft, real banner PNG without stock mutation, SOLD removal, automatic verified cleanup away from Settings, corrupt archive refusal, lost Storage response retry and offline guard')
+ await click('Đăng xuất');await until("!!document.querySelector('input[autocomplete=current-password]')");
+ await run("document.querySelector('input[type=email]').focus();document.querySelector('input[type=email]').select()");await cmd('Input.insertText',{text:user.email});await run("document.querySelector('input[autocomplete=current-password]').focus()");await cmd('Input.insertText',{text:'fake-new-cloud-password'});await click('Đăng nhập');await until("!!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đăng xuất')");
+ await cmd('Page.reload');await until("!!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đăng xuất')");
+ assert.deepEqual(failures,[]);console.log('PASS Cloud browser fake transport: recovery email/callback, visible password setup, recovery storage restoration, password re-login and reload, mobile layout/density/theme, lost-response durable retry, single draft, real banner PNG without stock mutation, SOLD removal, automatic verified cleanup away from Settings, corrupt archive refusal, lost Storage response retry and offline guard')
 }catch(error){console.error('Cloud browser failure:',error);console.error('Transport failures:',failures);console.error('Transport trace:',trace);try{console.error(await run('document.body.innerText'));const shot=await cmd('Page.captureScreenshot',{format:'png'});fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/failure.png',Buffer.from(shot.data,'base64'))}catch{}throw error}finally{if(ws?.readyState===1)try{await cmd('Browser.close')}catch{}ws?.close();if(browser.exitCode===null){browser.kill();await new Promise(r=>browser.once('exit',r))}await new Promise(r=>server.close(r));try{fs.rmSync(temp,{recursive:true,force:true,maxRetries:10,retryDelay:100})}catch(error){console.warn('Browser temporary cleanup:',error.code)}}
