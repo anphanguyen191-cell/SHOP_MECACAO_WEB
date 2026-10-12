@@ -37,7 +37,7 @@ export async function migrate(source,home,program,commit,{prepareProgram=prepare
   for(const name of ['START_SHOP.bat','MO_SHOP.vbs'])if(fs.existsSync(path.join(source,name)))fs.copyFileSync(path.join(source,name),path.join(home,'backups','old-launchers',name));
   const app=await launch(home,{commit,path:releaseDir});app.child.send('SHOP_LOCAL_CLOSE');await app.exited;sameDatabase(before,inspect(path.join(home,'data','stage6-main-test','database','shop-stage6-main-test.db')));
   atomic(path.join(oldRoot,'managed-installation.json'),{format:1,home,database:path.join(home,'data','stage6-main-test','database','shop-stage6-main-test.db')});
-  const launcher=`@echo off\r\nnode "${home.replaceAll('%','%%')}\\runner.mjs"\r\nif errorlevel 1 pause\r\n`;
+  const launcher='@echo off\r\nchcp 65001 >nul\r\ncd /d "%~dp0"\r\nnode -e "const fs=require(\'node:fs\'),cp=require(\'node:child_process\'),path=require(\'node:path\');const h=JSON.parse(fs.readFileSync(\'data/stage6-main-test/managed-installation.json\',\'utf8\')).home;const p=cp.spawn(process.execPath,[path.join(h,\'runner.mjs\')],{cwd:h,stdio:\'inherit\'});p.on(\'error\',e=>{console.error(e.message);process.exit(1)});p.on(\'exit\',c=>process.exit(c??1))"\r\nif errorlevel 1 pause\r\n';
   fs.writeFileSync(path.join(source,'START_SHOP.bat'),launcher);
   fs.writeFileSync(path.join(source,'MO_SHOP.vbs'),Buffer.from('\uFEFF'+`Set sh=CreateObject("WScript.Shell")\nsh.Run "wscript.exe " & Chr(34) & "${home.replaceAll('"','""')}\\MO_SHOP.vbs" & Chr(34),0,False\n`,'utf16le'));
   switched=true;console.log('CHUYỂN DỮ LIỆU PASS. Database/lịch sử/mã Cloud khớp; kho ảnh và dữ liệu gốc được giữ.');return {home,warehouse,before,manifest};
