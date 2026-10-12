@@ -57,7 +57,8 @@ shortcut.IconLocation=sh.ExpandEnvironmentStrings("%SystemRoot%\\System32\\shell
 shortcut.Description="Shop Me CaCao - du lieu co dinh"
 shortcut.Save
 sh.CurrentDirectory=root
-code=sh.Run("cmd.exe /d /c " & q & "node " & q & root & "\\runner.mjs" & q & " >> " & q & root & "\\launcher.log" & q & " 2>&1" & q,0,True)
+code=sh.Run("node.exe " & q & root & "\\runner.mjs" & q,0,True)
+If sh.Environment("Process")("SHOP_NO_BROWSER")="1" Then WScript.Quit code
 If code<>0 Then MsgBox "Khong mo duoc Shop. Giu nguyen du lieu va xem launcher.log.",48,"Shop Me CaCao"
 `}
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){

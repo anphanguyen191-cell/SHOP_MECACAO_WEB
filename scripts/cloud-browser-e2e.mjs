@@ -28,7 +28,7 @@ let ws,next=0;const pending=new Map(),failures=[],trace=[]
 function cmd(method,params={}){return new Promise((resolve,reject)=>{const id=++next,t=setTimeout(()=>{pending.delete(id);reject(Error(method+' timeout'))},20000);pending.set(id,{resolve:r=>{clearTimeout(t);resolve(r)},reject});ws.send(JSON.stringify({id,method,params}))})}
 async function run(expression){const r=await cmd('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value}
 async function until(expression){for(let n=0;n<150;n++){if(await run("Boolean("+expression+")"))return;await delay(100)}throw Error(expression+'\n'+await run('document.body.innerText'))}
-async function click(label){await run(`(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${JSON.stringify(label)});if(!b||b.disabled)throw Error('Button unavailable');b.click()})()`)}
+async function click(label){await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()==="+JSON.stringify(label)+"&&!b.disabled)");await run(`(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${JSON.stringify(label)});if(!b||b.disabled)throw Error('Button unavailable');b.click()})()`)}
 async function intercept(p){trace.push({url:p.request.url,method:p.request.method,body:p.request.postData});
  if(p.request.method==='OPTIONS'){await cmd('Fetch.fulfillRequest',{requestId:p.requestId,responseCode:200,responseHeaders:[{name:'Access-Control-Allow-Origin',value:'*'},{name:'Access-Control-Allow-Headers',value:Object.entries(p.request.headers).find(([key])=>key.toLowerCase()==='access-control-request-headers')?.[1]||'authorization,apikey,x-client-info,content-type,x-supabase-api-version'},{name:'Access-Control-Allow-Methods',value:'GET,POST,PUT,DELETE,OPTIONS'}],body:'e30='});return}
  const u=new URL(p.request.url),body=p.request.postData?JSON.parse(p.request.postData):{},endpoint=u.pathname.split('/').pop();let response={},status=200,mime='application/json',binary
@@ -164,7 +164,7 @@ try{
  assert(trace.some(t=>t.url.includes('/auth/v1/verify')&&t.method==='POST'),'Login verifies in app instead of following localhost redirect')
  assert.equal(await run('location.href'),url)
  assert.equal(await run('document.documentElement.scrollWidth<=innerWidth+2'),true)
- await click('Đăng xuất');await until("!!document.querySelector('input[type=password]')")
+ await click('Đăng xuất');await until("!!document.querySelector('input[autocomplete=current-password]')")
  const authStart=trace.length;
  await run("document.querySelector('input[type=email]').focus();document.querySelector('input[type=email]').select()");await cmd('Input.insertText',{text:user.email});await run("document.querySelector('input[type=password]').focus()");await cmd('Input.insertText',{text:'fake-wrong-password'});await click('Đăng nhập');await until("document.body.textContent.includes('Email hoặc mật khẩu tài khoản shop chưa đúng')")
  assert(!await run("!!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đăng xuất')"),'Wrong password must not sign in')
