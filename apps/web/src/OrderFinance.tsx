@@ -6,7 +6,7 @@ const vnd=(n:number|bigint)=>n.toLocaleString('vi-VN')+' đ'
 const methodNames:Record<string,string>={COD:'COD',TRANSFER:'Chuyển khoản',CASH:'Tiền mặt'}
 const deliveryNames:Record<string,string>={NEW:'Chưa giao',SHIPPED:'Đang giao',DELIVERED:'Đã giao',FAILED:'Giao thất bại'}
 const kindNames:Record<string,string>={RECEIPT:'Thu tiền',REFUND:'Hoàn tiền',CREDIT:'Điều chỉnh giảm',RETURN:'Trả hàng',EXCHANGE:'Đổi hàng',SUPPORT:'Hỗ trợ'}
-export default function OrderFinance({id,disabled,onChanged}:{id:string;disabled:boolean;onChanged:()=>void}){
+export default function OrderFinance({id,disabled,onChanged,onEditingChange}:{id:string;disabled:boolean;onChanged:()=>void;onEditingChange?:(dirty:boolean)=>void}){
  const [data,setData]=useState<any>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[reload,setReload]=useState(0),[method,setMethod]=useState('COD'),[receiptMethod,setReceiptMethod]=useState('COD'),[delivery,setDelivery]=useState('NEW'),[tracking,setTracking]=useState('')
  const [kind,setKind]=useState('RECEIPT'),[amount,setAmount]=useState(''),[note,setNote]=useState(''),[caseKind,setCaseKind]=useState('SUPPORT'),[caseNote,setCaseNote]=useState(''),[resolution,setResolution]=useState<Record<string,string>>({})
  const pendingKey='mecacao-finance-pending-'+id
@@ -15,6 +15,7 @@ export default function OrderFinance({id,disabled,onChanged}:{id:string;disabled
  useEffect(()=>{const c=new AbortController();setError('');apiJson('/api/sales/drafts/'+id+'/finance',{signal:c.signal}).then(s=>{if(c.signal.aborted)return;setData(s);setMethod(s.method);setReceiptMethod(s.method);setDelivery(s.delivery);setTracking(s.tracking)}).catch(e=>{if(!c.signal.aborted)setError(e.message)});return()=>c.abort()},[id,reload])
  const financeEditing=!!data&&(!!amount.trim()||!!note.trim()||!!caseNote.trim()||tracking!==(data.tracking??'')||delivery!==data.delivery||method!==data.method||receiptMethod!==data.method||kind!=='RECEIPT'||caseKind!=='SUPPORT'||Object.values(resolution).some(x=>x.trim().length>0))
  useEffect(()=>{const changed=()=>{if(lock.current||busy||pending||financeEditing)setError('Sổ thanh toán có thay đổi trên thiết bị khác. Nội dung đang nhập được giữ nguyên; đối chiếu sổ trước khi lưu.');else setReload(n=>n+1)};window.addEventListener('mecacao-server-change',changed);return()=>window.removeEventListener('mecacao-server-change',changed)},[busy,pending,financeEditing])
+ useEffect(()=>{onEditingChange?.(financeEditing);return()=>onEditingChange?.(false)},[financeEditing,onEditingChange])
  useUnsavedChanges(financeEditing||busy||!!pending,()=>setError('Thông tin thanh toán chưa hoàn tất. Ghi nhận hoặc Mở lại sổ để bỏ nội dung đang nhập.'))
  async function write(route:string,body:any,verb='POST',idempotent=false){
   if(lock.current||disabled||!data||pending)return;lock.current=true;setBusy(true);setError('')

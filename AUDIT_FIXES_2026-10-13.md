@@ -16,10 +16,10 @@ Phạm vi: LOCAL/Windows, Cloud và mobile; triển khai tuần tự theo yêu c
 | F10 | Lấy danh mục và ánh xạ category_id đúng. |
 | F11 | Báo cáo nhận thông báo dữ liệu Cloud thay đổi và tự tổng hợp lại. |
 | F12 | Không coi giá/phí/giảm trống là 0; từ chối số lẻ, âm và quá giới hạn số nguyên; áp dụng nhập hàng, giá và đơn. |
-| F13 | Bảo vệ thông tin đang nhập ở giá, nháp, kiểm kê, nhập hàng, thanh toán; không remount thanh toán vì phiên bản thay đổi. Có cách bỏ thay đổi/đọc lại. |
+| F13 | Bảo vệ thông tin đang nhập ở giá, nháp, kiểm kê, nhập hàng, thanh toán; không remount thanh toán vì phiên bản thay đổi hoặc do màn đơn đọc lại phía sau. Có cách bỏ thay đổi/đọc lại. |
 | F14 | Chi tiết sản phẩm, nhập hàng và trình cập nhật hiện lỗi đọc và cách thử lại; cập nhật kiểm HTTP status. |
 | F15 | PROJECT_STATE/ROADMAP phản ánh Cloud đang hoạt động, các giới hạn và hướng tiếp theo. |
-| F16 | V7.2.0 hiện mã build từ git; Windows giữ mã bản cài trong trình cập nhật. Giao diện có mở bản mới và bảo vệ nội dung chưa lưu. |
+| F16 | V7.2.0 hiện mã build từ git hoặc dấu vân tay mã nguồn của gói ZIP không có Git; Windows giữ mã bản cài trong trình cập nhật. Giao diện có mở bản mới và bảo vệ nội dung chưa lưu. |
 | F17 | Nâng fflate lên 0.8.3; kiểm lại tải ZIP, traversal, phục hồi khi cập nhật lỗi. |
 | F18 | Cloud trên Windows đọc khả năng restore LOCAL và hiện panel phù hợp, không mở tính năng Windows trên mobile. |
 | F19 | Điện thoại dùng tel/autocomplete; địa chỉ khách/đơn dùng textarea. |
