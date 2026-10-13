@@ -122,6 +122,11 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/web/dist
+          name: github-pages-${{ github.run_attempt }}
+      - name: Allow uploaded Pages artifact metadata to become visible
+        run: sleep 15
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
