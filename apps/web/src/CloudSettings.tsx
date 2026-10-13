@@ -37,18 +37,19 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
     const payload={[field]:batch[field].slice(start,start+100)},hash=await sha(JSON.stringify(payload));await cloudRpc('mc_v7_catalog',{p_instance:batch.instance,p_request:'catalog:'+batch.instance+':'+hash,p_payload:payload});registered+=payload[field].length;setProgress({registered,uploaded,skipped})
    }
    for(let start=0;start<batch.transactions.length;start+=100){const rows=batch.transactions.slice(start,start+100),hash=await sha(JSON.stringify(rows));await cloudRpc('mc_v7_ledger',{p_instance:batch.instance,p_request:'ledger:'+batch.instance+':'+hash,p_rows:rows})}
-   const availability=new Map((batch.sourceState||[]).map((x:any)=>[Number(x.id),x.present]));for(let start=0;start<(batch.sourceState||[]).length;start+=100)await cloudRpc('mc_v7_presence',{p_instance:batch.instance,p_request:'presence:'+crypto.randomUUID(),p_images:batch.sourceState.slice(start,start+100)})
+   const availability=new Map((batch.sourceState||[]).map((x:any)=>[Number(x.id),x.present])),verifiedSource:any[]=[],missingSource=(batch.sourceState||[]).filter((x:any)=>!x.present);for(let start=0;start<missingSource.length;start+=100)await cloudRpc('mc_v7_presence',{p_instance:batch.instance,p_request:'presence:'+crypto.randomUUID(),p_images:missingSource.slice(start,start+100)})
    for(const image of batch.images){
     if(availability.get(Number(image.id))===false){skipped++;setStatus('Ảnh nguồn #'+image.id+' đang thiếu; Cloud đã tạm ngừng cho chọn bán ảnh này, file Cloud được giữ để đối soát.');continue}
     if(paused.current){setStatus('Đã tạm dừng. Tiếp tục sẽ giữ các ảnh đã hoàn tất.');return}
     setStatus('Đang tối ưu/upload ảnh #'+image.id)
     const response=await fetch('/api/cloud/images/'+image.id);if(!response.ok){const err=await response.json();throw Error(err.error||'Không đọc được ảnh')}
     const bytes=await response.arrayBuffer(),hash=response.headers.get('X-Image-Sha256');if(bytes.byteLength>150000||!hash)throw Error('Ảnh tối ưu chưa đạt điều kiện upload.')
-    if(ready.has(Number(image.id))){if(ready.get(Number(image.id))!==hash)throw Error('Ảnh nguồn #'+image.id+' đã thay đổi so với Cloud. Cần đối soát.');skipped++;setProgress({registered,uploaded,skipped});continue}
+    if(ready.has(Number(image.id))){if(ready.get(Number(image.id))!==hash){if(batch.sourceState)await cloudRpc('mc_v7_presence',{p_instance:batch.instance,p_request:'presence:'+crypto.randomUUID(),p_images:[{id:Number(image.id),present:false}]});throw Error('Ảnh nguồn #'+image.id+' đã thay đổi so với Cloud. Đã ngừng cho chọn bán ảnh này để đối soát.')}verifiedSource.push({id:Number(image.id),present:true});skipped++;setProgress({registered,uploaded,skipped});continue}
     const path='v7/'+batch.instance+'/'+image.id+'.jpg';const {error}=await cloud.storage.from(CLOUD_BUCKET).upload(path,bytes,{contentType:'image/jpeg',upsert:false,cacheControl:'3600'})
     if(error){const {data, error:readError}=await cloud.storage.from(CLOUD_BUCKET).download(path);if(readError||!data)throw Error(error.message);const existing=await data.arrayBuffer(),digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',existing))).map(v=>v.toString(16).padStart(2,'0')).join('');if(digest!==hash)throw Error('Ảnh Cloud khác ảnh đang upload. Dừng để đối soát.')}
-    await cloudRpc('mc_v7_image',{p_image:image.id,p_sha:hash});uploaded++;setProgress({registered,uploaded,skipped})
+    await cloudRpc('mc_v7_image',{p_image:image.id,p_sha:hash});verifiedSource.push({id:Number(image.id),present:true});uploaded++;setProgress({registered,uploaded,skipped})
    }
+   if(batch.sourceState)for(let start=0;start<verifiedSource.length;start+=100)await cloudRpc('mc_v7_presence',{p_instance:batch.instance,p_request:'presence:'+crypto.randomUUID(),p_images:verifiedSource.slice(start,start+100)})
    if(batch.done)break;offset=batch.nextOffset
   }
   await apiJson('/api/cloud/activate',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:'{}'})
