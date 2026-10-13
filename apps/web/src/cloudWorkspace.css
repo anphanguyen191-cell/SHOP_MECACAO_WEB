@@ -19,3 +19,5 @@
 .cloudWorkspace :is(.cloudSettings,.catalogPanel,.phoneInbox,.stocktakePanel,.soldRetentionPage) button.primary{background:var(--mc-accent-strong);color:white}
 .cloudWorkspace :is(.catalogPanel,.phoneInbox,.stocktakePanel) input:not([type=checkbox]){width:100%;min-width:0}
 .cloudWorkspace .catalogPanel .product{margin-bottom:14px}
+
+@media(max-width:600px){.cloudWorkspace input,.cloudWorkspace select,.cloudWorkspace textarea{font-size:16px}.cloudWorkspace .salesButtons{flex-wrap:wrap}.cloudWorkspace textarea{width:100%;min-height:84px;resize:vertical}.cloudWorkspace .cloudShareButtons>*{min-width:0;max-width:100%;overflow-wrap:break-word}.cloudWorkspace .cloudShareButtons button{min-height:44px}}

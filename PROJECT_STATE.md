@@ -1,23 +1,11 @@
-# Trạng thái hiện tại — MAIN TEST 3.5.0-stage6-main-test
+# Trạng thái hiện tại — V7.2.0
 
-Bổ sung UI Checkpoint 6.1–6.6 theo spec chủ shop; [chi tiết](UI_CHECKPOINT6_2026-10-11.md). Chặng 6 LAN đã được hoàn thiện phần mềm: quản lý HTTPS/tài khoản/bật tắt LAN ngay trên Windows, giao diện dùng chung trên điện thoại, quyền API, cập nhật gần thời gian thực và hộp ảnh iPhone. Chưa STABLE: cần nghiệm thu Windows/iPhone vật lý, CA và Firewall trên mạng shop.
+Main gồm kho theo ảnh trên Windows, Cloud dùng chung ngoài LAN, mobile, khách/nháp/SOLD, thu/cọc/hoàn/giảm/công nợ/giao hàng, báo cáo/CSV, kiểm kê, hộp ảnh iPhone, backup/restore và cập nhật Windows có phục hồi khi lỗi. Xem [đợt rà soát và sửa lỗi](AUDIT_FIXES_2026-10-13.md).
 
-Nguồn nền tảng phát triển tiếp: [checkpoint tổng hợp](MAIN_CHECKPOINT_STAGE6_2026-10-11.md). Cách tải/chạy: [hướng dẫn bản main](MAIN_TEST_STAGE6_RELEASE.md). Thiết lập điện thoại: [hướng dẫn LAN](STAGE6_MOBILE_LAN_SETUP.md). Bằng chứng: [test report](STAGE6_TEST_REPORT.md), [Actions](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/actions/workflows/pages.yml).
+Một ảnh nguồn hiện hữu = một bộ tồn; sổ là dữ liệu đối soát riêng. Nháp chưa giữ/trừ hàng, SOLD bất biến. Cloud chỉ cho chọn ảnh đã đăng ký/sẵn sàng và chưa SOLD; Windows thiếu nguồn được tạm ngừng chọn bán khi đồng bộ, không xóa lịch sử. SOLD chỉ dọn ảnh Cloud sau archive Windows đã xác minh và chứng từ riêng tư ≤40KB đã giữ. Phiếu LOCAL/Cloud dùng chung bố cục đã duyệt.
 
-| Phạm vi | Trạng thái hiện tại |
-|---|---|
-| Chặng 1–2 | Kho theo ảnh, nhập COPY/scan/import/rename, chia sẻ, nháp/bán/SOLD, khách/contact snapshot, ship và PNG; backup/recovery/restore |
-| Chặng 3 | Thu/cọc/hoàn/điều chỉnh, COD/chuyển khoản/tiền mặt, công nợ, giao hàng/vận đơn, hậu mãi |
-| Chặng 4 | Báo cáo doanh số/dòng tiền/lãi gộp/thiếu vốn/CSV; kiểm kê không tự chỉnh tồn |
-| Chặng 5A | Kiểm chứng ảnh SOLD chỉ đọc; chưa có 5B di chuyển lưu trữ hoặc 5C xóa |
-| Chặng 6 | HTTPS cùng LAN, 4 vai trò, session/audit, polling, ảnh chờ; toàn bộ thiết lập thông thường bằng UI |
-| Windows | START_SHOP.bat; chọn kho tự tạo trên UI trước dữ liệu; đầy đủ chức năng LOCAL của main |
-| Dữ liệu | Thư mục cài mới có DB mới; mở lại cùng bản giữ DB/kho; không bắt nối dữ liệu thử cũ |
-| UI 6.1–6.6 | Panel chọn ảnh góc phải thu gọn/mở rộng, nhóm Product/Size, tránh bottom nav; 3 mức Nhỏ/Vừa/Lớn toàn bộ màn hình, mặc định Vừa và lưu tại thiết bị; nav 4 mục + Thêm; PNG theo banner shop; sáng/tối/safe area |
-| Chưa triển khai | Cloud/truy cập ngoài LAN/offline queue, Stage5B/5C, tự chỉnh tồn, ngân hàng/vận chuyển tự động |
+DB Windows vẫn `data/stage6-main-test/database/shop-stage6-main-test.db`; bản managed giữ dữ liệu cố định ngoài thư mục chương trình. Cập nhật qua Cài đặt; không giải nén đè dữ liệu cũ. Một kho Windows nối một instance Cloud. Khi đã bật Cloud authority, bán hàng/giá dùng Cloud; Windows nhận lại giá và đối soát SOLD. LAN mặc định tắt khi khởi động, giữ tài khoản/chứng chỉ và thu hồi phiên theo quyền.
 
-DB của bản này vẫn là `data/stage6-main-test/database/shop-stage6-main-test.db`. LAN mặc định tắt mỗi lần mở ứng dụng, bật trên giao diện khi cần. TLS dùng chung Express/SQLite với LOCAL, không tạo kho hoặc DB thứ hai. Tài khoản/chứng chỉ giữ trong bản cài; đổi tài khoản qua UI thu hồi mọi phiên điện thoại ngay.
+Kiểm thử chỉ dùng fixture/tạm; đối chiếu Actions đúng commit, không dùng kết quả baseline. Chưa STABLE: chưa nghiệm thu laptop/iPhone thật, CA/Firewall, share sheet và bàn phím Safari. Không có offline queue, snapshot incremental, tự chỉnh tồn, tích hợp ngân hàng/vận chuyển hay tự nhập trả. Cloud cần mạng; đối soát và đồng bộ nguồn cần laptop chủ shop mở.
 
-Kiểm thử Codex/CI chỉ dùng ảnh/SQLite/thư mục tạm giả lập. Chủ shop được chọn kho tự tạo và thao tác như kho thật; không cần marker fixture. Tồn theo ảnh canonical còn hiện hữu, nháp không giữ/trừ hàng, SOLD bất biến. Giữ transaction/request key/version/journal/hash/lock/recovery; backup không thay thế nghiệm thu CA/Firewall/iPhone.
-
-Các checkpoint V1/V2 và Stage1–5 trước đây là lịch sử, không thay trạng thái hiện tại. Baseline trước bản này: `5ab31e27925f67089d6593841ed51fb45b393763` (3.3.1). Quyền triển khai phần đã duyệt và đưa main/CI đã có; ngoài phạm vi đề xuất riêng.
+Các checkpoint V1/V2/Stage1–6 là lịch sử. Không buộc kế thừa DB thử; không reset/xóa kho thật. Giữ request key/version/journal/hash/lock/recovery.

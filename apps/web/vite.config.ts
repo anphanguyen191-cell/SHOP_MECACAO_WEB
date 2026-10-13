@@ -1,13 +1,15 @@
+import {execFileSync} from 'node:child_process'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  define:{__APP_BUILD:JSON.stringify(process.env.SHOP_BUILD_ID||execFileSync('git',['rev-parse','--short=12','HEAD'],{encoding:'utf8'}).trim())},
   base: './',
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: [],
       manifest: {
         name: 'Shop Mẹ CaCao',

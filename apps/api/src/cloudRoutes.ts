@@ -3,6 +3,8 @@ import {DatabaseSync} from 'node:sqlite'
 import {randomUUID} from 'node:crypto'
 import path from 'node:path'
 import fs from 'node:fs'
+import {salesExecutionService} from './salesExecution.js'
+import {soldProofImage} from './soldProofImage.js'
 import {optimizeCloudImage} from './cloudImages.js'
 import {isInternalWarehousePath} from './warehouseAreas.js'
 import {reconcileCloudSale} from './cloudReconcile.js'
@@ -62,8 +64,12 @@ export function cloudRouter(db:DatabaseSync,root:string){
    const variants=ids.length?db.prepare(`SELECT * FROM product_variants WHERE product_id IN (${marks}) ORDER BY id`).all(...ids):[]
    const images=ids.length?db.prepare(`SELECT id,product_id,variant_id,sort_order,is_primary FROM product_images WHERE product_id IN (${marks}) AND NOT EXISTS(SELECT 1 FROM sales_units WHERE image_id=product_images.id) ORDER BY id`).all(...ids):[]
    const transactions=ids.length?db.prepare(`SELECT t.* FROM inventory_transactions t JOIN product_variants v ON v.id=t.variant_id WHERE v.product_id IN (${marks}) ORDER BY t.id`).all(...ids):[]
-   res.json({instance,products,variants,images,transactions,categories:offset===0?db.prepare('SELECT * FROM categories ORDER BY id').all():[],nextOffset:offset+products.length,done:products.length<100})
+   const sourceState=images.map(image=>{const source=db.prepare('SELECT file_path FROM product_images WHERE id=?').get(image.id);try{return {id:Number(image.id),present:fs.statSync(String(source?.file_path)).isFile()}}catch(e){if(['ENOENT','ENOTDIR'].includes((e as NodeJS.ErrnoException).code||''))return {id:Number(image.id),present:false};throw Error('Không đọc được ảnh nguồn #'+image.id+'. Kiểm tra quyền ổ đĩa; chưa tự rút ảnh Cloud.')}})
+   res.json({instance,products,variants,images,transactions,sourceState,categories:offset===0?db.prepare('SELECT * FROM categories ORDER BY id').all():[],nextOffset:offset+products.length,done:products.length<100})
   }catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không đọc được kho'})}
+ })
+ router.get('/proof-images/:id',async(req,res)=>{
+  try{const token=req.get('authorization')||'',health=await rpc(token,'mc_v7_health',{}),instance=db.prepare("SELECT value FROM app_metadata WHERE key='cloud-instance'").get()?.value;if(health.role!=='owner'||health.instance!==instance||!instance)throw Error('Chỉ chủ shop của kho đã kết nối được đọc ảnh chứng từ.');const id=Number(req.params.id),order=String(req.query.order||'');if(!Number.isSafeInteger(id)||id<1||!/^[-A-Za-z0-9_]{1,100}$/.test(order)||!db.prepare('SELECT 1 FROM sales_units WHERE image_id=? AND order_id=?').get(id,order))throw Error('Ảnh chứng từ không thuộc đơn đã bán.');const image=await salesExecutionService(db,root).image(order,id),proof=await soldProofImage(image);res.set('X-Proof-Sha256',proof.sha256).set('X-Warehouse-Instance',String(instance)).type('jpeg').send(proof.data)}catch(e){res.status(409).json({error:e instanceof Error?e.message:'Chưa đọc được ảnh chứng từ'})}
  })
  router.get('/images/:id',async(req,res)=>{
   try{

@@ -2,13 +2,15 @@ import { useEffect,useMemo,useRef,useState } from 'react'
 import {runTask,type OperationTask} from './taskClient'
 import {TaskMeter} from './TaskProgress'
 import FolderPicker from './FolderPicker'
+import {useUnsavedChanges} from './useUnsavedChanges'
+import {validMoneyInput} from './moneyInput'
 import {apiJson} from './uiState'
 
 type Product={id:number;product_code:string;name:string}
 type Variant={id:number;sku:string;size:string;cost_price:number;sale_price:number}
 type ProductDetail={product:any;variants:Variant[]}
 type Flow='NEW_PRODUCT'|'NEW_SIZE'|'EXISTING_SIZE'
-type SizeRow={size:string;sku:string;quantity:number;costPrice:number;salePrice:number;sourcePath:string;imageCount:number}
+type SizeRow={size:string;sku:string;quantity:number;costPrice:number|string;salePrice:number|string;sourcePath:string;imageCount:number}
 type Progress={phase:string;percent:number;copied:number;total:number;current?:string}
 const blank=():SizeRow=>({size:'',sku:'',quantity:1,costPrice:0,salePrice:0,sourcePath:'',imageCount:0})
 const labels:Record<string,string>={VALIDATE:'Kiểm tra dữ liệu',PREPARE:'Chuẩn bị thư mục kho',COPY:'Copy ảnh vào kho',VERIFY:'Kiểm tra ảnh',DB_COMMIT:'Ghi dữ liệu kho',INTEGRITY:'Kiểm tra toàn vẹn',DONE:'Hoàn tất',ROLLBACK:'Hoàn tác'}
@@ -24,7 +26,7 @@ export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceAp
  const requestVersion=useRef(0),submitLock=useRef(false),reviewedPhotoSource=useRef(initialSourcePath??'')
  useEffect(()=>{let alive=true;apiJson<Product[]>('/api/products').then(j=>{if(alive)setProducts(j)}).catch(e=>{if(alive)setMsg(e.message)});return()=>{alive=false;requestVersion.current++}},[])
  const filteredProducts=useMemo(()=>{const q=productSearch.trim().toLowerCase();return q?products.filter(p=>p.name.toLowerCase().includes(q)||p.product_code.toLowerCase().includes(q)):products},[products,productSearch])
- async function chooseProduct(id:number){
+ async function chooseProduct(id:number){setEdited(true);
   const version=++requestVersion.current
   setProductId(id);setMsg('');setDetail(null);setRows([blank()]);setReading(true)
   try{
@@ -37,9 +39,9 @@ export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceAp
   }catch(e){if(version===requestVersion.current){setProductId(0);setMsg(e instanceof Error?e.message:'Không đọc được sản phẩm')}}
   finally{if(version===requestVersion.current)setReading(false)}
  }
- function switchFlow(next:Flow){requestVersion.current++;setReading(false);setFlow(next);setMsg('');setProgress(null);setProductId(0);setDetail(null);setProductSearch('');setName('');setCode('');setCategory('');setRows([blank()]);if(reviewedPhotoSource.current)void inspect(0,reviewedPhotoSource.current)}
- function patch(i:number,k:keyof SizeRow,v:string|number){setRows(previous=>previous.map((row,index)=>index===i?{...row,[k]:typeof row[k]==='number'?Math.max(0,Number(v)||0):v,...(k==='sourcePath'?{imageCount:0,quantity:0}:{})}:row))}
- async function inspect(i:number,selectedPath?:string){
+ function switchFlow(next:Flow){if(edited&&!window.confirm('Bỏ thông tin nhập hàng đang nhập để đổi cách nhập?'))return;setEdited(false);requestVersion.current++;setReading(false);setFlow(next);setMsg('');setProgress(null);setProductId(0);setDetail(null);setProductSearch('');setName('');setCode('');setCategory('');setRows([blank()]);if(reviewedPhotoSource.current)void inspect(0,reviewedPhotoSource.current)}
+ function patch(i:number,k:keyof SizeRow,v:string|number){setEdited(true);setRows(previous=>previous.map((row,index)=>index===i?{...row,[k]:k==='costPrice'||k==='salePrice'?v:typeof row[k]==='number'?Math.max(0,Number(v)||0):v,...(k==='sourcePath'?{imageCount:0,quantity:0}:{})}:row))}
+ async function inspect(i:number,selectedPath?:string){setEdited(true);
   const p=(selectedPath??rows[i].sourcePath).trim()
   if(!p)return
   if(reviewedPhotoSource.current&&p!==reviewedPhotoSource.current)reviewedPhotoSource.current=''
@@ -53,24 +55,28 @@ export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceAp
   }catch(e){if(version===requestVersion.current)setMsg(e instanceof Error?e.message:'Không đọc được folder ảnh')}
   finally{if(version===requestVersion.current)setReading(false)}
  }
- function chooseExistingVariant(id:number){const v=detail?.variants.find(x=>x.id===id);if(v){setRows([{size:v.size,sku:v.sku,quantity:1,costPrice:v.cost_price??0,salePrice:v.sale_price??0,sourcePath:'',imageCount:0}]);if(reviewedPhotoSource.current)void inspect(0,reviewedPhotoSource.current)}}
+ function chooseExistingVariant(id:number){setEdited(true);const v=detail?.variants.find(x=>x.id===id);if(v){setRows([{size:v.size,sku:v.sku,quantity:1,costPrice:v.cost_price??0,salePrice:v.sale_price??0,sourcePath:'',imageCount:0}]);if(reviewedPhotoSource.current)void inspect(0,reviewedPhotoSource.current)}}
  async function submit(){if(submitLock.current||reading)return;submitLock.current=true;setBusy(true);setMsg('');setProgress({phase:'VALIDATE',percent:2,copied:0,total:rows.reduce((n,r)=>n+r.imageCount,0)})
   try{
+   if(rows.some(x=>!validMoneyInput(x.costPrice)||!validMoneyInput(x.salePrice)))throw Error('Giá vốn và giá bán phải là số nguyên không âm.')
    if(rows.some(x=>!x.size.trim()||!x.sourcePath||x.imageCount<1))throw new Error('Mỗi Size cần tên và ảnh nguồn hợp lệ. Xóa Size trống trước khi lưu.')
    for(const r of rows) if(r.imageCount!==r.quantity) throw new Error('Tồn phải bám theo ảnh thực tế: Size '+r.size+' có '+r.imageCount+' ảnh nhưng SL nhập là '+r.quantity)
-   const payload={storeRoot,productId:flow==='NEW_PRODUCT'?undefined:productId||undefined,name,productCode:code,category,note,sizes:rows.filter(r=>r.size.trim()).map(r=>({size:r.size,sku:r.sku||undefined,quantity:r.imageCount,costPrice:Math.trunc(r.costPrice),salePrice:Math.trunc(r.salePrice),sourcePath:r.sourcePath||undefined}))}
+   const payload={storeRoot,productId:flow==='NEW_PRODUCT'?undefined:productId||undefined,name,productCode:code,category,note,sizes:rows.filter(r=>r.size.trim()).map(r=>({size:r.size,sku:r.sku||undefined,quantity:r.imageCount,costPrice:Number(r.costPrice),salePrice:Number(r.salePrice),sourcePath:r.sourcePath||undefined}))}
    const result=await runTask('/api/goods-receipt',payload,t=>{setTask(t);if(t.progress)setProgress(t.progress)});const j={result,events:[] as Progress[]}
    setProgress((j.events??[]).at(-1)??{phase:'DONE',percent:100,copied:j.result.copiedImages,total:j.result.copiedImages})
    setMsg('Nhập thành công: '+j.result.totalQuantity+' bộ · '+j.result.copiedImages+' ảnh đã copy vào kho. Tiến độ trực tiếp và kết quả được lưu theo mã tác vụ.')
    setRows(previous=>previous.map(row=>({...row,sourcePath:'',imageCount:0,quantity:0})))
    if(flow==='NEW_PRODUCT'){setName('');setCode('');setRows([blank()])}
    apiJson<Product[]>('/api/products').then(setProducts).catch(()=>{})
-   reviewedPhotoSource.current=''
-   onDone?.()
+   setEdited(false);reviewedPhotoSource.current=''
+   window.dispatchEvent(new Event('mecacao-cloud-sync-now'));onDone?.()
   }catch(e){setProgress(null);setMsg(e instanceof Error?e.message:'Nhập hàng thất bại')}finally{submitLock.current=false;setBusy(false)}
  }
+ const [edited,setEdited]=useState(false)
+ useUnsavedChanges(edited||busy,()=>setMsg(busy?'Nhập hàng đang xử lý; chờ kết quả trước khi rời màn hình.':'Thông tin nhập hàng chưa lưu. Nhập xong hoặc bỏ thay đổi trước khi chuyển màn.'))
  const existingSizes=detail?.variants??[]
- return <section id="goods-receipt-form" className="receipt receiptV2" tabIndex={-1}>
+ return <section id="goods-receipt-form" className="receipt receiptV2" tabIndex={-1} onChangeCapture={()=>setEdited(true)}>
+  {edited&&!busy&&<button type="button" onClick={()=>{if(window.confirm('Bỏ thông tin nhập hàng chưa lưu?')){setRows([blank()]);setName('');setCode('');setNote('');setEdited(false)}}}>Bỏ thay đổi đang nhập</button>}
   <div className="receiptHero"><div><p className="eyebrow">NHẬP HÀNG</p><h3>Chọn đúng tình huống nhập kho</h3><p>Dữ liệu đã có thì chọn lại từ hệ thống; chỉ nhập tay khi tạo mới.</p>{initialSourcePath&&<p role="note"><b>Ảnh duyệt từ iPhone:</b> Đã yêu cầu quét thư mục nguồn. Phải chọn Product, Size và giá, xem đủ ảnh rồi mới xác nhận nhập hàng.</p>}</div></div>
   <fieldset className="receiptFields" disabled={busy||reading}><div className="flowTabs">
    <button className={flow==='NEW_PRODUCT'?'active':''} onClick={()=>switchFlow('NEW_PRODUCT')}><b>1. Mẫu mới hoàn toàn</b><span>Tạo Product + Size mới</span></button>
@@ -91,8 +97,8 @@ export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceAp
    <label>Giá nhập (đ)<input type="number" min="0" step="1" value={x.costPrice} onChange={e=>patch(i,'costPrice',e.target.value)} placeholder="Giá nhập"/></label>
    <label>Giá bán (đ)<input type="number" min="0" step="1" value={x.salePrice} onChange={e=>patch(i,'salePrice',e.target.value)} placeholder="Giá bán"/></label>
   </div>)}
-  {flow!=='EXISTING_SIZE'&&<div className="row"><button onClick={()=>setRows(previous=>[...previous,blank()])}>+ THÊM SIZE</button>{rows.length>1&&<button onClick={()=>setRows(previous=>previous.slice(0,-1))}>BỎ SIZE CUỐI</button>}</div>}
-  <div className="row actions"><span className="receiptRule">1 ảnh hợp lệ trong Size = 1 sản phẩm vật lý nhập kho</span><button className="primary" disabled={busy||reading||!storeRoot||(flow==='NEW_PRODUCT'?!name.trim():!productId)||rows.some(r=>!r.imageCount||!r.size.trim()||!r.sourcePath)} onClick={()=>void submit()}>{busy?'ĐANG NHẬP...':'XÁC NHẬN NHẬP HÀNG'}</button></div>
+  {flow!=='EXISTING_SIZE'&&<div className="row"><button onClick={()=>{setEdited(true);setRows(previous=>[...previous,blank()])}}>+ THÊM SIZE</button>{rows.length>1&&<button onClick={()=>{setEdited(true);setRows(previous=>previous.slice(0,-1))}}>BỎ SIZE CUỐI</button>}</div>}
+  <div className="row actions"><span className="receiptRule">1 ảnh hợp lệ trong Size = 1 sản phẩm vật lý nhập kho</span><button className="primary" disabled={busy||reading||!storeRoot||(flow==='NEW_PRODUCT'?!name.trim():!productId)||rows.some(r=>!validMoneyInput(r.costPrice)||!validMoneyInput(r.salePrice)||!r.imageCount||!r.size.trim()||!r.sourcePath)} onClick={()=>void submit()}>{busy?'ĐANG NHẬP...':'XÁC NHẬN NHẬP HÀNG'}</button></div>
   </fieldset>{reading&&<p className="loadingState" role="status">Đang kiểm tra dữ liệu...</p>}
   <TaskMeter task={task}/>{!task&&progress&&<div className="progressBox"><div className="row"><b>{labels[progress.phase]??progress.phase}</b><strong>{progress.percent}%</strong></div><progress max="100" value={progress.percent}/><small>{progress.total?progress.copied+'/'+progress.total+' ảnh':''}{progress.current?' · '+progress.current:''}</small></div>}
   {msg&&<p className="notice" role="status">{msg}</p>}

@@ -31,9 +31,9 @@ try{
  eq(slip.summary(d.id,1).pages,2)
  const png=await slip.png(d.id,1,1),png2=await slip.png(d.id,1,2);eq((await sharp(png).metadata()).format,'png');eq((await sharp(png2).metadata()).width,1080)
  // The production banner must be embedded, not fetched by the recipient.
- const actual=await sharp(png2).extract({left:32,top:24,width:1016,height:378}).removeAlpha().raw().toBuffer()
- const expected=await sharp(fs.readFileSync(new URL('../../web/public/brand/banner.jpg',import.meta.url))).resize(1016).png().toBuffer()
- assert.deepEqual(actual,await sharp(expected).extract({left:0,top:0,width:1016,height:378}).removeAlpha().raw().toBuffer());n++
+ const actual=await sharp(png2).extract({left:0,top:0,width:1080,height:402}).removeAlpha().raw().toBuffer()
+ const expected=await sharp(fs.readFileSync(new URL('../../web/public/brand/banner.jpg',import.meta.url))).resize(1080,402,{fit:'contain',background:'#fff'}).removeAlpha().raw().toBuffer()
+ assert.ok(actual.equals(expected),'The banner must retain its original aspect ratio and pixels');n++
  fs.writeFileSync(path.join(root,'sample-slip.png'),png2)
  d=drafts.update(d.id,{...input,version:1,contact:{...contact,shippingFee:0}});eq(d.payableTotal,440000)
  await assert.rejects(()=>slip.png(d.id,1,1));n++

@@ -1,4 +1,4 @@
-type Asset={image_id:number;object_path:string;ready:boolean;cleanup_requested?:boolean;deleted_at?:string|null}
+type Asset={image_id:number;object_path:string;ready:boolean;cleanup_requested?:boolean;deleted_at?:string|null;proof_path?:string|null}
 type Unit={image_id:number;order_id:string}
 type Result={images:Array<{imageId:number;path:string;deletedAt?:string|null}>}
 export type CleanupIO={
@@ -11,6 +11,7 @@ export type CleanupIO={
  remove:(paths:string[])=>Promise<void>
  finalize:(ids:number[],reason:string)=>Promise<Result>
  check:()=>Promise<void>
+ preserve?:(images:Asset[],units:Unit[])=>Promise<void>
 }
 /** Storage deletion follows fresh local archive verification, never a SOLD flag alone. */
 export async function cleanupVerifiedSold(io:CleanupIO,selection?:number[],reason='Tự dọn SOLD sau khi laptop xác minh ảnh lưu'){
@@ -21,10 +22,13 @@ export async function cleanupVerifiedSold(io:CleanupIO,selection?:number[],reaso
  const sold=new Map(units.map(u=>[u.image_id,u.order_id])),chosen=selection?new Set(selection):null
  if(chosen&&(!chosen.size||chosen.size!==selection!.length||selection!.some(id=>!sold.has(id))))throw Error('Chỉ dọn ảnh thuộc đơn đã SOLD.')
  const candidates=assets.filter(a=>!a.deleted_at&&(a.ready||a.cleanup_requested)&&sold.has(a.image_id)&&(!chosen||chosen.has(a.image_id)))
+ // Recover small proof images for historical SOLD records without deleting anything.
+ if(io.preserve){const historical=assets.filter(a=>a.deleted_at&&!a.proof_path&&sold.has(a.image_id)&&(!chosen||chosen.has(a.image_id)));for(let offset=0;offset<historical.length;offset+=100){const batch=historical.slice(offset,offset+100);await io.check();await io.reconcile([...new Set(batch.map(a=>sold.get(a.image_id)!))]);await io.check();await io.preserve(batch,units)}}
  let removed=0
  for(let offset=0;offset<candidates.length;offset+=100){
   const batch=candidates.slice(offset,offset+100),ids=batch.map(a=>a.image_id),orders=[...new Set(batch.map(a=>sold.get(a.image_id)!))]
   await io.check();await io.reconcile(orders)
+  await io.check();if(io.preserve)await io.preserve(batch,units)
   await io.check();const prepared=await io.prepare(ids,reason)
   if(!Array.isArray(prepared.images)||prepared.images.length!==batch.length||new Set(prepared.images.map(i=>i.imageId)).size!==ids.length||prepared.images.some(i=>!batch.some(a=>a.image_id===i.imageId&&a.object_path===i.path)))throw Error('Danh sách ảnh dọn không khớp; chưa xóa file Cloud.')
   await io.check();await io.remove(prepared.images.map(i=>i.path))
