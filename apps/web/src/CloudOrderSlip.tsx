@@ -1,17 +1,21 @@
-import {useEffect,useState} from 'react'
+import {useEffect,useRef,useState} from 'react'
 import {cloudRpc} from './cloudClient'
-const money=(v:number)=>v.toLocaleString('vi-VN')+' ₫'
-export default function CloudOrderSlip({order,items,contact,urls,disabled=false}:{disabled?:boolean;order:any;items:any[];contact:any;urls:Record<string,string>}){
- const [files,setFiles]=useState<File[]>([]),[links,setLinks]=useState<string[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState('')
+import {renderOrderSlip,slipDate,slipModel} from './orderSlipLayout'
+export default function CloudOrderSlip({order,items,contact,urls,confirmedAt,disabled=false}:{disabled?:boolean;order:any;items:any[];contact:any;urls:Record<string,string>;confirmedAt?:string}){
+ const [files,setFiles]=useState<File[]>([]),[links,setLinks]=useState<string[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),lock=useRef(false)
  useEffect(()=>{const urls=files.map(f=>URL.createObjectURL(f));setLinks(urls);return()=>urls.forEach(u=>URL.revokeObjectURL(u))},[files])
- async function make(){setBusy(true);try{
+ async function make(){if(lock.current)return;lock.current=true;setBusy(true);setError('');setFiles([]);try{
   const before=await cloudRpc('mc_v7_finance',{p_id:order.id});if(before.orderVersion!==order.version)throw Error('Đơn đã đổi. Đọc lại trước khi tạo phiếu.')
-  const bannerResponse=await fetch(import.meta.env.BASE_URL+'brand/banner.jpg');if(!bannerResponse.ok)throw Error('Không tải được banner shop.');const banner=await createImageBitmap(await bannerResponse.blob()),generated:File[]=[]
-  try{for(let start=0;start<items.length;start+=8){const page=items.slice(start,start+8),canvas=document.createElement('canvas');canvas.width=1000;canvas.height=600+page.length*150;const ctx=canvas.getContext('2d');if(!ctx)throw Error('Thiết bị chưa hỗ trợ tạo PNG.');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(banner,0,0,1000,160);ctx.fillStyle='#382338';ctx.font='bold 32px sans-serif';ctx.fillText('PHIẾU CHỐT ĐƠN · '+order.id.slice(0,8).toUpperCase(),32,210);ctx.font='22px sans-serif';ctx.fillText((contact?.recipient_name||'')+' · '+(contact?.phone||''),32,250,930);ctx.fillText(contact?.address||'',32,287,930);ctx.fillText('Ảnh '+(start+1)+'–'+(start+page.length)+' / '+items.length+' · tạo phiếu không trừ tồn',32,325,930)
-   for(let index=0;index<page.length;index++){const item=page[index],y=355+index*150;const url=urls[item.image_id];if(!url)throw Error('Ảnh chưa tải đủ. Thử lại sau.');const response=await fetch(url);if(!response.ok)throw Error('Không đọc được ảnh riêng tư.');const bitmap=await createImageBitmap(await response.blob());try{const scale=Math.min(120/bitmap.width,125/bitmap.height);ctx.drawImage(bitmap,32,y,bitmap.width*scale,bitmap.height*scale)}finally{bitmap.close()}ctx.fillStyle='#382338';ctx.font='bold 23px sans-serif';ctx.fillText(item.product_code+' · '+item.product_name,180,y+34,775);ctx.font='22px sans-serif';ctx.fillText('Size '+item.size+' · '+money(item.unit_price),180,y+74,775);ctx.strokeStyle='#bbb';ctx.beginPath();ctx.moveTo(32,y+136);ctx.lineTo(968,y+136);ctx.stroke()}
-   const bottom=355+page.length*150;ctx.font='bold 24px sans-serif';ctx.fillText('Tổng thanh toán: '+money(before.adjustedTotal),32,bottom+35);ctx.fillText('Đã thu: '+money(before.netCollected)+' · còn: '+money(before.due),32,bottom+78);const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('Không tạo được PNG.')),'image/png'));generated.push(new File([blob],'MECACAO-'+order.id.slice(0,8)+'-'+(start/8+1)+'.png',{type:'image/png'}))
+  if(!items.length)throw Error('Đơn chưa có ảnh sản phẩm.')
+  const model=slipModel(order,items,contact,before,slipDate(confirmedAt,new Date()))
+  const bannerResponse=await fetch(import.meta.env.BASE_URL+'brand/banner.jpg');if(!bannerResponse.ok)throw Error('Không tải được banner shop.');const banner=await createImageBitmap(await bannerResponse.blob()),generated:File[]=[],pageCount=Math.ceil(items.length/8)
+  try{for(let start=0;start<items.length;start+=8){const page=items.slice(start,start+8),images:ImageBitmap[]=[]
+   try{for(const item of page){const url=urls[item.image_id];if(!url)throw Error('Ảnh chưa tải đủ. Thử lại sau.');const response=await fetch(url);if(!response.ok)throw Error('Không đọc được ảnh riêng tư.');images.push(await createImageBitmap(await response.blob()))}
+    const canvas=document.createElement('canvas');renderOrderSlip(canvas,banner,page,images,model,start,items.length,start/8+1,pageCount)
+    const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('Không tạo được PNG.')),'image/png'));generated.push(new File([blob],'MECACAO-'+order.id.slice(0,8)+'-'+(start/8+1)+'.png',{type:'image/png'}))
+   }finally{images.forEach(image=>image.close())}
   }}finally{banner.close()}
-  const after=await cloudRpc('mc_v7_finance',{p_id:order.id});if(after.orderVersion!==before.orderVersion||after.version!==before.version)throw Error('Đơn hoặc tiền đã đổi trong lúc tạo phiếu. Tạo lại để dùng số mới.');setFiles(generated)
- }catch(e){setError((e as Error).message);setFiles([])}finally{setBusy(false)}}
- return <div className="salesButtons"><p role="status">{error}</p><button className="salesAction salesActionPrimary" disabled={disabled||busy||!navigator.onLine} onClick={()=>void make()}>{busy?'Đang tạo…':'Tạo phiếu PNG'}</button>{files.map((file,i)=><a key={file.name} download={file.name} href={links[i]}>Tải trang {i+1}</a>)}{files.length>0&&navigator.canShare?.({files})&&<button onClick={()=>void navigator.share({files,title:'Shop Mẹ Ca Cao'}).catch(e=>{if(e.name!=='AbortError')setError(e.message)})}>Chia sẻ PNG</button>}</div>
+  const after=await cloudRpc('mc_v7_finance',{p_id:order.id});if(after.orderVersion!==before.orderVersion||after.version!==before.version||after.adjustedTotal!==before.adjustedTotal||after.netCollected!==before.netCollected||after.due!==before.due)throw Error('Đơn hoặc tiền đã đổi trong lúc tạo phiếu. Tạo lại để dùng số mới.');setFiles(generated)
+ }catch(e){setError((e as Error).message);setFiles([])}finally{lock.current=false;setBusy(false)}}
+ return <div className="salesButtons"><p role="status">{error}</p><button className="salesAction salesActionPrimary" disabled={disabled||busy||!navigator.onLine} onClick={()=>void make()}>{busy?'Đang tạo…':'Tạo phiếu PNG'}</button>{files.map((file,i)=><a key={file.name} download={file.name} href={links[i]}>Tải trang {i+1}</a>)}{files.length>0&&navigator.canShare?.({files})&&<button onClick={()=>void navigator.share({files,title:'Shop Mẹ CaCao'}).catch(e=>{if(e.name!=='AbortError')setError(e.message)})}>Chia sẻ PNG</button>}</div>
 }
