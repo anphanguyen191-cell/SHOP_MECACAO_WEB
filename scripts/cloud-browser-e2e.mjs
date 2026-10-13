@@ -24,7 +24,14 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));const url='http://127.0.0.1
 const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/chromium'].find(fs.existsSync);assert(chrome,'Chromium required')
 const browser=spawn(chrome,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-proxy-server','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{stdio:['ignore','ignore','pipe']})
 let browserLog='';browser.stderr.on('data',b=>browserLog+=b)
-let ws,next=0;const pending=new Map(),failures=[],trace=[]
+let ws,next=0;const pending=new Map(),failures=[],trace=[],interceptionErrors=[],cancelledRequests=new Set(),activeInterceptions=new Set()
+// A navigation/React cleanup can cancel a paused request before fulfilment.
+// Ignore only the exact stale CDP id error AND a matching browser cancellation;
+// fixture assertions, unconfirmed protocol errors and real failures still fail.
+function cancelledInterception(error,networkId){
+ if(!networkId||!cancelledRequests.has(networkId))return false
+ try{const protocol=JSON.parse(error.message);return protocol.code===-32602&&protocol.message==='Invalid InterceptionId.'}catch{return false}
+}
 function cmd(method,params={}){return new Promise((resolve,reject)=>{const id=++next,t=setTimeout(()=>{pending.delete(id);reject(Error(method+' timeout'))},20000);pending.set(id,{resolve:r=>{clearTimeout(t);resolve(r)},reject});ws.send(JSON.stringify({id,method,params}))})}
 async function run(expression){const r=await cmd('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value}
 async function until(expression){for(let n=0;n<150;n++){if(await run("Boolean("+expression+")"))return;await delay(100)}throw Error(expression+'\n'+await run('document.body.innerText'))}
@@ -74,7 +81,7 @@ try{
  assert(fs.existsSync(path.join(profile,'DevToolsActivePort')),'Chromium startup timed out: '+browserLog)
  const port=Number(fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0]),targets=await fetch('http://127.0.0.1:'+port+'/json/list').then(r=>r.json());ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl)
  await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true})})
- ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}else if(m.method==='Fetch.requestPaused')void intercept(m.params).catch(e=>failures.push(e));else if(m.method==='Page.javascriptDialogOpening')void cmd('Page.handleJavaScriptDialog',{accept:true})})
+ ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}else if(m.method==='Fetch.requestPaused'){const task=intercept(m.params).catch(error=>interceptionErrors.push({error,networkId:m.params.networkId,url:m.params.request.url}));activeInterceptions.add(task);void task.finally(()=>activeInterceptions.delete(task))}else if(m.method==='Network.loadingFailed'&&m.params.canceled)cancelledRequests.add(m.params.requestId);else if(m.method==='Page.javascriptDialogOpening')void cmd('Page.handleJavaScriptDialog',{accept:true})})
  await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Network.enable');await cmd('Network.setBypassServiceWorker',{bypass:true});await cmd('Network.setBlockedURLs',{urls:['wss://eyckwoewpomssjjggslr.supabase.co/*']});await cmd('Fetch.enable',{patterns:[{urlPattern:'https://eyckwoewpomssjjggslr.supabase.co/*'}]})
  const authInit=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`localStorage.setItem('mecacao-v7-auth',${JSON.stringify(JSON.stringify(session))});localStorage.setItem('mecacao-ui-cloud-auto-sync','false')`})
  await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await cmd('Page.navigate',{url});await until("!!document.querySelector('.treeProductHead')");await run("document.querySelector('.treeProductHead').click()");await until("!!document.querySelector('.treeVariantHead')");await run("document.querySelector('.treeVariantHead').click()");await until("!!document.querySelector('.stockImageSelect img')&&document.querySelector('.stockImageSelect img').complete")
@@ -196,5 +203,8 @@ try{
  await click('Đăng xuất');await until("!!document.querySelector('input[autocomplete=current-password]')");
  await run("document.querySelector('input[type=email]').focus();document.querySelector('input[type=email]').select()");await cmd('Input.insertText',{text:user.email});await run("document.querySelector('input[autocomplete=current-password]').focus()");await cmd('Input.insertText',{text:'fake-new-cloud-password'});await click('Đăng nhập');await until("!!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đăng xuất')");
  await cmd('Page.reload');await until("!!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đăng xuất')");
+ await Promise.all([...activeInterceptions]);await delay(100)
+ failures.push(...interceptionErrors.filter(({error,networkId})=>!cancelledInterception(error,networkId)).map(({error})=>error))
+ console.log('Confirmed cancelled stale interceptions:',interceptionErrors.length-failures.length)
  assert.deepEqual(failures,[]);console.log('PASS Cloud browser fake transport: recovery email/callback, visible password setup, recovery storage restoration, password re-login and reload, mobile layout/density/theme, lost-response durable retry, single draft, real banner PNG without stock mutation, SOLD removal, automatic verified cleanup away from Settings, corrupt archive refusal, lost Storage response retry and offline guard')
 }catch(error){console.error('Cloud browser failure:',error);console.error('Transport failures:',failures);console.error('Transport trace:',trace);try{console.error(await run('document.body.innerText'));const shot=await cmd('Page.captureScreenshot',{format:'png'});fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/failure.png',Buffer.from(shot.data,'base64'))}catch{}throw error}finally{if(ws?.readyState===1)try{await cmd('Browser.close')}catch{}ws?.close();if(browser.exitCode===null){browser.kill();await new Promise(r=>browser.once('exit',r))}await new Promise(r=>server.close(r));try{fs.rmSync(temp,{recursive:true,force:true,maxRetries:10,retryDelay:100})}catch(error){console.warn('Browser temporary cleanup:',error.code)}}
