@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 concurrency:
   group: shop-main-official-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 permissions:
   contents: write
 jobs:
