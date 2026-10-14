@@ -30,8 +30,29 @@ try{
  $database=Join-Path $installDir 'data/shop-v8/database/shop-v8.db'
  if(!(Test-Path $database)){ throw 'V8 database missing on D:' }
  if(!(Test-Path (Join-Path $installDir 'installation.json'))){ throw 'V8 installation marker missing' }
- if($health.warehouse -ne 'D:\Me CaCao Store'){ throw 'Wrong physical warehouse location' }
- Write-Host 'V8_DESKTOP_SMOKE_PASS: clean D: install, schema 130, isolated warehouse, GUI EXE.'
+ if($health.customWarehouse){throw 'V8 should not silently select a warehouse on fresh installation'}
+ $settings=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/warehouse/settings' -TimeoutSec 8
+ if($settings.rootPath){throw 'Fresh V8 already has a warehouse watch path'}
+ # Selection must be possible directly from Import kho, including a subsequent
+ # re-selection when the shop has no registered inventory or orders.
+ foreach($destination in @('D:\Me CaCao Store','D:\Me CaCao Other')){
+  New-Item -ItemType Directory -Force $destination | Out-Null
+  $body=ConvertTo-Json -Compress @{warehouse=$destination}
+  $result=Invoke-RestMethod -Method POST -Uri 'http://127.0.0.1:3000/api/local/warehouse' -ContentType 'application/json' -Headers @{Origin='http://127.0.0.1:3000'} -Body $body -TimeoutSec 15
+  if($result.warehouse -ne $destination){throw 'Warehouse selection not accepted'}
+  $changed=$false
+  for($retry=0;$retry -lt 100;$retry++){
+   try{
+    $health=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/health' -TimeoutSec 1
+    if($health.customWarehouse -and $health.warehouse -eq $destination){$changed=$true;break}
+   }catch{}
+   Start-Sleep -Milliseconds 500
+  }
+  if(!$changed){throw "Warehouse selection/restart failed for $destination"}
+  $settings=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/warehouse/settings' -TimeoutSec 8
+  if($settings.rootPath -ne $destination){throw 'Warehouse settings still point to previous location'}
+ }
+ Write-Host 'V8_DESKTOP_SMOKE_PASS: clean D: install, warehouse selection and change, backend restarts, schema 130.'
 }finally{
  if($desktop){ & taskkill.exe /T /F /PID $desktop.Id 2>$null | Out-Null }
  if($createdDrive){subst D: /D}
