@@ -1,0 +1,47 @@
+/* V8.3: consistent visual rhythm for operational screens. */
+.shell .overviewWelcome{border-radius:24px;padding:clamp(18px,3vw,30px);background:linear-gradient(115deg,var(--v8-soft),var(--v8-surface) 82%);border:1px solid var(--v8-edge)}
+.shell .overviewWelcome h2{font-size:clamp(23px,2.7vw,34px);line-height:1.2;letter-spacing:-.035em}
+.shell .overviewStats,.shell .catalogMetrics{gap:12px}
+.shell .overviewStat,.shell .catalogMetrics article{padding:18px;border:1px solid var(--v8-edge);background:var(--v8-surface);border-radius:18px}
+.shell .overviewStat strong,.shell .catalogMetrics strong{font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:-.04em}
+.shell :is(.overviewStat,.catalogMetrics article) span{font-size:11px;letter-spacing:.04em;font-weight:750}
+.shell .inventoryHeading,.shell .catalogPanelHeading,.shell .salesHeading{gap:12px;align-items:center}
+.shell .inventoryMetrics{gap:11px}
+.shell .inventoryMetrics :is(article,.card){border-radius:18px}
+.shell .inventoryFilters,.shell .catalogSearchArea{gap:12px}
+.shell .smartSearch input{width:100%}
+.shell .productList{gap:12px}
+.shell .product.clickable{cursor:pointer}
+.shell .catalogInfo{min-width:0}
+.shell .catalogInfo h3{font-size:clamp(15px,1.35vw,18px);line-height:1.35;overflow-wrap:anywhere}
+.shell .catalogInfo small{color:var(--v8-muted)}
+.shell .salesDraftPage,.shell .receiptDashboard,.shell .businessReports,.shell .stocktakePage{min-width:0}
+.shell .salesHeading{border-bottom:1px solid var(--v8-edge);padding-bottom:12px}
+.shell .salesAction{border-radius:12px;min-height:42px}
+.shell .floatingActions{box-shadow:0 12px 32px rgba(32,34,53,.16);border-radius:18px}
+.shell .displayPreferences{background:var(--v8-surface);border:1px solid var(--v8-edge);border-radius:18px;padding:16px;gap:12px}
+.shell .displayPreferences h3{margin-top:0}
+.shell .featureDrawer{background:var(--v8-surface)}
+.shell .featureDrawer .drawerHead{border-bottom:1px solid var(--v8-edge)}
+.shell .drawerLinks button{min-height:46px;display:flex;align-items:center;gap:9px}
+.shell .drawerLinks button.selected{background:var(--v8-soft);color:var(--v8-accent)}
+.shell .featureDrawer .drawerSearch input{min-height:44px}
+.shell .pageBreadcrumb strong{font-weight:750}
+.shell .notice:not(.warning){border-radius:12px}
+.shell button:not(:disabled){transition:background-color .14s ease,border-color .14s ease,box-shadow .14s ease}
+.shell :is(input,select,textarea):focus-visible{border-color:var(--v8-focus)}
+.shell .mobileQuickNav{border-top:1px solid var(--v8-edge);background:var(--v8-surface)}
+.shell .mobileQuickNav button{position:relative}
+.shell .mobileQuickNav button.selected::before{content:'';position:absolute;top:2px;left:20%;right:20%;height:3px;border-radius:3px;background:var(--v8-accent)}
+@media(max-width:760px){
+ .shell .overviewWelcome{padding:18px;border-radius:19px}
+ .shell .overviewWelcome h2{font-size:23px}
+ .shell .overviewStat,.shell .catalogMetrics article{padding:14px;border-radius:16px}
+ .shell .inventoryFilters{gap:9px}
+ .shell .productList{gap:10px}
+ .shell .salesHeading{align-items:flex-start}
+ .shell .displayPreferences{padding:13px;border-radius:15px}
+ .shell .floatingActions{max-width:calc(100vw - 26px)}
+}
+@media(max-width:360px){.shell .overviewStats,.shell .catalogMetrics{gap:7px}}
+@media(prefers-reduced-motion:reduce){.shell button:not(:disabled){transition:none}}
