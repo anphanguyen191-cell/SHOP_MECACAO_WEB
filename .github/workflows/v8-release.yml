@@ -19,6 +19,7 @@ jobs:
           dotnet-version: '8.0.x'
       - run: npm ci
       - run: npm run test:v8-layout
+      - run: node --test scripts/v8/release-fetch.test.mjs scripts/v8/data-snapshot.test.mjs
       - run: npm run build
       - run: npm run typecheck
       - run: npm run test:cloud
