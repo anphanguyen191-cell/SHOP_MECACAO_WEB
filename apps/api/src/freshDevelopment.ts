@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 export const freshDevelopment=process.env.SHOP_FRESH_DEVELOPMENT==='1'
-export const release={version:process.env.SHOP_V8_HOME?'8.0.0-preview':'7.3.0',channel:process.env.SHOP_V8_HOME?'preview':'release',stage:process.env.SHOP_V8_HOME?8:7,status:process.env.SHOP_V8_HOME?'DEVELOPMENT':'RELEASED',next:'Windows và iPhone dùng chung dữ liệu Cloud'}
+export const release={version:process.env.SHOP_V8_HOME?(process.env.SHOP_RELEASE_CHANNEL==='STABLE'?'8.0.0':'8.0.0-preview'):'7.3.0',channel:process.env.SHOP_V8_HOME?(process.env.SHOP_RELEASE_CHANNEL==='STABLE'?'stable':'preview'):'release',stage:process.env.SHOP_V8_HOME?8:7,status:process.env.SHOP_V8_HOME?(process.env.SHOP_RELEASE_CHANNEL==='STABLE'?'RELEASED':'DEVELOPMENT'):'RELEASED',next:'Windows và iPhone dùng chung dữ liệu Cloud'}
 const legacyRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../../data/stage6-main-test')
 export const managedHome=process.env.SHOP_MANAGED_HOME?path.resolve(process.env.SHOP_MANAGED_HOME):null
 // V8 is a fresh, isolated installation. Never infer it from a V7 test directory.
