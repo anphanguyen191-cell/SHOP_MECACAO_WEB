@@ -21,6 +21,7 @@ Copy-Item 'apps/web/package.json' (Join-Path $release 'apps/web/package.json') -
 Copy-Item 'node_modules' (Join-Path $release 'node_modules') -Recurse -Force
 Copy-Item 'scripts/v8/node-runner.mjs' (Join-Path $release 'scripts/v8/node-runner.mjs') -Force
 Copy-Item 'scripts/v8/release-fetch.mjs' (Join-Path $release 'scripts/v8/release-fetch.mjs') -Force
+Copy-Item 'scripts/v8/data-snapshot.mjs' (Join-Path $release 'scripts/v8/data-snapshot.mjs') -Force
 Copy-Item 'package.json' (Join-Path $release 'package.json') -Force
 $sha = if($env:GITHUB_SHA){$env:GITHUB_SHA}else{'local-preview'}
 $channel = 'PREVIEW'
