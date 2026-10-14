@@ -26,10 +26,17 @@ const realFile=(root,p)=>{
  if(!fs.existsSync(target)||fs.realpathSync(target)!==target||!fs.statSync(target).isFile())throw Error('File gói cập nhật không hợp lệ: '+p)
  return target
 }
-export async function stageLatest(home,previous,onStatus=()=>{}){
- const release=await json('https://api.github.com/repos/'+repo+'/releases/latest')
- if(!/^v8\.[0-9]+\.[0-9]+-stable$/.test(release.tag_name)||release.prerelease||release.draft)throw Error('Chưa có bản V8 STABLE đã duyệt')
- const asset=release.assets?.find(x=>x.name==='ShopMeCaCao-V8-STABLE-win-x64.zip')
+export async function stageLatest(home,previous,onStatus=()=>{},channel='STABLE'){
+ if(!['STABLE','PREVIEW'].includes(channel))throw Error('Kênh cập nhật không hợp lệ')
+ const preview=channel==='PREVIEW'
+ const url='https://api.github.com/repos/'+repo+(preview?'/releases/tags/v8-preview':'/releases/latest')
+ const release=await json(url)
+ if(preview){
+  if(release.tag_name!=='v8-preview'||!release.prerelease||release.draft)throw Error('Chưa có bản V8 PREVIEW hợp lệ trên GitHub Releases')
+ }else if(!/^v8\.[0-9]+\.[0-9]+-stable$/.test(release.tag_name)||release.prerelease||release.draft){
+  throw Error('Chưa có bản V8 STABLE đã duyệt')
+ }
+ const asset=release.assets?.find(x=>x.name==='ShopMeCaCao-V8-'+channel+'-win-x64.zip')
  if(!asset||!/^sha256:[a-f0-9]{64}$/i.test(asset.digest||''))throw Error('Release chưa có gói và SHA-256 xác thực')
  const updateDir=path.join(home,'updates'),stage=path.join(home,'staging','release-'+randomUUID())
  fs.mkdirSync(updateDir,{recursive:true});fs.mkdirSync(stage,{recursive:true})
@@ -41,10 +48,10 @@ export async function stageLatest(home,previous,onStatus=()=>{}){
   const h=createHash('sha256');let count=0
   await pipeline(Readable.fromWeb(r.body),new Transform({transform(chunk,_,done){count+=chunk.length;if(count>maxZip)return done(Error('Gói cập nhật vượt giới hạn'));h.update(chunk);done(null,chunk)}}),fs.createWriteStream(zip,{flags:'wx'}))
   if('sha256:'+h.digest('hex')!==asset.digest.toLowerCase())throw Error('SHA-256 bản tải về không khớp GitHub')
-  onStatus('VERIFYING','Đang kiểm tra bản STABLE trước khi chuyển phiên bản.')
+  onStatus('VERIFYING','Đang kiểm tra bản '+channel+' trước khi chuyển phiên bản.')
   await expand(zip,stage)
   const manifest=JSON.parse(fs.readFileSync(realFile(stage,'manifest.json'),'utf8'))
-  if(manifest.format!==8||manifest.channel!=='STABLE'||!/^[a-f0-9]{40}$/.test(manifest.sourceCommit))throw Error('Manifest bản phát hành không hợp lệ')
+  if(manifest.format!==8||manifest.channel!==channel||!/^[a-f0-9]{40}$/.test(manifest.sourceCommit))throw Error('Manifest bản phát hành không hợp lệ')
   if(manifest.sourceCommit===previous)return {current:true,sha:previous}
   realFile(stage,'releases/current/apps/api/dist/server.js')
   realFile(stage,'releases/current/apps/web/dist/index.html')
