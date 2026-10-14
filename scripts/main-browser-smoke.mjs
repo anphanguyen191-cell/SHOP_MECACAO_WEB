@@ -11,7 +11,7 @@ const env={...process.env,SHOP_FRESH_DEVELOPMENT:'1',PORT:'0',SHOP_LAN_ENABLED:'
 fs.cpSync('scripts/start-stage2.mjs',path.join(project,'scripts/start-stage2.mjs'),{recursive:true})
 const app=spawn(process.execPath,['scripts/start-stage2.mjs'],{cwd:project,env,stdio:['ignore','pipe','pipe']});let logs='';app.stdout.on('data',b=>logs+=b);app.stderr.on('data',b=>logs+=b)
 const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/chromium'].find(fs.existsSync);assert(chrome,'Linux CI Chromium is required')
-const profile=path.join(tmp,'profile'),browser=spawn(chrome,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-proxy-server','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{stdio:'ignore'})
+const profile=path.join(tmp,'profile');let browser=null,browserLog=''
 let ws,n=0;const pending=new Map()
 function cmd(method,params={}){return new Promise((resolve,reject)=>{const id=++n,t=setTimeout(()=>{pending.delete(id);reject(Error(method+' timeout'))},15000);pending.set(id,{resolve:r=>{clearTimeout(t);resolve(r)},reject});ws.send(JSON.stringify({id,method,params}))})}
 async function run(expression){const r=await cmd('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value}
@@ -19,7 +19,21 @@ async function until(expression){for(let i=0;i<100;i++){if(await run(expression)
 async function stop(p){if(p.exitCode!==null)return;await new Promise(r=>{p.once('exit',r);p.kill()})}
 try{
  for(let i=0;i<120;i++){if(app.exitCode!==null)throw Error(logs);try{const h=await fetch('http://127.0.0.1:3000/api/health').then(r=>r.json());if(h.freshDevelopment)break}catch{}await sleep(100)}
- for(let i=0;i<150&&!fs.existsSync(path.join(profile,'DevToolsActivePort'));i++)await sleep(100)
+ // Start Chromium after the API fixture becomes responsive; avoid competing
+ // with the initial SQLite/setup phase on a busy shared CI runner.
+ for(let attempt=0;attempt<2;attempt++){
+  browserLog=''
+  browser=spawn(chrome,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-proxy-server','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{stdio:['ignore','ignore','pipe']})
+  browser.stderr.on('data',data=>{browserLog+=data.toString().slice(0,4000)})
+  for(let i=0;i<200&&!fs.existsSync(path.join(profile,'DevToolsActivePort'));i++){
+   if(browser.exitCode!==null)break
+   await sleep(100)
+  }
+  if(fs.existsSync(path.join(profile,'DevToolsActivePort')))break
+  await stop(browser)
+  fs.rmSync(profile,{recursive:true,force:true,maxRetries:5,retryDelay:100})
+  if(attempt===1)throw Error('Chromium DevToolsActivePort missing after two attempts: '+browserLog.slice(-1800))
+ }
  const port=Number(fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0]),targets=await fetch('http://127.0.0.1:'+port+'/json/list').then(r=>r.json())
  ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true})});ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}})
  await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Page.navigate',{url:'http://127.0.0.1:3000'});await until("!!document.querySelector('.overviewStats')");assert(await run("!document.querySelector('.v8InstallSummary')"));await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("!!document.querySelector('.v8InstallSummary')")
@@ -78,4 +92,4 @@ try{
  await cmd('Page.reload');await until("!!document.querySelector('.overviewStats')")
  assert(await run("document.querySelector('.shell').classList.contains('densityLarge')"),'Device preference persistence')
  console.log('MAIN_BROWSER PASS: canonical launcher, version/progress, picker, own warehouse, automatic restart, 1366/390px all modules, three sizes, light/dark, mobile preference persistence')
-}finally{ws?.close();await stop(browser);await stop(app);await sleep(150);try{fs.rmSync(tmp,{recursive:true,force:true,maxRetries:15,retryDelay:150})}catch(e){console.error('Browser profile cleanup:',e)}}
+}finally{ws?.close();if(browser)await stop(browser);await stop(app);await sleep(150);try{fs.rmSync(tmp,{recursive:true,force:true,maxRetries:15,retryDelay:150})}catch(e){console.error('Browser profile cleanup:',e)}}
