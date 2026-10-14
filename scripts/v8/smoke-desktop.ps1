@@ -53,6 +53,10 @@ try{
   if($settings.rootPath -ne $destination){throw 'Warehouse settings still point to previous location'}
  }
  Write-Host 'V8_DESKTOP_SMOKE_PASS: clean D: install, warehouse selection and change, backend restarts, schema 130.'
+}catch{
+ $log=Join-Path $installDir 'logs/desktop.log'
+ if(Test-Path $log){Get-Content $log -Tail 60 | ForEach-Object {Write-Host $_}}
+ throw
 }finally{
  if($desktop){ & taskkill.exe /T /F /PID $desktop.Id 2>$null | Out-Null }
  if($createdDrive){subst D: /D}
