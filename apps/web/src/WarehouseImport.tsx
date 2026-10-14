@@ -20,9 +20,13 @@ export default function WarehouseImport({isDemo,onChanged}:{isDemo:boolean;onCha
   if(!h.freshDevelopment||h.warehouse===config.rootPath)return true
   if(h.customWarehouse&&h.release?.stage!==8)throw Error('Kho đang dùng là '+h.warehouse+'. Chỉ kho mới trống mới có thể đổi đường dẫn.')
   if(!config.rootPath.trim())throw Error('Chọn thư mục kho trước khi quét.')
-  if(!window.confirm('Dùng thư mục này làm kho của shop?\n'+config.rootPath+'\nThiết lập được nhớ cho lần mở sau. Ảnh chỉ được đọc khi quét; tồn kho chưa được ghi cho đến khi bạn duyệt.'))return false
+  const preflight=h.release?.stage===8?await apiJson('/api/local/warehouse/preflight?'+new URLSearchParams({warehouse:config.rootPath})):{legacyOwnership:false}
+  const warning=preflight.legacyOwnership
+   ?'Kho có dấu sở hữu của bản LOCAL cũ.\\nThoát hẳn bản cũ trước khi tiếp tục. V8 sẽ tiếp nhận kho mà không xóa hoặc di chuyển ảnh. Không mở lại phần mềm cũ với kho này.\\nXác nhận chuyển sang V8?'
+   :'Dùng thư mục này làm kho của shop?\\n'+config.rootPath+'\\nẢnh chỉ được đọc khi quét; chỉ nhập vào database sau khi duyệt.'
+  if(!window.confirm(warning))return false
   setMessage('Đang xác lập kho và mở lại kết nối…')
-  const selected=await apiJson('/api/local/warehouse',json({warehouse:config.rootPath}))
+  const selected=await apiJson('/api/local/warehouse',json({warehouse:config.rootPath,allowLegacyHandoff:preflight.legacyOwnership===true}))
   for(let n=0;n<60;n++){
    await new Promise(r=>setTimeout(r,500))
    try{const ready=await apiJson('/api/health');if(ready.customWarehouse&&ready.warehouse===selected.warehouse){setConfig(c=>({...c,rootPath:selected.warehouse}));return true}}catch{}
