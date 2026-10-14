@@ -9,12 +9,14 @@ on:
       - 'scripts/v8/package-windows.ps1'
       - 'scripts/v8/smoke-desktop.ps1'
       - '.github/workflows/v8-desktop.yml'
+      - 'apps/**'
+      - 'scripts/v8/preview-bootstrap.ps1'
   workflow_dispatch:
 concurrency:
   group: v8-desktop-preview
   cancel-in-progress: true
 permissions:
-  contents: read
+  contents: write
 jobs:
   preview:
     runs-on: windows-latest
@@ -38,6 +40,21 @@ jobs:
       - name: Real Windows EXE and D-drive smoke
         shell: pwsh
         run: ./scripts/v8/smoke-desktop.ps1
+      - name: Publish PREVIEW channel after Windows acceptance
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v8-preview
+          target_commitish: ${{ github.sha }}
+          name: Shop Mẹ CaCao V8 PREVIEW · kiểm thử
+          body: |
+            PREVIEW - chỉ dùng kiểm thử. Không dùng kho thật khi chưa nghiệm thu.
+            Windows CI và EXE first-launch smoke phải PASS trước khi phát hành.
+            Mọi dữ liệu và ảnh kho được lưu riêng trên ổ D:.
+          prerelease: true
+          draft: false
+          make_latest: false
+          overwrite_files: true
+          files: artifacts/ShopMeCaCao-V8-PREVIEW-win-x64.zip
       - uses: actions/upload-artifact@v4
         with:
           name: ShopMeCaCao-V8-PREVIEW-win-x64
