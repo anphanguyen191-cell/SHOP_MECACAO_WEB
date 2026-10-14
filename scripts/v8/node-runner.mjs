@@ -11,7 +11,6 @@ function stop(){
  stopping=true
  if(child.connected)child.send('SHOP_LOCAL_CLOSE')
  else child.kill()
- setTimeout(()=>{if(child.exitCode===null)child.kill()},15000).unref()
 }
 process.stdin.setEncoding('utf8')
 process.stdin.on('data',data=>{if(data.includes('STOP'))stop()})
