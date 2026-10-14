@@ -1,6 +1,7 @@
+param([ValidateSet('PREVIEW','STABLE')][string]$Channel='PREVIEW')
 $ErrorActionPreference='Stop'
 $virtual = Join-Path $env:RUNNER_TEMP 'mecacao-v8-drive'
-$installerZip = Join-Path (Resolve-Path '.').Path 'artifacts/ShopMeCaCao-V8-PREVIEW-win-x64.zip'
+$installerZip = Join-Path (Resolve-Path '.').Path ('artifacts/ShopMeCaCao-V8-'+$Channel+'-win-x64.zip')
 $createdDrive=$false
 if(!(Test-Path 'D:\')){
  New-Item -ItemType Directory -Force $virtual | Out-Null
