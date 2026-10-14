@@ -35,7 +35,7 @@ const demo:ProductRow[]=[
 {id:1,product_code:'LG0001',name:'Lửng gái T5',category:'Đồ tole bé gái',variant_count:3,total_stock:12,sizes:['Size 1','Size 2','Size 3'],stock_by_size:[{size:'Size 1',stock:5},{size:'Size 2',stock:4},{size:'Size 3',stock:3}]},
 {id:2,product_code:'BG0001',name:'Bộ gái hoa',category:'Đồ tole bé gái',variant_count:4,total_stock:7,sizes:['Size 1','Size 2','Size 3','Size 4'],stock_by_size:[{size:'Size 1',stock:2},{size:'Size 2',stock:1},{size:'Size 3',stock:1},{size:'Size 4',stock:3}]}
 ]
-const baseNav=['Tổng quan','Danh mục sản phẩm','Nhập hàng','Import kho','Tồn kho','Cài đặt']
+const baseNav=['Tổng quan','Danh mục sản phẩm','Nhập hàng','Import kho','Tồn kho','Kết nối Cloud','Cài đặt']
 const demoNav=['Tổng quan','Danh mục sản phẩm','Nhập hàng','Import kho','Tồn kho','Khách hàng','Bán hàng','Công nợ','Báo cáo','Kiểm kê','Ảnh SOLD','Ảnh iPhone','Cài đặt']
 const demoInfo:Record<string,string>={'Khách hàng':'Danh bạ khách, liên hệ và thông tin giao hàng.','Bán hàng':'Đơn nháp, chọn ảnh, chốt SOLD và phiếu PNG.','Công nợ':'Các khoản phải thu và hoàn khách.','Báo cáo':'Doanh số, dòng tiền, giá vốn và xuất CSV.','Kiểm kê':'Các phiên kiểm đếm theo mẫu và Size.','Ảnh SOLD':'Kiểm chứng ảnh hàng đã bán và SHA-256.','Ảnh iPhone':'Nhận ảnh qua Wi-Fi, chủ shop duyệt trên Windows.'}
 
@@ -50,7 +50,7 @@ export default function App(){
  const canReport=!health?.lanClient||lanRole==='owner'
  const canAuditSold=!health?.lanClient||lanRole==='owner'
  const canPhoneInbox=!isDemo&&!!health?.freshDevelopment&&(!health?.lanClient||lanRole==='owner'||lanRole==='inventory')
- const baseAccess=health?.lanClient?baseNav.filter(n=>!['Nhập hàng','Import kho','Cài đặt'].includes(n)):baseNav
+ const baseAccess=health?.lanClient?baseNav.filter(n=>!['Nhập hàng','Import kho','Kết nối Cloud','Cài đặt'].includes(n)):baseNav
  const nav=isDemo?demoNav:health?.salesDrafts?[...baseAccess.filter(n=>n!=='Cài đặt'),...(canSell?['Khách hàng','Bán hàng','Công nợ']:[]),...(health?.salesExecution?[...(canReport?['Báo cáo']:[]),...(canCount?['Kiểm kê']:[]),...(canAuditSold?['Ảnh SOLD']:[])]:[]),...(canPhoneInbox?['Ảnh iPhone']:[]),...(health?.lanClient?[]:[...(health?.freshDevelopment?['Mobile LAN']:[]),'Cài đặt'])]:baseAccess
  const conflictChoice=useDraftConflictChoice()
  const [salesId,setSalesId]=useState<string|null>(null),[addToDraft,setAddToDraft]=useState<string|null>(null)
@@ -146,8 +146,6 @@ export default function App(){
   <ShopSyncStatus enabled={!isDemo&&!!health?.ok}/>
   {!isDemo&&health?.freshDevelopment&&!health?.lanClient&&<CloudSoldMaintenance/>}
   {health?.lanClient&&<div className="lanSafetyBanner" role="status"><b>LAN NỘI BỘ · BẢN THỬ NGHIỆM</b><span>Tài khoản {health.lanRole??'chưa xác định'} · Dùng kho đã chọn trên Windows; Windows xác nhận mọi giao dịch. Chưa nghiệm thu vận hành thật.</span></div>}
-  {!isDemo&&!health?.lanClient&&<div hidden={active!=='Cài đặt'}><CloudSettings autoSync/></div>}
-  {active==='Cài đặt'&&(health?.freshDevelopment||isDemo)&&<ReleaseStatus version={health?.version??'3.5.0-stage6-main-test'} release={health?.release} warehouse={health?.lanClient?undefined:health?.warehouse} custom={health?.customWarehouse} onImport={()=>goTo('Import kho')}/>}
   {health?.localV2Business&&<div className="sandboxSafetyBanner businessSafetyBanner" role="status"><b>LOCAL V2 · KHO KINH DOANH</b><br/>Kho: {health.warehouse}<br/>DB: {health.databasePath}<br/>Ảnh nhập mới: {health.incoming} · Không mở V1/Python cũ đồng thời.</div>}
   {health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">BẢN PHỤC HỒI THỬ · Không phải kho kinh doanh.</div>}
   {isWindowsSandbox&&!health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">{health?.localV2Review?'LOCAL V2 — BẢN SAO ĐỂ DUYỆT. Dữ liệu lấy từ backup V1; thao tác chỉ thay bản sao, chưa kích hoạt kho thật.':'CHẾ ĐỘ THỬ WINDOWS — Database và kho giả lập riêng. KHÔNG thao tác ghi lên D:\\1-Me CaCao Store.'}</div>}
@@ -155,6 +153,9 @@ export default function App(){
 
   <div className="layout"><nav className="sidebar">{nav.map(n=><button key={n} className={active===n?'active':''} onClick={()=>goTo(n)}><ShopIcon label={n}/><strong>{n}</strong></button>)}</nav>
   <main><nav className="pageBreadcrumb" aria-label="Vị trí hiện tại">{active==='Tổng quan'?<strong>Trang chủ · Tổng quan</strong>:<><button onClick={()=>goTo('Tổng quan')}>Tổng quan</button><span>›</span><strong>{active}</strong></>}{isDemo&&<small>DEMO · Dữ liệu minh họa</small>}</nav>
+   {!isDemo&&!health?.lanClient&&<div hidden={active!=='Kết nối Cloud'}><CloudSettings autoSync/></div>}
+   {active==='Cài đặt'&&(health?.freshDevelopment||isDemo)&&<ReleaseStatus version={health?.version??'3.5.0-stage6-main-test'} release={health?.release} warehouse={health?.lanClient?undefined:health?.warehouse} custom={health?.customWarehouse} onImport={()=>goTo('Import kho')}/>}
+   
   {active==='Tổng quan'&&<div className="overview">
  <div className="dashboardFoldHeader"><div><span className="dashboardFoldEyebrow">BẢNG ĐIỀU HÀNH CỬA HÀNG</span><h2>Dashboard tổng quan</h2><p>Chỉ số tồn theo ảnh vật lý · chọn thẻ để mở chức năng</p></div><button type="button" className="dashboardFoldToggle" aria-expanded={overviewExpanded} aria-controls="overview-dashboard-body" onClick={()=>setOverviewExpanded(v=>!v)}>{overviewExpanded?'Thu gọn':'Xem dashboard'} <span aria-hidden="true">{overviewExpanded?'⌃':'⌄'}</span></button></div>
  {dashboardError&&<p className="notice warning" role="alert">{dashboardError} <button onClick={()=>setProductReload(x=>x+1)}>THỬ LẠI</button></p>}
