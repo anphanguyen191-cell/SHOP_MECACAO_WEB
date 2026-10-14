@@ -50,7 +50,7 @@ if((managedHome||v8Home)&&process.send)process.on('message',message=>{
  if(m?.type==='managed:quiesce'){
   updateFence=true;const until=Date.now()+45000
   const check=()=>{
-   const unresolved=tasks.pendingReview()||fs.existsSync(path.join(sandboxRoot!,SALES_AREA+'-pending.json'))||db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get()
+   const unresolved=tasks.pendingReview()||(sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))||db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get()
    if(unresolved){updateFence=false;process.send?.({type:'managed:refused',error:'Có giao dịch/tác vụ cần phục hồi hoặc đối soát. Cập nhật đã dừng.'});return}
    if(!taskActivity.busy&&!salesActivity.busy&&updateWrites===0){process.send?.({type:'managed:quiesced'});return}
    if(Date.now()>until){updateFence=false;process.send?.({type:'managed:refused',error:'Tác vụ chưa kết thúc. Chờ hoàn tất rồi cập nhật.'});return}

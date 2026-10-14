@@ -1,8 +1,6 @@
-name: Deploy GitHub Pages Preview
+name: Deploy Shop Mẹ CaCao main to Pages
 on:
   push:
-    branches: ["main"]
-  pull_request:
     branches: ["main"]
   workflow_dispatch:
 permissions:
@@ -118,6 +116,8 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm --workspace apps/web run build
+        env:
+          VITE_SHOP_RELEASE_CHANNEL: STABLE
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
