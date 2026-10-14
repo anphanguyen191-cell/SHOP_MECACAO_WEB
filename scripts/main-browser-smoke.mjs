@@ -78,4 +78,4 @@ try{
  await cmd('Page.reload');await until("!!document.querySelector('.overviewStats')")
  assert(await run("document.querySelector('.shell').classList.contains('densityLarge')"),'Device preference persistence')
  console.log('MAIN_BROWSER PASS: canonical launcher, version/progress, picker, own warehouse, automatic restart, 1366/390px all modules, three sizes, light/dark, mobile preference persistence')
-}finally{ws?.close();await stop(browser);await stop(app);fs.rmSync(tmp,{recursive:true,force:true})}
+}finally{ws?.close();await stop(browser);await stop(app);await sleep(150);try{fs.rmSync(tmp,{recursive:true,force:true,maxRetries:15,retryDelay:150})}catch(e){console.error('Browser profile cleanup:',e)}}
