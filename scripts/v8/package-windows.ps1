@@ -16,6 +16,8 @@ if($LASTEXITCODE -ne 0){ throw 'production dependency prune failed' }
 New-Item -ItemType Directory -Force (Join-Path $release 'apps/api'),(Join-Path $release 'apps/web'),(Join-Path $release 'scripts/v8') | Out-Null
 Copy-Item 'apps/api/dist' (Join-Path $release 'apps/api/dist') -Recurse -Force
 Copy-Item 'apps/web/dist' (Join-Path $release 'apps/web/dist') -Recurse -Force
+Copy-Item 'apps/api/package.json' (Join-Path $release 'apps/api/package.json') -Force
+Copy-Item 'apps/web/package.json' (Join-Path $release 'apps/web/package.json') -Force
 Copy-Item 'node_modules' (Join-Path $release 'node_modules') -Recurse -Force
 Copy-Item 'scripts/v8/node-runner.mjs' (Join-Path $release 'scripts/v8/node-runner.mjs') -Force
 Copy-Item 'package.json' (Join-Path $release 'package.json') -Force
