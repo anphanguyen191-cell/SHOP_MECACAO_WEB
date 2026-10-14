@@ -28,7 +28,7 @@ const realFile=(root,p)=>{
 }
 export async function stageLatest(home,previous,onStatus=()=>{}){
  const release=await json('https://api.github.com/repos/'+repo+'/releases/latest')
- if(!/^v8\.[0-9]+\.[0-9]+\.[0-9]+-stable$/.test(release.tag_name)||release.prerelease||release.draft)throw Error('Chưa có bản V8 STABLE đã duyệt')
+ if(!/^v8\.[0-9]+\.[0-9]+-stable$/.test(release.tag_name)||release.prerelease||release.draft)throw Error('Chưa có bản V8 STABLE đã duyệt')
  const asset=release.assets?.find(x=>x.name==='ShopMeCaCao-V8-STABLE-win-x64.zip')
  if(!asset||!/^sha256:[a-f0-9]{64}$/i.test(asset.digest||''))throw Error('Release chưa có gói và SHA-256 xác thực')
  const updateDir=path.join(home,'updates'),stage=path.join(home,'staging','release-'+randomUUID())
