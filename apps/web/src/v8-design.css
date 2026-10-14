@@ -38,3 +38,8 @@
 @media(prefers-reduced-motion:reduce){
  .shell *,.shell *::before,.shell *::after{transition:none!important;animation:none!important}
 }
+.shell .sidebar button{display:flex;align-items:center;gap:12px;font-weight:700}
+.shell .sidebar button svg{flex:0 0 18px;opacity:.78}
+.shell .sidebar button.active svg{opacity:1}
+.shell .drawerIcon{display:grid;place-items:center}
+.shell .drawerIcon svg{width:19px;height:19px}

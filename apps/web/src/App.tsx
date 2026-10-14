@@ -1,3 +1,4 @@
+import ShopIcon from './ShopIcon'
 import CloudSoldMaintenance from './CloudSoldMaintenance'
 import CloudSettings from './CloudSettings'
 import {ShopHeader,ShopDrawer} from './ShopChrome'
@@ -152,7 +153,7 @@ export default function App(){
   {isWindowsSandbox&&!health?.localV2RestoreReview&&<div className="sandboxSafetyBanner" role="status">{health?.localV2Review?'LOCAL V2 — BẢN SAO ĐỂ DUYỆT. Dữ liệu lấy từ backup V1; thao tác chỉ thay bản sao, chưa kích hoạt kho thật.':'CHẾ ĐỘ THỬ WINDOWS — Database và kho giả lập riêng. KHÔNG thao tác ghi lên D:\\1-Me CaCao Store.'}</div>}
   {menuOpen&&<ShopDrawer sections={nav.map(n=>({key:n,label:n,icon:({'Tổng quan':'⌂','Danh mục sản phẩm':'▦','Nhập hàng':'＋','Import kho':'⇩','Tồn kho':'▤','Bán hàng':'▧','Công nợ':'₫','Báo cáo':'▥','Kiểm kê':'✓','Ảnh SOLD':'▧','Khách hàng':'♧','Ảnh iPhone':'▧','Cài đặt':'⚙','Mobile LAN':'↔'} as Record<string,string>)[n]}))} active={active} onNavigate={goTo} onClose={()=>setMenuOpen(false)} search={menuSearch} onSearch={setMenuSearch} density={density} onDensity={setDensity} mode={mode}/>}
 
-  <div className="layout"><nav className="sidebar">{nav.map(n=><button key={n} className={active===n?'active':''} onClick={()=>goTo(n)}><strong>{n}</strong></button>)}</nav>
+  <div className="layout"><nav className="sidebar">{nav.map(n=><button key={n} className={active===n?'active':''} onClick={()=>goTo(n)}><ShopIcon label={n}/><strong>{n}</strong></button>)}</nav>
   <main><nav className="pageBreadcrumb" aria-label="Vị trí hiện tại">{active==='Tổng quan'?<strong>Trang chủ · Tổng quan</strong>:<><button onClick={()=>goTo('Tổng quan')}>Tổng quan</button><span>›</span><strong>{active}</strong></>}{isDemo&&<small>DEMO · Dữ liệu minh họa</small>}</nav>
   {active==='Tổng quan'&&<div className="overview">
  <div className="dashboardFoldHeader"><div><span className="dashboardFoldEyebrow">BẢNG ĐIỀU HÀNH CỬA HÀNG</span><h2>Dashboard tổng quan</h2><p>Chỉ số tồn theo ảnh vật lý · chọn thẻ để mở chức năng</p></div><button type="button" className="dashboardFoldToggle" aria-expanded={overviewExpanded} aria-controls="overview-dashboard-body" onClick={()=>setOverviewExpanded(v=>!v)}>{overviewExpanded?'Thu gọn':'Xem dashboard'} <span aria-hidden="true">{overviewExpanded?'⌃':'⌄'}</span></button></div>

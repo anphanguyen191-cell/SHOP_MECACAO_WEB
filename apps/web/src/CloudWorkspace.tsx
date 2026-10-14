@@ -1,3 +1,4 @@
+import ShopIcon from './ShopIcon'
 import CloudSoldMaintenance from './CloudSoldMaintenance'
 import CloudOrders from './CloudOrders'
 import {useCloudDraftConflictChoice} from './CloudDraftConflictChoice'
@@ -110,7 +111,7 @@ export default function CloudWorkspace(){
  return <div className={'shell cloudWorkspace density'+density[0].toUpperCase()+density.slice(1)+(density==='small'?' densityCompact':' densityComfort')+(dark?' themeDark':'')}>
  {draftConflict.dialog}<ShopHeader density={density} onDensity={setDensity} dark={dark} onTheme={()=>setDark(v=>!v)} onMenu={()=>setMenuOpen(true)} menuOpen={menuOpen} mode="CLOUD"/>
  {menuOpen&&<ShopDrawer sections={sections} active={tab} onNavigate={navigate} onClose={()=>setMenuOpen(false)} search={menuSearch} onSearch={setMenuSearch} density={density} onDensity={setDensity} mode="CLOUD"/>}
- <div className="layout"><nav className="sidebar" aria-label="Danh mục chức năng Cloud">{sections.map(s=><button key={s.key} className={tab===s.key?'active':''} onClick={()=>navigate(s.key)}><strong>{s.label}</strong></button>)}</nav><main>
+ <div className="layout"><nav className="sidebar" aria-label="Danh mục chức năng Cloud">{sections.map(s=><button key={s.key} className={tab===s.key?'active':''} onClick={()=>navigate(s.key)}><ShopIcon label={s.label}/><strong>{s.label}</strong></button>)}</nav><main>
  <nav className="pageBreadcrumb" aria-label="Vị trí hiện tại"><button onClick={()=>navigate('overview')}>Tổng quan</button><span>›</span><strong>{sections.find(s=>s.key===tab)?.label||'Shop Mẹ CaCao'}</strong></nav>
  <p className="muted">Shop Mẹ CaCao · {CLOUD_RELEASE}</p>
  <div className={'shopSyncStatus'+(!online?' offline':'')} role="status"><span className="shopSyncDot"/><span>{online?status:'Mất mạng. Chỉ xem dữ liệu đã đọc; kết nối lại để thao tác.'}</span><button disabled={!signed||busy||!online} onClick={()=>void load()}>Đọc lại</button></div>
