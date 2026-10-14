@@ -23,6 +23,9 @@ jobs:
       - run: npm run test:windows-update
       - shell: pwsh
         run: ./scripts/v8/package-windows.ps1
+      - name: Real D-drive EXE acceptance before release
+        shell: pwsh
+        run: ./scripts/v8/smoke-desktop.ps1 -Channel STABLE
       - name: Publish verified Windows package
         uses: softprops/action-gh-release@v2
         with:
