@@ -1,13 +1,17 @@
 $ErrorActionPreference='Stop'
 $virtual = Join-Path $env:RUNNER_TEMP 'mecacao-v8-drive'
 $installerZip = Join-Path (Resolve-Path '.').Path 'artifacts/ShopMeCaCao-V8-PREVIEW-win-x64.zip'
-if(Test-Path 'D:\'){ throw 'CI requires free D: drive for isolated desktop smoke' }
-New-Item -ItemType Directory -Force $virtual | Out-Null
-subst D: $virtual
-if($LASTEXITCODE -ne 0){ throw 'Failed to create isolated D: drive' }
+$createdDrive=$false
+if(!(Test-Path 'D:\')){
+ New-Item -ItemType Directory -Force $virtual | Out-Null
+ subst D: $virtual
+ if($LASTEXITCODE -ne 0){ throw 'Failed to create isolated D: drive' }
+ $createdDrive=$true
+}
 $desktop = $null
 try{
  $home='D:\ShopMeCaCao'
+ if(Test-Path $home){ throw 'CI fixture install path is not empty' }
  New-Item -ItemType Directory -Force $home | Out-Null
  Expand-Archive -LiteralPath $installerZip -DestinationPath $home -Force
  $desktop=Start-Process -FilePath "$home\ShopMeCaCao.exe" -WorkingDirectory $home -PassThru
@@ -29,5 +33,5 @@ try{
  Write-Host 'V8_DESKTOP_SMOKE_PASS: clean D: install, schema 130, isolated warehouse, GUI EXE.'
 }finally{
  if($desktop){ & taskkill.exe /T /F /PID $desktop.Id 2>$null | Out-Null }
- subst D: /D
+ if($createdDrive){subst D: /D}
 }
