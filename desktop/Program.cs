@@ -4,6 +4,8 @@ using System.Drawing;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text;
+using System.Security.Cryptography;
 using System.Windows.Forms;
 
 internal static class Program
@@ -136,7 +138,9 @@ internal sealed class ShopContext : ApplicationContext
                         var health = json.RootElement;
                         if (health.GetProperty("ok").GetBoolean() &&
                             health.GetProperty("database").GetString() == "shop-v8.db" &&
-                            health.GetProperty("schema").GetInt32() == 130)
+                            health.GetProperty("schema").GetInt32() == 130 &&
+                            health.GetProperty("installationId").GetString() ==
+                                Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(home))).ToLowerInvariant())
                         {
                             ready = true;
                             OpenBrowser();
