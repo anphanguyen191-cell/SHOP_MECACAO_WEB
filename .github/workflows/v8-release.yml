@@ -33,7 +33,7 @@ jobs:
       - name: Fresh-install and upgrade safety
         run: |
           npm run test:v8-layout
-          node --test scripts/v8/warehouse-cloud-ui.test.mjs scripts/v8/release-fetch.test.mjs scripts/v8/data-snapshot.test.mjs
+          node --test scripts/v8/warehouse-cloud-ui.test.mjs scripts/v8/warehouse-ownership.test.mjs scripts/v8/release-fetch.test.mjs scripts/v8/data-snapshot.test.mjs
           node --check scripts/v8/node-runner.mjs
           node --check scripts/v8/release-fetch.mjs
       - run: npm run build
