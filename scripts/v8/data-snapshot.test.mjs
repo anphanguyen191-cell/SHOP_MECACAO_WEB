@@ -26,7 +26,7 @@ test('refuses incomplete database or tampered rollback snapshot',()=>{
  try{
   fs.mkdirSync(dir,{recursive:true});fs.mkdirSync(path.join(home,'staging'))
   fs.writeFileSync(path.join(dir,'shop-v8.db'),'DB')
-  assert.throws(()=>snapshotV8Data(home),/chưa hoàn tất/)
+  assert.throws(()=>snapshotV8Data(home),/hoàn tất khởi tạo/)
   fs.writeFileSync(path.join(dir,'.initialized.json'),'{}')
   const snapshot=snapshotV8Data(home)
   fs.writeFileSync(path.join(snapshot.directory,'database','shop-v8.db'),'CORRUPT')
