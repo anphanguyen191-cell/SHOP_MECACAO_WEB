@@ -21,7 +21,7 @@ try{
   if($desktop.HasExited){ throw "Desktop EXE exited: $($desktop.ExitCode)" }
   try{
    $candidate=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/health' -TimeoutSec 1
-   if($candidate.ok){ $health=$candidate; break }
+   if($candidate.ok -and $candidate.writeReady){ $health=$candidate; break }
   }catch{}
   Start-Sleep -Milliseconds 400
  }
@@ -46,7 +46,7 @@ try{
   for($retry=0;$retry -lt 100;$retry++){
    try{
     $health=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/health' -TimeoutSec 1
-    if($health.customWarehouse -and $health.warehouse -eq $destination){$changed=$true;break}
+    if($health.writeReady -and $health.customWarehouse -and $health.warehouse -eq $destination){$changed=$true;break}
    }catch{}
    Start-Sleep -Milliseconds 500
   }
