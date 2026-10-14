@@ -72,7 +72,7 @@ export function checkWarehouse(rootPath=getWatchSettings().rootPath,onProgress?:
 }
 export function startWarehouseWatcher(schedule?:(root:string)=>void){
  let last=Date.now()
- const run=()=>{if(taskActivity.busy||salesActivity.busy||salesActivity.readers||(process.env.SHOP_SANDBOX_ROOT&&fs.existsSync(path.join(process.env.SHOP_SANDBOX_ROOT,SALES_AREA+'-pending.json'))))return;const c=getWatchSettings();if(!localRuntime&&c.rootPath&&fs.existsSync(path.join(c.rootPath,ACTIVE_MARKER)))return;if(c.rootPath)try{if(schedule)schedule(c.rootPath);else checkWarehouse(c.rootPath)}catch(e){console.error('Warehouse scan:',e instanceof Error?e.message:e)}}
+ const run=()=>{if(taskActivity.busy||salesActivity.busy||salesActivity.readers||(process.env.SHOP_SANDBOX_ROOT&&fs.existsSync(path.join(process.env.SHOP_SANDBOX_ROOT,SALES_AREA+'-pending.json'))))return;const c=getWatchSettings();if(!localRuntime&&!process.env.SHOP_V8_HOME&&c.rootPath&&fs.existsSync(path.join(c.rootPath,ACTIVE_MARKER)))return;if(c.rootPath)try{if(schedule)schedule(c.rootPath);else checkWarehouse(c.rootPath)}catch(e){console.error('Warehouse scan:',e instanceof Error?e.message:e)}}
  if(getWatchSettings().startup)setTimeout(run,0).unref()
  const timer=setInterval(()=>{const c=getWatchSettings();if(c.periodic&&Date.now()-last>=c.intervalSeconds*1000){last=Date.now();run()}},10000)
  timer.unref();return timer

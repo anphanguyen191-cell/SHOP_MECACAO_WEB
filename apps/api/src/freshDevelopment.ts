@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
+import {inspectWarehouseOwner} from './warehouseOwnership.js'
 export const freshDevelopment=process.env.SHOP_FRESH_DEVELOPMENT==='1'
 export const release={version:process.env.SHOP_V8_HOME?(process.env.SHOP_RELEASE_CHANNEL==='STABLE'?'8.0.0':'8.0.0-preview'):'7.3.0',channel:process.env.SHOP_V8_HOME?(process.env.SHOP_RELEASE_CHANNEL==='STABLE'?'stable':'preview'):'release',stage:process.env.SHOP_V8_HOME?8:7,status:process.env.SHOP_V8_HOME?(process.env.SHOP_RELEASE_CHANNEL==='STABLE'?'RELEASED':'DEVELOPMENT'):'RELEASED',next:'Windows và iPhone dùng chung dữ liệu Cloud'}
 const legacyRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../../data/stage6-main-test')
@@ -26,7 +27,8 @@ export function validateNewWarehouse(value:unknown){
  const root=path.resolve(value)
  if(fs.realpathSync(root)!==root||!fs.lstatSync(root).isDirectory()||fs.lstatSync(root).isSymbolicLink())throw Error('Kho phải là thư mục vật lý, không dùng liên kết')
  if(root===path.parse(root).root||contains(root,freshRoot)||contains(freshRoot,root))throw Error('Chọn thư mục kho riêng, không chọn cả ổ đĩa hoặc thư mục dữ liệu ứng dụng')
- if(fs.existsSync(path.join(root,'.mecacao-local-active.json'))||fs.existsSync(path.join(root,'.mecacao-local-runtime.lock')))throw Error('Kho đang thuộc bản cài khác; chọn thư mục chưa được bản khác sử dụng')
+ if(v8Home)inspectWarehouseOwner(root,v8Home)
+ else if(fs.existsSync(path.join(root,'.mecacao-local-active.json'))||fs.existsSync(path.join(root,'.mecacao-local-runtime.lock')))throw Error('Kho đang thuộc bản cài khác; chọn thư mục chưa được bản khác sử dụng')
  return root
 }
 let selected:string|null=null
@@ -39,7 +41,7 @@ if(freshDevelopment){
   const c=JSON.parse(fs.readFileSync(warehouseConfig,'utf8'));if(c.format!==1)throw Error('Cấu hình kho không hợp lệ')
   // Runtime lock is checked separately against this installation's database.
   selected=path.resolve(c.warehouse)
-  if(!path.isAbsolute(c.warehouse)||fs.realpathSync(selected)!==selected||!fs.lstatSync(selected).isDirectory()||selected===path.parse(selected).root||contains(selected,freshRoot)||contains(freshRoot,selected)||fs.existsSync(path.join(selected,'.mecacao-local-active.json')))throw Error('Kho đã chọn không còn hợp lệ; giữ nguyên cấu hình để kiểm tra')
+  if(!path.isAbsolute(c.warehouse)||fs.realpathSync(selected)!==selected||!fs.lstatSync(selected).isDirectory()||selected===path.parse(selected).root||contains(selected,freshRoot)||contains(freshRoot,selected)||(v8Home?inspectWarehouseOwner(selected,v8Home)==='LEGACY':fs.existsSync(path.join(selected,'.mecacao-local-active.json'))))throw Error('Kho đã chọn chưa được bàn giao hợp lệ; giữ nguyên cấu hình để kiểm tra')
  }
  process.env.SHOP_SANDBOX_ROOT=selected??freshRoot;process.env.SHOP_DB_PATH=path.join(freshRoot,'database',v8Home?'shop-v8.db':'shop-stage6-main-test.db')
  process.env.SHOP_ENABLE_V2_DRAFTS='1';process.env.SHOP_ENABLE_V2_SALES='1';process.env.SHOP_HOST='127.0.0.1'

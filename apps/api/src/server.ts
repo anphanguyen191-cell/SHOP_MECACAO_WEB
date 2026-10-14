@@ -6,6 +6,7 @@ import {configureLan} from './lanRuntime.js'
 import {createLanControl,lanControlRouter} from './lanControl.js'
 import {installLanGuard} from './lanServer.js'
 import {freshDevelopment,freshWarehouse,freshRoot,managedHome,customWarehouse,warehouseConfig,validateNewWarehouse,release,v8Home} from './freshDevelopment.js'
+import {inspectWarehouseOwner,adoptWarehouse} from './warehouseOwnership.js'
 import {taskManager} from './tasks.js'
 import {taskActivity} from './taskActivity.js'
 import {salesActivity,SALES_AREA} from './salesExecution.js'
@@ -193,20 +194,39 @@ app.get('/api/health', (_req, res) => res.json({
   lanClient:!!res.locals.lanUser,lanRole:res.locals.lanUser?.role,
   ok: true, writeReady:!updateFence&&!updateProbe, app: 'SHOP_MECACAO_WEB', installationId:res.locals.lanUser?undefined:createHash('sha256').update(managedHome??v8Home??path.resolve(process.cwd())).digest('hex'), cloudAuthority:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(), freshDevelopment,customWarehouse,release: freshDevelopment?release:undefined,version: freshDevelopment?release.version:localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:res.locals.lanUser?undefined:(freshDevelopment?freshWarehouse:localRuntime?.warehouse),incoming:res.locals.lanUser?undefined:localRuntime?.incoming,databasePath:res.locals.lanUser?undefined:((managedHome||v8Home)?dbPath:localRuntime?.database),localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
 }))
+app.get('/api/local/warehouse/preflight',(req,res)=>{
+ if(!v8Home||res.locals.lanUser)return res.status(403).json({error:'Chỉ chọn kho trên Windows V8'})
+ try{
+  const warehouse=validateNewWarehouse(req.query.warehouse)
+  if(path.parse(warehouse).root.toUpperCase()!=='D:\\')throw Error('Kho V8 phải thuộc ổ D:')
+  res.set('Cache-Control','no-store').json({warehouse,legacyOwnership:inspectWarehouseOwner(warehouse,v8Home)==='LEGACY'})
+ }catch(e){res.status(409).json({error:e instanceof Error?e.message:String(e)})}
+})
 app.post('/api/local/warehouse',(req,res)=>{
  if(!freshDevelopment)return res.status(404).json({error:'Chọn kho áp dụng cho bản main mới'})
  try{
   if(!v8Home&&(customWarehouse||fs.existsSync(warehouseConfig)))throw Error('Kho đã được chọn và khóa cho bản cài này.')
   if(['products','product_images','sales_orders','shop_customers','inventory_transactions','sales_units','finance_entries','stocktake_sessions','cloud_sync_cursors'].filter(t=>db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(t)).some(t=>db.prepare('SELECT 1 FROM '+t+' LIMIT 1').get())||db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())throw Error('Chỉ chọn kho trước khi nhập dữ liệu. Giữ kho hiện tại hoặc giải nén bản main vào thư mục mới.')
   const warehouse=validateNewWarehouse(req.body.warehouse)
+  if(v8Home&&inspectWarehouseOwner(warehouse,v8Home)==='LEGACY'&&req.body.allowLegacyHandoff!==true)
+   throw Error('Để dùng lại kho LOCAL cũ, hãy xác nhận chuyển quyền sử dụng tại Import kho.')
   if(v8Home&&path.parse(warehouse).root.toUpperCase()!=='D:\\')throw Error('Kho chính thức V8 phải thuộc ổ D:')
   if(v8Home&&(taskActivity.busy||salesActivity.busy||tasks.pendingReview()))throw Error('Hãy đợi các tác vụ đang chạy hoàn tất trước khi đổi kho')
   if(freshWarehouse===warehouse&&customWarehouse)return res.json({warehouse,restarting:false})
   if(v8Home){
+   const undo=adoptWarehouse(warehouse,v8Home)
+   const previousConfig=fs.existsSync(warehouseConfig)?fs.readFileSync(warehouseConfig):null
    const temp=warehouseConfig+'.'+randomUUID()+'.tmp'
-   fs.writeFileSync(temp,JSON.stringify({format:1,warehouse}),{flag:'wx',mode:0o600})
-   fs.renameSync(temp,warehouseConfig)
-   db.prepare("UPDATE app_settings SET value=?,updated_at=datetime('now') WHERE key='warehouse-watch'").run(JSON.stringify({...getWatchSettings(),rootPath:warehouse}))
+   try{
+    fs.writeFileSync(temp,JSON.stringify({format:1,warehouse}),{flag:'wx',mode:0o600})
+    fs.renameSync(temp,warehouseConfig)
+    db.prepare("UPDATE app_settings SET value=?,updated_at=datetime('now') WHERE key='warehouse-watch'").run(JSON.stringify({...getWatchSettings(),rootPath:warehouse}))
+   }catch(e){
+    try{fs.unlinkSync(temp)}catch{}
+    try{if(previousConfig)fs.writeFileSync(warehouseConfig,previousConfig);else if(fs.existsSync(warehouseConfig))fs.unlinkSync(warehouseConfig)}catch{}
+    try{undo()}catch{}
+    throw e
+   }
   }else{
    const fd=fs.openSync(warehouseConfig,'wx',0o600)
    try{fs.writeFileSync(fd,JSON.stringify({format:1,warehouse}));fs.fsyncSync(fd)}finally{fs.closeSync(fd)}
