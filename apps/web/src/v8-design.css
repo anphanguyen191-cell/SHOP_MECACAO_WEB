@@ -1,0 +1,40 @@
+/* V8 Premium Retail: one set of visual tokens for desktop and mobile. */
+.shell {
+ --v8-bg:#fff9f6;--v8-surface:#ffffff;--v8-edge:#e5dce0;
+ --v8-ink:#283747;--v8-muted:#5c6172;--v8-accent:#974669;
+ --v8-soft:#fff0f3;--v8-focus:#007b87;--v8-radius:18px;
+ --v8-shadow:0 6px 26px rgba(30,40,55,.07);
+ --mc-accent:var(--v8-accent);--mc-ink:var(--v8-ink);
+ --mc-subtle:var(--v8-muted);--mc-border:var(--v8-edge);
+ --mc-surface:var(--v8-surface);--mc-soft:var(--v8-soft);
+ color:var(--v8-ink);background:var(--v8-bg);
+}
+.shell.themeDark{
+ --v8-bg:#191d2a;--v8-surface:#242a38;--v8-edge:#43485b;
+ --v8-ink:#f6f3f9;--v8-muted:#c9c4d2;--v8-accent:#f3a9cd;
+ --v8-soft:#352c41;--v8-focus:#89e2e3;
+}
+.shell .topbar{background:var(--v8-surface);border-color:var(--v8-edge);backdrop-filter:blur(14px)}
+.shell .sidebar{background:var(--v8-surface);border-color:var(--v8-edge)}
+.shell .sidebar button{border-radius:13px;min-height:44px}
+.shell .sidebar button.active{background:var(--v8-soft);color:var(--v8-accent);box-shadow:inset 3px 0 var(--v8-accent)}
+.shell .card,.shell .panel,.shell .overviewPanel,.shell .overviewStat,.shell .product,.shell .inventoryCard{
+ background:var(--v8-surface);border:1px solid var(--v8-edge);border-radius:var(--v8-radius);box-shadow:var(--v8-shadow);
+}
+.shell :is(input,select,textarea){accent-color:var(--v8-accent)}
+.shell :is(button,a,input,select,textarea,[tabindex]):focus-visible{outline:3px solid var(--v8-focus);outline-offset:2px}
+.shell :is(button,[role=button]){touch-action:manipulation}
+.shell :is(button):disabled{cursor:not-allowed;opacity:.6}
+.shell :is(h1,h2,h3){color:var(--v8-ink);letter-spacing:-.02em}
+.shell .product.clickable{transition:box-shadow .17s ease,transform .17s ease}
+.shell .product.clickable:hover{box-shadow:0 12px 30px rgba(30,40,55,.12);transform:translateY(-1px)}
+.shell .catalogPhoto img,.shell .inventoryThumb img{object-fit:cover;max-width:100%}
+@media(max-width:760px){
+ .shell .topbar{padding:11px 13px}
+ .shell main{padding-inline:max(13px,env(safe-area-inset-left))}
+ .shell :is(button,input,select,textarea){min-height:44px}
+ .shell .product.clickable:hover{transform:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .shell *,.shell *::before,.shell *::after{transition:none!important;animation:none!important}
+}
