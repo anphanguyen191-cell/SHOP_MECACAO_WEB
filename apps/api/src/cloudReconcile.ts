@@ -17,7 +17,7 @@ async function reconcile(db:DatabaseSync,root:string,proof:any){
  const stable={...proof,assets:assets.map((a:any)=>({image_id:a.image_id,object_path:a.object_path,sha256:a.sha256,bytes:a.bytes,revision:a.revision})).sort((a:any,b:any)=>a.image_id-b.image_id)}
  const hash=createHash('sha256').update(JSON.stringify(stable)).digest('hex'),marker='cloud-sold:'+o.id,key='cloud-sale-'+o.id
  const previous=db.prepare('SELECT value FROM app_metadata WHERE key=?').get(marker)
- const costs=new Map<number,number>(items.map((i:any)=>[i.image_id,i.unit_cost??0]));if([...costs.values()].some(v=>!Number.isSafeInteger(v)||v<0))throw Error('Giá vốn snapshot Cloud không hợp lệ.');
+ const costs=new Map<number,number|null>(items.map((i:any)=>[i.image_id,i.unit_cost??null]));if([...costs.values()].some(v=>v!==null&&(!Number.isSafeInteger(v)||v<0)))throw Error('Giá vốn snapshot Cloud không hợp lệ.');
  const execution=salesExecutionService(db,root,costs)
  if(previous){if(previous.value!==hash)throw Error('Bằng chứng SOLD Cloud thay đổi.');const status=await execution.status(key);if(!status.sold)throw Error('Lưu trữ SOLD Windows cần phục hồi.');return status}
  const existing=await execution.status(key)
@@ -42,7 +42,7 @@ async function reconcile(db:DatabaseSync,root:string,proof:any){
   db.prepare('INSERT INTO sales_orders(id,request_key,request_hash,discount,note,version) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET discount=excluded.discount,note=excluded.note,version=excluded.version').run(o.id,'cloud-import-'+o.id,hash,o.discount,o.note,o.version)
   db.prepare('DELETE FROM sales_order_images WHERE order_id=?').run(o.id)
   const insert=db.prepare('INSERT INTO sales_order_images(order_id,image_id,product_id,variant_id,product_name,product_code,size,sku,unit_price,unit_cost,position) VALUES(?,?,?,?,?,?,?,?,?,?,?)')
-  items.forEach((i:any,index:number)=>insert.run(o.id,i.image_id,i.product_id,i.variant_id,i.product_name,i.product_code,i.size,i.sku,i.unit_price,i.unit_cost>0?i.unit_cost:null,index))
+  items.forEach((i:any,index:number)=>insert.run(o.id,i.image_id,i.product_id,i.variant_id,i.product_name,i.product_code,i.size,i.sku,i.unit_price,i.unit_cost??null,index))
   const contact=proof.contact||{}
   db.prepare('INSERT INTO order_contacts(order_id,recipient_name,phone,address,shipping_fee) VALUES(?,?,?,?,?) ON CONFLICT(order_id) DO UPDATE SET recipient_name=excluded.recipient_name,phone=excluded.phone,address=excluded.address,shipping_fee=excluded.shipping_fee').run(o.id,contact.recipient_name||'',contact.phone||'',contact.address||'',contact.shipping_fee||0)
   db.exec('COMMIT')

@@ -40,7 +40,10 @@ export function cloudRouter(db:DatabaseSync,root:string){
    db.exec('BEGIN IMMEDIATE')
    try{
     for(const p of products)db.prepare('UPDATE products SET status=? WHERE id=? AND product_code=?').run(p.status,p.id,p.product_code)
-    for(const v of variants)db.prepare('UPDATE product_variants SET cost_price=?,sale_price=?,status=? WHERE id=? AND product_id=? AND sku=?').run(v.cost_price,v.sale_price,v.status,v.id,v.product_id,v.sku)
+    for(const v of variants){
+     db.prepare('UPDATE product_variants SET cost_price=?,sale_price=?,status=? WHERE id=? AND product_id=? AND sku=? AND (cost_price<>? OR sale_price<>? OR status<>?)').run(v.cost_price,v.sale_price,v.status,v.id,v.product_id,v.sku,v.cost_price,v.sale_price,v.status)
+     if(v.cost_price_set!==undefined)db.prepare('INSERT INTO variant_price_state(variant_id,cost_set,sale_set) SELECT id,?,? FROM product_variants WHERE id=? AND sku=? ON CONFLICT(variant_id) DO UPDATE SET cost_set=excluded.cost_set,sale_set=excluded.sale_set,revision=revision+1 WHERE cost_set<>excluded.cost_set OR sale_set<>excluded.sale_set').run(v.cost_price_set?1:0,v.sale_price_set?1:0,v.id,v.sku)
+    }
     db.exec('COMMIT')
    }catch(e){db.exec('ROLLBACK');throw e}
    res.json({updated:variants.length})
@@ -65,7 +68,7 @@ export function cloudRouter(db:DatabaseSync,root:string){
    const images=ids.length?db.prepare(`SELECT id,product_id,variant_id,sort_order,is_primary FROM product_images WHERE product_id IN (${marks}) AND NOT EXISTS(SELECT 1 FROM sales_units WHERE image_id=product_images.id) ORDER BY id`).all(...ids):[]
    const transactions=ids.length?db.prepare(`SELECT t.* FROM inventory_transactions t JOIN product_variants v ON v.id=t.variant_id WHERE v.product_id IN (${marks}) ORDER BY t.id`).all(...ids):[]
    const sourceState=images.map(image=>{const source=db.prepare('SELECT file_path FROM product_images WHERE id=?').get(image.id);try{return {id:Number(image.id),present:fs.statSync(String(source?.file_path)).isFile()}}catch(e){if(['ENOENT','ENOTDIR'].includes((e as NodeJS.ErrnoException).code||''))return {id:Number(image.id),present:false};throw Error('Không đọc được ảnh nguồn #'+image.id+'. Kiểm tra quyền ổ đĩa; chưa tự rút ảnh Cloud.')}})
-   res.json({instance,products,variants,images,transactions,sourceState,categories:offset===0?db.prepare('SELECT * FROM categories ORDER BY id').all():[],nextOffset:offset+products.length,done:products.length<100})
+   res.json({instance,products,variants:variants.map(v=>{const s=db.prepare('SELECT * FROM variant_price_state WHERE variant_id=?').get(v.id);return {...v,cost_price_set:Number(v.cost_price)>0||s?.cost_set===1,sale_price_set:Number(v.sale_price)>0||s?.sale_set===1}}),images,transactions,sourceState,categories:offset===0?db.prepare('SELECT * FROM categories ORDER BY id').all():[],nextOffset:offset+products.length,done:products.length<100})
   }catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không đọc được kho'})}
  })
  router.get('/proof-images/:id',async(req,res)=>{

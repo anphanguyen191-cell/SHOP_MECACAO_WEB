@@ -1,5 +1,6 @@
 import {bootstrapFinance,assertFinanceEdit} from './orderFinance.js'
-import {bootstrapCustomers,contactInput} from './customers.js'
+import {knownUnitCost} from './priceBulk.js'
+import {bootstrapCustomers,contactInput,saveDraftCustomer} from './customers.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import {createHash,randomUUID} from 'node:crypto'
@@ -71,17 +72,18 @@ export function salesDraftService(db:DatabaseSync,sandboxRoot:string,confirmedCl
  }
  function saveContact(id:string,raw:any,input:Input){
   const old=db.prepare('SELECT shipping_fee FROM order_contacts WHERE order_id=?').get(id)
-  const c=raw.contact===undefined?null:contactInput(db,raw.contact),total=input.items.reduce((n,i)=>n+i.unitPrice,0)-input.discount+(c?.shippingFee??Number(old?.shipping_fee??0))
+  let c=raw.contact===undefined?null:contactInput(db,raw.contact);const total=input.items.reduce((n,i)=>n+i.unitPrice,0)-input.discount+(c?.shippingFee??Number(old?.shipping_fee??0))
   if(!Number.isSafeInteger(total))throw new SalesError('Tổng thanh toán vượt giới hạn an toàn')
   assertFinanceEdit(db,id,total)
   if(!c)return
+  c=saveDraftCustomer(db,raw.contact,c)
   db.prepare(`INSERT INTO order_contacts(order_id,customer_id,recipient_name,phone,address,shipping_fee) VALUES(?,?,?,?,?,?) ON CONFLICT(order_id) DO UPDATE SET customer_id=excluded.customer_id,recipient_name=excluded.recipient_name,phone=excluded.phone,address=excluded.address,shipping_fee=excluded.shipping_fee`).run(id,c.customerId,c.recipientName,c.phone,c.address,c.shippingFee)
  }
  function saveItems(id:string,input:Input){
   const rows=input.items.map(item=>{const row=stock(item.imageId),reason=unavailable(row);if(reason)throw new SalesError('Ảnh #'+item.imageId+': '+reason,409);return {row:row!,price:item.unitPrice}})
   db.prepare('DELETE FROM sales_order_images WHERE order_id=?').run(id)
   const insert=db.prepare('INSERT INTO sales_order_images(order_id,image_id,product_id,variant_id,product_name,product_code,size,sku,unit_price,unit_cost,position) VALUES(?,?,?,?,?,?,?,?,?,?,?)')
-  rows.forEach(({row,price},i)=>insert.run(id,row.image_id,row.product_id,row.variant_id,row.product_name,row.product_code,row.size,row.sku,price,row.unit_cost>0?row.unit_cost:null,i))
+  rows.forEach(({row,price},i)=>insert.run(id,row.image_id,row.product_id,row.variant_id,row.product_name,row.product_code,row.size,row.sku,price,knownUnitCost(db,row.variant_id,row.unit_cost),i))
  }
  return {
   get,

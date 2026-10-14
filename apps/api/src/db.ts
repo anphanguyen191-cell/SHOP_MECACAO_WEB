@@ -6,6 +6,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { bootstrapV100,readSchemaVersion } from './schema.js'
 import {bootstrapSalesExecution} from './salesExecution.js'
 import {bootstrapSalesDrafts} from './salesSchema.js'
+import {bootstrapPriceBulk} from './priceBulk.js'
 import {localRuntime,claimRuntime,legacyWarehouseActive} from './localRuntime.js'
 
 export const salesExecutionEnabled=process.env.SHOP_ENABLE_V2_SALES==='1'
@@ -33,6 +34,7 @@ export const db=new DatabaseSync(dbPath)
 db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;')
 try{
  if(localRuntime){if(readSchemaVersion(db)!==130)throw Error('LOCAL không tự migration DB')}else if(salesExecutionEnabled){if(readSchemaVersion(db)!==130)bootstrapSalesDrafts(db);bootstrapSalesExecution(db,freshDevelopment?freshRoot:process.env.SHOP_SANDBOX_ROOT!)}else if(salesDraftsEnabled)bootstrapSalesDrafts(db);else bootstrapV100(db)
+ bootstrapPriceBulk(db)
  if(freshDevelopment){
   if(customWarehouse){
    db.prepare("INSERT INTO app_metadata(key,value,updated_at) VALUES('warehouse_layout','DIRECT',datetime('now')) ON CONFLICT(key) DO UPDATE SET value='DIRECT'").run()

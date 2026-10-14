@@ -85,6 +85,7 @@ export function lanApiAllowed(role:LanRole,rawMethod:string,rawPath:string){
  if(/^\/api\/sales\/drafts\/recover$/.test(p))return false
  if(/^\/api\/sales\/drafts\/[^/]+\/archives(\/|$)/.test(p))return false
  if(method==='GET'){
+  if(/^\/api\/inventory\/prices(?:\/history\/[-a-zA-Z0-9]{16,100})?$/.test(p))return role==='owner'||role==='inventory'
   if(/^\/api\/lan\/photos(?:\/[a-f0-9-]{36}\/preview)?$/.test(p))return role==='owner'||role==='inventory'
   const shared=[
    /^\/api\/health$/, /^\/api\/lan\/changes$/, /^\/api\/products(?:\/\d+)?$/, /^\/api\/inventory\/(?:dashboard|explorer|suggestions|filter-options|share\/capabilities|share\/image\/\d+)$/,
@@ -128,6 +129,7 @@ export function lanApiAllowed(role:LanRole,rawMethod:string,rawPath:string){
   if(method==='PUT'&&/^\/api\/sales\/drafts\/customers\/[A-Za-z0-9_-]+$/.test(p))return true
  }
  if(role==='inventory'||role==='owner'){
+  if(method==='POST'&&/^\/api\/inventory\/prices\/(preview|commit)$/.test(p))return true
   if(method==='POST'&&p==='/api/sales/drafts/stocktakes')return true
   if(method==='PUT'&&/^\/api\/sales\/drafts\/stocktakes\/[A-Za-z0-9_-]+$/.test(p))return true
   if(method==='POST'&&/^\/api\/sales\/drafts\/stocktakes\/[A-Za-z0-9_-]+\/finish$/.test(p))return true

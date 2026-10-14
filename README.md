@@ -1,8 +1,10 @@
 # SHOP MẸ CACAO WEB — main mới nhất
 
-**V7.1.3 — bản phát hành Windows và Cloud.** Schema 130. Giao diện chung trên laptop và iPhone; phiên bản/kho đang dùng hiển thị gọn, không đưa tiến độ phát triển vào màn hình nghiệp vụ.
+**V7.3.0 — bản phát hành Windows và Cloud.** Schema 130. Giao diện chung trên laptop và iPhone; phiên bản/kho đang dùng hiển thị gọn, không đưa tiến độ phát triển vào màn hình nghiệp vụ.
 
 [Hướng dẫn sử dụng và cập nhật](HUONG_DAN_SU_DUNG.md) · [Mở web Cloud](https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1) · [Tải Windows từ main](https://github.com/anphanguyen191-cell/SHOP_MECACAO_WEB/archive/refs/heads/main.zip).
+
+[Excel bổ sung giá và lưu khách trong nháp](EXCEL_GIA_VA_KHACH_V7.3.0.md).
 
 Windows có thêm [thiết lập dữ liệu cố định và cập nhật một nút](WINDOWS_CAP_NHAT_MOT_NUT.md). Công cụ chuyển một lần giữ đúng database/kho Cloud và giữ bản gốc; cần nghiệm thu laptop thật.
 
@@ -37,4 +39,4 @@ Cài đặt → Backup đầy đủ → Phục hồi thử sang vùng mới → 
 
 Đặc tả các chặng: [khách/PNG](STAGE2_CUSTOMERS_PNG.md), [thu tiền/hậu mãi](STAGE3_PAYMENTS_AFTERCARE.md), [báo cáo/kiểm kê](STAGE4_REPORTS_STOCKTAKE.md). Checkpoint V1/V2/Stage1–5 và launcher migration trong source là lịch sử/công cụ tương thích tùy chọn, không phải bước khởi chạy bản mới.
 
-Lịch sử 23 migration V7 trong source đã khớp phiên bản thực tế trên Supabase; chỉ đổi tên file để khớp history, không chạy lại reset.
+Lịch sử migration V7 trong source đã khớp phiên bản thực tế trên Supabase; chỉ đổi tên file để khớp history, không chạy lại reset.

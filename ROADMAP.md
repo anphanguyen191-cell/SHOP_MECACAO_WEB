@@ -1,9 +1,10 @@
-# Roadmap — V7.2.0
+# Roadmap — V7.3.0
 
 Trạng thái hiện tại tại [PROJECT_STATE](PROJECT_STATE.md); phạm vi sửa lỗi tại [AUDIT_FIXES](AUDIT_FIXES_2026-10-13.md).
 
 | Phạm vi | Tiến độ |
 |---|---|
+| Excel tồn kho, bổ sung giá còn thiếu; khách trực tiếp trong nháp | Tích hợp V7.3.0; chờ nghiệm thu máy/Excel thực tế |
 | Kho ảnh, nhập/scan/import, nháp/SOLD, khách/phiếu, thu/cọc/hoàn/giảm/công nợ, giao hàng | Tích hợp main |
 | Backup/recovery/restore, cập nhật Windows giữ dữ liệu và phục hồi khi lỗi | Tích hợp main |
 | Báo cáo/CSV, kiểm kê không tự chỉnh tồn, giữ archive SOLD | Tích hợp main |

@@ -1,3 +1,4 @@
+import {markPriceSet} from './priceBulk.js'
 import { db } from './db.js'
 import { physicalImagesByVariant } from './physicalInventory.js'
 
@@ -159,5 +160,6 @@ export function updateVariantPricing(id:number,costPrice:number,salePrice:number
  if(!Number.isFinite(costPrice)||costPrice<0||!Number.isFinite(salePrice)||salePrice<0)throw new Error('Giá theo size không hợp lệ')
  const r=db.prepare("UPDATE product_variants SET cost_price=?,sale_price=?,updated_at=datetime('now') WHERE id=?").run(costPrice,salePrice,id)
  if(Number(r.changes)!==1)throw new Error('Không tìm thấy SKU')
+ markPriceSet(db,id,true,true)
  return db.prepare('SELECT * FROM product_variants WHERE id=?').get(id)
 }

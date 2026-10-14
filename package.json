@@ -36,7 +36,7 @@
     "test:stage6-sync": "node --import tsx apps/api/src/lanChangeFeedSelfTest.ts",
     "test:stage6-photos": "node --import tsx apps/api/src/lanPhotoInboxSelfTest.ts",
     "test:stage6-control": "node --import tsx apps/api/src/lanControlSelfTest.ts",
-    "test:cloud": "node scripts/audit-ui-dom.mjs && node scripts/audit-source-sync-dom.mjs && node scripts/audit-local-finance-dom.mjs && node --import tsx scripts/audit-safety-selftest.mts && node --import tsx scripts/order-slip-selftest.mts && node --import tsx scripts/cloud-password-selftest.mts && node --import tsx scripts/cloud-sold-cleanup-selftest.mts && node --import tsx apps/api/src/cloudImagesSelfTest.ts && node --import tsx apps/api/src/cloudReconcileSelfTest.ts",
+    "test:cloud": "node --import tsx scripts/price-customer-selftest.mts && node scripts/price-customer-dom.mjs && node scripts/audit-ui-dom.mjs && node scripts/audit-source-sync-dom.mjs && node scripts/audit-local-finance-dom.mjs && node --import tsx scripts/audit-safety-selftest.mts && node --import tsx scripts/order-slip-selftest.mts && node --import tsx scripts/cloud-password-selftest.mts && node --import tsx scripts/cloud-sold-cleanup-selftest.mts && node --import tsx apps/api/src/cloudImagesSelfTest.ts && node --import tsx apps/api/src/cloudReconcileSelfTest.ts",
     "test:windows-update": "node --import tsx scripts/managed-update-selftest.mts"
   },
   "devDependencies": {

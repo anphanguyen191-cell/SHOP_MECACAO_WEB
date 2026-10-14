@@ -7,6 +7,7 @@ import http from 'node:http'
 import {spawn} from 'node:child_process'
 import assert from 'node:assert/strict'
 import sharp from 'sharp'
+import {unzipSync,zipSync,strFromU8,strToU8} from 'fflate'
 import {createHash} from 'node:crypto'
 import {setTimeout as delay} from 'node:timers/promises'
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'mc-cloud-browser-')),profile=path.join(temp,'profile'),image=await sharp({create:{width:100,height:140,channels:3,background:'#923e71'}}).jpeg().toBuffer()
@@ -50,6 +51,8 @@ async function intercept(p){trace.push({url:p.request.url,method:p.request.metho
  else if(u.pathname.includes('/rest/v1/rpc/')){
   if(endpoint==='mc_v7_health')response={contract:1,schema:130,role:'owner',status:'CLOUD_TEST_READY',instance:'fake',sequence:state.sequence}
   else if(endpoint==='mc_v7_rows'){const all=rows(body.p_table),offset=Number(body.p_after||0);response={rows:all.slice(offset,offset+body.p_limit),nextOffset:offset+body.p_limit}}
+  else if(endpoint==='mc_v7_price_snapshot')response={scope:'CLOUD',instance:'fake',exportedAt:new Date().toISOString(),rows:[{id:1,productCode:product.product_code,sku:variant.sku,name:product.name,size:variant.size,stock:1,cost:variant.cost_price,sale:variant.sale_price,costSet:variant.cost_price>0||!!variant.cost_price_set,saleSet:true,version:variant.cloud_revision}],history:[]}
+  else if(endpoint==='mc_v7_prices'){assert.equal(body.p_payload.instance,'fake');assert.equal(body.p_payload.rows[0].cost,10000);const apply=variant.cost_price===0&&!variant.cost_price_set?10000:null;response={costCount:apply===null?0:1,saleCount:0,rows:[{id:1,sku:variant.sku,name:product.name,size:variant.size,applyCost:apply,applySale:null,status:body.p_action==='prices.commit'?'Đã bổ sung':'Sẽ bổ sung'}]};if(body.p_action==='prices.commit'){variant.cost_price=10000;variant.cost_price_set=true;variant.cloud_revision++;state.sequence++;}}
   else if(endpoint==='mc_v7_finance')response=finance(body.p_id)
   else if(endpoint==='mc_v7_debts')response=state.orders.map(o=>finance(o.id))
   else if(endpoint==='mc_v7_proof_register'){assert(state.proofUploaded&&state.archiveValid);assert.equal(body.p_sha,imageSha);assert.equal(body.p_path,'proof/v7/fake/1-'+imageSha+'.jpg');state.proofPath=body.p_path;state.sequence++;response={imageId:1,path:body.p_path}}
@@ -99,6 +102,13 @@ try{
  await until("!!document.querySelector('.treeProductHead')");await run("document.querySelector('.treeProductHead').click()");await until("!!document.querySelector('.treeVariantHead')");await run("document.querySelector('.treeVariantHead').click()");await until("!!document.querySelector('.stockImageSelect')")
  fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/shared-mobile.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
 
+ // Real mobile Chromium: exported OOXML edited in G, file upload, preview-only and confirmation.
+ variant.cost_price=0;variant.cost_price_set=false;
+ await click('▸ Excel tồn kho & bổ sung giá');assert(await run('document.documentElement.scrollWidth<=innerWidth+2'));
+ await run("window.oldPriceDownload=HTMLAnchorElement.prototype.click;HTMLAnchorElement.prototype.click=function(){if(this.download.endsWith('.xlsx'))window.priceBlob=this.href;else return window.oldPriceDownload.call(this)}");await click('Xuất tồn kho Excel');await until('!!window.priceBlob');
+ const exported=await run("fetch(window.priceBlob).then(r=>r.blob()).then(b=>new Promise(resolve=>{const r=new FileReader();r.onload=()=>resolve(r.result.split(',')[1]);r.readAsDataURL(b)}))");const z=unzipSync(Buffer.from(exported,'base64'));const original=strFromU8(z['xl/worksheets/sheet1.xml']);assert(original.includes('<c r=\"G2\" s=\"3\" t=\"inlineStr\">'));z['xl/worksheets/sheet1.xml']=strToU8(original.replace(/<c r="G2"[^>]*>.*?<\/c>/,'<c r="G2" s="3"><v>10000</v></c>'));const priceFile=path.join(temp,'prices.xlsx');fs.writeFileSync(priceFile,zipSync(z));
+ const priceDoc=await cmd('DOM.getDocument'),priceNode=await cmd('DOM.querySelector',{nodeId:priceDoc.root.nodeId,selector:'.priceWorkbook input[type=file]'});await cmd('DOM.setFileInputFiles',{nodeId:priceNode.nodeId,files:[priceFile]});await until("document.body.innerText.includes('Xem trước — chưa ghi giá')");assert.equal(variant.cost_price,0);assert(await run('document.documentElement.scrollWidth<=innerWidth+2'));
+ fs.writeFileSync('artifacts/cloud-browser/price-excel-mobile-preview.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'));await click('Xác nhận bổ sung giá');await until("document.body.innerText.includes('Kết quả lần nhập')");assert.equal(variant.cost_price,10000);assert.equal(variant.sale_price,50000);await run('HTMLAnchorElement.prototype.click=window.oldPriceDownload');await click('▾ Excel tồn kho & bổ sung giá');
  await run("document.querySelector('.stockImageSelect').click()");assert(await run("(()=>{const r=document.querySelector('.floatingActions').getBoundingClientRect();const dock=document.querySelector('.mobileQuickNav').getBoundingClientRect();return r.right<=innerWidth&&r.bottom<dock.top&&r.left>0})()"))
  await click('Chuẩn bị chia sẻ');await until("!!document.querySelector('a[download$=\".jpg\"]')")
  const shared=await run("(()=>{const a=document.querySelector('a[download$=\".jpg\"]');return fetch(a.href).then(r=>r.blob()).then(b=>({name:a.download,bytes:b.size}))})()")

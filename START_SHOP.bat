@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title Shop Me CaCao - V7.1.3
+title Shop Me CaCao - V7.3.0
 where node >nul 2>nul
 if errorlevel 1 (
  echo Can cai Node.js 22.13 hoac moi hon truoc khi mo ung dung.

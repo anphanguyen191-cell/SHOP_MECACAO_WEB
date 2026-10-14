@@ -2,6 +2,7 @@ import CloudSoldMaintenance from './CloudSoldMaintenance'
 import CloudOrders from './CloudOrders'
 import {useCloudDraftConflictChoice} from './CloudDraftConflictChoice'
 import SettingsView from './SettingsView'
+import PriceWorkbookPanel from './PriceWorkbookPanel'
 import InventoryView,{type InventorySource} from './InventoryView'
 import {useMemo} from 'react'
 import {cloudInventory} from './cloudInventory'
@@ -119,7 +120,7 @@ export default function CloudWorkspace(){
  <div hidden={signed&&tab!=='settings'}><details open><summary>{['localhost','127.0.0.1'].includes(location.hostname)?'Đồng bộ Windows: '+syncStatus:'Kết nối Cloud'}</summary><CloudSettings autoSync desktop={desktop}/></details></div>
  {tab==='settings'&&<><section className="displayPreferences"><div><h3>Cài đặt giao diện · Mật độ hiển thị</h3><p>Nhỏ để xem bao quát, Vừa để dùng hằng ngày, Lớn để dễ đọc và chạm.</p></div><DisplayDensity value={density} onChange={setDensity}/></section>{desktop&&<SettingsView showCloud={false} sandbox={localRestore}/>}</>}
  {desktop&&signed&&<CloudSoldMaintenance/>}
- {signed&&tab==='inventory'&&<InventoryView source={inventorySource} onDraft={canSell?inventoryDraft:undefined}/>}
+ {signed&&tab==='inventory'&&<InventoryView priceTools={role==='owner'||role==='inventory'?<PriceWorkbookPanel cloud onChanged={load}/>:undefined} source={inventorySource} onDraft={canSell?inventoryDraft:undefined}/>}
  {signed&&tab==='orders'&&<CloudOrders assets={data.cloud_image_assets||[]} orders={data.sales_orders||[]} items={data.sales_order_images||[]} contacts={data.order_contacts||[]} confirmations={data.sales_confirmations||[]} customers={data.shop_customers||[]} urls={urls} current={current} onPick={id=>{if(window.dispatchEvent(new Event('mecacao-before-navigate',{cancelable:true})))setCurrent(id)}} onInventory={()=>navigate('inventory')} onFinance={id=>void run(()=>openFinance(id))} onConfirm={o=>void run(()=>confirmSale(o))} onCancel={(id,version)=>{if(window.confirm('Hủy đơn nháp này?'))void run(async()=>{await command('draft.cancel',{id,version})})}} onChanged={load} editable={canSell} busy={busy} online={online} ready={cloudReady}/>}
 
  {signed&&tab==='soldCloud'&&<CloudSold units={data.sales_units||[]} assets={data.cloud_image_assets||[]} urls={urls} desktop={role==='owner'&&['localhost','127.0.0.1'].includes(location.hostname)} onChanged={load}/>}

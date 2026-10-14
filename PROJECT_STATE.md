@@ -1,4 +1,6 @@
-# Trạng thái hiện tại — V7.2.0
+# Trạng thái hiện tại — V7.3.0
+
+V7.3.0 bổ sung [Excel giá và lưu khách trong nháp](EXCEL_GIA_VA_KHACH_V7.3.0.md): xuất tồn theo Product/Size, xem trước và bổ sung từng giá còn thiếu, nhận biết giá 0 đã xác nhận, lịch sử/idempotency và chống ghi giá cũ. Khách trực tiếp được lưu cùng nháp khi chọn; trùng điện thoại gợi ý khách cũ, không tự ghi đè danh mục. SQLite thêm bảng trạng thái/nhật ký riêng, schema nghiệp vụ vẫn 130; Cloud thêm cột/hàm, không reset dữ liệu.
 
 Main gồm kho theo ảnh trên Windows, Cloud dùng chung ngoài LAN, mobile, khách/nháp/SOLD, thu/cọc/hoàn/giảm/công nợ/giao hàng, báo cáo/CSV, kiểm kê, hộp ảnh iPhone, backup/restore và cập nhật Windows có phục hồi khi lỗi. Xem [đợt rà soát và sửa lỗi](AUDIT_FIXES_2026-10-13.md).
 

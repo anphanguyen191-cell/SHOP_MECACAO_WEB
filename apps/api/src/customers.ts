@@ -43,3 +43,10 @@ export function contactInput(db:DatabaseSync,raw:any){
  if(!Number.isSafeInteger(shippingFee)||shippingFee<0)throw new SalesError('Phí ship phải là số đồng nguyên không âm')
  return {customerId,recipientName,phone,address,shippingFee}
 }
+/** Called inside the draft transaction; failed draft validation rolls back the customer. */
+export function saveDraftCustomer(db:DatabaseSync,raw:any,contact:ReturnType<typeof contactInput>){
+ if(raw?.saveCustomer!==true||contact.customerId||!contact.recipientName)return contact
+ if(!contact.phone&&raw.confirmNoPhone!==true)throw new SalesError('Xác nhận lưu khách không có số điện thoại',400)
+ const saved=customerService(db).save({name:contact.recipientName,phone:contact.phone,address:contact.address,note:'',allowDuplicate:raw.allowDuplicateCustomer===true})
+ return {...contact,customerId:String(saved.id)}
+}

@@ -1,4 +1,5 @@
 import {cloudRouter} from './cloudRoutes.js'
+import {priceBulkService} from './priceBulk.js'
 import {phonePhotoRouter} from './lanPhotoRoutes.js'
 import {createLanChangeFeed} from './lanChangeFeed.js'
 import {configureLan} from './lanRuntime.js'
@@ -285,6 +286,14 @@ app.get('/api/inventory', (req,res) => {
 })
 app.get('/api/catalog/dashboard', (_req,res)=>{try{res.json(catalogDashboard())}catch(e){res.status(500).json({error:e instanceof Error?e.message:'Không thể tổng hợp danh mục'})}})
 app.get('/api/inventory/filter-options', (_req,res)=>res.json(inventoryFilterOptions()))
+const prices=priceBulkService(db,()=>inventoryExplorer({status:'active'}))
+app.get('/api/inventory/prices',(_req,res)=>{try{res.set('Cache-Control','no-store').json(prices.snapshot())}catch(e){res.status(400).json({error:(e as Error).message})}})
+app.get('/api/inventory/prices/history/:id',(req,res)=>{try{res.set('Cache-Control','no-store').json(prices.history(req.params.id))}catch(e){res.status((e as any).status||400).json({error:(e as Error).message})}})
+for(const action of ['preview','commit'] as const)app.post('/api/inventory/prices/'+action,(req,res)=>{
+ if(res.locals.lanUser&& !['owner','inventory'].includes(res.locals.lanUser.role))return res.status(403).json({error:'Cần quyền quản lý kho'})
+ if(db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())return res.status(409).json({error:'Kho đang dùng Cloud. Xuất và bổ sung giá trên giao diện Cloud.'})
+ try{res.json(action==='preview'?prices.preview(req.body):prices.commit(req.body,req.get('Idempotency-Key')))}catch(e){res.status((e as any).status||400).json({error:(e as Error).message})}
+})
 app.get('/api/inventory/dashboard', (_req,res)=>{try{res.json(inventoryDashboard())}catch(e){res.status(500).json({error:e instanceof Error?e.message:'Không thể tổng hợp tồn kho'})}})
 app.get('/api/inventory/explorer', (req,res)=>{try{res.json(inventoryExplorer({search:String(req.query.search??''),category:String(req.query.category??''),size:String(req.query.size??''),status:String(req.query.status??'active') as 'all'|'active'|'inactive'}))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể đọc cây tồn kho'})}})
 app.get('/api/inventory/suggestions', (req,res)=>{try{res.json(inventorySuggestions(String(req.query.search??'')))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể gợi ý sản phẩm'})}})

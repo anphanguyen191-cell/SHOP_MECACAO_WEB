@@ -1,4 +1,4 @@
-# Shop Mẹ CaCao V7.1.3
+# Shop Mẹ CaCao V7.3.0
 
 ## Cài lần đầu
 
@@ -31,9 +31,13 @@ Khuyến nghị dùng gói bàn giao có `CAI_DU_LIEU_CO_DINH.bat` để thiết
 1. Dừng ứng dụng đang chạy và dùng chức năng sao lưu hiện có trước khi thay mã.
 2. Giải nén ZIP mới vào nơi tạm. Chép nội dung thư mục chứa START_SHOP.bat vào đúng thư mục cài đang dùng, thay các file mã nguồn khi được hỏi.
 3. Giữ nguyên thư mục data, ảnh nguồn, cấu hình và database hiện có. ZIP source không chứa kho của bạn; không xóa thư mục data hoặc chạy SQL reset.
-4. Chạy START_SHOP.bat từ thư mục cài cũ. Kiểm tra Kho đang dùng trước khi nhập hoặc bán tiếp. Tải lại trang Cloud để thấy V7.1.3.
+4. Chạy START_SHOP.bat từ thư mục cài cũ. Kiểm tra Kho đang dùng trước khi nhập hoặc bán tiếp. Tải lại trang Cloud để thấy V7.3.0.
 
 Dữ liệu nằm trong bản cài hiện tại; giải nén riêng thành một bản cài khác sẽ có database riêng. Vì Cloud gắn một instance Windows, không đổi sang bản cài/database mới khi muốn tiếp tục cùng shop. Luôn cập nhật bản cài đang dùng.
+
+## Bổ sung giá từ Excel và lưu khách trong nháp
+
+Xem [hướng dẫn V7.3.0](EXCEL_GIA_VA_KHACH_V7.3.0.md): Tồn kho → Excel tồn kho & bổ sung giá → Xuất → điền G/H → Nhập → xem trước → Xác nhận. Khách nhập trực tiếp có lựa chọn lưu vào danh sách khi lưu nháp.
 
 ## Khi gặp lỗi
 

@@ -1,3 +1,4 @@
+import {markPriceSet} from './priceBulk.js'
 import {rejectSoldSource} from './soldSource.js'
 import {requireApprovedPhoneReceiptSource} from './lanPhotoInbox.js'
 import {freshDevelopment,freshRoot} from './freshDevelopment.js'
@@ -77,7 +78,7 @@ export function receiveGoods(input:ReceiveInput,onProgress?:(p:ReceiveProgress)=
    const addVariant=db.prepare('INSERT INTO product_variants(product_id,sku,size,cost_price,sale_price) VALUES(?,?,?,?,?)')
    const addImage=db.prepare('INSERT INTO product_images(product_id,variant_id,file_path,sort_order) VALUES(?,?,?,?)')
    const addTx=db.prepare("INSERT INTO inventory_transactions(variant_id,transaction_type,quantity,unit_cost,note) VALUES(?,'IMPORT',?,?,?)")
-   for(const plan of plans){let v=currentVariants.find(v=>String(v.size).toLowerCase()===plan.size.size.toLowerCase());let variantId:number;if(v){variantId=v.id;db.prepare("UPDATE product_variants SET cost_price=?,sale_price=?,updated_at=datetime('now') WHERE id=?").run(plan.size.costPrice,plan.size.salePrice,variantId)}else{const sku=(plan.size.sku?.trim()||suggestSku(productCode,plan.size.size)).toUpperCase();variantId=Number(addVariant.run(productId,sku,plan.size.size,plan.size.costPrice,plan.size.salePrice).lastInsertRowid)}plan.copies.forEach((x,i)=>addImage.run(productId,variantId,x.dest,i));addTx.run(variantId,plan.size.quantity,plan.size.costPrice,input.note??'Nhập hàng')}
+   for(const plan of plans){let v=currentVariants.find(v=>String(v.size).toLowerCase()===plan.size.size.toLowerCase());let variantId:number;if(v){variantId=v.id;db.prepare("UPDATE product_variants SET cost_price=?,sale_price=?,updated_at=datetime('now') WHERE id=?").run(plan.size.costPrice,plan.size.salePrice,variantId)}else{const sku=(plan.size.sku?.trim()||suggestSku(productCode,plan.size.size)).toUpperCase();variantId=Number(addVariant.run(productId,sku,plan.size.size,plan.size.costPrice,plan.size.salePrice).lastInsertRowid)}markPriceSet(db,variantId,true,true);plan.copies.forEach((x,i)=>addImage.run(productId,variantId,x.dest,i));addTx.run(variantId,plan.size.quantity,plan.size.costPrice,input.note??'Nhập hàng')}
    emit({phase:'INTEGRITY',percent:96,copied,total});const fk=db.prepare('PRAGMA foreign_key_check').all();if(fk.length)throw new Error('SQLite foreign_key_check thất bại');db.exec('COMMIT');committed=true
    // Never roll back committed physical copies even if a status callback fails.
    const result={ok:true,productId,product:getProduct(productId!),copiedImages:copied,totalQuantity:sizes.reduce((n,s)=>n+s.quantity,0)}
