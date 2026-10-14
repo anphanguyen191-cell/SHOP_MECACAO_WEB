@@ -168,7 +168,11 @@ async function browserTest(base,id){
   await run("(()=>{const s=document.querySelector('.salesListHead select');const set=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set;set.call(s,'SOLD');s.dispatchEvent(new Event('change',{bubbles:true}))})()")
   await until("Array.from(document.querySelectorAll('.salesOrderRow')).some(b=>b.textContent.includes("+JSON.stringify(id.slice(0,8).toUpperCase())+"))")
   await run("Array.from(document.querySelectorAll('.salesOrderRow')).find(b=>b.textContent.includes("+JSON.stringify(id.slice(0,8).toUpperCase())+")).click()")
-  await until("document.querySelector('.salesItem img')?.naturalWidth>0")
+  await until("!!document.querySelector('.salesItem img')")
+  // The SOLD thumbnail is lazy-loaded. It may still be below the viewport
+  // after the earlier mobile emulation checks; explicitly reveal it first.
+  await run("document.querySelector('.salesItem img').scrollIntoView({block:'center'})")
+  await until("document.querySelector('.salesItem img')?.complete&&document.querySelector('.salesItem img')?.naturalWidth>0")
   assert(await run("document.querySelector('.salesEditorHead h3').textContent.includes('ĐÃ BÁN')"));checks++
   await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()")
   await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='BACKUP ĐẦY ĐỦ DB + ẢNH GỐC (KIỂM TRA SHA)')")
