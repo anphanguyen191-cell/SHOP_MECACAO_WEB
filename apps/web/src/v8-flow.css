@@ -45,3 +45,30 @@
 }
 @media(max-width:360px){.shell .overviewStats,.shell .catalogMetrics{gap:7px}}
 @media(prefers-reduced-motion:reduce){.shell button:not(:disabled){transition:none}}
+
+
+/* V8 warehouse import: one primary action, neutral cards, reduced decorative chrome. */
+.shell .warehouseWorkspace{gap:14px}
+.shell .warehouseWorkspace>.dashboardFoldHeader{background:var(--v8-surface);border:1px solid var(--v8-edge);border-radius:18px;box-shadow:var(--v8-shadow);padding:19px 22px;margin:2px 0 0}
+.shell .warehouseWorkspace>.dashboardFoldHeader h2{font-size:clamp(22px,2.3vw,30px);color:var(--v8-ink);font-weight:800}
+.shell .warehouseWorkspace>.dashboardFoldHeader p{font-size:13px;color:var(--v8-muted)}
+.shell .warehouseWorkspace .warehouseConfig{padding:18px 20px!important;border-color:var(--v8-edge)!important;background:var(--v8-surface)!important;border-radius:18px!important}
+.shell .warehouseWorkspace .warehouseConfig .row{gap:10px;align-items:stretch}
+.shell .warehouseWorkspace .warehouseConfig .row>input{flex:1;min-width:220px;font-size:14px;padding:11px 14px;border-radius:12px;border:1px solid var(--v8-edge);background:var(--v8-surface);color:var(--v8-ink)}
+.shell .warehouseWorkspace .warehouseConfig .row>button{white-space:nowrap;font-weight:750;border-radius:12px;min-height:44px}
+.shell .warehouseWorkspace .warehouseConfig .row>button.primary{background:var(--v8-accent);color:white;border-color:transparent}
+.shell .warehouseWorkspace .warehouseConfig>.muted{font-size:12px}
+.shell .warehouseWorkspace .warehouseMetrics>button{background:var(--v8-surface);border-color:var(--v8-edge);border-radius:16px;box-shadow:var(--v8-shadow)}
+.shell .warehouseWorkspace .warehouseMetrics>button strong{color:var(--v8-ink)}
+.shell .warehouseWorkspace .warehouseResults,.shell .warehouseWorkspace .warehouseProduct,.shell .warehouseWorkspace .warehouseConfirm{background:var(--v8-surface);border-color:var(--v8-edge)!important}
+.shell .warehouseWorkspace .warehouseTableWrap{overflow:auto;max-width:100%}
+.shell .warehouseWorkspace .warehouseTableWrap table{min-width:760px}
+.shell .warehouseWatchSettings label{color:var(--v8-ink);font-weight:650}
+.shell .warehouseWatchSettings p{color:var(--v8-muted)}
+@media(max-width:760px){
+ .shell .warehouseWorkspace>.dashboardFoldHeader{padding:15px 14px}
+ .shell .warehouseWorkspace .warehouseConfig{padding:14px!important}
+ .shell .warehouseWorkspace .warehouseConfig .row{flex-direction:column}
+ .shell .warehouseWorkspace .warehouseConfig .row>input{min-width:0;flex:none}
+ .shell .warehouseWorkspace .warehouseConfig .row>button{width:100%}
+}
