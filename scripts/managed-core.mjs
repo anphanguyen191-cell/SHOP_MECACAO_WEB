@@ -7,7 +7,19 @@ export const REPO='anphanguyen191-cell/SHOP_MECACAO_WEB',SCHEMA='130'
 export const inside=(a,b)=>{const r=path.relative(a,b);return r===''||(!path.isAbsolute(r)&&r!=='..'&&!r.startsWith('..'+path.sep))}
 export const digest=b=>createHash('sha256').update(b).digest('hex')
 export function physical(p,dir=false){p=path.resolve(p);if(fs.realpathSync(p)!==p||fs.lstatSync(p).isSymbolicLink()||!(dir?fs.statSync(p).isDirectory():fs.statSync(p).isFile()))throw Error('Đường dẫn không phải file/thư mục vật lý: '+p);return p}
-export function atomic(file,value){fs.mkdirSync(path.dirname(file),{recursive:true});const tmp=file+'.'+randomUUID()+'.tmp';const fd=fs.openSync(tmp,'wx',0o600);try{fs.writeFileSync(fd,JSON.stringify(value,null,2));fs.fsyncSync(fd)}finally{fs.closeSync(fd)}fs.renameSync(tmp,file)}
+export function atomic(file,value){fs.mkdirSync(path.dirname(file),{recursive:true});const tmp=file+'.'+randomUUID()+'.tmp';const fd=fs.openSync(tmp,'wx',0o600);try{fs.writeFileSync(fd,JSON.stringify(value,null,2));fs.fsyncSync(fd)}finally{fs.closeSync(fd)}// Windows can transiently deny replacing a status file while another process reads it.
+ // Retry only sharing violations; never truncate or partially overwrite the destination.
+ for(let attempt=0;;attempt++){
+  try{fs.renameSync(tmp,file);break}
+  catch(e){
+   if(process.platform!=='win32'||!['EPERM','EACCES','EBUSY'].includes(e.code)||attempt>=12){
+    try{fs.unlinkSync(tmp)}catch{}
+    throw e
+   }
+   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,30+attempt*20)
+  }
+ }
+}
 export const read=file=>JSON.parse(fs.readFileSync(physical(file),'utf8'))
 export function config(home){home=physical(home,true);const c=read(path.join(home,'installation.json'));if(c.format!==1||c.home!==home||c.data!==path.join(home,'data')||c.schema!==SCHEMA)throw Error('Cấu hình dữ liệu cố định không hợp lệ');physical(c.data,true);physical(database(home));return c}
 export const database=home=>path.join(home,'data','stage6-main-test','database','shop-stage6-main-test.db')
