@@ -23,6 +23,7 @@ jobs:
       - run: node --check scripts/v8/release-fetch.mjs
       - run: node --check scripts/v8/data-snapshot.mjs
       - run: node --test scripts/v8/release-fetch.test.mjs scripts/v8/data-snapshot.test.mjs
+      - run: node --test scripts/v8/warehouse-cloud-ui.test.mjs
       - run: npm run test:v8-layout
       - run: npm run build
       - run: npm run typecheck
