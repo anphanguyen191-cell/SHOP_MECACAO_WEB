@@ -44,7 +44,7 @@ if(receiptRecovery.journals)console.log('Receipt recovery:',JSON.stringify(recei
 const app = express()
 let updateFence=process.env.SHOP_UPDATE_STARTING==='1',updateWrites=0
 const updateProbe=process.env.SHOP_UPDATE_PROBE==='1'
-if(managedHome&&process.send)process.on('message',message=>{
+if((managedHome||v8Home)&&process.send)process.on('message',message=>{
  const m=message as {type?:string}
  if(m?.type==='managed:enable'&&!updateProbe)updateFence=false
  if(m?.type==='managed:quiesce'){
@@ -86,15 +86,16 @@ app.use('/api',(req,res,next)=>{
  }else if(req.path!=='/health'&&legacyWarehouseActive(db))return res.status(409).json({error:'Kho đã chuyển LOCAL V2; dừng V1 và mở START_SHOP_V2_LOCAL.bat.'})
  next()
 })
+const updateHome=managedHome??v8Home
 app.get('/api/local/update',(_req,res)=>{
  if(res.locals.lanUser)return res.status(403).json({error:'Chỉ cập nhật tại Windows của shop'})
- let state:any=null;if(managedHome){try{state=JSON.parse(fs.readFileSync(path.join(managedHome,'update-status.json'),'utf8'))}catch{}}
- let active:any=null;if(managedHome){try{active=JSON.parse(fs.readFileSync(path.join(managedHome,'active.json'),'utf8'))}catch{}}
- res.set('Cache-Control','no-store').json({managed:!!managedHome&&!!process.send,home:managedHome,database:managedHome?dbPath:undefined,active:active?.commit,state})
+ let state:any=null;if(updateHome){try{state=JSON.parse(fs.readFileSync(path.join(updateHome,'update-status.json'),'utf8'))}catch{}}
+ let active:any=null;if(updateHome){try{active=JSON.parse(fs.readFileSync(path.join(updateHome,'active.json'),'utf8'))}catch{}}
+ res.set('Cache-Control','no-store').json({managed:!!updateHome&&!!process.send,home:updateHome,database:updateHome?dbPath:undefined,active:active?.commit??active?.release??'current',state})
 })
 app.post('/api/local/update',(_req,res)=>{
- if(res.locals.lanUser||!managedHome||!process.send||updateProbe)return res.status(403).json({error:'Cần thiết lập dữ liệu cố định trên Windows trước'})
- const state=JSON.parse(fs.readFileSync(path.join(managedHome,'update-status.json'),'utf8'))
+ if(res.locals.lanUser||!updateHome||!process.send||updateProbe)return res.status(403).json({error:'Cần thiết lập dữ liệu cố định trên Windows trước'})
+ let state:any={phase:'IDLE'};try{state=JSON.parse(fs.readFileSync(path.join(updateHome,'update-status.json'),'utf8'))}catch{}
  if(['CHECKING','DOWNLOADING','BUILDING','STOPPING','BACKUP','VERIFYING'].includes(state.phase))return res.status(409).json({error:'Cập nhật đang chạy'})
  process.send({type:'managed:update'});res.status(202).json({accepted:true})
 })
