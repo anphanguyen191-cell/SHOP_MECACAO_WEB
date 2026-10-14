@@ -86,6 +86,9 @@ async function update(){
   await quiesce(server)
   await close(server)
   switched=true
+  const data=path.join(home,'data','shop-v8')
+  snapshot=path.join(home,'staging','rollback-'+randomUUID())
+  fs.cpSync(data,snapshot,{recursive:true,force:false,errorOnExist:true})
   status('VERIFYING','Đang khởi động bản mới, kiểm tra đúng database V8.')
   candidate=start(result.sha)
   await ready(candidate)
@@ -93,6 +96,7 @@ async function update(){
   server=candidate
   enable(server)
   status('SUCCEEDED','Cập nhật thành công. Nhấn Mở giao diện mới để sử dụng.')
+  try{fs.rmSync(snapshot,{recursive:true,force:true})}catch(e){console.error('Không xóa được vùng tạm sau cập nhật:',e)}
  }catch(e){
   if(candidate&&candidate.exitCode===null){try{await close(candidate)}catch{}}
   if(switched){
