@@ -24,7 +24,7 @@ Copy-Item 'scripts/v8/release-fetch.mjs' (Join-Path $release 'scripts/v8/release
 Copy-Item 'package.json' (Join-Path $release 'package.json') -Force
 $sha = if($env:GITHUB_SHA){$env:GITHUB_SHA}else{'local-preview'}
 $channel = 'PREVIEW'
-if($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -match '^v8[.][0-9]+[.][0-9]+[.][0-9]+-stable$'){$channel='STABLE'}
+if($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -match '^v8[.][0-9]+[.][0-9]+-stable$'){$channel='STABLE'}
 $manifest = [ordered]@{
  format=8; channel=$channel; sourceCommit=$sha; schema=130;
  launcherSha256=(Get-FileHash (Join-Path $package 'ShopMeCaCao.exe') -Algorithm SHA256).Hash.ToLower();
