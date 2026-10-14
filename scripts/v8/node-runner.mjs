@@ -3,6 +3,7 @@ import path from 'node:path'
 import {fork} from 'node:child_process'
 import {createHash,randomUUID} from 'node:crypto'
 import {stageLatest} from './release-fetch.mjs'
+import {snapshotV8Data,restoreV8Data} from './data-snapshot.mjs'
 
 const home=process.env.SHOP_V8_HOME
 if(!home||!fs.statSync(home).isDirectory())throw Error('Thiếu thư mục V8 trên ổ D:')
@@ -72,7 +73,7 @@ let server=null,updating=false,stopping=false
 async function update(){
  updating=true
  const previous=active()
- let switched=false,candidate
+ let switched=false,candidate,snapshot=null
  try{
   status('CHECKING','Đang kiểm tra bản V8 STABLE trên GitHub.')
   const result=await stageLatest(home,previous,status)
@@ -86,9 +87,7 @@ async function update(){
   await quiesce(server)
   await close(server)
   switched=true
-  const data=path.join(home,'data','shop-v8')
-  snapshot=path.join(home,'staging','rollback-'+randomUUID())
-  fs.cpSync(data,snapshot,{recursive:true,force:false,errorOnExist:true})
+  snapshot=snapshotV8Data(home)
   status('VERIFYING','Đang khởi động bản mới, kiểm tra đúng database V8.')
   candidate=start(result.sha)
   await ready(candidate)
@@ -96,11 +95,11 @@ async function update(){
   server=candidate
   enable(server)
   status('SUCCEEDED','Cập nhật thành công. Nhấn Mở giao diện mới để sử dụng.')
-  try{fs.rmSync(snapshot,{recursive:true,force:true})}catch(e){console.error('Không xóa được vùng tạm sau cập nhật:',e)}
+  try{fs.rmSync(snapshot.directory,{recursive:true,force:true})}catch(e){console.error('Không xóa được vùng tạm sau cập nhật:',e)}
  }catch(e){
   if(candidate&&candidate.exitCode===null){try{await close(candidate)}catch{}}
   if(switched){
-   try{server=start(previous);await ready(server);enable(server)}
+   try{if(snapshot)restoreV8Data(home,snapshot);server=start(previous);await ready(server);enable(server)}
    catch(recovery){status('REVIEW_REQUIRED','Không mở lại được phiên bản cũ. Giữ nguyên dữ liệu, kiểm tra log.');console.error(recovery);return}
   }else if(server?.connected)enable(server)
   status('FAILED','Chưa cập nhật: '+(e instanceof Error?e.message:String(e)))
