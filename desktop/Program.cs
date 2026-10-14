@@ -77,10 +77,11 @@ internal sealed class ShopContext : ApplicationContext
         foreach (var item in new[] {
             dbDir, Path.Combine(root,"warehouse"), Path.Combine(home,"runtime"),
             Path.Combine(home,"releases"), Path.Combine(home,"updates"),
-            Path.Combine(home,"staging"), Path.Combine(home,"cache"), Path.Combine(home,"logs"), warehouse
+            Path.Combine(home,"staging"), Path.Combine(home,"cache"), Path.Combine(home,"logs")
         }) Directory.CreateDirectory(item);
-        WriteOnce(Path.Combine(root, "warehouse-config.json"), new { format = 1, warehouse });
-        WriteOnce(marker, new { format = 8, mode = "FRESH", home, warehouse, data = root, schema = 130, createdAt = DateTimeOffset.UtcNow });
+        // First launch must not silently lock in a default warehouse.
+        // The owner selects the actual folder directly from Import kho.
+        WriteOnce(marker, new { format = 8, mode = "FRESH", home, warehouse = (string?)null, data = root, schema = 130, createdAt = DateTimeOffset.UtcNow });
     }
 
     private void Log(string? message)

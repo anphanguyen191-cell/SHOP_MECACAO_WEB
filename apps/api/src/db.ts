@@ -44,7 +44,7 @@ try{
    const saved=db.prepare("SELECT value FROM app_settings WHERE key='warehouse-watch'").get()
    if(saved){const c=JSON.parse(String(saved.value));if(c.rootPath!==freshWarehouse)db.prepare("UPDATE app_settings SET value=? WHERE key='warehouse-watch'").run(JSON.stringify({...c,rootPath:freshWarehouse}))}
   }
-  db.prepare("INSERT INTO app_settings(key,value) VALUES('warehouse-watch',?) ON CONFLICT(key) DO NOTHING").run(JSON.stringify({rootPath:freshWarehouse,startup:false,periodic:false,intervalSeconds:300,autoRename:false,popup:true}))
+  db.prepare("INSERT INTO app_settings(key,value) VALUES('warehouse-watch',?) ON CONFLICT(key) DO NOTHING").run(JSON.stringify({rootPath:v8Home&&!customWarehouse?'':freshWarehouse,startup:false,periodic:false,intervalSeconds:300,autoRename:false,popup:true}))
  }
  db.prepare("INSERT INTO app_metadata(key,value,updated_at) VALUES('app_version',?,datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=datetime('now')").run(freshDevelopment?release.version:localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev')
  db.prepare("INSERT INTO app_settings(key,value,updated_at) VALUES('low_stock_threshold','2',datetime('now')) ON CONFLICT(key) DO NOTHING").run()

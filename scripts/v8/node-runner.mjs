@@ -29,7 +29,13 @@ function start(release,fenced=true){
  for(const k of ['SHOP_MANAGED_HOME','SHOP_DB_PATH','SHOP_SANDBOX_ROOT','SHOP_LOCAL_V2_CONFIG','SHOP_LOCAL_V2_RESTORE_READY'])delete env[k]
  const child=fork(entry,[],{cwd:root,env,stdio:['ignore','inherit','inherit','ipc'],windowsHide:true})
  child.on('message',m=>{if(m?.type==='managed:update'&&!updating&&!stopping)void update()})
- child.once('exit',code=>{if(child===server&&!updating&&!stopping){status('FAILED','Máy chủ đã dừng, xem log trên ổ D: · exit '+code)}})
+ child.once('exit',code=>{
+  if(child!==server||updating||stopping)return
+  if(code===75){
+   status('RESTARTING','Đã ghi nhận kho được chọn. Đang mở lại Shop...')
+   void (async()=>{try{await sleep(350);server=start(active());await ready(server);enable(server);status('IDLE','Đã chuyển kho. Vui lòng quét và duyệt hàng trong Import kho.')}catch(error){status('FAILED','Không mở lại được sau khi chọn kho: '+String(error));console.error(error)}})()
+  }else status('FAILED','Máy chủ đã dừng, xem log trên ổ D: · exit '+code)
+ })
  return child
 }
 const identity=createHash('sha256').update(home).digest('hex')
