@@ -24,7 +24,7 @@ const folder=release=>path.join(home,'releases',release)
 function start(release,fenced=true){
  const root=folder(release),entry=path.join(root,'apps/api/dist/server.js')
  if(!fs.existsSync(entry))throw Error('Không có chương trình V8: '+release)
- const env={...process.env,SHOP_FRESH_DEVELOPMENT:'1',SHOP_V8_HOME:home,SHOP_HOST:'127.0.0.1',PORT:'3000',SHOP_UPDATE_STARTING:fenced?'1':'0'}
+ const env={...process.env,SHOP_FRESH_DEVELOPMENT:'1',SHOP_V8_HOME:home,SHOP_HOST:'127.0.0.1',PORT:'3000',SHOP_UPDATE_STARTING:fenced?'1':'0',SHOP_RELEASE_CHANNEL:release==='current'?'PREVIEW':'STABLE'}
  for(const k of ['SHOP_MANAGED_HOME','SHOP_DB_PATH','SHOP_SANDBOX_ROOT','SHOP_LOCAL_V2_CONFIG','SHOP_LOCAL_V2_RESTORE_READY'])delete env[k]
  const child=fork(entry,[],{cwd:root,env,stdio:['ignore','inherit','inherit','ipc'],windowsHide:true})
  child.on('message',m=>{if(m?.type==='managed:update'&&!updating&&!stopping)void update()})
