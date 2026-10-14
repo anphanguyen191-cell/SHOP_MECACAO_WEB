@@ -54,7 +54,7 @@ try{
 async function browserTest(base,id){
  const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/chromium'].find(fs.existsSync);assert(chrome,'Chromium required for Linux V2 UI test')
  const profile=fs.mkdtempSync(path.join(os.tmpdir(),'mecacao-v2-browser-')),c=spawn(chrome,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-proxy-server','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{stdio:'ignore'})
- let ws,n=0;const pending=new Map()
+ let ws,n=0,noPhonePrompts=0;const pending=new Map(),dialogErrors=[]
  function cmd(method,params={}){return new Promise((resolve,reject)=>{const seq=++n,t=setTimeout(()=>{pending.delete(seq);reject(Error(method+' timeout'))},15000);pending.set(seq,{resolve:x=>{clearTimeout(t);resolve(x)},reject});ws.send(JSON.stringify({id:seq,method,params}))})}
  async function run(expression){const r=await cmd('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value}
  async function until(expression){for(let i=0;i<100;i++){if(await run(expression))return;await sleep(100)}throw Error('UI wait: '+expression)}
@@ -62,7 +62,7 @@ async function browserTest(base,id){
   for(let i=0;i<150&&!fs.existsSync(path.join(profile,'DevToolsActivePort'));i++)await sleep(100)
   const p=Number(fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0]),targets=await(await fetch('http://127.0.0.1:'+p+'/json/list')).json()
   ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true})})
-  ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}})
+  ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}else if(m.method==='Page.javascriptDialogOpening'){const allowed=m.params.message==='Lưu khách mới không có số điện thoại?';if(allowed)noPhonePrompts++;else dialogErrors.push(m.params.message);void cmd('Page.handleJavaScriptDialog',{accept:allowed}).catch(e=>dialogErrors.push(e.message))}})
   await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Emulation.setDeviceMetricsOverride',{width:1366,height:768,deviceScaleFactor:1,mobile:false});await cmd('Page.navigate',{url:base})
   await until("Array.from(document.querySelectorAll('.sidebar button')).some(b=>b.textContent==='Bán hàng')")
   await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Bán hàng').click()")
@@ -76,7 +76,7 @@ async function browserTest(base,id){
   await until("Array.from(document.querySelectorAll('.salesButtons button')).some(b=>b.textContent==='Lưu thay đổi'&&!b.disabled)")
   await run("Array.from(document.querySelectorAll('.salesButtons button')).find(b=>b.textContent==='Lưu thay đổi').click()")
   await until("!document.querySelector('.preflightCheck').disabled")
-  const savedContact=(await api('/api/sales/drafts/'+id)).contact;assert(savedContact.recipientName==='Mẹ test PNG'&&savedContact.shippingFee===15000);checks++
+  const savedContact=(await api('/api/sales/drafts/'+id)).contact;assert(savedContact.recipientName==='Mẹ test PNG'&&savedContact.shippingFee===15000);checks++;assert.equal(noPhonePrompts,1);assert(savedContact.customerId,'Direct recipient must save a customer with draft');const savedCustomers=await api('/api/sales/drafts/customers?q='+encodeURIComponent('Mẹ test PNG'));assert.equal(savedCustomers.length,1);assert.equal(savedCustomers[0].id,savedContact.customerId);assert.equal(savedCustomers[0].phone,'');assert.deepEqual(dialogErrors,[]);checks+=5
   await run("document.querySelector('.orderSlip button').click()")
   await until("document.querySelector('.orderSlip img')?.naturalWidth===1080")
   assert(await run("document.querySelector('.orderSlip a').download.endsWith('.png')"));checks++
