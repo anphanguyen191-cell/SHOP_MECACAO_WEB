@@ -8,7 +8,23 @@ export const cloud=createClient(CLOUD_URL,'sb_publishable_iyEI25gFfU4pXxmdFJ823Q
 export class CloudRpcError extends Error {constructor(message:string,public code:string,public raw:string=message){super(message)}}
 export async function cloudRpc<T=any>(name:string,args:Record<string,unknown>={}){const {data,error}=await cloud.rpc(name,args);if(error)throw new CloudRpcError(cloudError(error.message),error.code,error.message);return data as T}
 export function cloudError(message:string){const errors:Record<string,string>={CLOUD_CUSTOMER_DUPLICATE:'Số điện thoại đã có khách. Chọn khách cũ hoặc xác nhận tạo khách riêng.',CLOUD_CUSTOMER_NO_PHONE:'Xác nhận lưu khách không có số điện thoại.',CLOUD_PRICE_FILE_LIMIT:'File cần từ 1 đến 5.000 dòng và không vượt giới hạn.',CLOUD_PRICE_FILE_IDENTITY:'Mã/size không khớp hoặc hàng không còn tồn. Xuất lại báo cáo.',CLOUD_PRICE_FILE_INVALID:'File có mã trùng hoặc phiên bản giá không hợp lệ.',CLOUD_DRAFT_CONFLICT:'Ảnh đã có trong đơn nháp khác. Kiểm tra các đơn liên quan trước khi thêm.',CLOUD_VERSION_CONFLICT:'Đơn đã thay đổi trên thiết bị khác. Đọc lại trước khi lưu.',CLOUD_SOURCE_MISSING:'Ảnh nguồn đang thiếu trên laptop. Đối soát kho trước khi bán.',CLOUD_IMAGE_SOLD_OR_MISSING:'Ảnh vừa được bán hoặc chưa khớp kho. Đọc lại để đối soát.',CLOUD_ARCHIVE_NOT_VERIFIED:'Chưa xác minh được ảnh lưu trên laptop. Ảnh Cloud đang được giữ lại.',CLOUD_PRICE_INVALID:'Kiểm tra giá bán, giá vốn và giảm giá: nhập số nguyên không âm.',CLOUD_CONTACT_OR_TOTAL_INVALID:'Kiểm tra khách, địa chỉ, phí ship và tổng tiền của đơn.',CLOUD_MONEY_OVERFLOW:'Số tiền vượt giới hạn được hỗ trợ. Kiểm tra lại số đã nhập.',CLOUD_TABLE_INVALID:'Ứng dụng cần cập nhật để đọc dữ liệu này.',CLOUD_LOGIN_REQUIRED:'Đăng nhập tài khoản shop để kết nối.',CLOUD_ACCESS_DENIED:'Tài khoản chưa được cấp quyền vào shop.',CLOUD_ROLE_DENIED:'Tài khoản không có quyền thực hiện thao tác này.',CLOUD_WAREHOUSE_MISMATCH:'Cloud đang kết nối với kho khác. Không tự gộp hai kho.',CLOUD_REQUEST_CONFLICT:'Yêu cầu đã có nội dung khác. Đọc lại trước khi tiếp tục.',CLOUD_IMAGE_SOLD:'Ảnh đã được bán; đọc lại dữ liệu.',CLOUD_UPLOAD_NOT_VERIFIED:'File ảnh chưa upload xong hoặc vượt 150KB.',CLOUD_IMAGE_REVISION_CONFLICT:'Ảnh nguồn đã thay đổi. Cần đối soát trước khi thay ảnh Cloud.'};for(const [key,value]of Object.entries(errors))if(message.includes(key))return value;return message}
-export async function cloudRows(table:string){const rows:any[]=[];let offset=0;for(;;){const result=await cloudRpc('mc_v7_rows',{p_table:table,p_after:String(offset),p_limit:200});rows.push(...result.rows);if(result.rows.length<200)return rows;offset=result.nextOffset}}
+/**
+ * V8 Cloud paging uses the existing RPC's verified upper bound of 500 rows.
+ * The cursor and array guards fail closed if the API contract changes, rather
+ * than looping indefinitely or displaying an incomplete inventory as current.
+ */
+export async function cloudRows(table:string){
+ const pageSize=500,rows:any[]=[]
+ let offset=0
+ for(;;){
+  const result=await cloudRpc<{rows:any[];nextOffset:number}>('mc_v7_rows',{p_table:table,p_after:String(offset),p_limit:pageSize})
+  if(!Array.isArray(result?.rows)||result.rows.length>pageSize||!Number.isSafeInteger(result.nextOffset)||result.nextOffset!==offset+result.rows.length)throw Error('Trang dữ liệu Cloud không hợp lệ; dừng đọc để đối soát.')
+  rows.push(...result.rows)
+  if(result.rows.length<pageSize)return rows
+  if(result.nextOffset>100000)throw Error('Khối lượng dữ liệu vượt giới hạn tải hiện tại; yêu cầu tra cứu theo trang.')
+  offset=result.nextOffset
+ }
+}
 export async function cloudImageUrl(path:string){const {data,error}=await cloud.storage.from(CLOUD_BUCKET).createSignedUrl(path,1800);if(error)throw Error(cloudError(error.message));return data.signedUrl}
 
 const pendingKey='mecacao-v7-pending-command'
