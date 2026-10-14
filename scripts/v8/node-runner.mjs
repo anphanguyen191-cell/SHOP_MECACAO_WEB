@@ -8,6 +8,9 @@ import {snapshotV8Data,restoreV8Data} from './data-snapshot.mjs'
 const home=process.env.SHOP_V8_HOME
 if(!home||!fs.statSync(home).isDirectory())throw Error('Thiếu thư mục V8 trên ổ D:')
 const activeFile=path.join(home,'active.json'),statusFile=path.join(home,'update-status.json')
+const rootManifest=JSON.parse(fs.readFileSync(path.join(home,'manifest.json'),'utf8'))
+if(rootManifest.format!==8||!['PREVIEW','STABLE'].includes(rootManifest.channel))throw Error('Không xác định được kênh cập nhật V8')
+const releaseChannel=rootManifest.channel
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms))
 const write=(file,value)=>{
  const temp=file+'.'+randomUUID()+'.tmp'
@@ -25,7 +28,7 @@ const folder=release=>path.join(home,'releases',release)
 function start(release,fenced=true){
  const root=folder(release),entry=path.join(root,'apps/api/dist/server.js')
  if(!fs.existsSync(entry))throw Error('Không có chương trình V8: '+release)
- const env={...process.env,SHOP_FRESH_DEVELOPMENT:'1',SHOP_V8_HOME:home,SHOP_HOST:'127.0.0.1',PORT:'3000',SHOP_UPDATE_STARTING:fenced?'1':'0',SHOP_RELEASE_CHANNEL:release==='current'?'PREVIEW':'STABLE'}
+ const env={...process.env,SHOP_FRESH_DEVELOPMENT:'1',SHOP_V8_HOME:home,SHOP_HOST:'127.0.0.1',PORT:'3000',SHOP_UPDATE_STARTING:fenced?'1':'0',SHOP_RELEASE_CHANNEL:releaseChannel}
  for(const k of ['SHOP_MANAGED_HOME','SHOP_DB_PATH','SHOP_SANDBOX_ROOT','SHOP_LOCAL_V2_CONFIG','SHOP_LOCAL_V2_RESTORE_READY'])delete env[k]
  const child=fork(entry,[],{cwd:root,env,stdio:['ignore','inherit','inherit','ipc'],windowsHide:true})
  child.on('message',m=>{if(m?.type==='managed:update'&&!updating&&!stopping)void update()})
@@ -81,9 +84,9 @@ async function update(){
  const previous=active()
  let switched=false,candidate,snapshot=null
  try{
-  status('CHECKING','Đang kiểm tra bản V8 STABLE trên GitHub.')
-  const result=await stageLatest(home,previous,status)
-  if(result.current){status('CURRENT','Đang sử dụng bản V8 STABLE mới nhất.');return}
+  status('CHECKING','Đang kiểm tra bản V8 '+releaseChannel+' trên GitHub.')
+  const result=await stageLatest(home,previous,status,releaseChannel)
+  if(result.current){status('CURRENT','Đang sử dụng bản V8 '+releaseChannel+' mới nhất.');return}
   const dest=folder(result.sha)
   if(fs.existsSync(dest)){
    if(!fs.statSync(path.join(dest,'apps/api/dist/server.js')).isFile())throw Error('Thư mục phát hành trùng tên nhưng không hợp lệ')
