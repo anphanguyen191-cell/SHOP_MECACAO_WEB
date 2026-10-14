@@ -383,8 +383,22 @@ if (fs.existsSync(webDist)) {
 }
 
 if(lanControl)void lanControl.startInitial().catch(e=>console.error('LAN không bật được; Windows LOCAL vẫn chạy:',e.message))
-app.listen(PORT, process.env.SHOP_HOST ?? '127.0.0.1', () => {
+const httpListener=app.listen(PORT, process.env.SHOP_HOST ?? '127.0.0.1', () => {
   startWarehouseWatcher(rootPath=>{if(!updateFence&&!updateProbe&&!tasks.pendingReview())tasks.start('SCAN',{rootPath,background:true},'watch-'+randomUUID())})
   console.log(`Shop Mẹ CaCao đang chạy: http://localhost:${PORT}`)
   console.log(`Database: ${dbPath}`)
+})
+
+/**
+ * Desktop shutdown uses an IPC request, not an unconditional process kill.
+ * Refuse while tasks/transactions are active; the launcher keeps running.
+ */
+if(process.send)process.on('message',message=>{
+ if(message!=='SHOP_LOCAL_CLOSE')return
+ if(taskActivity.busy||salesActivity.busy||updateWrites>0||tasks.pendingReview()){
+  process.send?.({type:'desktop:close-refused',reason:'Cần hoàn tất tác vụ hoặc đối soát trước khi thoát'})
+  return
+ }
+ updateFence=true
+ httpListener.close(()=>{try{db.close()}catch{}process.exit(0)})
 })
