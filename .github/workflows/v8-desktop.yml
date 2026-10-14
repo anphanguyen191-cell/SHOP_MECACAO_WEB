@@ -27,6 +27,9 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - run: npm ci
+      - run: node --check scripts/v8/node-runner.mjs
+      - run: node --check scripts/v8/release-fetch.mjs
+      - run: node --check scripts/v8/data-snapshot.mjs
       - run: node --test scripts/v8/release-fetch.test.mjs scripts/v8/data-snapshot.test.mjs
       - run: npm run build
       - run: npm run typecheck
