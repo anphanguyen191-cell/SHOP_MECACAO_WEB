@@ -5,12 +5,20 @@ export const freshDevelopment=process.env.SHOP_FRESH_DEVELOPMENT==='1'
 export const release={version:'7.3.0',channel:'release',stage:7,status:'RELEASED',next:'Windows và iPhone dùng chung dữ liệu Cloud'}
 const legacyRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../../data/stage6-main-test')
 export const managedHome=process.env.SHOP_MANAGED_HOME?path.resolve(process.env.SHOP_MANAGED_HOME):null
-export const freshRoot=managedHome?path.join(managedHome,'data','stage6-main-test'):legacyRoot
+// V8 is a fresh, isolated installation. Never infer it from a V7 test directory.
+export const v8Home=process.env.SHOP_V8_HOME?path.resolve(process.env.SHOP_V8_HOME):null
+if(v8Home){
+ if(!freshDevelopment||managedHome)throw Error('V8 chỉ chạy trong fresh mode và không nhận V7 managed home')
+ const markerPath=path.join(v8Home,'installation.json')
+ const marker=JSON.parse(fs.readFileSync(markerPath,'utf8'))
+ if(marker.format!==8||marker.home!==v8Home||marker.schema!==130||marker.data!==path.join(v8Home,'data','shop-v8'))throw Error('Cài đặt V8 chưa hợp lệ; không tự tạo kho hoặc database')
+}
+export const freshRoot=v8Home?path.join(v8Home,'data','shop-v8'):managedHome?path.join(managedHome,'data','stage6-main-test'):legacyRoot
 if(freshDevelopment&&managedHome){
  const c=JSON.parse(fs.readFileSync(path.join(managedHome,'installation.json'),'utf8'))
  if(c.format!==1||c.home!==managedHome||c.data!==path.join(managedHome,'data')||c.schema!=='130'||!fs.existsSync(path.join(freshRoot,'database','shop-stage6-main-test.db')))throw Error('Dữ liệu cố định chưa được xác minh. Không tạo database rỗng.')
 }
-if(freshDevelopment&&!managedHome&&fs.existsSync(path.join(legacyRoot,'managed-installation.json')))throw Error('Dữ liệu đã chuyển sang vùng cố định. Mở biểu tượng Shop hoặc START_SHOP mới.')
+if(freshDevelopment&&!managedHome&&!v8Home&&fs.existsSync(path.join(legacyRoot,'managed-installation.json')))throw Error('Dữ liệu đã chuyển sang vùng cố định. Mở biểu tượng Shop hoặc START_SHOP mới.')
 export const warehouseConfig=path.join(freshRoot,'warehouse-config.json')
 function contains(a:string,b:string){const r=path.relative(a,b);return r===''||(!path.isAbsolute(r)&&r!=='..'&&!r.startsWith('..'+path.sep))}
 export function validateNewWarehouse(value:unknown){
@@ -33,7 +41,7 @@ if(freshDevelopment){
   selected=path.resolve(c.warehouse)
   if(!path.isAbsolute(c.warehouse)||fs.realpathSync(selected)!==selected||!fs.lstatSync(selected).isDirectory()||selected===path.parse(selected).root||contains(selected,freshRoot)||contains(freshRoot,selected)||fs.existsSync(path.join(selected,'.mecacao-local-active.json')))throw Error('Kho đã chọn không còn hợp lệ; giữ nguyên cấu hình để kiểm tra')
  }
- process.env.SHOP_SANDBOX_ROOT=selected??freshRoot;process.env.SHOP_DB_PATH=path.join(freshRoot,'database','shop-stage6-main-test.db')
+ process.env.SHOP_SANDBOX_ROOT=selected??freshRoot;process.env.SHOP_DB_PATH=path.join(freshRoot,'database',v8Home?'shop-v8.db':'shop-stage6-main-test.db')
  process.env.SHOP_ENABLE_V2_DRAFTS='1';process.env.SHOP_ENABLE_V2_SALES='1';process.env.SHOP_HOST='127.0.0.1'
 }
 export const customWarehouse=selected!==null

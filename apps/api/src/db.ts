@@ -1,4 +1,4 @@
-import {freshDevelopment,freshWarehouse,freshRoot,customWarehouse,release} from './freshDevelopment.js'
+import {freshDevelopment,freshWarehouse,freshRoot,customWarehouse,release,v8Home} from './freshDevelopment.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -16,10 +16,13 @@ if(salesDraftsEnabled&&!process.env.SHOP_SANDBOX_ROOT)throw new Error('V2 đơn 
 
 const here=path.dirname(fileURLToPath(import.meta.url))
 const projectRoot=path.resolve(here,'../../..')
-const dataDir=path.join(projectRoot,'data')
+const dataDir=v8Home?path.join(v8Home,'data','shop-v8'):path.join(projectRoot,'data')
 fs.mkdirSync(dataDir,{recursive:true})
 const dbPath=process.env.SHOP_DB_PATH?path.resolve(process.env.SHOP_DB_PATH):path.join(dataDir,'shop.db')
 fs.mkdirSync(path.dirname(dbPath),{recursive:true})
+// A missing database after first successful V8 bootstrap is a failure, not a new shop.
+const v8Guard=v8Home?path.join(path.dirname(dbPath),'.initialized.json'):null
+if(v8Guard&&fs.existsSync(v8Guard)&&!fs.existsSync(dbPath))throw Error('Database V8 không còn hiện hữu. Đã chặn tạo database rỗng thay thế.')
 if(process.env.SHOP_SANDBOX_ROOT&&!localRuntime&&!freshDevelopment){
  const root=fs.realpathSync(path.resolve(process.env.SHOP_SANDBOX_ROOT))
  const parent=fs.realpathSync(path.dirname(dbPath))
@@ -45,6 +48,10 @@ try{
  }
  db.prepare("INSERT INTO app_metadata(key,value,updated_at) VALUES('app_version',?,datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=datetime('now')").run(freshDevelopment?release.version:localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev')
  db.prepare("INSERT INTO app_settings(key,value,updated_at) VALUES('low_stock_threshold','2',datetime('now')) ON CONFLICT(key) DO NOTHING").run()
+ if(v8Guard&&!fs.existsSync(v8Guard)){
+  const marker={format:8,database:dbPath,schema:130,createdAt:new Date().toISOString()}
+  fs.writeFileSync(v8Guard,JSON.stringify(marker,null,2),{flag:'wx'})
+ }
 }catch(error){
  try{db.close()}catch{}
  throw error
