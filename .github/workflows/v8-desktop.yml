@@ -1,0 +1,34 @@
+name: V8 Windows preview package
+on:
+  push:
+    branches: ['v8/**']
+    paths:
+      - 'desktop/**'
+      - 'scripts/v8/**'
+      - 'apps/**'
+      - '.github/workflows/v8-desktop.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: npm ci
+      - run: npm run build
+      - run: npm run typecheck
+      - shell: pwsh
+        run: ./scripts/v8/package-windows.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ShopMeCaCao-V8-PREVIEW-win-x64
+          path: artifacts/ShopMeCaCao-V8-PREVIEW-win-x64.zip
+          retention-days: 7
+          if-no-files-found: error
