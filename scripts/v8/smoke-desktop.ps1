@@ -27,6 +27,8 @@ try{
  }
  if($null -eq $health){ throw 'Desktop never became healthy' }
  if($health.database -ne 'shop-v8.db' -or $health.schema -ne 130){ throw 'Desktop loaded wrong database/schema' }
+ if($health.release.stage -ne 8){throw 'Desktop did not load V8 release'}
+ if($health.cloudAuthority){throw 'Fresh V8 must not be linked to legacy Cloud automatically'}
  $database=Join-Path $installDir 'data/shop-v8/database/shop-v8.db'
  if(!(Test-Path $database)){ throw 'V8 database missing on D:' }
  if(!(Test-Path (Join-Path $installDir 'installation.json'))){ throw 'V8 installation marker missing' }
