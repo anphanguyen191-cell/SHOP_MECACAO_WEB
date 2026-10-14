@@ -19,6 +19,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: npm ci
+      - run: node --test scripts/v8/release-fetch.test.mjs
       - run: npm run test:v8-layout
       - run: npm run build
       - run: npm run typecheck
