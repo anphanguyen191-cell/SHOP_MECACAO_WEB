@@ -8,6 +8,8 @@ export default function CloudOrderEditor({order,items,contact,customers=[],urls=
  useUnsavedChanges(dirty,()=>setError('Lưu thay đổi của đơn hoặc đọc lại trước khi chuyển chức năng.'))
  useEffect(()=>{onDirty?.(dirty);return()=>onDirty?.(false)},[dirty,onDirty])
  const [rows,setRows]=useState(items.map(i=>({...i}))),[discount,setDiscount]=useState(String(order.discount)),[note,setNote]=useState(order.note||''),[details,setDetails]=useState({...contact}),[busy,setBusy]=useState(false),[error,setError]=useState('')
+ // Bind the customer created by our acknowledged save without replacing edits.
+ useEffect(()=>{if(!dirty&&order.version===baseVersion&&contact?.customer_id&&!details.customer_id&&['recipient_name','phone','address'].every(k=>(contact[k]||'')===(details[k]||'')))setDetails((old:any)=>({...old,customer_id:contact.customer_id}))},[dirty,baseVersion,order.version,contact?.customer_id,contact?.recipient_name,contact?.phone,contact?.address])
  const [saveCustomer,setSaveCustomer]=useState(true),[allowDuplicate,setAllowDuplicate]=useState(false)
  const key=(s:string)=>{let k=s.replace(/\D/g,'');return k.startsWith('84')?'0'+k.slice(2):k};const matches=details.phone?customers.filter(c=>key(c.phone)===key(details.phone)):[]
  const valid=rows.length>0&&rows.every(i=>validMoneyInput(i.unit_price))&&validMoneyInput(discount)&&validMoneyInput(details.shipping_fee??0)&&Number(discount)<=rows.reduce((n,i)=>n+Number(i.unit_price),0)
