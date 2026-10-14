@@ -22,10 +22,10 @@ try{
  for(let i=0;i<150&&!fs.existsSync(path.join(profile,'DevToolsActivePort'));i++)await sleep(100)
  const port=Number(fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0]),targets=await fetch('http://127.0.0.1:'+port+'/json/list').then(r=>r.json())
  ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true})});ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}})
- await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Page.navigate',{url:'http://127.0.0.1:3000'});await until("!!document.querySelector('.overviewStats')");assert(await run("!document.querySelector('.releaseStatus')"));await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("!!document.querySelector('.releaseWarehouse button')")
- assert(await run("document.querySelector('.releaseStatus').textContent.includes('V7.3.0')&&!/MAIN TEST|ĐANG PHÁT TRIỂN|chưa STABLE/.test(document.querySelector('.releaseStatus').textContent)&&!document.querySelector('.headerActions').textContent.includes('MAIN TEST')"))
+ await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Page.navigate',{url:'http://127.0.0.1:3000'});await until("!!document.querySelector('.overviewStats')");assert(await run("!document.querySelector('.v8InstallSummary')"));await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("!!document.querySelector('.warehouseConfig button')")
+ assert(await run("document.querySelector('.v8InstallSummary').textContent.includes('V7.3.0')&&!/MAIN TEST|ĐANG PHÁT TRIỂN|chưa STABLE/.test(document.querySelector('.v8InstallSummary').textContent)&&!document.querySelector('.headerActions').textContent.includes('MAIN TEST')"))
  assert.equal((await fetch('http://127.0.0.1:3000/api/local/lan').then(r=>r.json())).enabled,false)
- await run("document.querySelector('.releaseWarehouse button').click()");await until("!!document.querySelector('.folderModal')");await run("document.querySelector('[aria-label=\"Đóng chọn thư mục\"]').click()")
+ await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Import kho').click()");await until("!!document.querySelector('.warehouseConfig button')");await run("Array.from(document.querySelectorAll('.warehouseConfig button')).find(b=>b.textContent==='CHỌN THƯ MỤC').click()");await until("!!document.querySelector('.folderModal')");await run("document.querySelector('[aria-label=\"Đóng chọn thư mục\"]').click()")
  // Real folder selection, automatic launcher restart, and UI reload without manual scripts.
  const own=path.join(tmp,'my-test-warehouse');fs.mkdirSync(own)
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Import kho').click()")
@@ -43,8 +43,8 @@ try{
  assert.equal((await fetch('http://127.0.0.1:3000/api/products').then(r=>r.json())).length,0,'Scan must not register stock')
  const other=await fetch('http://127.0.0.1:3000/api/store/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rootPath:tmp})});assert.equal(other.status,403,'Another folder must remain blocked')
  for(let i=0;i<100;i++){try{const h=await fetch('http://127.0.0.1:3000/api/health').then(r=>r.json());if(h.customWarehouse)break}catch{}await sleep(100)}
- await cmd('Page.reload');await until("!!document.querySelector('.overviewStats')");assert(await run("!document.querySelector('.releaseStatus')"));await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("document.querySelector('.releaseStatus')?.textContent.includes("+JSON.stringify(own)+")")
- assert(await run("!Array.from(document.querySelectorAll('.releaseWarehouse button')).some(b=>b.textContent.includes('CHỌN KHO'))"))
+ await cmd('Page.reload');await until("!!document.querySelector('.overviewStats')");assert(await run("!document.querySelector('.v8InstallSummary')"));await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("document.querySelector('.v8InstallSummary')?.textContent.includes("+JSON.stringify(own)+")")
+ assert(await run("!Array.from(document.querySelectorAll('.v8InstallSummary button')).some(b=>b.textContent.includes('CHỌN KHO'))"))
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tổng quan').click()");await until("!!document.querySelector('.overviewStats')")
  const out=path.resolve('artifacts/main-release');fs.mkdirSync(out,{recursive:true})
  for(const width of [1366,390])for(const dark of [false,true]){
