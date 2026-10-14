@@ -11,6 +11,7 @@ import './uiRefresh.css'
 import './displaySize.css'
 import './floatingActions.css'
 import './v8-design.css'
+import './v8-flow.css'
 
 const updateSW=registerSW({ immediate: true,onNeedRefresh(){window.dispatchEvent(new Event('mecacao-update-ready'))} })
 
