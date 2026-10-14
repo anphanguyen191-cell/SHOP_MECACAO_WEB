@@ -4,10 +4,15 @@ on:
     branches: ['v8/**']
     paths:
       - 'desktop/**'
-      - 'scripts/v8/**'
-      - 'apps/**'
+      - 'scripts/v8/node-runner.mjs'
+      - 'scripts/v8/release-fetch.mjs'
+      - 'scripts/v8/package-windows.ps1'
+      - 'scripts/v8/smoke-desktop.ps1'
       - '.github/workflows/v8-desktop.yml'
   workflow_dispatch:
+concurrency:
+  group: v8-desktop-preview
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
