@@ -30,7 +30,7 @@ jobs:
           prerelease: false
           draft: false
           make_latest: true
-          files: artifacts/ShopMeCaCao-V8-PREVIEW-win-x64.zip
+          files: artifacts/ShopMeCaCao-V8-STABLE-win-x64.zip
           body: |
             Bản phát hành chỉ dùng sau khi chủ shop nghiệm thu thực tế Windows/iPhone.
             Một gói ứng dụng Windows; database và kho ảnh không nằm trong gói.
