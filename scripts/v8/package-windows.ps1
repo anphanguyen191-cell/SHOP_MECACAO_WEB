@@ -23,24 +23,15 @@ Copy-Item 'scripts/v8/node-runner.mjs' (Join-Path $release 'scripts/v8/node-runn
 Copy-Item 'scripts/v8/release-fetch.mjs' (Join-Path $release 'scripts/v8/release-fetch.mjs') -Force
 Copy-Item 'scripts/v8/data-snapshot.mjs' (Join-Path $release 'scripts/v8/data-snapshot.mjs') -Force
 Copy-Item 'package.json' (Join-Path $release 'package.json') -Force
+
 $sha = if($env:GITHUB_SHA){$env:GITHUB_SHA}else{'local-preview'}
-$channel = 'PREVIEW'
-if($env:V8_BUILD_CHANNEL -eq 'STABLE' -or ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -match '^v8[.][0-9]+[.][0-9]+-stable
+$channel = if($env:V8_BUILD_CHANNEL -eq 'STABLE'){'STABLE'}else{'PREVIEW'}
 $manifest = [ordered]@{
- format=8; channel=$channel; sourceCommit=$sha; schema=130;
- launcherSha256=(Get-FileHash (Join-Path $package 'ShopMeCaCao.exe') -Algorithm SHA256).Hash.ToLower();
- nodeSha256=(Get-FileHash (Join-Path $package 'runtime/node.exe') -Algorithm SHA256).Hash.ToLower()
-}
-$manifest | ConvertTo-Json | Set-Content -Path (Join-Path $package 'manifest.json') -Encoding utf8
-New-Item -ItemType Directory -Force $artifact | Out-Null
-$zip = Join-Path $artifact ('ShopMeCaCao-V8-' + $channel + '-win-x64.zip')
-if(Test-Path $zip){Remove-Item $zip -Force}
-Compress-Archive -Path (Join-Path $package '*') -DestinationPath $zip -CompressionLevel Optimal
-Write-Host "V8_PACKAGE_CREATED: $zip"
-)){$channel='STABLE'}
-$manifest = [ordered]@{
- format=8; channel=$channel; sourceCommit=$sha; schema=130;
- launcherSha256=(Get-FileHash (Join-Path $package 'ShopMeCaCao.exe') -Algorithm SHA256).Hash.ToLower();
+ format=8
+ channel=$channel
+ sourceCommit=$sha
+ schema=130
+ launcherSha256=(Get-FileHash (Join-Path $package 'ShopMeCaCao.exe') -Algorithm SHA256).Hash.ToLower()
  nodeSha256=(Get-FileHash (Join-Path $package 'runtime/node.exe') -Algorithm SHA256).Hash.ToLower()
 }
 $manifest | ConvertTo-Json | Set-Content -Path (Join-Path $package 'manifest.json') -Encoding utf8
