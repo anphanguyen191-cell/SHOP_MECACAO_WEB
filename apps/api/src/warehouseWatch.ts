@@ -22,6 +22,10 @@ export function validateWarehouseRoot(value:string){
  const root=fs.realpathSync(path.resolve(value.trim()))
  if(!fs.statSync(root).isDirectory())throw Error('Kho gốc không phải thư mục')
  if(localRuntime&&root!==localRuntime.warehouse)throw Error('Không đổi kho đích của LOCAL đã kích hoạt')
+ if(process.env.SHOP_V8_HOME){
+  const selected=process.env.SHOP_SANDBOX_ROOT
+  if(!selected||root!==fs.realpathSync(selected))throw Error('Kho V8 chỉ được đổi tại Import kho, không được đổi qua cấu hình quét')
+ }
  const sandbox=process.env.SHOP_SANDBOX_ROOT
  if(sandbox){const base=fs.realpathSync(sandbox),rel=path.relative(base,root);if(path.isAbsolute(rel)||rel==='..'||rel.startsWith('..'+path.sep))throw Error('Kho phải nằm trong sandbox thử nghiệm')}
  return root
