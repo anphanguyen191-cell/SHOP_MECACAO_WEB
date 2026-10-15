@@ -1,6 +1,27 @@
 import { db } from './db.js'
 import { physicalImagesByVariant } from './physicalInventory.js'
+import {getWatchSettings} from './warehouseWatch.js'
+import {scanStore} from './storeScanner.js'
+import path from 'node:path'
 
+/** All physical images in a known Product/Size are counted, even if their
+ * registration is still pending. Registration controls whether a specific
+ * image can be sold, never how many files exist in the folder.
+ * Recompute on every stock read: manual Explorer deletions cannot leave a
+ * stale positive stock in the dashboard.
+ */
+function unregisteredPhysicalByVariant(){
+ const pending=new Map<number,number>()
+ const root=getWatchSettings().rootPath
+ if(!root)return pending
+ const known=new Set((db.prepare('SELECT file_path FROM product_images').all() as {file_path:string}[]).map(r=>path.resolve(r.file_path).toLowerCase()))
+ for(const product of scanStore(root))for(const size of product.sizes){
+  if(!size.existingVariantId)continue
+  const count=size.images.filter(file=>!known.has(path.resolve(file).toLowerCase())).length
+  if(count)pending.set(size.existingVariantId,count)
+ }
+ return pending
+}
 export type InventoryFilters={search?:string;category?:string;size?:string;status?:'all'|'active'|'inactive';state?:'all'|'out'|'low'|'ok';threshold?:number}
 
 function inventoryMetadata(filters:InventoryFilters={}){
@@ -27,25 +48,28 @@ function inventoryMetadata(filters:InventoryFilters={}){
 export function inventoryRows(filters:InventoryFilters={}){
  const {rows,state,threshold}=inventoryMetadata(filters)
  const images=physicalImagesByVariant(rows.map(r=>r.variant_id))
- const actual=rows.map(r=>({...r,image_id:(images.get(r.variant_id)??[]).find(i=>i.product_id===r.product_id&&i.exists)?.id??null,ledger_stock:Number(r.stock||0),stock:(images.get(r.variant_id)??[]).filter(x=>x.product_id===r.product_id&&x.exists).length}))
+ const pending=unregisteredPhysicalByVariant()
+ const actual=rows.map(r=>({...r,pendingImages:pending.get(r.variant_id)??0,image_id:(images.get(r.variant_id)??[]).find(i=>i.product_id===r.product_id&&i.exists)?.id??null,ledger_stock:Number(r.stock||0),stock:(images.get(r.variant_id)??[]).filter(x=>x.product_id===r.product_id&&x.exists).length+(pending.get(r.variant_id)??0)}))
  return actual.filter(r=>state==='all'||(state==='out'&&r.stock===0)||(state==='low'&&r.stock>0&&r.stock<=threshold)||(state==='ok'&&r.stock>threshold))
 }
 
 type ExplorerImage={id:number;file_name:string;file_path:string;exists:boolean}
-type ExplorerVariant={variant_status:string;variant_id:number;sku:string;size:string;cost_price:number;sale_price:number;ledger_stock:number;stock:number;images:ExplorerImage[]}
+type ExplorerVariant={variant_status:string;variant_id:number;sku:string;size:string;cost_price:number;sale_price:number;ledger_stock:number;stock:number;pendingImages:number;images:ExplorerImage[]}
 type ExplorerProduct={product_id:number;product_code:string;product_name:string;category:string|null;product_status:string;stock:number;variants:ExplorerVariant[]}
 
 export function inventoryExplorer(filters:Pick<InventoryFilters,'search'|'category'|'size'|'status'>={}){
  const {rows}=inventoryMetadata({...filters,state:'all'})
  const imageMap=physicalImagesByVariant(rows.map(r=>r.variant_id))
+ const pending=unregisteredPhysicalByVariant()
  const products=new Map<number,ExplorerProduct>()
  for(const r of rows){
   const images=(imageMap.get(r.variant_id)??[]).filter(x=>x.product_id===r.product_id)
   const registered=images.filter(x=>x.exists)
-  const stock=registered.length
+  const awaitingReview=pending.get(r.variant_id)??0
+  const stock=registered.length+awaitingReview
   let product=products.get(r.product_id)
   if(!product){product={product_id:r.product_id,product_code:r.product_code,product_name:r.product_name,category:r.category??null,product_status:r.product_status,stock:0,variants:[]};products.set(r.product_id,product)}
-  product.variants.push({variant_status:r.variant_status,variant_id:r.variant_id,sku:r.sku,size:r.size,cost_price:Number(r.cost_price||0),sale_price:Number(r.sale_price||0),ledger_stock:Number(r.stock||0),stock,images:registered})
+  product.variants.push({variant_status:r.variant_status,variant_id:r.variant_id,sku:r.sku,size:r.size,cost_price:Number(r.cost_price||0),sale_price:Number(r.sale_price||0),ledger_stock:Number(r.stock||0),stock,pendingImages:awaitingReview,images:registered})
   product.stock+=stock
  }
  return [...products.values()]
@@ -60,14 +84,16 @@ export function inventoryDashboard(products=inventoryExplorer({status:'active'})
  const byStockAsc=[...positive].sort((a,b)=>a.stock-b.stock||a.product_name.localeCompare(b.product_name,'vi')).slice(0,5).map(p=>({product_id:p.product_id,product_name:p.product_name,product_code:p.product_code,stock:p.stock}))
  const sizes=[...sizeMap.entries()].map(([size,stock])=>({size,stock})).sort((a,b)=>b.stock-a.stock||a.size.localeCompare(b.size,'vi'))
  const mismatches=variants.filter(v=>v.ledger_stock!==v.stock).length
- return {stock:variants.reduce((n,v)=>n+v.stock,0),products:products.length,productsInStock:positive.length,skus:variants.length,sizes:sizes.length,outOfStock:variants.filter(v=>v.stock===0).length,topProducts:byStockDesc,lowProducts:byStockAsc,sizeStock:sizes,mismatches,source:'PHYSICAL_IMAGES'}
+ const pendingImages=variants.reduce((n,v)=>n+v.pendingImages,0)
+ return {stock:variants.reduce((n,v)=>n+v.stock,0),products:products.length,productsInStock:positive.length,skus:variants.length,sizes:sizes.length,outOfStock:variants.filter(v=>v.stock===0).length,topProducts:byStockDesc,lowProducts:byStockAsc,sizeStock:sizes,mismatches,pendingImages,source:'PHYSICAL_IMAGES'}
 }
 
 export function inventorySuggestions(search=''){
  const q='%'+search.trim()+'%'
  const rows=db.prepare(`SELECT p.id AS product_id,p.product_code,p.name AS product_name,v.id AS variant_id,v.sku,v.size FROM product_variants v JOIN products p ON p.id=v.product_id WHERE p.status='active' AND v.status='active' AND (?='%%' OR p.name LIKE ? OR p.product_code LIKE ? OR v.sku LIKE ? OR v.size LIKE ?) ORDER BY CASE WHEN p.name LIKE ? OR p.product_code LIKE ? THEN 0 ELSE 1 END,p.name,v.size LIMIT 20`).all(q,q,q,q,q,search.trim()+'%',search.trim()+'%') as Array<{product_id:number;product_code:string;product_name:string;variant_id:number;sku:string;size:string}>
  const images=physicalImagesByVariant(rows.map(row=>row.variant_id))
- return rows.map(row=>({...row,stock:(images.get(row.variant_id)??[]).filter(x=>x.product_id===row.product_id&&x.exists).length}))
+ const pending=unregisteredPhysicalByVariant()
+ return rows.map(row=>({...row,pendingImages:pending.get(row.variant_id)??0,stock:(images.get(row.variant_id)??[]).filter(x=>x.product_id===row.product_id&&x.exists).length+(pending.get(row.variant_id)??0)}))
 }
 
 export function inventoryHistory(limit=200){
