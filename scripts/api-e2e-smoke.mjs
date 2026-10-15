@@ -151,6 +151,7 @@ try{
  await stop();start({SHOP_SANDBOX_ROOT:home});await waitReady()
  check((await api('/api/warehouse/settings')).rootPath===fs.realpathSync(storeRoot),'warehouse root persisted across server restart')
  check((await api('/api/inventory/dashboard')).stock===4,'renamed stock persisted across restart')
+ const ledgerBeforePending=(await api('/api/inventory/explorer')).flatMap(p=>p.variants).reduce((sum,v)=>sum+v.ledger_stock,0)
  for(let i=0;i<200;i++){const tasks=await api('/api/tasks');if(!tasks.some(t=>['QUEUED','RUNNING'].includes(t.status)))break;await sleep(50)}
  const pendingFile=path.join(sizeDir,'PENDING-STARTUP.png');fs.copyFileSync(file2,pendingFile)
  await stop();start({SHOP_SANDBOX_ROOT:home});await waitReady()
@@ -168,7 +169,8 @@ try{
  const physicalWithPending=await api('/api/inventory/dashboard')
  check(physicalWithPending.stock===6&&physicalWithPending.pendingImages===2,'automatic scans include two on-disk photos awaiting registration')
  const explorerWithPending=await api('/api/inventory/explorer')
- check(explorerWithPending.some(p=>p.variants.some(v=>v.pendingImages===2&&v.ledger_stock!==v.stock)),'physical pending photos never fabricate inventory ledger transactions')
+ check(explorerWithPending.some(p=>p.variants.some(v=>v.pendingImages===2)),'new on-disk photos are flagged for approval')
+ check(explorerWithPending.flatMap(p=>p.variants).reduce((sum,v)=>sum+v.ledger_stock,0)===ledgerBeforePending,'automatic file discovery never fabricates inventory ledger transactions')
  fs.unlinkSync(pendingFile);fs.unlinkSync(periodicFile)
  check((await api('/api/inventory/dashboard')).stock===4,'deleting the two extra physical photos updates stock immediately')
  console.log('HTTP_API_ACCEPTANCE PASS: '+checks+' assertions; 3 receipt flows, scan/import/idempotence, ledger isolation, SHA originals, lossless backup and restart')
