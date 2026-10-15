@@ -35,7 +35,7 @@ try{
  if($health.customWarehouse){throw 'V8 should not silently select a warehouse on fresh installation'}
  # Never allow writes to internal temporary warehouse before configuring V8.
  try{
-  Invoke-RestMethod -Method POST -Uri 'http://127.0.0.1:3000/api/goods-receipt' -ContentType 'application/json' -Body '{"storeRoot":"D:\\ShopMeCaCao\\data\\shop-v8\\warehouse","sizes":[]}' -TimeoutSec 8 | Out-Null
+  Invoke-RestMethod -Method POST -Uri 'http://127.0.0.1:3000/api/goods-receipt' -ContentType 'application/json' -Headers @{Origin='http://127.0.0.1:3000'} -Body '{"storeRoot":"D:\\ShopMeCaCao\\data\\shop-v8\\warehouse","sizes":[]}' -TimeoutSec 8 | Out-Null
   throw 'Goods receipt bypassed official warehouse setup'
  }catch{
   if($_.Exception.Message -match 'bypassed official'){throw}
