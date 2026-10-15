@@ -87,3 +87,25 @@ test('malformed orphan lock is preserved for manual inspection',()=>{
   assert.equal(fs.readFileSync(x.lock,'utf8'),'{"bad":"unknown"}')
  }finally{x.done()}
 })
+
+test('an older running V8 can take over its own photo-folder runtime lock',()=>{
+ const x=tmp()
+ try{
+  const payload={format:1,pid:process.pid,database:path.join(x.home,'data','shop-v8','database','shop-v8.db'),configSha:'stage4-fresh'}
+  fs.writeFileSync(x.lock,JSON.stringify(payload))
+  assert.equal(inspectWarehouseOwner(x.root,x.home),'ORPHAN')
+  adoptWarehouse(x.root,x.home)
+  assert.equal(inspectWarehouseOwner(x.root,x.home),'OWN')
+  assert.equal(fs.readFileSync(x.image,'utf8'),'ORIGINAL_FILE_MUST_NOT_CHANGE')
+  assert.equal(fs.existsSync(x.lock),false)
+ }finally{x.done()}
+})
+test('live different owner cannot transfer, even if old version used stage4-fresh lock',()=>{
+ const x=tmp()
+ try{
+  const payload={format:1,pid:process.pid,database:path.join(x.base,'foreign','shop-v8.db'),configSha:'stage4-fresh'}
+  fs.writeFileSync(x.lock,JSON.stringify(payload))
+  assert.throws(()=>adoptWarehouse(x.root,x.home),/còn hoạt động/)
+  assert.equal(fs.readFileSync(x.lock,'utf8'),JSON.stringify(payload))
+ }finally{x.done()}
+})
