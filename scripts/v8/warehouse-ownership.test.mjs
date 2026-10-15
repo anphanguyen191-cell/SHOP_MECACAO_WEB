@@ -109,3 +109,29 @@ test('live different owner cannot transfer, even if old version used stage4-fres
   assert.equal(fs.readFileSync(x.lock,'utf8'),JSON.stringify(payload))
  }finally{x.done()}
 })
+
+test('owner can explicitly accept reused live PID without owner marker, preserving evidence',()=>{
+ const x=tmp()
+ try{
+  const lock={format:1,pid:process.pid,database:x.owner.database,configSha:'stage4-fresh'}
+  fs.writeFileSync(x.lock,JSON.stringify(lock))
+  assert.throws(()=>inspectWarehouseOwner(x.root,x.home),/còn hoạt động/)
+  assert.equal(inspectWarehouseOwner(x.root,x.home,true),'ORPHAN_UNVERIFIED')
+  adoptWarehouse(x.root,x.home,true)
+  assert.equal(inspectWarehouseOwner(x.root,x.home),'OWN')
+  assert.equal(fs.readFileSync(x.image,'utf8'),'ORIGINAL_FILE_MUST_NOT_CHANGE')
+  const archived=path.join(x.home,'data','shop-v8','warehouse-handoffs')
+  const handoff=JSON.parse(fs.readFileSync(path.join(archived,fs.readdirSync(archived)[0]),'utf8'))
+  assert.equal(handoff.recoveryType,'ORPHAN_UNVERIFIED')
+  assert.equal(handoff.ownerConfirmed,true)
+  assert.deepEqual(JSON.parse(handoff.lock),lock)
+ }finally{x.done()}
+})
+test('owner confirmation cannot steal a warehouse belonging to another V8 database',()=>{
+ const x=tmp()
+ try{
+  adoptWarehouse(x.root,x.home)
+  assert.throws(()=>adoptWarehouse(x.root,path.join(x.base,'DifferentV8'),true),/V8 khác/)
+  assert.equal(fs.readFileSync(x.image,'utf8'),'ORIGINAL_FILE_MUST_NOT_CHANGE')
+ }finally{x.done()}
+})
