@@ -37,7 +37,7 @@ try{
  const receipt=await request('/api/goods-receipt','POST',{storeRoot:h.warehouse,name:'Bộ hàng mới',sizes:[{size:'Size 1',quantity:1,costPrice:20000,salePrice:50000,sourcePath:source}]});eq(receipt.status,201);eq(fs.readFileSync(photo),bytes)
  let explorer=(await request('/api/inventory/explorer')).data;const imageId=explorer[0].variants[0].images[0].id
  const renameBefore=await request('/api/warehouse/rename/preview','POST',{rootPath:h.warehouse});eq(renameBefore.status,200)
- const renameFirst=await request('/api/warehouse/rename/commit','POST',{rootPath:h.warehouse,ids:renameBefore.data.files.map(f=>f.id),token:renameBefore.data.token,confirmed:true});eq(renameFirst.status,200)
+ const renameFirst=await request('/api/warehouse/rename/commit','POST',{rootPath:h.warehouse,ids:renameBefore.data.files.map(f=>f.id),token:renameBefore.data.token,confirmed:true});if(renameFirst.status!==200)throw Error('Rename acceptance returned '+renameFirst.status+': '+JSON.stringify(renameFirst.data));eq(renameFirst.status,200)
  explorer=(await request('/api/inventory/explorer')).data
  const customer=(await request('/api/sales/drafts/customers','POST',{name:'Mẹ Cacao',phone:'0901234567',address:'Bạc Liêu',note:''})).data
  const input={items:[{imageId,unitPrice:50000}],discount:5000,note:'Giao chiều',contact:{customerId:customer.id,recipientName:customer.name,phone:customer.phone,address:customer.address,shippingFee:15000}}
