@@ -40,3 +40,8 @@ test('catalog: variant ID alone is insufficient to reconcile SKU or Size',()=>{
  assert.throws(()=>validateCloudVariants([variant(10)],[variant(10,'ABC8','10')]),/không khớp/)
  assert.throws(()=>validateCloudVariants([variant(10)],[]),/không khớp/)
 })
+
+test('inventory with a missing source cannot activate as if it were ready',()=>{
+ assert.deepEqual(reconcileCloudImages([photo(1)],[photo(1),photo(2)],[asset(1),asset(2,true,false)],[],2).withdrawn,[])
+ assert.deepEqual(reconcileCloudImages([photo(1)],[photo(1),photo(2)],[asset(1),asset(2)],[],2).withdrawn,[2])
+})

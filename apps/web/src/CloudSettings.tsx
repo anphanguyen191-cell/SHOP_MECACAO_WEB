@@ -61,8 +61,14 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
   for(;;){
    if(paused.current){setStatus('Đã tạm dừng. Bấm Tiếp tục để đọc lại và đồng bộ phần thiếu.');return}
    const batch=await apiJson('/api/cloud/catalog?offset='+offset)
-   localImageCount+=batch.images.length;localProducts+=batch.products.length
-   activePhotos.push(...batch.images);activeVariants.push(...batch.variants)
+   localProducts+=batch.products.length
+   if(!Array.isArray(batch.sourceState)||batch.sourceState.length!==batch.images.length)throw Error('Windows không trả đủ chứng thực ảnh nguồn; dừng đồng bộ.')
+   const localPresence=new Map(batch.sourceState.map((x:any)=>[Number(x.id),x.present]))
+   const physicallyPresent=batch.images.filter((x:any)=>localPresence.get(Number(x.id))===true)
+   if(physicallyPresent.length+batch.sourceState.filter((x:any)=>x.present===false).length!==batch.images.length)
+    throw Error('Windows trả trạng thái ảnh nguồn không hợp lệ. Dừng đồng bộ.')
+   localImageCount+=physicallyPresent.length
+   activePhotos.push(...physicallyPresent);activeVariants.push(...batch.variants)
    // Each request is bounded; dependencies are registered in order.
    for(const field of ['categories','products','variants','images'])for(let start=0;start<batch[field].length;start+=100){
     const group=batch[field].slice(start,start+100)
@@ -100,7 +106,7 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
    if(batch.sourceState)for(let start=0;start<verifiedSource.length;start+=100)await cloudRpc('mc_v7_presence',{p_instance:batch.instance,p_request:'presence:'+crypto.randomUUID(),p_images:verifiedSource.slice(start,start+100)})
    if(batch.done)break;offset=batch.nextOffset
   }
-  if(missingCount>0)throw Error('Có '+missingCount+' ảnh nguồn thiếu trên Windows. Chưa bật Cloud để tránh sai tồn kho.')
+  if(missingCount>0&&localImageCount===0)throw Error('Toàn bộ ảnh nguồn Windows đang thiếu. Không được rút toàn bộ tồn Cloud tự động; hãy kiểm tra đường dẫn kho.')
   const afterImages=await cloudRows('product_images'),afterAssets=await cloudRows('cloud_image_assets'),
         afterSold=await cloudRows('sales_units'),afterVariants=await cloudRows('product_variants')
   validateCloudVariants(activeVariants,afterVariants)
@@ -116,8 +122,34 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
    audit=reconcileCloudImages(activePhotos,afterImages,verifiedAssets,afterSold,localProducts)
    if(audit.withdrawn.length)throw Error('Cloud còn '+audit.withdrawn.length+' ảnh dư chưa rút khỏi tồn; chưa kích hoạt.')
   }
-  await apiJson('/api/cloud/activate',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:'{}'})
+  // Re-scan physical presence to reject changes during a long-running 3,000+ photo sync.
+  let verifyOffset=0,verifiedProducts=0
+  const verifiedImages:any[]=[],verifiedVariants:any[]=[]
+  for(;;){
+   const page=await apiJson('/api/cloud/catalog?offset='+verifyOffset)
+   if(page.instance!==initial.instance||!Array.isArray(page.sourceState)||page.sourceState.length!==page.images.length)throw Error('Kho Windows vừa thay đổi hoặc quét chưa đầy đủ; thử đồng bộ lại.')
+   verifiedProducts+=page.products.length
+   const status=new Map(page.sourceState.map((x:any)=>[Number(x.id),x.present]))
+   verifiedImages.push(...page.images.filter((x:any)=>status.get(Number(x.id))===true))
+   verifiedVariants.push(...page.variants)
+   if(page.done)break
+   if(!Number.isSafeInteger(page.nextOffset)||page.nextOffset<=verifyOffset)throw Error('Phân trang Windows không hợp lệ; dừng.')
+   verifyOffset=page.nextOffset
+  }
+  if(verifiedProducts!==localProducts||verifiedImages.length!==activePhotos.length||verifiedVariants.length!==activeVariants.length)throw Error('Kho Windows vừa nhập/xóa hàng trong lúc đồng bộ. Bấm Tiếp tục để đối soát từ đầu.')
+  // Validate both ways; a matching count with different IDs or SKU is NOT acceptable.
+  const first=new Map(activePhotos.map(x=>[Number(x.id),x]))
+  for(const image of verifiedImages){
+   const prev=first.get(Number(image.id))
+   if(!prev||Number(prev.product_id)!==Number(image.product_id)||Number(prev.variant_id)!==Number(image.variant_id))
+    throw Error('Ảnh tồn Windows đã thay đổi khi đồng bộ; đọc lại trước khi kích hoạt.')
+  }
+  validateCloudVariants(activeVariants,verifiedVariants)
+  const report=await cloudRpc<{ready:number;missingOrInvalidFiles:number;sharedActivePaths:number;invalidHashes:number}>('mc_v8_stock_integrity',{p_instance:initial.instance})
+  if(report.ready!==localImageCount||report.missingOrInvalidFiles!==0||report.sharedActivePaths!==0||report.invalidHashes!==0)
+   throw Error('Kiểm tra Storage Cloud chưa đạt: '+report.ready+'/'+localImageCount+' ảnh; file thiếu/hỏng '+report.missingOrInvalidFiles+'; ảnh trùng đường dẫn '+report.sharedActivePaths+'. Không bật bán hàng.')
   await apiJson('/api/cloud/prices',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:'{}'})
+  await apiJson('/api/cloud/activate',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:'{}'})
   const assets=await cloudRows('cloud_image_assets'),inbox=await cloudRows('cloud_photo_inbox')
   for(const photo of inbox.filter(p=>p.status==='LOCAL_READY'&&assets.some(a=>a.ready&&a.sha256===p.sha256))){await cloudCommand('inbox.consume',{id:photo.id});const {error}=await cloud.storage.from(CLOUD_BUCKET).remove([photo.object_path]);if(error)throw Error('Ảnh đã vào tồn. File hộp chờ chưa dọn được; dọn tại Ảnh Cloud.')}
   window.dispatchEvent(new Event('mecacao-cloud-sold-check'));window.dispatchEvent(new Event('mecacao-cloud-activated'))
@@ -125,7 +157,7 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
   // RLS protects every prior Storage path still referenced by V8 inventory.
   try{
    const freed=await cleanupLegacyObjects()
-   setStatus('Đã đồng bộ V8 '+localImageCount+' ảnh · dùng lại '+skipped+' · tải mới '+uploaded+' · dọn '+freed.count+' ảnh dư ('+Math.round(freed.bytes/1024/1024)+' MiB). Mở Cloud trên Windows/iPhone để nghiệm thu.')
+   setStatus('Đã đồng bộ V8 '+localImageCount+' ảnh tồn · đã rút '+missingCount+' ảnh nguồn thiếu · giữ/tái dùng '+skipped+' · tải mới '+uploaded+' · dọn '+freed.count+' file dư ('+Math.round(freed.bytes/1024/1024)+' MiB). Mở Cloud trên Windows/iPhone để nghiệm thu.')
   }catch(e){
    setStatus('Kho V8 đã đồng bộ nhưng chưa dọn hết ảnh cũ: '+(e as Error).message+'. Các file chưa dọn vẫn được giữ nguyên.')
   }

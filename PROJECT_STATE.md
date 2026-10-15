@@ -1,3 +1,11 @@
+## Cloud kiểm thử sâu: file mất, thay đổi trong lúc đồng bộ, kích hoạt sớm
+
+- Tồn vật lý = chỉ các ảnh Windows được xác nhận `present=true`; ảnh mất trên thư mục gốc được đánh dấu không bán được qua `mc_v7_presence`. Không chặn mọi đồng bộ nếu chỉ thiếu một vài file; nhưng không tự xóa sạch tồn khi toàn bộ ảnh Windows đột ngột mất.
+- Trước khi bật Cloud: đọc lại một vòng toàn bộ danh mục Windows, kiểm tra ID ảnh/Product/Size không thay đổi trong lúc upload; đối chiếu từng Size; Supabase RPC `mc_v8_stock_integrity` kiểm tra Storage có vật lý đúng 1 file JPEG tối ưu/bộ tồn, không trùng đường dẫn, có SHA.
+- Đồng bộ giá hai chiều trước khi kích hoạt để tránh bán khi giá Windows/Cloud chưa đối chiếu xong.
+- Giữ lịch sử SOLD và ledger; không xóa thư mục ảnh gốc, không cập nhật nhánh phụ.
+
+---
 ## Cloud sync deep-audit — 15/10/2026
 
 - Kiểm thử bổ sung: số ảnh thực tế, ảnh đã SOLD vẫn phải ở lịch sử, thiếu file, sai Product/Size/SKU, trùng ID, ảnh Windows xóa khỏi ổ D, và đồng bộ lặp lại.
