@@ -1,3 +1,10 @@
+## Đợt V8.0.70 — giao diện kiểm tra trước đồng bộ (16/10/2026 theo kế hoạch)
+
+- Bổ sung "Xem trước đối soát (không ghi)" để xem tên Product Windows/Cloud, số Size, ảnh thực hiện hữu, ảnh thiếu, số ảnh Cloud sẵn sàng và ảnh dự kiến cần tải lên. Nút chỉ đọc, không đăng ký hoặc xoá dữ liệu Cloud.
+- Phát hiện cùng ID nhưng lệch tên tiếng Việt/mã Product, liên kết Product/Size/ảnh, hoặc Cloud gắn kho khác. Giữ nguyên cơ chế xác nhận tiếp nhận hiện có.
+- Không đổi dữ liệu LOCAL/ảnh gốc, không chạy lại reset Supabase. Nghiệm thu thực tế vẫn chờ Windows/iPhone.
+
+---
 ## Regression test: tên file ảnh không tái sử dụng
 - Test thực tế trên thư mục tạm (không ảnh thật): đã cấp số, xóa file, đổi phần mở rộng, app khởi động lại, nhiều Size và file đã mất; số mới luôn tăng. Không cần DB riêng.
 

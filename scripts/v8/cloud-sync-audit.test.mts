@@ -96,3 +96,29 @@ test('V8 Cloud keeps exact Vietnamese product names and IDs from Windows',()=>{
  assert.throws(()=>validateCloudProductNames(local,[local[0]]),/chưa trùng chính xác/)
  assert.throws(()=>validateCloudProductNames(local,[...local,{id:3,product_code:'X',name:'dư'}]),/không thuộc kho Windows/)
 })
+
+const {assessCloudSyncPreview}=await import('../../apps/web/src/cloudSyncAudit.ts')
+const checkSource=(products:any[],variants:any[],images:any[],present=true)=>[{instance:'warehouse-A',products,variants,images,sourceState:images.map(i=>({id:i.id,present})),done:true}]
+test('read-only Cloud preview counts exact Vietnamese Product/Size/stock before first sync',()=>{
+ const p=[{id:3,name:'Đồ bộ tole Bé Gái',product_code:'BG03'}],v=[{id:9,product_id:3,size:'8',sku:'BG03-S8'}],i=[{id:10,product_id:3,variant_id:9}]
+ const report=assessCloudSyncPreview(checkSource(p,v,i),{products:[],variants:[],images:[],assets:[]},null)
+ assert.deepEqual(report.local,{products:1,sizes:1,stock:1,missing:0})
+ assert.equal(report.cloud.products,0);assert.equal(report.newUploads,1);assert.equal(report.safe,true)
+})
+test('read-only preview exposes exact product-name mismatch and foreign warehouse',()=>{
+ const p=[{id:3,name:'Đồ bộ tole Bé Gái',product_code:'BG03'}],v=[{id:9,product_id:3,size:'8',sku:'BG03-S8'}],i=[{id:10,product_id:3,variant_id:9}]
+ const report=assessCloudSyncPreview(checkSource(p,v,i),{products:[{...p[0],name:'Do bo tole Be Gai'}],variants:v,images:i,assets:[]},'other')
+ assert.equal(report.needsHandoff,true);assert.equal(report.safe,false);assert.match(report.conflicts.join(' '),/tên\/mã Cloud/)
+})
+test('preview rejects duplicate IDs and broken Product-Size-image links',()=>{
+ const p={id:3,name:'Gấu',product_code:'G03'},v={id:9,product_id:3,size:'8',sku:'G03-S8'},i={id:10,product_id:3,variant_id:9},remote={products:[],variants:[],images:[],assets:[]}
+ assert.throws(()=>assessCloudSyncPreview(checkSource([p,p],[v],[i]),remote,null),/bị trùng/)
+ assert.throws(()=>assessCloudSyncPreview(checkSource([p],[{...v,product_id:12}],[i]),remote,null),/thiếu Product/)
+ assert.throws(()=>assessCloudSyncPreview(checkSource([p],[v],[{...i,variant_id:99}]),remote,null),/thiếu hoặc sai/)
+})
+test('preview counts only physically present photos and avoids unnecessary reupload',()=>{
+ const p={id:3,name:'Gấu',product_code:'G03'},v={id:9,product_id:3,size:'8',sku:'G03-S8'},i=[{id:10,product_id:3,variant_id:9},{id:11,product_id:3,variant_id:9}]
+ const pages=checkSource([p],[v],i);pages[0].sourceState[1].present=false
+ const r=assessCloudSyncPreview(pages,{products:[p],variants:[v],images:i,assets:[{image_id:10,ready:true,source_present:true}]},'warehouse-A')
+ assert.equal(r.local.stock,1);assert.equal(r.local.missing,1);assert.equal(r.newUploads,0)
+})

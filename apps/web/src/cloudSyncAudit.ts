@@ -108,3 +108,50 @@ export async function runImageSyncQueue<T>(items:T[],worker:(item:T)=>Promise<vo
  }))
  if(failed)throw failure
 }
+
+/** Read-only Windows-to-Cloud preview; never changes database or Storage. */
+export function assessCloudSyncPreview(pages:any[],remote:{products:SyncProduct[];variants:SyncVariant[];images:SyncPhoto[];assets:SyncAsset[]},cloudInstance:string|null){
+ if(!pages.length||typeof pages[0]?.instance!=='string'||!pages[0].instance)throw Error('Chưa xác định được kho Windows để đối chiếu.')
+ const ps:any[]=[],vs:any[]=[],is:any[]=[],ss:any[]=[]
+ for(const page of pages){
+  if(page.instance!==pages[0].instance)throw Error('Kho Windows đã thay đổi khi đọc.')
+  for(const k of ['products','variants','images','sourceState'])if(!Array.isArray(page[k]))throw Error('Thiếu dữ liệu '+k+' trên Windows.')
+  if(page.images.length!==page.sourceState.length)throw Error('Ảnh Windows không khớp trạng thái nguồn.')
+  ps.push(...page.products);vs.push(...page.variants);is.push(...page.images);ss.push(...page.sourceState)
+ }
+ const lp=indexed(ps,p=>id(p.id,'Product Windows'),'Product Windows')
+ const lv=indexed(vs,p=>id(p.id,'Size Windows'),'Size Windows')
+ const li=indexed(is,p=>id(p.id,'ảnh Windows'),'ảnh Windows')
+ const ls=indexed(ss,p=>id(p.id,'nguồn Windows'),'nguồn Windows')
+ const rp=indexed(remote.products,p=>id(p.id,'Product Cloud'),'Product Cloud')
+ const rv=indexed(remote.variants,p=>id(p.id,'Size Cloud'),'Size Cloud')
+ const ri=indexed(remote.images,p=>id(p.id,'ảnh Cloud'),'ảnh Cloud')
+ const ra=indexed(remote.assets,p=>id(p.image_id,'file Cloud'),'file Cloud')
+ const conflicts:string[]=[]
+ for(const [number,p] of lp){
+  if(typeof p.name!=='string'||!p.name.trim()||typeof p.product_code!=='string'||!p.product_code.trim())throw Error('Product Windows #'+number+' thiếu tên/mã.')
+  const other=rp.get(number)
+  if(other&&(other.name!==p.name||other.product_code!==p.product_code))conflicts.push('Product #'+number+': tên/mã Cloud khác Windows ('+p.name+').')
+ }
+ for(const [number,v] of lv){
+  if(!lp.has(id(v.product_id,'Product của Size')))throw Error('Size #'+number+' thiếu Product Windows.')
+  const other=rv.get(number)
+  if(other&&(Number(other.product_id)!==Number(v.product_id)||other.sku!==v.sku||other.size!==v.size))
+    conflicts.push('Size #'+number+': Product/SKU/Size Cloud không khớp Windows.')
+ }
+ let stock=0,missing=0,newUploads=0
+ for(const [number,p] of li){
+  const v=lv.get(id(p.variant_id,'Size của ảnh'))
+  if(!v||id(v.product_id,'Product của Size')!==id(p.product_id,'Product của ảnh'))throw Error('Ảnh #'+number+' thiếu hoặc sai Product/Size Windows.')
+  const source=ls.get(number)
+  if(!source||typeof source.present!=='boolean')throw Error('Ảnh #'+number+' không có trạng thái nguồn Windows.')
+  const other=ri.get(number)
+  if(other&&(Number(other.product_id)!==Number(p.product_id)||Number(other.variant_id)!==Number(p.variant_id)))
+    conflicts.push('Ảnh #'+number+': Product/Size Cloud không khớp Windows.')
+  if(source.present){stock++;const asset=ra.get(number);if(!asset?.ready||asset.source_present===false)newUploads++}else missing++
+ }
+ if(ls.size!==li.size)throw Error('Nguồn Windows trả ID ảnh dư.')
+ const needsHandoff=!!cloudInstance&&cloudInstance!==pages[0].instance
+ return {local:{products:lp.size,sizes:lv.size,stock,missing},cloud:{products:rp.size,sizes:rv.size,images:ri.size,ready:[...ra.values()].filter(a=>a.ready&&a.source_present!==false).length},
+  newUploads,needsHandoff,conflictCount:conflicts.length,conflicts:conflicts.slice(0,10),safe:!needsHandoff&&!conflicts.length&&stock>0}
+}
