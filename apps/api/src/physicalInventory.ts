@@ -32,3 +32,44 @@ export function physicalImagesByVariant(variantIds:number[]) {
  }
  return result
 }
+
+/** Count unregistered image files in known Product/Size directories.
+ * File existence is the authority for the physical count; a new photo remains
+ * unselectable for an order until its source/hash is approved and registered.
+ * An unavailable configured root is an error, never an empty warehouse.
+ */
+export function unregisteredPhysicalByVariant():Map<number,number>{
+ const row=db.prepare("SELECT value FROM app_settings WHERE key='warehouse-watch'").get() as {value:string}|undefined
+ if(!row)return new Map()
+ let root:string
+ try{root=path.resolve(JSON.parse(row.value).rootPath||'')}catch{throw new Error('Cấu hình kho không đọc được; không thể kiểm đếm ảnh')}
+ if(!root||root===path.resolve('.'))return new Map()
+ const realRoot=fs.realpathSync(root)
+ if(!fs.statSync(realRoot).isDirectory()||isInternalWarehousePath(realRoot))throw new Error('Kho ảnh gốc không hợp lệ')
+ const known=new Set((db.prepare('SELECT file_path FROM product_images').all() as {file_path:string}[]).map(x=>path.resolve(x.file_path).toLowerCase()))
+ const variants=db.prepare('SELECT v.id,p.name AS product_name,v.size FROM product_variants v JOIN products p ON p.id=v.product_id').all() as Array<{id:number;product_name:string;size:string}>
+ const out=new Map<number,number>()
+ const ext=new Set(['.jpg','.jpeg','.png','.webp','.heic'])
+ for(const v of variants){
+  const folder=path.resolve(realRoot,v.product_name,v.size)
+  const relative=path.relative(realRoot,folder)
+  if(!relative||relative==='..'||relative.startsWith('..'+path.sep)||path.isAbsolute(relative)||isInternalWarehousePath(folder))continue
+  let entries:fs.Dirent[]
+  try{entries=fs.readdirSync(folder,{withFileTypes:true})}catch(e){
+   if(['ENOENT','ENOTDIR'].includes((e as NodeJS.ErrnoException).code??''))continue
+   throw new Error('Không kiểm tra được ảnh Size: '+folder,{cause:e})
+  }
+  let count=0
+  for(const e of entries){
+   if(!e.isFile()||!ext.has(path.extname(e.name).toLowerCase()))continue
+   const file=path.join(folder,e.name)
+   if(known.has(file.toLowerCase()))continue
+   const real=fs.realpathSync(file)
+   const rel=path.relative(realRoot,real)
+   if(rel==='..'||rel.startsWith('..'+path.sep)||path.isAbsolute(rel)||isInternalWarehousePath(real))continue
+   count++
+  }
+  if(count)out.set(v.id,count)
+ }
+ return out
+}
