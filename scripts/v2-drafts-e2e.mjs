@@ -17,7 +17,18 @@ const base='http://127.0.0.1:'+port
 let child,launcher,logs='',checks=0
 async function start(enabled=true,restored=null){
  logs='';child=spawn(process.execPath,['apps/api/dist/server.js'],{env:{...process.env,PORT:String(port),SHOP_HOST:'127.0.0.1',SHOP_SANDBOX_ROOT:restored?.targetRoot||root,SHOP_DB_PATH:restored?.database||dbPath,SHOP_ENABLE_V2_DRAFTS:enabled?'1':''},stdio:['ignore','pipe','pipe']});child.stdout.on('data',x=>logs+=x);child.stderr.on('data',x=>logs+=x)
- for(let i=0;i<80;i++){if(child.exitCode!==null)throw Error(logs);try{const r=await fetch(base+'/api/health');if(r.ok)return await r.json()}catch{}await sleep(100)}throw Error('API timeout '+logs)
+ // Windows CI hosts can pause process startup for tens of seconds under parallel
+ // package and browser jobs. A fixed 8s poll was a flaky test, not a runtime failure.
+ const deadline=Date.now()+45000
+ while(Date.now()<deadline){
+  if(child.exitCode!==null||child.signalCode)throw Error('API exited before ready: '+logs)
+  try{
+   const response=await fetch(base+'/api/health',{signal:AbortSignal.timeout(1500)})
+   if(response.ok)return await response.json()
+  }catch{}
+  await sleep(150)
+ }
+ throw Error('API startup exceeded 45 seconds on sandbox port '+port+'. Logs: '+logs)
 }
 async function stop(){if(child&&child.exitCode===null){const c=child;await new Promise(r=>{c.once('exit',r);c.kill()})}child=null}
 async function api(url,method='GET',body,expected=200,headers={}){
@@ -85,7 +96,7 @@ try{
  await stop();await start()
  launcher=spawn(process.execPath,['scripts/run-restored-sandbox.mjs','V2DraftSandbox'],{env:{...process.env,LOCALAPPDATA:testBase,SHOP_NO_OPEN_BROWSER:'1'},stdio:['ignore','pipe','pipe','ipc']})
  let launcherLogs='';launcher.stdout.on('data',x=>launcherLogs+=x);launcher.stderr.on('data',x=>launcherLogs+=x)
- let launchOk=false;for(let n=0;n<100;n++){if(launcher.exitCode!==null)throw Error(launcherLogs);try{const h=await(await fetch('http://127.0.0.1:3016/api/health')).json();if(h.sandbox&&h.database==='shop-restored.db'){launchOk=true;break}}catch{}await sleep(100)}assert(launchOk,launcherLogs);checks++
+ let launchOk=false;const launcherDeadline=Date.now()+45000;while(Date.now()<launcherDeadline){if(launcher.exitCode!==null||launcher.signalCode)throw Error('Sandbox launcher exited: '+launcherLogs);try{const h=await(await fetch('http://127.0.0.1:3016/api/health',{signal:AbortSignal.timeout(1500)})).json();if(h.sandbox&&h.database==='shop-restored.db'){launchOk=true;break}}catch{}await sleep(150)}assert(launchOk,'Sandbox launcher startup exceeded 45 seconds: '+launcherLogs);checks++
  assert((await(await fetch('http://127.0.0.1:3016/api/inventory/dashboard')).json()).stock===1);checks++
  const launched=launcher;await new Promise(r=>{launched.once('exit',r);launched.send('stop')});launcher=null
  const stock=await api('/api/inventory/dashboard');assert(stock.stock===1&&hash()===original);checks++
