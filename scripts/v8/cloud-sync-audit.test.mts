@@ -45,3 +45,44 @@ test('inventory with a missing source cannot activate as if it were ready',()=>{
  assert.deepEqual(reconcileCloudImages([photo(1)],[photo(1),photo(2)],[asset(1),asset(2,true,false)],[],2).withdrawn,[])
  assert.deepEqual(reconcileCloudImages([photo(1)],[photo(1),photo(2)],[asset(1),asset(2)],[],2).withdrawn,[2])
 })
+
+const {readCloudSourceSnapshot}=await import('../../apps/web/src/cloudSyncAudit.ts')
+const page=(images:any[],sourceState:any[],extra={})=>({instance:'warehouse',images,sourceState,done:true,...extra})
+test('source preflight rejects total source loss before caller can write anything',async()=>{
+ let writes=0
+ await assert.rejects(async()=>{await readCloudSourceSnapshot(async()=>page([photo(1)],[{id:1,present:false}]));writes++},/Toàn bộ/)
+ assert.equal(writes,0)
+})
+test('source preflight validates all pages and allows partial missing files',async()=>{
+ const calls:number[]=[]
+ const pages=await readCloudSourceSnapshot(async offset=>{calls.push(offset);return offset===0?page([photo(1)],[{id:1,present:false}],{done:false,nextOffset:100}):page([photo(2)],[{id:2,present:true}])})
+ assert.deepEqual(calls,[0,100]);assert.equal(pages.length,2)
+})
+test('source preflight rejects duplicate IDs, different instance and stuck pagination',async()=>{
+ await assert.rejects(()=>readCloudSourceSnapshot(async()=>page([photo(1),photo(2)],[{id:1,present:true},{id:1,present:true}])),/trùng/)
+ await assert.rejects(()=>readCloudSourceSnapshot(async()=>page([],[],{done:false,nextOffset:0})),/Phân trang/)
+ await assert.rejects(()=>readCloudSourceSnapshot(async offset=>offset===0?page([],[],{done:false,nextOffset:100}):page([],[],{instance:'other'})),/định danh/)
+})
+
+const {verifyStorageDeletion}=await import('../../apps/web/src/cloudSyncAudit.ts')
+test('cleanup never reports freed space on silent or partial Storage refusal',()=>{
+ const entries=[{path:'old/1.jpg',bytes:100},{path:'old/2.jpg',bytes:200}]
+ assert.throws(()=>verifyStorageDeletion(entries,[]),/0\/2/)
+ assert.throws(()=>verifyStorageDeletion(entries,[{name:'old/1.jpg'}]),/1\/2/)
+ assert.throws(()=>verifyStorageDeletion(entries,null),/chưa xác nhận/)
+ assert.throws(()=>verifyStorageDeletion(entries,[{name:'other.jpg'}]),/không khớp/)
+ assert.deepEqual(verifyStorageDeletion(entries,[{name:'old/2.jpg'},{name:'old/1.jpg'}]),{count:2,bytes:300})
+})
+
+const {runImageSyncQueue}=await import('../../apps/web/src/cloudSyncAudit.ts')
+test('image upload queue stays bounded and processes each ID once',async()=>{
+ let active=0,peak=0;const seen:number[]=[]
+ await runImageSyncQueue([1,2,3,4,5],async id=>{active++;peak=Math.max(peak,active);await new Promise(r=>setTimeout(r,5));seen.push(id);active--},()=>false)
+ assert.equal(peak,2);assert.deepEqual(seen.sort(),[1,2,3,4,5]);assert.equal(active,0)
+})
+test('failed queue drains in-flight work before returning and does not start later images',async()=>{
+ let finished=false;const seen:number[]=[]
+ await assert.rejects(()=>runImageSyncQueue([1,2,3,4],async id=>{seen.push(id);if(id===1)throw Error('network lost');await new Promise(r=>setTimeout(r,15));finished=true},()=>false),/network lost/)
+ assert.deepEqual(seen,[1,2]);assert.equal(finished,true)
+ let calls=0;await runImageSyncQueue([1],async()=>{calls++},()=>true);assert.equal(calls,0)
+})

@@ -1,3 +1,13 @@
+## Cloud audit bổ sung — an toàn trước ghi, hiệu năng và xác nhận xóa (15/10/2026)
+
+- Đọc và kiểm tra toàn bộ trang nguồn trước khi ghi Cloud; toàn bộ ảnh mất thì dừng trước mọi thay đổi tồn. Rút ảnh thiếu từng phần chỉ sau vòng quét lại xác nhận kho không thay đổi.
+- Tải tối đa 2 ảnh đồng thời; lỗi/dừng không khởi chạy ảnh mới, chờ các yêu cầu đang chạy kết thúc trước khi cho phép lần đồng bộ sau.
+- Mỗi yêu cầu vẫn đọc và SHA-256 nội dung ảnh gốc. Bộ nhớ đệm tối đa 10.000 cặp hash, không lưu bản sao ảnh; nếu nội dung và hash Cloud khớp, trả 204, tránh nén JPEG và truyền lại. Khởi động lại API cần làm nóng cache lại. Không dựa riêng vào tên/size/mtime.
+- Dọn Storage chỉ cộng số file/dung lượng khi phản hồi xác nhận đủ đúng đường dẫn; kết quả rỗng/một phần/sai đường dẫn phải báo lỗi. Không có thao tác xóa Cloud thật trong đợt audit này.
+- Đã PASS tại môi trường phát triển: typecheck, build, 16 bài cloud-sync-audit, toàn bộ test:cloud gồm React DOM cho mất toàn bộ nguồn/thay hash/khôi phục/cache 204, ảnh nguồn thay cùng mtime, ảnh bị xóa, queue lỗi và xóa không đầy đủ. Ảnh mẫu 202.201 byte: lần nén đầu ~0,54–0,63 giây, kiểm tra cache <1 ms (không đại diện cả kho).
+- Windows Release/Pages phải kiểm tra đúng commit sau push. Cloud thật Windows/iPhone vẫn chưa nghiệm thu; chủ shop cập nhật STABLE và đồng bộ/đối chiếu số ảnh thực tế. Không tạo database LOCAL khác hoặc sửa ảnh gốc.
+
+---
 ## Cloud kiểm thử sâu: file mất, thay đổi trong lúc đồng bộ, kích hoạt sớm
 
 - Tồn vật lý = chỉ các ảnh Windows được xác nhận `present=true`; ảnh mất trên thư mục gốc được đánh dấu không bán được qua `mc_v7_presence`. Không chặn mọi đồng bộ nếu chỉ thiếu một vài file; nhưng không tự xóa sạch tồn khi toàn bộ ảnh Windows đột ngột mất.

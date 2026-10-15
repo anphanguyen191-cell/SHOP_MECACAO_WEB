@@ -5,7 +5,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import {salesExecutionService} from './salesExecution.js'
 import {soldProofImage} from './soldProofImage.js'
-import {optimizeCloudImage} from './cloudImages.js'
+import {cloudImageForSync} from './cloudImages.js'
 import {isInternalWarehousePath} from './warehouseAreas.js'
 import {reconcileCloudSale} from './cloudReconcile.js'
 const cloudUrl='https://eyckwoewpomssjjggslr.supabase.co'
@@ -81,8 +81,10 @@ export function cloudRouter(db:DatabaseSync,root:string){
    if(!row)throw Error('Ảnh đã bán hoặc không còn trong kho')
    const file=fs.realpathSync(String(row.file_path)),base=fs.realpathSync(root),rel=path.relative(base,file)
    if(path.isAbsolute(rel)||rel==='..'||rel.startsWith('..'+path.sep)||isInternalWarehousePath(file)||!fs.statSync(file).isFile())throw Error('Ảnh không nằm trong kho hiện tại')
-   const result=await optimizeCloudImage(file)
-   res.set('X-Image-Sha256',result.sha256).type('jpeg').send(result.data)
+   const result=await cloudImageForSync(file,typeof req.query.knownSha==='string'?req.query.knownSha:undefined)
+   res.set('X-Image-Sha256',result.sha256)
+   if(result.data===null){res.status(204).end();return}
+   res.type('jpeg').send(result.data)
   }catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không tối ưu được ảnh'})}
  })
  return router

@@ -19,3 +19,20 @@ export async function optimizeCloudImage(source:string|Buffer){
  }
  throw Error('Ảnh chưa đạt 150KB với chất lượng phù hợp. Chọn ảnh khác hoặc kiểm tra ảnh nguồn.')
 }
+
+// Only digest pairs are cached (no source copies or JPEG copies). Re-read and
+// hash source bytes on every request so same-size/mtime replacements are detected.
+const verifiedDigests=new Map<string,string>()
+export async function cloudImageForSync(source:string,knownSha?:string){
+ if(fs.statSync(source).size>32*1024*1024)throw Error('Ảnh nguồn vượt 32MB.')
+ const input=fs.readFileSync(source),sourceSha=createHash('sha256').update(input).digest('hex')
+ const previous=verifiedDigests.get(sourceSha)
+ if(knownSha&&previous===knownSha){
+  verifiedDigests.delete(sourceSha);verifiedDigests.set(sourceSha,previous)
+  return {sha256:previous,data:null}
+ }
+ const result=await optimizeCloudImage(input)
+ verifiedDigests.delete(sourceSha);verifiedDigests.set(sourceSha,result.sha256)
+ if(verifiedDigests.size>10000)verifiedDigests.delete(verifiedDigests.keys().next().value!)
+ return {sha256:result.sha256,data:result.data}
+}
