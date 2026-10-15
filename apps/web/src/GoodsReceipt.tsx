@@ -20,7 +20,7 @@ export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceAp
  const [products,setProducts]=useState<Product[]>([]),[flow,setFlow]=useState<Flow>('EXISTING_SIZE'),[productId,setProductId]=useState(0),[detail,setDetail]=useState<ProductDetail|null>(null)
  const [name,setName]=useState(''),[code,setCode]=useState(''),[category,setCategory]=useState(''),[storeRoot,setStoreRoot]=useState(''),[rows,setRows]=useState<SizeRow[]>([blank()]),[note,setNote]=useState('')
  const [busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[progress,setProgress]=useState<Progress|null>(null),[productSearch,setProductSearch]=useState(''),[pick,setPick]=useState<{kind:'store'|'source';row?:number}|null>(null)
- useEffect(()=>{apiJson('/api/health').then(h=>{if(h.freshDevelopment&&h.warehouse){setFresh(true);setStoreRoot(h.warehouse);setFlow('NEW_PRODUCT')}}).catch(()=>{})},[])
+ useEffect(()=>{apiJson('/api/health').then(h=>{if(h.freshDevelopment){setFresh(true);setStoreRoot(h.release?.stage===8&&!h.customWarehouse?'':h.warehouse||'');setFlow('NEW_PRODUCT')}}).catch(()=>{})},[])
  const [reading,setReading]=useState(false),[task,setTask]=useState<OperationTask|null>(null)
  useEffect(()=>{if(initialSourcePath){void inspect(0,initialSourcePath);onInitialSourceApplied?.()}},[])
  const requestVersion=useRef(0),submitLock=useRef(false),reviewedPhotoSource=useRef(initialSourcePath??'')
@@ -83,6 +83,7 @@ export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceAp
    <button className={flow==='NEW_SIZE'?'active':''} onClick={()=>switchFlow('NEW_SIZE')}><b>2. Thêm Size mới</b><span>Product đã có, Size chưa có</span></button>
    <button className={flow==='EXISTING_SIZE'?'active':''} onClick={()=>switchFlow('EXISTING_SIZE')}><b>3. Nhập thêm Size đã có</b><span>Product + Size đều có sẵn</span></button>
   </div>
+  {fresh&&!storeRoot&&<p role="alert" className="notice warning">Chưa chọn kho chính thức. Vào Import kho để chọn thư mục ảnh gốc và quét kho trước khi nhập hàng.</p>}
   <div className="formGrid"><label>Kho đích · chứa Product → Size<div className="pickerInput"><input value={storeRoot} readOnly placeholder={'D:\\1-Me CaCao Store'}/>{!fresh&&<button onClick={()=>setPick({kind:'store'})}>CHỌN KHO</button>}</div></label><label>Ghi chú<input value={note} onChange={e=>setNote(e.target.value)} placeholder="Ví dụ: Hàng về đợt chiều"/></label></div>
   {flow!=='NEW_PRODUCT'&&<div className="productPicker"><label>Tìm sản phẩm có sẵn<input value={productSearch} onChange={e=>setProductSearch(e.target.value)} placeholder="Gõ tên hoặc mã sản phẩm..."/></label><div className="pickerResults">{filteredProducts.slice(0,12).map(p=><button key={p.id} className={productId===p.id?'selected':''} onClick={()=>void chooseProduct(p.id)}><b>{p.name}</b><span>{p.product_code}</span></button>)}</div></div>}
   {flow==='NEW_PRODUCT'&&<div className="formGrid"><label>Tên sản phẩm mới<input value={name} onChange={e=>setName(e.target.value)}/></label><label>Mã sản phẩm<input value={code} onChange={e=>setCode(e.target.value)} placeholder="Để trống = tự đề xuất"/></label><label>Danh mục<input value={category} onChange={e=>setCategory(e.target.value)} placeholder="Danh mục mới hoặc hiện có"/></label></div>}
