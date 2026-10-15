@@ -9,10 +9,13 @@ function contents(file:string){
 function parse(file:string){try{return JSON.parse(contents(file).toString())}catch{throw Error('Dấu kho bị lỗi; không thay đổi ảnh hoặc quyền kho')}}
 function own(home:string,root:string){return {format:8,home,warehouse:root,database:path.join(home,'data','shop-v8','database','shop-v8.db')}}
 type Ownership='NEW'|'OWN'|'LEGACY'|'ORPHAN'
-function inspectOrphanLock(file:string){
+function inspectOrphanLock(file:string,home:string,root:string){
  const lock=parse(file)
  if(lock.format!==1||!Number.isSafeInteger(lock.pid)||lock.pid<=0||typeof lock.database!=='string'||!path.isAbsolute(lock.database)||typeof lock.configSha!=='string')
   throw Error('Khóa LOCAL không có dấu chủ sở hữu hoặc không hợp lệ. Không tự xóa. Cần kiểm tra file khóa trong thư mục kho.')
+ // Historic V8 releases placed their own stage4-fresh lock in the photo
+ // root. Allow this SAME process to take ownership; another live PID is blocked.
+ if(lock.pid===process.pid&&lock.configSha==='stage4-fresh'&&lock.database===own(home,root).database)return
  try{process.kill(lock.pid,0)}
  catch(e){
   if((e as NodeJS.ErrnoException).code==='ESRCH')return
@@ -27,7 +30,7 @@ export function inspectWarehouseOwner(root:string,home:string):Ownership{
    // Previous LOCAL or early V8 builds can leave only a runtime lock behind
    // when an upgrade was interrupted. Never assume it is safe to delete:
    // verify the recorded PID is dead and retain the complete original file.
-   inspectOrphanLock(l)
+   inspectOrphanLock(l,home,root)
    return 'ORPHAN'
   }
   return 'NEW'
