@@ -8,30 +8,31 @@ function contents(file:string){
 }
 function parse(file:string){try{return JSON.parse(contents(file).toString())}catch{throw Error('Dấu kho bị lỗi; không thay đổi ảnh hoặc quyền kho')}}
 function own(home:string,root:string){return {format:8,home,warehouse:root,database:path.join(home,'data','shop-v8','database','shop-v8.db')}}
-type Ownership='NEW'|'OWN'|'LEGACY'|'ORPHAN'
-function inspectOrphanLock(file:string,home:string,root:string){
+type Ownership='NEW'|'OWN'|'LEGACY'|'ORPHAN'|'ORPHAN_UNVERIFIED'
+function inspectOrphanLock(file:string,home:string,root:string,allowUnverified=false):boolean{
  const lock=parse(file)
  if(lock.format!==1||!Number.isSafeInteger(lock.pid)||lock.pid<=0||typeof lock.database!=='string'||!path.isAbsolute(lock.database)||typeof lock.configSha!=='string')
   throw Error('Khóa LOCAL không có dấu chủ sở hữu hoặc không hợp lệ. Không tự xóa. Cần kiểm tra file khóa trong thư mục kho.')
  // Historic V8 releases placed their own stage4-fresh lock in the photo
  // root. Allow this SAME process to take ownership; another live PID is blocked.
- if(lock.pid===process.pid&&lock.configSha==='stage4-fresh'&&lock.database===own(home,root).database)return
+ if(lock.pid===process.pid&&lock.configSha==='stage4-fresh'&&lock.database===own(home,root).database)return true
  try{process.kill(lock.pid,0)}
  catch(e){
-  if((e as NodeJS.ErrnoException).code==='ESRCH')return
+  if((e as NodeJS.ErrnoException).code==='ESRCH')return true
+  if(allowUnverified)return false
   throw Error('Chưa xác nhận được phiên bản LOCAL cũ đã dừng. Đóng phần mềm cũ trước khi tiếp nhận kho.')
  }
+ if(allowUnverified)return false
  throw Error('Một tiến trình LOCAL còn hoạt động trên kho này. Hãy đóng hoàn toàn phiên bản cũ trước khi tiếp nhận.')
 }
-export function inspectWarehouseOwner(root:string,home:string):Ownership{
+export function inspectWarehouseOwner(root:string,home:string,allowUnverified=false):Ownership{
  const m=path.join(root,MARKER),l=path.join(root,LOCK)
  if(!fs.existsSync(m)){
   if(fs.existsSync(l)){
    // Previous LOCAL or early V8 builds can leave only a runtime lock behind
    // when an upgrade was interrupted. Never assume it is safe to delete:
    // verify the recorded PID is dead and retain the complete original file.
-   inspectOrphanLock(l,home,root)
-   return 'ORPHAN'
+   return inspectOrphanLock(l,home,root,allowUnverified)?'ORPHAN':'ORPHAN_UNVERIFIED'
   }
   return 'NEW'
  }
@@ -54,17 +55,18 @@ export function inspectWarehouseOwner(root:string,home:string):Ownership{
  }
  return 'LEGACY'
 }
-export function adoptWarehouse(root:string,home:string){
- const kind=inspectWarehouseOwner(root,home)
+export function adoptWarehouse(root:string,home:string,allowUnverified=false){
+ const kind=inspectWarehouseOwner(root,home,allowUnverified)
+ if(kind==='ORPHAN_UNVERIFIED'&&!allowUnverified)throw Error('Kho cũ cần xác nhận tiếp nhận thủ công từ chủ Shop')
  if(kind==='OWN')return ()=>{}
  const marker=path.join(root,MARKER),lock=path.join(root,LOCK)
  const previous=fs.existsSync(marker)?contents(marker):null
  const priorLock=fs.existsSync(lock)?contents(lock):null
- if(kind==='LEGACY'||kind==='ORPHAN'){
+ if(kind==='LEGACY'||kind==='ORPHAN'||kind==='ORPHAN_UNVERIFIED'){
   const archive=path.join(home,'data','shop-v8','warehouse-handoffs')
   fs.mkdirSync(archive,{recursive:true})
   const target=path.join(archive,createHash('sha256').update(root).digest('hex')+'.json')
-  if(!fs.existsSync(target))fs.writeFileSync(target,JSON.stringify({root,marker:previous?.toString()??null,lock:priorLock?.toString()??null,at:new Date().toISOString()}),{flag:'wx'})
+  if(!fs.existsSync(target))fs.writeFileSync(target,JSON.stringify({root,marker:previous?.toString()??null,lock:priorLock?.toString()??null,at:new Date().toISOString(),recoveryType:kind,ownerConfirmed:kind==='ORPHAN_UNVERIFIED'}),{flag:'wx'})
  }
  if(priorLock)fs.unlinkSync(lock)
  const temp=marker+'.'+randomUUID()+'.tmp'
