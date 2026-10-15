@@ -105,26 +105,37 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
   const assets=await cloudRows('cloud_image_assets'),inbox=await cloudRows('cloud_photo_inbox')
   for(const photo of inbox.filter(p=>p.status==='LOCAL_READY'&&assets.some(a=>a.ready&&a.sha256===p.sha256))){await cloudCommand('inbox.consume',{id:photo.id});const {error}=await cloud.storage.from(CLOUD_BUCKET).remove([photo.object_path]);if(error)throw Error('Ảnh đã vào tồn. File hộp chờ chưa dọn được; dọn tại Ảnh Cloud.')}
   window.dispatchEvent(new Event('mecacao-cloud-sold-check'));window.dispatchEvent(new Event('mecacao-cloud-activated'))
-  setStatus('Danh mục/ảnh đã đồng bộ và đã bật kho Cloud. Mở giao diện Cloud trên Windows và mobile để bán cùng dữ liệu.')
- })}
- async function cleanupLegacy(){await action(async()=>{
-  const state=await apiJson('/api/cloud/state'),local=await apiJson('/api/cloud/catalog?offset=0'),remote=await cloudRpc<any>('mc_v7_health')
-  if(!state.enabled||remote.status!=='CLOUD_TEST_READY'||remote.instance!==local.instance)throw Error('Chưa xác minh kết nối V8 Windows ↔ Cloud; không xóa ảnh.')
-  let entries=await cloudRpc<Array<{path:string;bytes:number}>>('mc_v8_legacy_cleanup_candidates',{p_limit:100})
-  if(!Array.isArray(entries))throw Error('Danh sách ảnh chờ xóa không hợp lệ.')
-  if(!entries.length){setStatus('Không có ảnh cũ trùng đã xác minh; ảnh chưa đối chiếu sẽ được giữ nguyên.');return}
-  if(!window.confirm('Xóa các bản sao Cloud CŨ trùng SHA-256 đã có bản V8 sẵn sàng? Giữ nguyên ảnh nguồn Windows, đơn hàng và dữ liệu lưu trữ.'))return
-  let count=0,bytes=0
-  for(let step=0;step<100&&entries.length;step++){
-   if(entries.length>100||entries.some(x=>typeof x.path!=='string'||!Number.isFinite(x.bytes)))throw Error('Danh sách xóa chưa xác minh.')
-   const {error}=await cloud.storage.from(CLOUD_BUCKET).remove(entries.map(x=>x.path))
-   if(error)throw Error('Xóa tạm dừng: '+error.message)
-   count+=entries.length;bytes+=entries.reduce((n,x)=>n+x.bytes,0)
-   setStatus('Đã dọn '+count+' bản ảnh Cloud cũ trùng; đang kiểm tra tiếp.')
-   entries=await cloudRpc<Array<{path:string;bytes:number}>>('mc_v8_legacy_cleanup_candidates',{p_limit:100})
-   if(!Array.isArray(entries))throw Error('Không xác minh được kết quả dọn ảnh.')
+  // Cleanup only after complete current inventory matching and activation.
+  // RLS protects every prior Storage path still referenced by V8 inventory.
+  try{
+   const freed=await cleanupLegacyObjects()
+   setStatus('Đã đồng bộ V8 '+localImageCount+' ảnh · dùng lại '+skipped+' · tải mới '+uploaded+' · dọn '+freed.count+' ảnh dư ('+Math.round(freed.bytes/1024/1024)+' MiB). Mở Cloud trên Windows/iPhone để nghiệm thu.')
+  }catch(e){
+   setStatus('Kho V8 đã đồng bộ nhưng chưa dọn hết ảnh cũ: '+(e as Error).message+'. Các file chưa dọn vẫn được giữ nguyên.')
   }
-  setStatus('Đã dọn '+count+' ảnh cũ đã xác minh ('+Math.round(bytes/1024/1024)+' MiB). Ảnh không chứng minh trùng được bảo toàn.')
+ })}
+ async function cleanupLegacyObjects():Promise<{count:number;bytes:number}>{
+  const state=await apiJson('/api/cloud/state'),local=await apiJson('/api/cloud/catalog?offset=0'),remote=await cloudRpc<any>('mc_v7_health')
+  if(!state.enabled||remote.status!=='CLOUD_TEST_READY'||remote.instance!==local.instance)throw Error('Chưa xác minh cùng kho V8 Windows/Cloud; không dọn ảnh.')
+  let entries=await cloudRpc<Array<{path:string;bytes:number}>>('mc_v8_legacy_cleanup_candidates',{p_limit:100})
+  if(!Array.isArray(entries))throw Error('Danh sách ảnh chờ dọn không hợp lệ.')
+  let count=0,bytes=0
+  for(let step=0;step<150&&entries.length;step++){
+   if(entries.length>100||entries.some(x=>typeof x.path!=='string'||!Number.isFinite(x.bytes)))throw Error('Danh sách xóa chưa kiểm chứng.')
+   const {error}=await cloud.storage.from(CLOUD_BUCKET).remove(entries.map(x=>x.path))
+   if(error)throw Error('Dọn Storage tạm dừng: '+error.message)
+   count+=entries.length;bytes+=entries.reduce((n,x)=>n+x.bytes,0)
+   setStatus('Đã dọn '+count+' bản cũ không còn tham chiếu trong tồn V8.')
+   entries=await cloudRpc<Array<{path:string;bytes:number}>>('mc_v8_legacy_cleanup_candidates',{p_limit:100})
+   if(!Array.isArray(entries))throw Error('Chưa xác minh được kết quả dọn.')
+  }
+  if(entries.length)throw Error('Số lượng file cũ còn lớn; có thể dọn tiếp sau.')
+  return {count,bytes}
+ }
+ async function cleanupLegacy(){await action(async()=>{
+  if(!window.confirm('Dọn các file Cloud cũ KHÔNG còn được tồn V8 tham chiếu? Giữ nguyên ảnh laptop và nghiệp vụ kinh doanh.'))return
+  const freed=await cleanupLegacyObjects()
+  setStatus('Đã dọn '+freed.count+' file Cloud cũ ('+Math.round(freed.bytes/1024/1024)+' MiB). Ảnh đang được V8 sử dụng giữ nguyên.')
  })}
  latestSync.current=sync
  function saveMobile(){try{const url=new URL(mobile);if(url.protocol!=='https:')throw Error('Link Mobile phải là HTTPS');url.searchParams.set('cloud','1');localStorage.setItem('mecacao-v7-mobile-url',url.href);setMobile(url.href);setStatus('Đã lưu link Mobile.')}catch(e){setStatus(e instanceof Error&&/email rate limit exceeded/i.test(e.message)?'Gửi email đang bị giới hạn. Hãy đăng nhập bằng mật khẩu tài khoản shop ở phía trên.':e instanceof Error?e.message:'Link không hợp lệ')}}
