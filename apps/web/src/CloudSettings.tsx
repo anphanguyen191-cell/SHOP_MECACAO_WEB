@@ -3,6 +3,7 @@ import type {Session} from '@supabase/supabase-js'
 import {saveCloudPassword} from './cloudPassword'
 import {cloud,cloudRpc,cloudRows,cloudCommand,CLOUD_BUCKET} from './cloudClient'
 import {CLOUD_RELEASE,CLOUD_MOBILE_URL} from './cloudRelease'
+import {reconcileCloudImages,validateCloudVariants} from './cloudSyncAudit'
 import {apiJson,useBooleanPreference} from './uiState'
 const sha=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))).map(v=>v.toString(16).padStart(2,'0')).join('')
 export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:boolean;autoSync?:boolean}){
@@ -23,7 +24,7 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
  async function verify(){await action(async()=>{const {error}=await cloud.auth.verifyOtp({email:email.trim(),token:code.trim(),type:'email'});if(error)throw error;setCode('');setSent(false);await check()})}
  async function verifyLink(){await action(async()=>{let token:string;try{const url=new URL(loginLink.trim());if(url.protocol!=='https:'||url.hostname!=='eyckwoewpomssjjggslr.supabase.co'||url.pathname!=='/auth/v1/verify'||!!url.username||!!url.password||!!url.port)throw Error();token=url.searchParams.get('token_hash')||url.searchParams.get('token')||'';if(!token||!['email','magiclink'].includes(url.searchParams.get('type')||''))throw Error()}catch{throw Error('Dán liên kết đăng nhập Supabase từ email vừa nhận. Không dùng liên kết đổi mật khẩu hoặc liên kết của project khác.')}setLoginLink('');const {error}=await cloud.auth.verifyOtp({token_hash:token,type:'email'});if(error)throw Error('Liên kết đã hết hạn hoặc được mở trước đó. Yêu cầu email đăng nhập mới.');setSent(false);await check()})}
  async function sync(){await action(async()=>{
-  if((await check()).role!=='owner')throw Error('Chỉ chủ shop được đồng bộ kho Windows. Các tài khoản khác vẫn xem dữ liệu theo quyền.');paused.current=false;setProgress({registered:0,uploaded:0,skipped:0});let offset=0,registered=0,uploaded=0,skipped=0,localImageCount=0,missingCount=0
+  if((await check()).role!=='owner')throw Error('Chỉ chủ shop được đồng bộ kho Windows. Các tài khoản khác vẫn xem dữ liệu theo quyền.');paused.current=false;setProgress({registered:0,uploaded:0,skipped:0});let offset=0,registered=0,uploaded=0,skipped=0,localImageCount=0,missingCount=0,localProducts=0
   const session=(await cloud.auth.getSession()).data.session;if(!session)throw Error('Phiên Cloud đã hết hạn.')
   const initial=await apiJson('/api/cloud/catalog?offset=0')
   const localHealth=await apiJson('/api/health')
@@ -54,12 +55,14 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
   await cloudRpc('mc_v7_catalog',{p_instance:initial.instance,p_request:'bootstrap:'+initial.instance+':'+session.user.id,p_payload:{}})
   const state=await apiJson('/api/cloud/state'),sold=(await cloudRows('sales_confirmations')).map(c=>c.order_id).filter(id=>!state.reconciled.includes(id))
   for(let start=0;start<sold.length;start+=100)await apiJson('/api/cloud/reconcile',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify({orders:sold.slice(start,start+100)})})
+  const activePhotos:any[]=[],activeVariants:any[]=[]
   const existingImages=new Map((await cloudRows('product_images')).map(a=>[Number(a.id),a]))
   const ready=new Map((await cloudRows('cloud_image_assets')).filter(a=>a.ready).map(a=>[Number(a.image_id),a.sha256]))
   for(;;){
    if(paused.current){setStatus('Đã tạm dừng. Bấm Tiếp tục để đọc lại và đồng bộ phần thiếu.');return}
    const batch=await apiJson('/api/cloud/catalog?offset='+offset)
-   localImageCount+=batch.images.length
+   localImageCount+=batch.images.length;localProducts+=batch.products.length
+   activePhotos.push(...batch.images);activeVariants.push(...batch.variants)
    // Each request is bounded; dependencies are registered in order.
    for(const field of ['categories','products','variants','images'])for(let start=0;start<batch[field].length;start+=100){
     const group=batch[field].slice(start,start+100)
@@ -97,9 +100,22 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
    if(batch.sourceState)for(let start=0;start<verifiedSource.length;start+=100)await cloudRpc('mc_v7_presence',{p_instance:batch.instance,p_request:'presence:'+crypto.randomUUID(),p_images:verifiedSource.slice(start,start+100)})
    if(batch.done)break;offset=batch.nextOffset
   }
-  const afterImages=await cloudRows('product_images'),afterAssets=await cloudRows('cloud_image_assets')
   if(missingCount>0)throw Error('Có '+missingCount+' ảnh nguồn thiếu trên Windows. Chưa bật Cloud để tránh sai tồn kho.')
-  if(afterImages.length!==localImageCount||afterAssets.filter(a=>a.ready&&a.source_present!==false).length!==localImageCount)throw Error('Ảnh Cloud chưa khớp '+localImageCount+' ảnh Windows; không kích hoạt kho Cloud.')
+  const afterImages=await cloudRows('product_images'),afterAssets=await cloudRows('cloud_image_assets'),
+        afterSold=await cloudRows('sales_units'),afterVariants=await cloudRows('product_variants')
+  validateCloudVariants(activeVariants,afterVariants)
+  let audit=reconcileCloudImages(activePhotos,afterImages,afterAssets,afterSold,localProducts)
+  // Cloud retains historical SOLD images and rows from prior scans. Only active
+  // physical Windows images are required; previously removed files become unavailable.
+  if(audit.withdrawn.length){
+   for(let start=0;start<audit.withdrawn.length;start+=100)await cloudRpc('mc_v7_presence',{
+    p_instance:initial.instance,p_request:'withdrawn:'+crypto.randomUUID(),
+    p_images:audit.withdrawn.slice(start,start+100).map(id=>({id,present:false}))
+   })
+   const verifiedAssets=await cloudRows('cloud_image_assets')
+   audit=reconcileCloudImages(activePhotos,afterImages,verifiedAssets,afterSold,localProducts)
+   if(audit.withdrawn.length)throw Error('Cloud còn '+audit.withdrawn.length+' ảnh dư chưa rút khỏi tồn; chưa kích hoạt.')
+  }
   await apiJson('/api/cloud/activate',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:'{}'})
   await apiJson('/api/cloud/prices',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:'{}'})
   const assets=await cloudRows('cloud_image_assets'),inbox=await cloudRows('cloud_photo_inbox')

@@ -1,0 +1,56 @@
+/** Pure, fail-closed inventory reconciliation. No Storage or payment mutations here.
+ * Sold rows remain immutable history; withdrawn physical images are retained as
+ * unavailable catalog entries so orders/receipts retain their references.
+ */
+export type SyncPhoto = {id:number|string;product_id:number|string;variant_id:number|string}
+export type SyncAsset = {image_id:number|string;ready:boolean;source_present?:boolean|null;object_path?:string}
+export type SyncSold = {image_id:number|string}
+export type SyncVariant = {id:number|string;product_id:number|string;sku:string;size:string}
+const id=(value:unknown,name:string):number=>{
+ const n=Number(value)
+ if(!Number.isSafeInteger(n)||n<1)throw Error('Cloud: ID '+name+' không hợp lệ; dừng đối chiếu.')
+ return n
+}
+function indexed<T>(rows:T[],key:(row:T)=>number,name:string):Map<number,T>{
+ const map=new Map<number,T>()
+ for(const row of rows){const k=key(row);if(map.has(k))throw Error('Cloud: ID '+name+' bị trùng ('+k+'); dừng đồng bộ.');map.set(k,row)}
+ return map
+}
+export function validateCloudVariants(local:SyncVariant[],remote:SyncVariant[]){
+ const server=indexed(remote,v=>id(v.id,'Size Cloud'),'Size Cloud')
+ const seen=indexed(local,v=>id(v.id,'Size Windows'),'Size Windows')
+ for(const [key,row] of seen){
+  const other=server.get(key)
+  if(!other||id(other.product_id,'Product Cloud')!==id(row.product_id,'Product Windows')
+   ||other.sku!==row.sku||other.size!==row.size)
+   throw Error('Cloud: Size #'+key+' không khớp Product/SKU/Size Windows. Dừng để kiểm tra.')
+ }
+ return seen.size
+}
+export function reconcileCloudImages(
+ local:SyncPhoto[],remote:SyncPhoto[],assets:SyncAsset[],soldRows:SyncSold[],localProducts:number
+){
+ const expected=indexed(local,x=>id(x.id,'ảnh Windows'),'ảnh Windows')
+ const images=indexed(remote,x=>id(x.id,'ảnh Cloud'),'ảnh Cloud')
+ const available=indexed(assets,x=>id(x.image_id,'asset Cloud'),'asset Cloud')
+ const sold=new Set(soldRows.map(x=>id(x.image_id,'SOLD')))
+ if(localProducts===0&&images.size>0)throw Error('Windows báo kho không có sản phẩm nhưng Cloud có ảnh. Không tự rút hàng khi chưa xác minh lại kho.')
+ for(const [key,photo] of expected){
+  const entry=images.get(key),asset=available.get(key)
+  if(!entry||!asset||!asset.ready||asset.source_present===false)
+   throw Error('Cloud: ảnh tồn #'+key+' chưa sẵn sàng hoặc chưa có file đăng ký; không kích hoạt.')
+  if(sold.has(key))throw Error('Cloud: ảnh #'+key+' đang SOLD nhưng Windows báo còn tồn. Cần đối soát.')
+  if(id(entry.product_id,'Product Cloud')!==id(photo.product_id,'Product Windows')
+     ||id(entry.variant_id,'Size Cloud')!==id(photo.variant_id,'Size Windows'))
+   throw Error('Cloud: ảnh #'+key+' khác Product/Size Windows; ngừng để tránh trộn kho.')
+  if(typeof asset.object_path!=='string'||!asset.object_path)
+   throw Error('Cloud: ảnh #'+key+' thiếu đường dẫn Storage.')
+ }
+ const withdrawn:number[]=[]
+ for(const [key,photo] of images){
+  if(expected.has(key)||sold.has(key))continue
+  const asset=available.get(key)
+  if(asset?.ready&&asset.source_present!==false)withdrawn.push(key)
+ }
+ return {expected:expected.size,ready:expected.size,withdrawn:withdrawn.sort((a,b)=>a-b)}
+}

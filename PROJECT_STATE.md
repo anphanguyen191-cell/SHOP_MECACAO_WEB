@@ -1,3 +1,11 @@
+## Cloud sync deep-audit — 15/10/2026
+
+- Kiểm thử bổ sung: số ảnh thực tế, ảnh đã SOLD vẫn phải ở lịch sử, thiếu file, sai Product/Size/SKU, trùng ID, ảnh Windows xóa khỏi ổ D, và đồng bộ lặp lại.
+- Sửa bug Cloud đã phát hành trước: trước đây so tổng số bảng Cloud (bao gồm ảnh SOLD/lịch sử) với số ảnh Windows đang tồn. Khi bán/xóa ảnh, đồng bộ lại có thể báo sai dù dữ liệu đúng. Bây giờ kiểm theo từng ID bộ tồn, đối chiếu Product/Size/asset ready; ảnh SOLD giữ trong lịch sử, ảnh Windows đã xóa chỉ rút khỏi tồn Cloud (source_present=false), không xóa file ảnh gốc/hồ sơ.
+- Chỉ kích hoạt sau khi tất cả ảnh tồn và Size được đối soát; không rút toàn kho nếu Windows tạm trả danh mục không có sản phẩm trong khi Cloud đã có hàng.
+- Chưa nghiệm thu Cloud thực tế Windows/iPhone cho đến khi chủ shop chạy xác nhận trên máy. CI mô phỏng không thay thế nghiệm thu.
+
+---
 ## Bảo vệ ảnh SOLD khi dùng lại file Cloud — 15/10/2026
 
 - Đối chiếu SHA-256 để dùng lại file Cloud **chỉ khi file đó chưa được gán cho bộ tồn khác**, giữ nguyên quy tắc mỗi ảnh tồn là một bộ có nghiệp vụ SOLD độc lập.

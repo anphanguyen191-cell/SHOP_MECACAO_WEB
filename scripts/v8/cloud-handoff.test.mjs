@@ -10,7 +10,7 @@ test('handoff requires owner consent, stable sequence, backup and no sold/financ
 })
 test('activation happens only after full Windows/Cloud inventory verification',()=>{
  assert.ok(ui.includes('missingCount>0'))
- assert.ok(ui.includes('afterImages.length!==localImageCount'))
+ assert.ok(ui.includes('reconcileCloudImages(activePhotos,afterImages,afterAssets,afterSold,localProducts)'))
  assert.ok(ui.indexOf("await apiJson('/api/cloud/activate'")>ui.indexOf("afterImages=await cloudRows('product_images')"))
 })
 test('retained old images only delete after identical SHA, ready asset, and explicit action',()=>{
