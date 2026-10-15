@@ -1,8 +1,25 @@
+# PROJECT_STATE — chốt nghiệm thu import kho thật ngày 15/10/2026
+
+> **Trạng thái mới nhất (ưu tiên đọc trước hồ sơ bàn giao lịch sử bên dưới).**
+> Ngày 15/10/2026, chủ shop đã trực tiếp **xác nhận import kho thật thành công trên laptop**. Đây là kết quả nghiệm thu do người dùng cung cấp, không phải suy luận từ CI. Không tiếp tục coi lỗi chặn chọn kho/import là lỗi P0 đang tái diễn nếu chưa có bằng chứng lỗi mới.
+
+## Checkpoint đã chốt theo xác nhận chủ shop
+
+- **P0/1 — Chọn và tiếp nhận kho `D:\1-Me CaCao Store`: ĐẠT theo xác nhận chủ shop** (việc import thành công chứng minh kho đã được tiếp nhận cho luồng đăng ký).
+- **P0/2 — Import kho ảnh thật vào LOCAL V8: ĐẠT theo xác nhận trực tiếp của chủ shop ngày 15/10/2026.**
+- Bản source/Release đã xác minh trước chốt: GitHub `main` `d48d5867692a778ab045161e942d82c7b6eceab4`, `v8.0.56-stable`, Windows workflow `38696788972` PASS, GitHub Pages workflow `38696788976` PASS. **Không khẳng định phiên bản chính xác đang chạy trên laptop nếu chưa có ảnh/API health xác nhận.**
+- **Chưa có xác nhận riêng** rằng đã khởi động lại Windows và đối chiếu đầy đủ Product/Size/số ảnh sau lần chạy lại. Đây là mục kiểm tra bền vững dữ liệu sau import, không phủ nhận xác nhận import thành công.
+- **Bước tiếp theo — P0/3, chưa nghiệm thu:** kiểm tra tồn vật lý sau thêm/xóa/khôi phục ảnh bằng Windows Explorer và quét/làm mới; 1 ảnh hợp lệ hiện hữu = 1 bộ; không sinh đơn/thu tiền giả; SOLD không quay lại tồn. Sau đó mới đến ba nghiệp vụ nhập, nghiệp vụ kinh doanh và Cloud.
+- **Giữ nguyên kiến trúc:** một nhánh `main`, một SQLite LOCAL V8 tại `D:\ShopMeCaCao\data\shop-v8\database\shop-v8.db`, kho gốc `D:\1-Me CaCao Store`, không sửa/di chuyển/xóa ảnh gốc; cập nhật ứng dụng qua `Cài đặt → Kiểm tra & cập nhật` từ kênh STABLE.
+- Ghi nhận này là **cập nhật hồ sơ trạng thái**, không thay đổi code nghiệp vụ, không reset dữ liệu và không tạo thêm database/nhánh.
+
+---
+
 # PROJECT_STATE — tiếp nhận và xử lý P0 ngày 15/10/2026
 
 Hồ sơ đầy đủ của chủ shop được giữ bên dưới làm baseline. Mọi quy tắc V7 trước đây mâu thuẫn với hồ sơ này đều đã được thay thế.
 
-## Đợt sửa P0 hiện tại (chưa nghiệm thu laptop)
+## Đợt sửa P0 trước xác nhận của chủ shop (lưu lịch sử)
 
 - Đã xác minh trước sửa: main `17f3289557fb261d93f57a5e71970fe6bc7d4f05`, Release `v8.0.54-stable`; Windows run 38680330286 và Pages run 38680330285 success.
 - Dấu LOCAL lỗi/không khớp, BOM JSON, khóa mồ côi/PID tái sử dụng và marker của V8 đã ngừng dùng được đưa về luồng cảnh báo → chủ shop xác nhận tiếp nhận. Giữ bản gốc marker/lock trong data/shop-v8/warehouse-handoffs, gồm bytes base64; mỗi lần tiếp nhận có hồ sơ riêng.
@@ -11,7 +28,7 @@ Hồ sơ đầy đủ của chủ shop được giữ bên dưới làm baseline
 - Cho phép chọn lại chính kho đã đăng ký mà không yêu cầu cài app/database mới. Sửa xuống dòng cảnh báo Import.
 - Windows EXE gate bổ sung 5 trạng thái di sản, từ chối thiếu xác nhận, tiếp nhận có xác nhận, đăng ký qua background task như React, chống nhập trùng, chọn lại kho đã có hàng và giữ ảnh nguồn.
 - Typecheck/build và toàn bộ npm run test:gate đã đạt trong môi trường phát triển. Bài xác minh live process cần Windows CI (môi trường hiện tại không đọc được /proc của child). Kết quả phát hành phải xem Actions đúng commit, không dùng PASS baseline.
-- **Checkpoint chọn/quét/duyệt/đăng ký kho thật: OPEN.** Chỉ đóng sau khi chủ shop xác nhận trên laptop và sau khởi động lại. Không triển khai Cloud/marketing/UI khác trong checkpoint này.
+- **Tại thời điểm ghi mục này, checkpoint chọn/quét/duyệt/đăng ký kho thật còn OPEN.** Sau đó, chủ shop đã xác nhận import thành công ngày 15/10/2026; xem phần trạng thái mới nhất ở đầu file. Kiểm tra sau khởi động lại vẫn chưa có xác nhận riêng.
 - Cập nhật laptop chỉ qua **Cài đặt → Kiểm tra & cập nhật**. Sau khi Release mới được phát hành, đối chiếu tag và sourceCommit trong health; chọn **D:\1-Me CaCao Store**, xác nhận tiếp nhận nếu có cảnh báo, quét và duyệt lô.
 
 ---
