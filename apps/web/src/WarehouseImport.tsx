@@ -22,7 +22,7 @@ export default function WarehouseImport({isDemo,onChanged}:{isDemo:boolean;onCha
   if(!config.rootPath.trim())throw Error('Chọn thư mục kho trước khi quét.')
   const preflight=h.release?.stage===8?await apiJson('/api/local/warehouse/preflight?'+new URLSearchParams({warehouse:config.rootPath})):{legacyOwnership:false}
   const warning=preflight.legacyOwnership
-   ?'Kho có dấu sở hữu của bản LOCAL cũ.\\nThoát hẳn bản cũ trước khi tiếp tục. V8 sẽ tiếp nhận kho mà không xóa hoặc di chuyển ảnh. Không mở lại phần mềm cũ với kho này.\\nXác nhận chuyển sang V8?'
+   ?'Kho có dấu khóa hoặc sở hữu của bản LOCAL cũ.\\nThoát hẳn bản cũ trước khi tiếp tục. V8 sẽ tiếp nhận kho mà không xóa hoặc di chuyển ảnh. Không mở lại phần mềm cũ với kho này.\\nXác nhận chuyển sang V8?'
    :'Dùng thư mục này làm kho của shop?\\n'+config.rootPath+'\\nẢnh chỉ được đọc khi quét; chỉ nhập vào database sau khi duyệt.'
   if(!window.confirm(warning))return false
   setMessage('Đang xác lập kho và mở lại kết nối…')

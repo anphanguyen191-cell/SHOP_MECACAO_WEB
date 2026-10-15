@@ -52,3 +52,38 @@ test('V8 forbids two database owners on same photo directory',()=>{
   assert.equal(inspectWarehouseOwner(x.root,x.home),'NEW')
  }finally{x.done()}
 })
+
+test('orphan LOCAL lock without owner marker can transfer safely when PID is dead',()=>{
+ const x=tmp()
+ try{
+  const original={format:1,pid:99999999,database:x.owner.database,configSha:'stage4-fresh'}
+  fs.writeFileSync(x.lock,JSON.stringify(original))
+  assert.equal(inspectWarehouseOwner(x.root,x.home),'ORPHAN')
+  adoptWarehouse(x.root,x.home)
+  assert.equal(inspectWarehouseOwner(x.root,x.home),'OWN')
+  assert.equal(fs.readFileSync(x.image,'utf8'),'ORIGINAL_FILE_MUST_NOT_CHANGE')
+  assert(!fs.existsSync(x.lock))
+  const saved=JSON.parse(fs.readFileSync(path.join(x.home,'data','shop-v8','warehouse-handoffs',fs.readdirSync(path.join(x.home,'data','shop-v8','warehouse-handoffs'))[0])))
+  assert.equal(saved.marker,null)
+  assert.deepEqual(JSON.parse(saved.lock),original)
+ }finally{x.done()}
+})
+test('orphan lock belonging to live PID must block and retain original lock',()=>{
+ const x=tmp()
+ try{
+  const content=JSON.stringify({format:1,pid:process.pid,database:x.owner.database,configSha:'stage4-fresh'})
+  fs.writeFileSync(x.lock,content)
+  assert.throws(()=>inspectWarehouseOwner(x.root,x.home),/còn hoạt động/)
+  assert.throws(()=>adoptWarehouse(x.root,x.home),/còn hoạt động/)
+  assert.equal(fs.readFileSync(x.lock,'utf8'),content)
+  assert.equal(fs.readFileSync(x.image,'utf8'),'ORIGINAL_FILE_MUST_NOT_CHANGE')
+ }finally{x.done()}
+})
+test('malformed orphan lock is preserved for manual inspection',()=>{
+ const x=tmp()
+ try{
+  fs.writeFileSync(x.lock,'{"bad":"unknown"}')
+  assert.throws(()=>adoptWarehouse(x.root,x.home),/không hợp lệ/)
+  assert.equal(fs.readFileSync(x.lock,'utf8'),'{"bad":"unknown"}')
+ }finally{x.done()}
+})

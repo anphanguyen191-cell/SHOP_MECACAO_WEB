@@ -35,11 +35,22 @@ try{
  if($health.customWarehouse){throw 'V8 should not silently select a warehouse on fresh installation'}
  $settings=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/warehouse/settings' -TimeoutSec 8
  if($settings.rootPath){throw 'Fresh V8 already has a warehouse watch path'}
+ # Regression: early LOCAL builds left a runtime lock but no ownership marker.
+ # This must be recoverable only if the PID is gone, without modifying photos.
+ $orphan='D:\1-Me CaCao Store'
+ $orphanPhoto=Join-Path $orphan 'Product A\Size 8\original.jpg'
+ New-Item -ItemType Directory -Force (Split-Path $orphanPhoto) | Out-Null
+ [System.IO.File]::WriteAllBytes($orphanPhoto,[byte[]](10,20,30,40,50,60))
+ $originalHash=(Get-FileHash $orphanPhoto -Algorithm SHA256).Hash
+ $oldLock=Join-Path $orphan '.mecacao-local-runtime.lock'
+ @{format=1;pid=99999999;database='D:\OldShop\shop.db';configSha='stage4-fresh'} | ConvertTo-Json | Set-Content $oldLock -Encoding utf8
  # Selection must be possible directly from Import kho, including a subsequent
  # re-selection when the shop has no registered inventory or orders.
- foreach($destination in @('D:\Me CaCao Store','D:\Me CaCao Other')){
+ foreach($destination in @('D:\Me CaCao Store','D:\Me CaCao Other',$orphan)){
   New-Item -ItemType Directory -Force $destination | Out-Null
-  $body=ConvertTo-Json -Compress @{warehouse=$destination}
+  $preflight=Invoke-RestMethod -Uri ('http://127.0.0.1:3000/api/local/warehouse/preflight?warehouse='+[uri]::EscapeDataString($destination)) -TimeoutSec 8
+  if($destination -eq $orphan -and !$preflight.legacyOwnership){throw 'Orphan LOCAL lock not detected as transferable'}
+  $body=ConvertTo-Json -Compress @{warehouse=$destination;allowLegacyHandoff=[bool]$preflight.legacyOwnership}
   $result=Invoke-RestMethod -Method POST -Uri 'http://127.0.0.1:3000/api/local/warehouse' -ContentType 'application/json' -Headers @{Origin='http://127.0.0.1:3000'} -Body $body -TimeoutSec 15
   if($result.warehouse -ne $destination){throw 'Warehouse selection not accepted'}
   $changed=$false
@@ -53,6 +64,13 @@ try{
   if(!$changed){throw "Warehouse selection/restart failed for $destination"}
   $settings=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/warehouse/settings' -TimeoutSec 8
   if($settings.rootPath -ne $destination){throw 'Warehouse settings still point to previous location'}
+  if($destination -eq $orphan){
+   if((Get-FileHash $orphanPhoto -Algorithm SHA256).Hash -ne $originalHash){throw 'Photo changed during orphan lock handoff'}
+   $marker=Get-Content (Join-Path $orphan '.mecacao-local-active.json') -Raw | ConvertFrom-Json
+   if($marker.format -ne 8){throw 'V8 ownership marker missing after orphan handoff'}
+   $handoffs=Join-Path $installDir 'data/shop-v8/warehouse-handoffs'
+   if(!(Test-Path $handoffs) -or !(Get-ChildItem $handoffs -Filter '*.json')){throw 'Original orphan lock evidence not archived'}
+  }
  }
  Write-Host 'V8_DESKTOP_SMOKE_PASS: clean D: install, warehouse selection and change, backend restarts, schema 130.'
 }catch{
