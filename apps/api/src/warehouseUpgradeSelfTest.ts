@@ -48,6 +48,19 @@ checkWarehouse(root);assert.equal(getWarehouseNotices().length,1,'unchanged scan
 const notice=getWarehouseNotices()[0];markWarehouseNotice(notice.id,'seen');checkWarehouse(root);assert.equal(getWarehouseNotices()[0].state,'seen')
 for(const p of snapshot.products)commitStoreImport({rootPath:root,name:p.name,productCode:p.suggestedProductCode,variants:p.sizes.map(s=>({size:s.size,sku:s.suggestedSku,images:s.images,openingStock:s.images.length}))})
 assert.equal(checkWarehouse(root).summary.registeredImages,2);assert.equal(getWarehouseNotices()[0].state,'resolved');assert.equal(inventoryDashboard().stock,2)
+
+const addedByExplorer=path.join(path.dirname(first),'added-directly.jpg')
+fs.copyFileSync(first,addedByExplorer)
+assert.equal(checkWarehouse(root).summary.pendingImages,1,'new direct folder image is detected')
+assert.equal(inventoryDashboard().stock,3,'pending but physical image counts before registration')
+fs.renameSync(first,first+'.removed-outside-app')
+assert.equal(inventoryDashboard().stock,2,'Windows file removal reduces stock immediately without ledger mutation')
+assert.equal(checkWarehouse(root).summary.missingImages,1,'missing registered file flagged after scan')
+fs.renameSync(first+'.removed-outside-app',first)
+fs.unlinkSync(addedByExplorer)
+assert.equal(checkWarehouse(root).summary.pendingImages,0,'pending direct photo removal reconciled')
+assert.equal(inventoryDashboard().stock,2,'restoring file restores physical stock without adding ledger rows')
+
 assert.throws(()=>scanStore(path.dirname(first)),/kho gốc/)
 // A cover file beside canonical Product/Size folders must not reject a valid root.
 fs.copyFileSync(first,path.join(root,'cover.jpg'));fs.copyFileSync(first,path.join(root,'Lửng gái','cover.jpg'));assert.equal(warehouseSnapshot(root).summary.images,2)
