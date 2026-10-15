@@ -8,10 +8,28 @@ function contents(file:string){
 }
 function parse(file:string){try{return JSON.parse(contents(file).toString())}catch{throw Error('Dấu kho bị lỗi; không thay đổi ảnh hoặc quyền kho')}}
 function own(home:string,root:string){return {format:8,home,warehouse:root,database:path.join(home,'data','shop-v8','database','shop-v8.db')}}
-export function inspectWarehouseOwner(root:string,home:string):'NEW'|'OWN'|'LEGACY'{
+type Ownership='NEW'|'OWN'|'LEGACY'|'ORPHAN'
+function inspectOrphanLock(file:string){
+ const lock=parse(file)
+ if(lock.format!==1||!Number.isSafeInteger(lock.pid)||lock.pid<=0||typeof lock.database!=='string'||!path.isAbsolute(lock.database)||typeof lock.configSha!=='string')
+  throw Error('Khóa LOCAL không có dấu chủ sở hữu hoặc không hợp lệ. Không tự xóa. Cần kiểm tra file khóa trong thư mục kho.')
+ try{process.kill(lock.pid,0)}
+ catch(e){
+  if((e as NodeJS.ErrnoException).code==='ESRCH')return
+  throw Error('Chưa xác nhận được phiên bản LOCAL cũ đã dừng. Đóng phần mềm cũ trước khi tiếp nhận kho.')
+ }
+ throw Error('Một tiến trình LOCAL còn hoạt động trên kho này. Hãy đóng hoàn toàn phiên bản cũ trước khi tiếp nhận.')
+}
+export function inspectWarehouseOwner(root:string,home:string):Ownership{
  const m=path.join(root,MARKER),l=path.join(root,LOCK)
  if(!fs.existsSync(m)){
-  if(fs.existsSync(l))throw Error('Kho có khóa LOCAL không rõ chủ, không thể chuyển quyền')
+  if(fs.existsSync(l)){
+   // Previous LOCAL or early V8 builds can leave only a runtime lock behind
+   // when an upgrade was interrupted. Never assume it is safe to delete:
+   // verify the recorded PID is dead and retain the complete original file.
+   inspectOrphanLock(l)
+   return 'ORPHAN'
+  }
   return 'NEW'
  }
  const o=parse(m)
@@ -39,11 +57,11 @@ export function adoptWarehouse(root:string,home:string){
  const marker=path.join(root,MARKER),lock=path.join(root,LOCK)
  const previous=fs.existsSync(marker)?contents(marker):null
  const priorLock=fs.existsSync(lock)?contents(lock):null
- if(kind==='LEGACY'){
+ if(kind==='LEGACY'||kind==='ORPHAN'){
   const archive=path.join(home,'data','shop-v8','warehouse-handoffs')
   fs.mkdirSync(archive,{recursive:true})
   const target=path.join(archive,createHash('sha256').update(root).digest('hex')+'.json')
-  if(!fs.existsSync(target))fs.writeFileSync(target,JSON.stringify({root,marker:previous!.toString(),lock:priorLock?.toString()??null,at:new Date().toISOString()}),{flag:'wx'})
+  if(!fs.existsSync(target))fs.writeFileSync(target,JSON.stringify({root,marker:previous?.toString()??null,lock:priorLock?.toString()??null,at:new Date().toISOString()}),{flag:'wx'})
  }
  if(priorLock)fs.unlinkSync(lock)
  const temp=marker+'.'+randomUUID()+'.tmp'
