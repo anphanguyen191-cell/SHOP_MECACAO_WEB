@@ -87,7 +87,11 @@ try{
    try{
     Invoke-RestMethod -Method POST -Uri 'http://127.0.0.1:3000/api/local/warehouse' -ContentType 'application/json' -Headers @{Origin='http://127.0.0.1:3000'} -Body (@{warehouse=$destination}|ConvertTo-Json) -TimeoutSec 15 | Out-Null
     throw 'Unconfirmed handoff was accepted'
-   }catch{if($_.Exception.Message -match 'Unconfirmed handoff was accepted'){throw};if($_.ErrorDetails.Message -notmatch 'xác nhận'){throw}}
+   }catch{
+    if($_.Exception.Message -match 'Unconfirmed handoff was accepted'){throw}
+    $refusal=$_.ErrorDetails.Message | ConvertFrom-Json
+    if([int]$_.Exception.Response.StatusCode -ne 409 -or $refusal.error -notmatch 'xác nhận'){throw}
+   }
   }
   $body=ConvertTo-Json -Compress @{warehouse=$destination;allowLegacyHandoff=[bool]$preflight.legacyOwnership}
   $result=Invoke-RestMethod -Method POST -Uri 'http://127.0.0.1:3000/api/local/warehouse' -ContentType 'application/json' -Headers @{Origin='http://127.0.0.1:3000'} -Body $body -TimeoutSec 15
