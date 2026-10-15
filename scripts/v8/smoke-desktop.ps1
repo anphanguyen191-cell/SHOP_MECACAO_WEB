@@ -80,6 +80,19 @@ try{
    if(!(Test-Path $handoffs) -or !(Get-ChildItem $handoffs -Filter '*.json')){throw 'Original orphan lock evidence not archived'}
   }
  }
+ # Initial stock registration: scan first, confirm and import once, then prove
+ # repeating the same approved registration does not duplicate physical stock.
+ $headers=@{Origin='http://127.0.0.1:3000'}
+ $snapshot=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/store/scan' -Method POST -Headers $headers -ContentType 'application/json' -Body (@{rootPath=$orphan}|ConvertTo-Json) -TimeoutSec 30
+ if($snapshot.summary.images -ne 1 -or $snapshot.summary.products -ne 1){throw 'Initial physical stock scan did not find existing photo'}
+ $registerProduct=@{rootPath=$orphan;name='Product A';productCode='V8AUDITOLD';variants=@(@{size='Size 8';sku='V8AUDITOLD08';openingStock=1;costPrice=23000;salePrice=45000;images=@($orphanPhoto)})}
+ $importPayload=@{confirmed=$true;product=$registerProduct}|ConvertTo-Json -Depth 8
+ $registered=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/store/import' -Method POST -Headers $headers -ContentType 'application/json' -Body $importPayload -TimeoutSec 30
+ if($registered.registration.images -ne 1){throw 'Initial existing photo was not registered'}
+ $same=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/store/import' -Method POST -Headers $headers -ContentType 'application/json' -Body $importPayload -TimeoutSec 30
+ if($same.registration.images -ne 0){throw 'Duplicate scan changed the inventory image count'}
+ if((Get-FileHash $orphanPhoto -Algorithm SHA256).Hash -ne $originalHash){throw 'Initial stock registration modified the physical photo'}
+
  # V8 must not lock the source photo root at each startup; runtime lock
  # belongs to its own application data folder.
  if(Test-Path (Join-Path $orphan '.mecacao-local-runtime.lock')){throw 'Runtime lock leaked back into the photo warehouse'}
