@@ -65,14 +65,30 @@ try{
  [System.IO.File]::WriteAllBytes($unverifiedOriginal,[byte[]](7,8,9,10))
  $unverifiedHash=(Get-FileHash $unverifiedOriginal -Algorithm SHA256).Hash
  @{format=1;pid=$PID;database='D:\OldShop\shop.db';configSha='stage4-fresh'} | ConvertTo-Json | Set-Content (Join-Path $unverified '.mecacao-local-runtime.lock') -Encoding utf8
+ # Exact legacy cases that previously vetoed shop-owner consent.
+ $legacyCases=@('D:\Cacao malformed marker','D:\Cacao mismatched marker','D:\Cacao old V8','D:\Cacao malformed lock','D:\Cacao legacy reused PID')
+ foreach($legacy in $legacyCases){New-Item -ItemType Directory -Force $legacy | Out-Null}
+ '{broken' | Set-Content (Join-Path $legacyCases[0] '.mecacao-local-active.json') -Encoding utf8
+ @{format=1;warehouse='D:\OldPath';database='D:\OldShop\shop.db'} | ConvertTo-Json | Set-Content (Join-Path $legacyCases[1] '.mecacao-local-active.json') -Encoding utf8
+ @{format=8;home='D:\StoppedV8';warehouse=$legacyCases[2];database='D:\StoppedV8\data\shop-v8\database\shop-v8.db'} | ConvertTo-Json | Set-Content (Join-Path $legacyCases[2] '.mecacao-local-active.json') -Encoding utf8
+ '{unknown' | Set-Content (Join-Path $legacyCases[3] '.mecacao-local-runtime.lock') -Encoding utf8
+ @{format=1;warehouse=$legacyCases[4];database='D:\OldShop\shop.db';configPath='D:\OldShop\config.json';configSha=('a'*64)} | ConvertTo-Json | Set-Content (Join-Path $legacyCases[4] '.mecacao-local-active.json') -Encoding utf8
+ @{format=1;pid=$PID;database='D:\OldShop\shop.db';configSha=('a'*64)} | ConvertTo-Json | Set-Content (Join-Path $legacyCases[4] '.mecacao-local-runtime.lock') -Encoding utf8
  # Selection must be possible directly from Import kho, including a subsequent
  # re-selection when the shop has no registered inventory or orders.
- foreach($destination in @('D:\Me CaCao Store','D:\Me CaCao Other',$unverified,$orphan)){
+ foreach($destination in (@('D:\Me CaCao Store','D:\Me CaCao Other')+$legacyCases+@($unverified,$orphan))){
   New-Item -ItemType Directory -Force $destination | Out-Null
   $preflight=Invoke-RestMethod -Uri ('http://127.0.0.1:3000/api/local/warehouse/preflight?warehouse='+[uri]::EscapeDataString($destination)) -TimeoutSec 8
   if($destination -eq $orphan -and !$preflight.legacyOwnership){throw 'Orphan LOCAL lock not detected as transferable'}
   if($destination -eq $unverified -and (!$preflight.legacyOwnership -or !$preflight.requiresManualConfirmation)){throw 'Unverified LOCAL lock requires owner consent'}
   if($destination -eq $unverified -and (Get-FileHash $unverifiedOriginal -Algorithm SHA256).Hash -ne $unverifiedHash){throw 'Preflight changed unverified orphan photo'}
+  if($legacyCases -contains $destination){
+   if(!$preflight.legacyOwnership -or !$preflight.requiresManualConfirmation){throw 'Legacy marker did not offer owner consent'}
+   try{
+    Invoke-RestMethod -Method POST -Uri 'http://127.0.0.1:3000/api/local/warehouse' -ContentType 'application/json' -Headers @{Origin='http://127.0.0.1:3000'} -Body (@{warehouse=$destination}|ConvertTo-Json) -TimeoutSec 15 | Out-Null
+    throw 'Unconfirmed handoff was accepted'
+   }catch{if($_.Exception.Message -match 'Unconfirmed handoff was accepted'){throw};if($_.ErrorDetails.Message -notmatch 'xác nhận'){throw}}
+  }
   $body=ConvertTo-Json -Compress @{warehouse=$destination;allowLegacyHandoff=[bool]$preflight.legacyOwnership}
   $result=Invoke-RestMethod -Method POST -Uri 'http://127.0.0.1:3000/api/local/warehouse' -ContentType 'application/json' -Headers @{Origin='http://127.0.0.1:3000'} -Body $body -TimeoutSec 15
   if($result.warehouse -ne $destination){throw 'Warehouse selection not accepted'}
@@ -106,11 +122,22 @@ try{
  if($snapshot.summary.images -ne 1 -or $snapshot.summary.products -ne 1){throw 'Initial physical stock scan did not find existing photo'}
  $registerProduct=@{rootPath=$orphan;name='Product A';productCode='V8AUDITOLD';variants=@(@{size='Size 8';sku='V8AUDITOLD08';openingStock=1;costPrice=23000;salePrice=45000;images=@($orphanPhoto)})}
  $importPayload=@{confirmed=$true;product=$registerProduct}|ConvertTo-Json -Depth 8
- $registered=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/store/import' -Method POST -Headers $headers -ContentType 'application/json' -Body $importPayload -TimeoutSec 30
- if($registered.registration.images -ne 1){throw 'Initial existing photo was not registered'}
+ # Exercise the exact background-worker registration path used by React.
+ $batchHeaders=@{Origin='http://127.0.0.1:3000';'Idempotency-Key'='windows-owner-register-0001'}
+ $batch=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/store/import-batch-task' -Method POST -Headers $batchHeaders -ContentType 'application/json' -Body (@{confirmed=$true;products=@($registerProduct)}|ConvertTo-Json -Depth 8) -TimeoutSec 30
+ $completed=$null
+ for($poll=0;$poll -lt 120;$poll++){
+  $task=Invoke-RestMethod -Uri ('http://127.0.0.1:3000/api/tasks/'+$batch.task.id) -TimeoutSec 5
+  if($task.status -in @('SUCCEEDED','FAILED','REVIEW_REQUIRED')){$completed=$task;break}
+  Start-Sleep -Milliseconds 250
+ }
+ if(!$completed -or $completed.status -ne 'SUCCEEDED' -or $completed.result.outcomes[0].status -ne 'SAVED' -or $completed.result.outcomes[0].images -ne 1){throw ('Background registration failed: '+($completed|ConvertTo-Json -Depth 8))}
  $same=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/store/import' -Method POST -Headers $headers -ContentType 'application/json' -Body $importPayload -TimeoutSec 30
  if($same.registration.images -ne 0){throw 'Duplicate scan changed the inventory image count'}
  if((Get-FileHash $orphanPhoto -Algorithm SHA256).Hash -ne $originalHash){throw 'Initial stock registration modified the physical photo'}
+
+ $repeatSelection=Invoke-RestMethod -Method POST -Uri 'http://127.0.0.1:3000/api/local/warehouse' -ContentType 'application/json' -Headers $headers -Body (@{warehouse=$orphan}|ConvertTo-Json) -TimeoutSec 15
+ if($repeatSelection.restarting -or $repeatSelection.warehouse -ne $orphan){throw 'Already registered warehouse cannot be reselected idempotently'}
 
  # V8 must not lock the source photo root at each startup; runtime lock
  # belongs to its own application data folder.

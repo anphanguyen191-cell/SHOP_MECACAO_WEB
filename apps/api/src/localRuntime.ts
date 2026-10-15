@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import {createHash} from 'node:crypto'
+import {createHash,randomUUID} from 'node:crypto'
+import {verifiedV8Writer} from './warehouseOwnership.js'
 import {DatabaseSync} from 'node:sqlite'
 
 export const ACTIVE_MARKER='.mecacao-local-active.json'
@@ -35,10 +36,22 @@ if(localRuntime){process.env.SHOP_SANDBOX_ROOT=localRuntime.warehouse;process.en
 export function claimRuntime(config:NonNullable<typeof localRuntime>){
   const lock=path.join(config.warehouse,RUNTIME_LOCK),payload=JSON.stringify({format:1,pid:process.pid,database:config.database,configSha:config.configSha})
   if(fs.existsSync(lock)){
-    const previous=JSON.parse(fs.readFileSync(physical(lock),'utf8'))
-    if(previous.format!==1||!Number.isSafeInteger(previous.pid)||previous.pid<=0||previous.database!==config.database||previous.configSha!==config.configSha)throw Error('Khóa LOCAL không rõ; giữ nguyên để kiểm tra')
-    try{process.kill(previous.pid,0);throw Error('LOCAL V2 đã có tiến trình chạy. Không mở hai server cùng kho.')}catch(e){if((e as NodeJS.ErrnoException).code!=='ESRCH')throw e}
-    fs.unlinkSync(lock) // Only a verified lock belonging to an absent process is removed.
+    if(process.env.SHOP_V8_HOME){
+      const bytes=fs.readFileSync(physical(lock))
+      let previous:any=null
+      try{previous=JSON.parse(bytes.toString().replace(/^\uFEFF/,''))}catch{}
+      if(verifiedV8Writer(config.database,previous))throw Error('V8 đang có tiến trình sử dụng database này (PID '+previous.pid+'). Đóng cửa sổ Shop còn chạy trước khi mở lại.')
+      // Stale/corrupt runtime metadata is not a second database. Preserve it
+      // under the same installation before claiming the atomic runtime file.
+      const archive=path.join(config.dataRoot,'warehouse-handoffs')
+      fs.mkdirSync(archive,{recursive:true})
+      fs.renameSync(lock,path.join(archive,'runtime-'+randomUUID()+'.json'))
+    }else{
+      const previous=JSON.parse(fs.readFileSync(physical(lock),'utf8'))
+      if(previous.format!==1||!Number.isSafeInteger(previous.pid)||previous.pid<=0||previous.database!==config.database||previous.configSha!==config.configSha)throw Error('Khóa LOCAL không rõ; giữ nguyên để kiểm tra')
+      try{process.kill(previous.pid,0);throw Error('LOCAL V2 đã có tiến trình chạy. Không mở hai server cùng kho.')}catch(e){if((e as NodeJS.ErrnoException).code!=='ESRCH')throw e}
+      fs.unlinkSync(lock)
+    }
   }
   const fd=fs.openSync(lock,'wx',0o600);try{fs.writeFileSync(fd,payload);fs.fsyncSync(fd)}finally{fs.closeSync(fd)}
   process.once('exit',()=>{try{if(fs.readFileSync(lock,'utf8')===payload)fs.unlinkSync(lock)}catch{}})

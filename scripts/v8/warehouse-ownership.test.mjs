@@ -5,6 +5,8 @@ import os from 'node:os'
 import path from 'node:path'
 import {pathToFileURL} from 'node:url'
 import ts from 'typescript'
+import {spawn} from 'node:child_process'
+import {once} from 'node:events'
 const source=fs.readFileSync(new URL('../../apps/api/src/warehouseOwnership.ts',import.meta.url),'utf8')
 const location=fs.mkdtempSync(path.join(os.tmpdir(),'mc-v8-ownership-'))
 const compiled=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText
@@ -19,119 +21,67 @@ function tmp(){
  const owner={format:1,warehouse:root,database:path.join(base,'previous','shop.db'),configPath:path.join(base,'previous','config.json'),configSha:'a'.repeat(64)}
  return {base,home,root,image,owner,marker:path.join(root,'.mecacao-local-active.json'),lock:path.join(root,'.mecacao-local-runtime.lock'),done(){fs.rmSync(base,{recursive:true,force:true})}}
 }
-test('V8 accepts stopped LOCAL warehouse without modifying photos',()=>{
+const cases=[
+ ['legacy marker with reused PID',x=>{fs.writeFileSync(x.marker,JSON.stringify(x.owner));fs.writeFileSync(x.lock,JSON.stringify({format:1,pid:process.pid,database:x.owner.database,configSha:x.owner.configSha}))}],
+ ['malformed marker',x=>fs.writeFileSync(x.marker,'{broken')],
+ ['BOM legacy marker',x=>fs.writeFileSync(x.marker,'\uFEFF'+JSON.stringify(x.owner))],
+ ['mismatched marker path',x=>fs.writeFileSync(x.marker,JSON.stringify({...x.owner,warehouse:'old-path'}))],
+ ['malformed orphan lock',x=>fs.writeFileSync(x.lock,'unknown format')],
+ ['orphan reused PID',x=>fs.writeFileSync(x.lock,JSON.stringify({pid:process.pid,database:x.owner.database}))],
+ ['orphan dead PID',x=>fs.writeFileSync(x.lock,JSON.stringify({pid:99999999,database:x.owner.database}))],
+ ['stopped different V8 installation',x=>fs.writeFileSync(x.marker,JSON.stringify({format:8,home:path.join(x.base,'OldV8'),warehouse:x.root,database:path.join(x.base,'OldV8','data','shop-v8','database','shop-v8.db')}))],
+ ['own marker with leftover lock',x=>{adoptWarehouse(x.root,x.home);fs.writeFileSync(x.lock,'{old')}],
+]
+for(const [name,prepare] of cases)test(name+': consent, archive, rollback, original images preserved',()=>{
  const x=tmp()
  try{
-  fs.writeFileSync(x.marker,JSON.stringify(x.owner))
-  fs.writeFileSync(x.lock,JSON.stringify({format:1,pid:99999999,database:x.owner.database,configSha:x.owner.configSha}))
-  assert.equal(inspectWarehouseOwner(x.root,x.home),'LEGACY')
-  adoptWarehouse(x.root,x.home)
+  prepare(x)
+  const marker=fs.existsSync(x.marker)?fs.readFileSync(x.marker):null
+  const lock=fs.existsSync(x.lock)?fs.readFileSync(x.lock):null
+  assert.notEqual(inspectWarehouseOwner(x.root,x.home,true),'OWN')
+  assert.throws(()=>adoptWarehouse(x.root,x.home),/xác nhận/)
+  const undo=adoptWarehouse(x.root,x.home,true)
   assert.equal(inspectWarehouseOwner(x.root,x.home),'OWN')
   assert.equal(fs.readFileSync(x.image,'utf8'),'ORIGINAL_FILE_MUST_NOT_CHANGE')
   assert(!fs.existsSync(x.lock))
-  assert.equal(fs.readdirSync(path.join(x.home,'data','shop-v8','warehouse-handoffs')).length,1)
- }finally{x.done()}
-})
-test('active older shop refuses V8 takeover',()=>{
- const x=tmp()
- try{
-  fs.writeFileSync(x.marker,JSON.stringify(x.owner))
-  fs.writeFileSync(x.lock,JSON.stringify({format:1,pid:process.pid,database:x.owner.database,configSha:x.owner.configSha}))
-  assert.throws(()=>adoptWarehouse(x.root,x.home),/vẫn đang chạy/)
-  assert.equal(JSON.parse(fs.readFileSync(x.marker)).format,1)
-  assert.equal(fs.readFileSync(x.image,'utf8'),'ORIGINAL_FILE_MUST_NOT_CHANGE')
- }finally{x.done()}
-})
-test('V8 forbids two database owners on same photo directory',()=>{
- const x=tmp()
- try{
-  assert.equal(inspectWarehouseOwner(x.root,x.home),'NEW')
-  const undo=adoptWarehouse(x.root,x.home)
-  assert.throws(()=>inspectWarehouseOwner(x.root,path.join(x.base,'OtherV8')),/V8 khác/)
+  const dir=path.join(x.home,'data','shop-v8','warehouse-handoffs')
+  const saved=JSON.parse(fs.readFileSync(path.join(dir,fs.readdirSync(dir)[0])))
+  assert.equal(saved.markerBase64,marker?.toString('base64')??null)
+  assert.equal(saved.lockBase64,lock?.toString('base64')??null)
+  assert.equal(saved.ownerConfirmed,true)
   undo()
-  assert.equal(inspectWarehouseOwner(x.root,x.home),'NEW')
- }finally{x.done()}
-})
-
-test('orphan LOCAL lock without owner marker can transfer safely when PID is dead',()=>{
- const x=tmp()
- try{
-  const original={format:1,pid:99999999,database:x.owner.database,configSha:'stage4-fresh'}
-  fs.writeFileSync(x.lock,JSON.stringify(original))
-  assert.equal(inspectWarehouseOwner(x.root,x.home),'ORPHAN')
-  adoptWarehouse(x.root,x.home)
-  assert.equal(inspectWarehouseOwner(x.root,x.home),'OWN')
-  assert.equal(fs.readFileSync(x.image,'utf8'),'ORIGINAL_FILE_MUST_NOT_CHANGE')
-  assert(!fs.existsSync(x.lock))
-  const saved=JSON.parse(fs.readFileSync(path.join(x.home,'data','shop-v8','warehouse-handoffs',fs.readdirSync(path.join(x.home,'data','shop-v8','warehouse-handoffs'))[0])))
-  assert.equal(saved.marker,null)
-  assert.deepEqual(JSON.parse(saved.lock),original)
- }finally{x.done()}
-})
-test('orphan lock belonging to live PID must block and retain original lock',()=>{
- const x=tmp()
- try{
-  const content=JSON.stringify({format:1,pid:process.pid,database:x.owner.database,configSha:'stage4-fresh'})
-  fs.writeFileSync(x.lock,content)
-  assert.throws(()=>inspectWarehouseOwner(x.root,x.home),/còn hoạt động/)
-  assert.throws(()=>adoptWarehouse(x.root,x.home),/còn hoạt động/)
-  assert.equal(fs.readFileSync(x.lock,'utf8'),content)
-  assert.equal(fs.readFileSync(x.image,'utf8'),'ORIGINAL_FILE_MUST_NOT_CHANGE')
- }finally{x.done()}
-})
-test('malformed orphan lock is preserved for manual inspection',()=>{
- const x=tmp()
- try{
-  fs.writeFileSync(x.lock,'{"bad":"unknown"}')
-  assert.throws(()=>adoptWarehouse(x.root,x.home),/không hợp lệ/)
-  assert.equal(fs.readFileSync(x.lock,'utf8'),'{"bad":"unknown"}')
- }finally{x.done()}
-})
-
-test('an older running V8 can take over its own photo-folder runtime lock',()=>{
- const x=tmp()
- try{
-  const payload={format:1,pid:process.pid,database:path.join(x.home,'data','shop-v8','database','shop-v8.db'),configSha:'stage4-fresh'}
-  fs.writeFileSync(x.lock,JSON.stringify(payload))
-  assert.equal(inspectWarehouseOwner(x.root,x.home),'ORPHAN')
-  adoptWarehouse(x.root,x.home)
-  assert.equal(inspectWarehouseOwner(x.root,x.home),'OWN')
-  assert.equal(fs.readFileSync(x.image,'utf8'),'ORIGINAL_FILE_MUST_NOT_CHANGE')
-  assert.equal(fs.existsSync(x.lock),false)
- }finally{x.done()}
-})
-test('live different owner cannot transfer, even if old version used stage4-fresh lock',()=>{
- const x=tmp()
- try{
-  const payload={format:1,pid:process.pid,database:path.join(x.base,'foreign','shop-v8.db'),configSha:'stage4-fresh'}
-  fs.writeFileSync(x.lock,JSON.stringify(payload))
-  assert.throws(()=>adoptWarehouse(x.root,x.home),/còn hoạt động/)
-  assert.equal(fs.readFileSync(x.lock,'utf8'),JSON.stringify(payload))
- }finally{x.done()}
-})
-
-test('owner can explicitly accept reused live PID without owner marker, preserving evidence',()=>{
- const x=tmp()
- try{
-  const lock={format:1,pid:process.pid,database:x.owner.database,configSha:'stage4-fresh'}
-  fs.writeFileSync(x.lock,JSON.stringify(lock))
-  assert.throws(()=>inspectWarehouseOwner(x.root,x.home),/còn hoạt động/)
-  assert.equal(inspectWarehouseOwner(x.root,x.home,true),'ORPHAN_UNVERIFIED')
+  assert.deepEqual(fs.existsSync(x.marker)?fs.readFileSync(x.marker):null,marker)
+  assert.deepEqual(fs.existsSync(x.lock)?fs.readFileSync(x.lock):null,lock)
   adoptWarehouse(x.root,x.home,true)
-  assert.equal(inspectWarehouseOwner(x.root,x.home),'OWN')
-  assert.equal(fs.readFileSync(x.image,'utf8'),'ORIGINAL_FILE_MUST_NOT_CHANGE')
-  const archived=path.join(x.home,'data','shop-v8','warehouse-handoffs')
-  const handoff=JSON.parse(fs.readFileSync(path.join(archived,fs.readdirSync(archived)[0]),'utf8'))
-  assert.equal(handoff.recoveryType,'ORPHAN_UNVERIFIED')
-  assert.equal(handoff.ownerConfirmed,true)
-  assert.deepEqual(JSON.parse(handoff.lock),lock)
+  assert.equal(fs.readdirSync(dir).length,2,'each handoff retains its own evidence')
  }finally{x.done()}
 })
-test('owner confirmation cannot steal a warehouse belonging to another V8 database',()=>{
+test('new and already owned warehouse are idempotent',()=>{
  const x=tmp()
  try{
+  assert.equal(inspectWarehouseOwner(x.root,x.home),'NEW')
   adoptWarehouse(x.root,x.home)
-  assert.throws(()=>adoptWarehouse(x.root,path.join(x.base,'DifferentV8'),true),/V8 khác/)
-  assert.equal(fs.readFileSync(x.image,'utf8'),'ORIGINAL_FILE_MUST_NOT_CHANGE')
+  const original=fs.readFileSync(x.marker)
+  adoptWarehouse(x.root,x.home)
+  assert.deepEqual(fs.readFileSync(x.marker),original)
  }finally{x.done()}
+})
+test('verified live V8 writer blocks even with owner confirmation',{skip:process.platform!=='win32'&&!fs.existsSync('/proc/self/cmdline')?'This runner does not expose process command lines; mandatory Windows CI covers this case':false},async(t)=>{
+ const x=tmp();let child
+ try{
+  const other=path.join(x.base,'OtherV8')
+  const entry=path.join(other,'releases','current','apps','api','dist','server.js')
+  fs.mkdirSync(path.dirname(entry),{recursive:true});fs.writeFileSync(entry,'setInterval(()=>{},1000)')
+  const database=path.join(other,'data','shop-v8','database','shop-v8.db')
+  fs.mkdirSync(path.dirname(database),{recursive:true})
+  child=spawn(process.execPath,[entry],{stdio:'ignore'});await once(child,'spawn')
+  if(process.platform!=='win32'&&!fs.existsSync(`/proc/${child.pid}/cmdline`)){t.skip('Process namespace unavailable here; live-writer check is mandatory on Windows CI');return}
+  fs.writeFileSync(path.join(other,'data','shop-v8','.mecacao-local-runtime.lock'),JSON.stringify({format:1,pid:child.pid,database,configSha:'stage4-fresh'}))
+  fs.writeFileSync(x.marker,JSON.stringify({format:8,home:other,warehouse:x.root,database}))
+  const original=fs.readFileSync(x.marker)
+  assert.throws(()=>inspectWarehouseOwner(x.root,x.home,true),/đã xác minh/)
+  assert.throws(()=>adoptWarehouse(x.root,x.home,true),/đã xác minh/)
+  assert.deepEqual(fs.readFileSync(x.marker),original)
+  assert.equal(fs.readFileSync(x.image,'utf8'),'ORIGINAL_FILE_MUST_NOT_CHANGE')
+ }finally{if(child){const stopped=once(child,'exit');child.kill();await stopped}x.done()}
 })

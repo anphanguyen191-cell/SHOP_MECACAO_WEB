@@ -56,7 +56,7 @@ if(freshDevelopment){
   const c=JSON.parse(fs.readFileSync(warehouseConfig,'utf8'));if(c.format!==1)throw Error('Cấu hình kho không hợp lệ')
   // Runtime lock is checked separately against this installation's database.
   selected=path.resolve(c.warehouse)
-  if(!path.isAbsolute(c.warehouse)||fs.realpathSync(selected)!==selected||!fs.lstatSync(selected).isDirectory()||selected===path.parse(selected).root||contains(selected,freshRoot)||contains(freshRoot,selected)||(v8Home?inspectWarehouseOwner(selected,v8Home)==='LEGACY':fs.existsSync(path.join(selected,'.mecacao-local-active.json'))))throw Error('Kho đã chọn chưa được bàn giao hợp lệ; giữ nguyên cấu hình để kiểm tra')
+  if(!path.isAbsolute(c.warehouse)||fs.realpathSync(selected)!==selected||!fs.lstatSync(selected).isDirectory()||selected===path.parse(selected).root||contains(selected,freshRoot)||contains(freshRoot,selected)||(v8Home?inspectWarehouseOwner(selected,v8Home)!=='OWN':fs.existsSync(path.join(selected,'.mecacao-local-active.json'))))throw Error('Kho đã chọn chưa được bàn giao hợp lệ; giữ nguyên cấu hình để kiểm tra')
  }
  process.env.SHOP_SANDBOX_ROOT=selected??freshRoot;process.env.SHOP_DB_PATH=path.join(freshRoot,'database',v8Home?'shop-v8.db':'shop-stage6-main-test.db')
  process.env.SHOP_ENABLE_V2_DRAFTS='1';process.env.SHOP_ENABLE_V2_SALES='1';process.env.SHOP_HOST='127.0.0.1'

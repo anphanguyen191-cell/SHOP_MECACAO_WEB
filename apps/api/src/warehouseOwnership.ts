@@ -1,73 +1,74 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import {createHash,randomUUID} from 'node:crypto'
+import {execFileSync} from 'node:child_process'
 const MARKER='.mecacao-local-active.json',LOCK='.mecacao-local-runtime.lock'
 function contents(file:string){
- if(fs.realpathSync(file)!==file||!fs.lstatSync(file).isFile()||fs.lstatSync(file).isSymbolicLink())throw Error('Dấu kho không an toàn')
+ if(fs.realpathSync(file)!==file||!fs.lstatSync(file).isFile()||fs.lstatSync(file).isSymbolicLink())throw Error('Dấu kho không phải file vật lý an toàn; không ghi đè liên kết hoặc thư mục')
  return fs.readFileSync(file)
 }
-function parse(file:string){try{return JSON.parse(contents(file).toString())}catch{throw Error('Dấu kho bị lỗi; không thay đổi ảnh hoặc quyền kho')}}
+function read(file:string){
+ if(!fs.existsSync(file))return null
+ const bytes=contents(file)
+ try{return JSON.parse(bytes.toString().replace(/^\uFEFF/,''))}catch{return null}
+}
 function own(home:string,root:string){return {format:8,home,warehouse:root,database:path.join(home,'data','shop-v8','database','shop-v8.db')}}
 type Ownership='NEW'|'OWN'|'LEGACY'|'ORPHAN'|'ORPHAN_UNVERIFIED'
-function inspectOrphanLock(file:string,home:string,root:string,allowUnverified=false):boolean{
- const lock=parse(file)
- if(lock.format!==1||!Number.isSafeInteger(lock.pid)||lock.pid<=0||typeof lock.database!=='string'||!path.isAbsolute(lock.database)||typeof lock.configSha!=='string')
-  throw Error('Khóa LOCAL không có dấu chủ sở hữu hoặc không hợp lệ. Không tự xóa. Cần kiểm tra file khóa trong thư mục kho.')
- // Historic V8 releases placed their own stage4-fresh lock in the photo
- // root. Allow this SAME process to take ownership; another live PID is blocked.
- if(lock.pid===process.pid&&lock.configSha==='stage4-fresh'&&lock.database===own(home,root).database)return true
- try{process.kill(lock.pid,0)}
- catch(e){
-  if((e as NodeJS.ErrnoException).code==='ESRCH')return true
-  if(allowUnverified)return false
-  throw Error('Chưa xác nhận được phiên bản LOCAL cũ đã dừng. Đóng phần mềm cũ trước khi tiếp nhận kho.')
- }
- if(allowUnverified)return false
- throw Error('Một tiến trình LOCAL còn hoạt động trên kho này. Hãy đóng hoàn toàn phiên bản cũ trước khi tiếp nhận.')
+// A live PID alone is not evidence: Windows reuses PIDs. Only block a V8
+// writer when its runtime lock AND live command line identify that installation.
+export function verifiedV8Writer(database:unknown,lock:any){
+ if(typeof database!=='string'||!path.isAbsolute(database)||lock?.database!==database||!Number.isSafeInteger(lock?.pid)||lock.pid<=0||lock.pid===process.pid)return false
+ const home=path.resolve(database,'../../../..')
+ if(database!==own(home,'').database)return false
+ try{
+  process.kill(lock.pid,0)
+  const command=process.platform==='win32'
+   ?execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',`(Get-CimInstance Win32_Process -Filter "ProcessId = ${lock.pid}").CommandLine`],{encoding:'utf8',windowsHide:true,timeout:5000})
+   :fs.readFileSync(`/proc/${lock.pid}/cmdline`,'utf8').replace(/\0/g,' ')
+  const normalized=command.replace(/\\/g,'/').toLowerCase()
+  const prefix=path.join(home,'releases').replace(/\\/g,'/').toLowerCase()+'/'
+  return normalized.includes(prefix)&&/\/apps\/api\/dist\/server\.js(?:["\s]|$)/.test(normalized)
+ }catch{return false}
 }
-export function inspectWarehouseOwner(root:string,home:string,allowUnverified=false):Ownership{
+function assertNoOtherWriter(root:string,home:string,owner:any,photoLock:any){
+ const candidates=new Set<string>()
+ if(typeof owner?.database==='string')candidates.add(owner.database)
+ if(typeof photoLock?.database==='string')candidates.add(photoLock.database)
+ for(const database of candidates){
+  if(!path.isAbsolute(database)||database===own(home,root).database)continue
+  const runtime=path.join(path.dirname(path.dirname(database)),LOCK)
+  // Do not interpret a marker path as authority to write any other DB.
+  const lock=read(runtime)
+  if(verifiedV8Writer(database,lock)||verifiedV8Writer(database,photoLock))
+   throw Error(`Một tiến trình V8 đã xác minh đang sử dụng kho (PID ${lock?.pid??photoLock?.pid}, database ${database}). Thoát bản V8 đó rồi tiếp nhận lại; ảnh và database được giữ nguyên.`)
+ }
+}
+export function inspectWarehouseOwner(root:string,home:string,_allowUnverified=false):Ownership{
  const m=path.join(root,MARKER),l=path.join(root,LOCK)
- if(!fs.existsSync(m)){
-  if(fs.existsSync(l)){
-   // Previous LOCAL or early V8 builds can leave only a runtime lock behind
-   // when an upgrade was interrupted. Never assume it is safe to delete:
-   // verify the recorded PID is dead and retain the complete original file.
-   return inspectOrphanLock(l,home,root,allowUnverified)?'ORPHAN':'ORPHAN_UNVERIFIED'
-  }
-  return 'NEW'
- }
- const o=parse(m)
- if(o.format===8){
-  const expected=own(home,root)
-  if(o.home!==expected.home||o.warehouse!==expected.warehouse||o.database!==expected.database)throw Error('Kho thuộc bản V8 khác; không dùng chung database')
-  return 'OWN'
- }
- if(o.format!==1||o.warehouse!==root||typeof o.database!=='string'||!path.isAbsolute(o.database)||typeof o.configPath!=='string'||!path.isAbsolute(o.configPath)||typeof o.configSha!=='string'||!/^[a-f0-9]{64}$/i.test(o.configSha))
-  throw Error('Dấu LOCAL cũ không hợp lệ; cần đối soát trước khi chuyển kho')
- if(fs.existsSync(l)){
-  const lock=parse(l)
-  if(lock.format!==1||!Number.isSafeInteger(lock.pid)||lock.pid<=0||lock.database!==o.database||lock.configSha!==o.configSha)throw Error('Khóa LOCAL cũ không khớp. Không tự xóa.')
-  try{process.kill(lock.pid,0)}catch(e){
-   if((e as NodeJS.ErrnoException).code==='ESRCH')return 'LEGACY'
-   throw Error('Không xác định được tiến trình LOCAL cũ; hãy thoát hẳn phần mềm cũ')
-  }
-  throw Error('Phần mềm LOCAL cũ vẫn đang chạy. Thoát bản cũ trước khi dùng kho này trên V8.')
- }
+ const owner=read(m),lock=read(l)
+ assertNoOtherWriter(root,home,owner,lock)
+ if(!fs.existsSync(m))return fs.existsSync(l)?'ORPHAN_UNVERIFIED':'NEW'
+ const expected=own(home,root)
+ if(owner?.format===8&&owner.home===expected.home&&owner.warehouse===expected.warehouse&&owner.database===expected.database&&!fs.existsSync(l))return 'OWN'
+ // Malformed, mismatched and old markers are evidence to archive, never an
+ // ownership veto. The POST endpoint requires the shop owner's confirmation.
  return 'LEGACY'
 }
-export function adoptWarehouse(root:string,home:string,allowUnverified=false){
- const kind=inspectWarehouseOwner(root,home,allowUnverified)
- if(kind==='ORPHAN_UNVERIFIED'&&!allowUnverified)throw Error('Kho cũ cần xác nhận tiếp nhận thủ công từ chủ Shop')
+export function adoptWarehouse(root:string,home:string,ownerConfirmed=false){
+ const kind=inspectWarehouseOwner(root,home)
  if(kind==='OWN')return ()=>{}
+ if(kind!=='NEW'&&!ownerConfirmed)throw Error('Kho có dấu phiên bản cũ. Chủ shop cần xác nhận tiếp nhận kho tại Import kho.')
  const marker=path.join(root,MARKER),lock=path.join(root,LOCK)
  const previous=fs.existsSync(marker)?contents(marker):null
  const priorLock=fs.existsSync(lock)?contents(lock):null
- if(kind==='LEGACY'||kind==='ORPHAN'||kind==='ORPHAN_UNVERIFIED'){
+ if(previous||priorLock){
   const archive=path.join(home,'data','shop-v8','warehouse-handoffs')
   fs.mkdirSync(archive,{recursive:true})
-  const target=path.join(archive,createHash('sha256').update(root).digest('hex')+'.json')
-  if(!fs.existsSync(target))fs.writeFileSync(target,JSON.stringify({root,marker:previous?.toString()??null,lock:priorLock?.toString()??null,at:new Date().toISOString(),recoveryType:kind,ownerConfirmed:kind==='ORPHAN_UNVERIFIED'}),{flag:'wx'})
+  const target=path.join(archive,createHash('sha256').update(root).digest('hex')+'-'+randomUUID()+'.json')
+  fs.writeFileSync(target,JSON.stringify({root,marker:previous?.toString()??null,lock:priorLock?.toString()??null,markerBase64:previous?.toString('base64')??null,lockBase64:priorLock?.toString('base64')??null,at:new Date().toISOString(),recoveryType:kind,ownerConfirmed}),{flag:'wx'})
  }
+ // Recheck immediately before writing, including changes since preflight.
+ inspectWarehouseOwner(root,home)
  if(priorLock)fs.unlinkSync(lock)
  const temp=marker+'.'+randomUUID()+'.tmp'
  try{

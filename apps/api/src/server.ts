@@ -215,14 +215,15 @@ app.get('/api/local/warehouse/preflight',(req,res)=>{
   const warehouse=validateNewWarehouse(req.query.warehouse,true)
   if(path.parse(warehouse).root.toUpperCase()!=='D:\\')throw Error('Kho V8 phải thuộc ổ D:')
   const ownership=inspectWarehouseOwner(warehouse,v8Home,true)
-  res.set('Cache-Control','no-store').json({warehouse,legacyOwnership:['LEGACY','ORPHAN','ORPHAN_UNVERIFIED'].includes(ownership),ownership,requiresManualConfirmation:ownership==='ORPHAN_UNVERIFIED'})
+  res.set('Cache-Control','no-store').json({warehouse,legacyOwnership:['LEGACY','ORPHAN','ORPHAN_UNVERIFIED'].includes(ownership),ownership,requiresManualConfirmation:ownership!=='NEW'&&ownership!=='OWN'})
  }catch(e){res.status(409).json({error:e instanceof Error?e.message:String(e)})}
 })
 app.post('/api/local/warehouse',(req,res)=>{
  if(!freshDevelopment)return res.status(404).json({error:'Chọn kho áp dụng cho bản main mới'})
  try{
   if(!v8Home&&(customWarehouse||fs.existsSync(warehouseConfig)))throw Error('Kho đã được chọn và khóa cho bản cài này.')
-  if(['products','product_images','sales_orders','shop_customers','inventory_transactions','sales_units','finance_entries','stocktake_sessions','cloud_sync_cursors'].filter(t=>db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(t)).some(t=>db.prepare('SELECT 1 FROM '+t+' LIMIT 1').get())||db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())throw Error('Chỉ chọn kho trước khi nhập dữ liệu. Giữ kho hiện tại hoặc giải nén bản main vào thư mục mới.')
+  if(v8Home&&customWarehouse&&typeof req.body.warehouse==='string'&&path.resolve(req.body.warehouse)===freshWarehouse){validateNewWarehouse(req.body.warehouse);return res.json({warehouse:freshWarehouse,restarting:false})}
+  if(['products','product_images','sales_orders','shop_customers','inventory_transactions','sales_units','finance_entries','stocktake_sessions','cloud_sync_cursors'].filter(t=>db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(t)).some(t=>db.prepare('SELECT 1 FROM '+t+' LIMIT 1').get())||db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())throw Error('Chỉ chọn kho trước khi nhập dữ liệu. Giữ kho hiện tại; không tạo database khác. Cần đối soát dữ liệu trước khi đổi sang kho khác.')
   const warehouse=validateNewWarehouse(req.body.warehouse,req.body.allowLegacyHandoff===true)
   if(v8Home&&['LEGACY','ORPHAN','ORPHAN_UNVERIFIED'].includes(inspectWarehouseOwner(warehouse,v8Home,true))&&req.body.allowLegacyHandoff!==true)
    throw Error('Để dùng lại kho LOCAL cũ, hãy xác nhận chuyển quyền sử dụng tại Import kho.')

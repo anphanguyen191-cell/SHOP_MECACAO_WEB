@@ -26,12 +26,15 @@ function active(){
  return state.release
 }
 const folder=release=>path.join(home,'releases',release)
+const expectedIdentities=new WeakMap()
 function start(release,fenced=true){
  const root=folder(release),entry=path.join(root,'apps/api/dist/server.js')
  if(!fs.existsSync(entry))throw Error('Không có chương trình V8: '+release)
  const env={...process.env,SHOP_FRESH_DEVELOPMENT:'1',SHOP_V8_HOME:home,SHOP_HOST:'127.0.0.1',PORT:'3000',SHOP_UPDATE_STARTING:fenced?'1':'0',SHOP_RELEASE_CHANNEL:release==='current'&&rootManifest.channel==='PREVIEW'?'PREVIEW':'STABLE'}
  for(const k of ['SHOP_MANAGED_HOME','SHOP_DB_PATH','SHOP_SANDBOX_ROOT','SHOP_LOCAL_V2_CONFIG','SHOP_LOCAL_V2_RESTORE_READY'])delete env[k]
  const child=fork(entry,[],{cwd:root,env,stdio:['ignore','inherit','inherit','ipc'],windowsHide:true})
+ const metadataPath=path.join(root,'release-info.json')
+ if(fs.existsSync(metadataPath))expectedIdentities.set(child,JSON.parse(fs.readFileSync(metadataPath,'utf8')))
  child.on('message',m=>{if(m?.type==='managed:update'&&!updating&&!stopping)void update()})
  child.once('exit',code=>{
   if(child!==server||updating||stopping)return
@@ -52,9 +55,11 @@ async function ready(child){
     const h=await resp.json()
     if(h.installationId!==identity||h.database!=='shop-v8.db'||h.schema!==130||h.databasePath!==path.join(home,'data','shop-v8','database','shop-v8.db'))
      throw Error('Phiên bản không mở đúng database V8')
+    const expected=expectedIdentities.get(child)
+    if(expected&&(h.release?.sourceCommit!==expected.sourceCommit||h.release?.tag!==expected.tag))throw Error('Mã chương trình đang chạy không khớp bản phát hành vừa mở')
     return
    }
-  }catch(e){if(String(e.message).includes('không mở đúng'))throw e}
+  }catch(e){if(String(e.message).includes('không mở đúng')||String(e.message).includes('không khớp bản phát hành'))throw e}
   await sleep(300)
  }
  throw Error('Ứng dụng V8 không khởi động được')
