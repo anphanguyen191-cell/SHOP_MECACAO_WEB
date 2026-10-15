@@ -165,8 +165,12 @@ try{
  while(Date.now()<deadline){const notices=await api('/api/warehouse/notices');periodicNotice=notices.length>baselineNoticeCount&&notices.some(n=>n.state==='unseen'&&n.message.includes('2 ảnh chờ duyệt'));if(periodicNotice)break;await sleep(500)}
  check(periodicNotice,'real periodic backend timer discovers a second pending image')
  for(let i=0;i<200;i++){const tasks=await api('/api/tasks');if(!tasks.some(t=>['QUEUED','RUNNING'].includes(t.status)))break;await sleep(50)}
- check((await api('/api/inventory/dashboard')).stock===4,'automatic scans never register pending physical files or change ledger stock')
+ const physicalWithPending=await api('/api/inventory/dashboard')
+ check(physicalWithPending.stock===6&&physicalWithPending.pendingImages===2,'automatic scans include two on-disk photos awaiting registration')
+ const explorerWithPending=await api('/api/inventory/explorer')
+ check(explorerWithPending.some(p=>p.variants.some(v=>v.pendingImages===2&&v.ledger_stock!==v.stock)),'physical pending photos never fabricate inventory ledger transactions')
  fs.unlinkSync(pendingFile);fs.unlinkSync(periodicFile)
+ check((await api('/api/inventory/dashboard')).stock===4,'deleting the two extra physical photos updates stock immediately')
  console.log('HTTP_API_ACCEPTANCE PASS: '+checks+' assertions; 3 receipt flows, scan/import/idempotence, ledger isolation, SHA originals, lossless backup and restart')
 }catch(e){console.error(e instanceof Error?e.stack:String(e));console.error('Server logs:',logs.slice(-4000));process.exitCode=1}
 finally{
