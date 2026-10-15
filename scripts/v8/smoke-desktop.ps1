@@ -160,7 +160,6 @@ try{
  if($desktop){ & taskkill.exe /T /F /PID $desktop.Id 2>$null | Out-Null }
  if($createdDrive){subst D: /D}
 }
-){throw 'V8 version still hardcoded or malformed'}
  if($health.cloudAuthority){throw 'Fresh V8 must not be linked to legacy Cloud automatically'}
  $database=Join-Path $installDir 'data/shop-v8/database/shop-v8.db'
  if(!(Test-Path $database)){ throw 'V8 database missing on D:' }
