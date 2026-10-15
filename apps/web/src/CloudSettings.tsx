@@ -3,7 +3,7 @@ import type {Session} from '@supabase/supabase-js'
 import {saveCloudPassword} from './cloudPassword'
 import {cloud,cloudRpc,cloudRows,cloudCommand,CLOUD_BUCKET} from './cloudClient'
 import {CLOUD_RELEASE,CLOUD_MOBILE_URL} from './cloudRelease'
-import {runImageSyncQueue,verifyStorageDeletion,readCloudSourceSnapshot,reconcileCloudImages,validateCloudVariants} from './cloudSyncAudit'
+import {runImageSyncQueue,verifyStorageDeletion,readCloudSourceSnapshot,reconcileCloudImages,validateCloudVariants,validateCloudProductNames} from './cloudSyncAudit'
 import {apiJson,useBooleanPreference} from './uiState'
 const sha=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))).map(v=>v.toString(16).padStart(2,'0')).join('')
 export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:boolean;autoSync?:boolean}){
@@ -56,7 +56,7 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
   await cloudRpc('mc_v7_catalog',{p_instance:initial.instance,p_request:'bootstrap:'+initial.instance+':'+session.user.id,p_payload:{}})
   const state=await apiJson('/api/cloud/state'),sold=(await cloudRows('sales_confirmations')).map(c=>c.order_id).filter(id=>!state.reconciled.includes(id))
   for(let start=0;start<sold.length;start+=100)await apiJson('/api/cloud/reconcile',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify({orders:sold.slice(start,start+100)})})
-  const activePhotos:any[]=[],activeVariants:any[]=[]
+  const activePhotos:any[]=[],activeVariants:any[]=[],activeProducts:any[]=[]
   const existingImages=new Map((await cloudRows('product_images')).map(a=>[Number(a.id),a]))
   const ready=new Map((await cloudRows('cloud_image_assets')).filter(a=>a.ready).map(a=>[Number(a.image_id),a.sha256]))
   for(;;){
@@ -69,7 +69,7 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
    if(physicallyPresent.length+batch.sourceState.filter((x:any)=>x.present===false).length!==batch.images.length)
     throw Error('Windows trả trạng thái ảnh nguồn không hợp lệ. Dừng đồng bộ.')
    localImageCount+=physicallyPresent.length
-   activePhotos.push(...physicallyPresent);activeVariants.push(...batch.variants)
+   activePhotos.push(...physicallyPresent);activeVariants.push(...batch.variants);activeProducts.push(...batch.products)
    // Each request is bounded; dependencies are registered in order.
    for(const field of ['categories','products','variants','images'])for(let start=0;start<batch[field].length;start+=100){
     const group=batch[field].slice(start,start+100)
@@ -114,16 +114,17 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
    if(batch.done)break;offset++
   }
   if(missingCount>0&&localImageCount===0)throw Error('Toàn bộ ảnh nguồn Windows đang thiếu. Không được rút toàn bộ tồn Cloud tự động; hãy kiểm tra đường dẫn kho.')
-  const afterImages=await cloudRows('product_images'),afterAssets=await cloudRows('cloud_image_assets'),
+  const afterProducts=await cloudRows('products'),afterImages=await cloudRows('product_images'),afterAssets=await cloudRows('cloud_image_assets'),
         afterSold=await cloudRows('sales_units'),afterVariants=await cloudRows('product_variants')
+  validateCloudProductNames(activeProducts,afterProducts)
   validateCloudVariants(activeVariants,afterVariants)
   // Re-scan physical presence to reject changes during a long-running 3,000+ photo sync.
   let verifyOffset=0,verifiedProducts=0
-  const verifiedImages:any[]=[],verifiedVariants:any[]=[]
+  const verifiedImages:any[]=[],verifiedVariants:any[]=[],verifiedProductsRows:any[]=[]
   for(;;){
    const page=await apiJson('/api/cloud/catalog?offset='+verifyOffset)
    if(page.instance!==initial.instance||!Array.isArray(page.sourceState)||page.sourceState.length!==page.images.length)throw Error('Kho Windows vừa thay đổi hoặc quét chưa đầy đủ; thử đồng bộ lại.')
-   verifiedProducts+=page.products.length
+   verifiedProducts+=page.products.length;verifiedProductsRows.push(...page.products)
    const status=new Map(page.sourceState.map((x:any)=>[Number(x.id),x.present]))
    verifiedImages.push(...page.images.filter((x:any)=>status.get(Number(x.id))===true))
    verifiedVariants.push(...page.variants)
@@ -139,6 +140,7 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
    if(!prev||Number(prev.product_id)!==Number(image.product_id)||Number(prev.variant_id)!==Number(image.variant_id))
     throw Error('Ảnh tồn Windows đã thay đổi khi đồng bộ; đọc lại trước khi kích hoạt.')
   }
+  validateCloudProductNames(activeProducts,verifiedProductsRows)
   validateCloudVariants(activeVariants,verifiedVariants)
   let audit=reconcileCloudImages(activePhotos,afterImages,afterAssets,afterSold,localProducts)
   // Cloud retains historical SOLD images and rows from prior scans. Only active

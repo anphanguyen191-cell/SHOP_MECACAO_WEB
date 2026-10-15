@@ -1,3 +1,12 @@
+## Reset Cloud sạch và quy tắc đồng nhất tên / số thứ tự file — 15/10/2026
+
+- Supabase hiện tại đã sạch: 0 sản phẩm, 0 Size, 0 ảnh, 0 Storage objects; giữ tài khoản/role owner và schema/RPC cùng bucket không công khai. Chưa có đồng bộ thực tế từ laptop sau reset.
+- Tên sản phẩm Cloud lấy nguyên văn từ `products.name` trên Windows, giữ dấu tiếng Việt/mã Product/ID; chặn kích hoạt Cloud nếu tên hoặc mã khác (so sánh từng bản ghi).
+- Ảnh mới trên V8 COPY vào kho được tự đặt tên `ShopMeCaCao_Tole_<Product>_Size_<Size>_<số tăng>.jpg`; không gán lại số đã cấp kể cả sau khi ảnh bị bán/xóa. Bộ đếm cao nhất lưu trong `app_metadata` của một database LOCAL V8, có nguồn đối chiếu bổ sung từ file kho và mọi đường dẫn ảnh đã đăng ký (kể cả file bị mất).
+- Đặt số trước khi COPY/rename, không reset số khi rollback: có thể khuyết số nhưng tuyệt đối không tái sử dụng. Không thay đổi ảnh gốc hiện hữu chỉ bởi cập nhật phiên bản.
+- Các lần chạy trên laptop cần test import 3 kiểu, rename, xóa ảnh, restart, then next filename, Cloud exact-name, mobile sau khi cập nhật.
+
+---
 ## Cloud audit bổ sung — an toàn trước ghi, hiệu năng và xác nhận xóa (15/10/2026)
 
 - Đọc và kiểm tra toàn bộ trang nguồn trước khi ghi Cloud; toàn bộ ảnh mất thì dừng trước mọi thay đổi tồn. Rút ảnh thiếu từng phần chỉ sau vòng quét lại xác nhận kho không thay đổi.

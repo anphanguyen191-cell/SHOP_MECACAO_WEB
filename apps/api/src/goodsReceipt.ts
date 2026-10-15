@@ -9,7 +9,7 @@ import { db } from './db.js'
 import { suggestProductCode, suggestSku, getProduct } from './products.js'
 import { createReceiptJournal, finishReceiptJournal, recoverPendingGoodsReceipts } from './receiptRecovery.js'
 import {getWatchSettings} from './warehouseWatch.js'
-import {nextNamedImage} from './imageNaming.js'
+import {nextNamedImage,reserveNamedImageSequences} from './imageNaming.js'
 import {recoverImageRenames} from './imageRename.js'
 
 const IMAGE_EXTENSIONS=new Set(['.jpg','.jpeg','.png','.webp','.heic'])
@@ -64,8 +64,10 @@ export function receiveGoods(input:ReceiveInput,onProgress?:(p:ReceiveProgress)=
    for(const existingFile of fs.readdirSync(dir)){const candidate=path.join(dir,existingFile);if(IMAGE_EXTENSIONS.has(path.extname(existingFile).toLowerCase())&&fs.statSync(candidate).isFile())hashes.add(digest(candidate))}
    if(!inside(fs.realpathSync(root),canonicalDir))throw new Error('Thư mục kho đích nằm ngoài kho đã chọn')
    const copies:{src:string;dest:string;sha256:string}[]=[]
-   for(const src of s.images){const approvedHash=freshDevelopment?requireApprovedPhoneReceiptSource(freshRoot,src):undefined;const source=fs.realpathSync(src);if(source===fs.realpathSync(root)||inside(fs.realpathSync(root),source))throw new Error('Không được nhập ảnh nguồn từ chính kho đích: '+src);const hash=digest(source);if(approvedHash&&approvedHash!==hash)throw new Error('Ảnh iPhone thay đổi trong lúc xác nhận nhập, dừng ghi tồn');rejectSoldSource(db,hash);if(hashes.has(hash))throw new Error('Ảnh trùng nội dung đã có trong kho hoặc trong phiếu: '+path.basename(src));hashes.add(hash);copies.push({src,dest:getWatchSettings().autoRename?nextNamedImage(dir,productName,s.size,path.extname(src),reserved):nextTarget(dir,path.extname(src),reserved),sha256:hash})}
+   for(const src of s.images){const approvedHash=freshDevelopment?requireApprovedPhoneReceiptSource(freshRoot,src):undefined;const source=fs.realpathSync(src);if(source===fs.realpathSync(root)||inside(fs.realpathSync(root),source))throw new Error('Không được nhập ảnh nguồn từ chính kho đích: '+src);const hash=digest(source);if(approvedHash&&approvedHash!==hash)throw new Error('Ảnh iPhone thay đổi trong lúc xác nhận nhập, dừng ghi tồn');rejectSoldSource(db,hash);if(hashes.has(hash))throw new Error('Ảnh trùng nội dung đã có trong kho hoặc trong phiếu: '+path.basename(src));hashes.add(hash);copies.push({src,dest:(freshDevelopment||getWatchSettings().autoRename)?nextNamedImage(dir,productName,s.size,path.extname(src),reserved):nextTarget(dir,path.extname(src),reserved),sha256:hash})}
    plans.push({size:s,dir,copies})}
+  // Persist every allocated name independently of receipt rollback; skipped IDs are safe.
+  reserveNamedImageSequences(plans.flatMap(p=>p.copies.map(x=>x.dest)))
   // Journal MUST be persisted before creating any inventory image.
   journal=createReceiptJournal({storeRoot:root,files:plans.flatMap(p=>p.copies.map(x=>({dest:x.dest,sha256:x.sha256}))),createdDirs})
   let copied=0

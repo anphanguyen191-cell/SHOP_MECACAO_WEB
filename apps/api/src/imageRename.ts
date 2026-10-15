@@ -3,7 +3,7 @@ import path from 'node:path'
 import {createHash,randomUUID} from 'node:crypto'
 import {db,dbPath} from './db.js'
 import {createBackup} from './backup.js'
-import {imagePrefix,nextNamedImage} from './imageNaming.js'
+import {imagePrefix,nextNamedImage,reserveNamedImageSequences} from './imageNaming.js'
 import {validateWarehouseRoot} from './warehouseWatch.js'
 import {recoverPendingGoodsReceipts} from './receiptRecovery.js'
 
@@ -80,6 +80,7 @@ export function commitImageRename(rootPath:string,ids:number[],token:string,conf
  if(plan.missing.length)throw Error('Có ảnh bị thiếu; kiểm tra trước khi rename')
  if(!plan.files.length)return {renamed:0,log:null}
  const backup=createBackup() as any
+ reserveNamedImageSequences(plan.files.map(f=>f.newPath))
  fs.mkdirSync(journalDir,{recursive:true});const id=randomUUID(),journal=path.join(journalDir,id+'.json')
  const j:Journal={version:1,id,rootPath:plan.rootPath,files:plan.files,backup:JSON.stringify(backup),createdAt:new Date().toISOString()}
  validateJournal(j);syncWrite(journal,j)

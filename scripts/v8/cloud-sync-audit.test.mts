@@ -86,3 +86,13 @@ test('failed queue drains in-flight work before returning and does not start lat
  assert.deepEqual(seen,[1,2]);assert.equal(finished,true)
  let calls=0;await runImageSyncQueue([1],async()=>{calls++},()=>true);assert.equal(calls,0)
 })
+
+const {validateCloudProductNames}=await import('../../apps/web/src/cloudSyncAudit.ts')
+test('V8 Cloud keeps exact Vietnamese product names and IDs from Windows',()=>{
+ const local=[{id:1,product_code:'VA0001',name:'Vải tole Bé Gái'},{id:2,product_code:'DO0002',name:'Đồ bộ Gấu Hồng'}]
+ assert.equal(validateCloudProductNames(local,[...local]),2)
+ assert.throws(()=>validateCloudProductNames(local,[{...local[0],name:'Vai tole Be Gai'},local[1]]),/chưa trùng chính xác/)
+ assert.throws(()=>validateCloudProductNames(local,[{...local[0],product_code:'VA0002'},local[1]]),/chưa trùng chính xác/)
+ assert.throws(()=>validateCloudProductNames(local,[local[0]]),/chưa trùng chính xác/)
+ assert.throws(()=>validateCloudProductNames(local,[...local,{id:3,product_code:'X',name:'dư'}]),/không thuộc kho Windows/)
+})

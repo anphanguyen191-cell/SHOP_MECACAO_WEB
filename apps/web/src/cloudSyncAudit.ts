@@ -6,6 +6,18 @@ export type SyncPhoto = {id:number|string;product_id:number|string;variant_id:nu
 export type SyncAsset = {image_id:number|string;ready:boolean;source_present?:boolean|null;object_path?:string}
 export type SyncSold = {image_id:number|string}
 export type SyncVariant = {id:number|string;product_id:number|string;sku:string;size:string}
+export type SyncProduct = {id:number|string;product_code:string;name:string}
+export function validateCloudProductNames(local:SyncProduct[],remote:SyncProduct[]){
+ const source=indexed(local,p=>id(p.id,'Product Windows'),'Product Windows')
+ const cloud=indexed(remote,p=>id(p.id,'Product Cloud'),'Product Cloud')
+ for(const [number,product] of source){
+  const saved=cloud.get(number)
+  if(!saved||saved.product_code!==product.product_code||saved.name!==product.name)
+   throw Error('Tên/mã sản phẩm Cloud #'+number+' chưa trùng chính xác Windows. Dừng kích hoạt; không tự sửa tên kho gốc.')
+ }
+ if(cloud.size!==source.size)throw Error('Danh mục Cloud có sản phẩm không thuộc kho Windows; cần đọc lại trước khi kích hoạt.')
+ return source.size
+}
 const id=(value:unknown,name:string):number=>{
  const n=Number(value)
  if(!Number.isSafeInteger(n)||n<1)throw Error('Cloud: ID '+name+' không hợp lệ; dừng đối chiếu.')
