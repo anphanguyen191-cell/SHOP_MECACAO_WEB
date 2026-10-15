@@ -1,3 +1,12 @@
+## Cập nhật đồng bộ Cloud theo SHA-256 — 15/10/2026
+
+- Nguyên tắc mới: phát hành phiên bản Windows không được đổi kho Cloud. Đối chiếu ảnh theo SHA-256 JPEG đã tối ưu, không căn cứ phiên bản, tên ảnh hoặc ID.
+- Tái sử dụng ảnh cũ trên Cloud khi hash trùng và Storage có file hợp lệ; nếu chưa có mới upload. Trùng nội dung giữa nhiều ID dùng chung một ảnh Cloud để tiết kiệm dung lượng.
+- Supabase đã triển khai RPC `mc_v8_catalog_variants` sửa lỗi cũ Size 9 cột/7 giá trị; và `mc_v8_reuse_image` tái sử dụng ảnh mà không cần tải lại. Quét sau chỉ đăng ký ảnh chưa có và kiểm tra Product/Size.
+- Hồ sơ Cloud test cũ được lưu trước khi tiếp nhận; 3.100 JPEG cũ chưa xóa. Chỉ xóa các bản ảnh cũ không còn được Cloud V8 sử dụng **sau** khi đối soát, kích hoạt Cloud và xác nhận của chủ shop.
+- LOCAL V8 và ảnh gốc `D:\1-Me CaCao Store` giữ nguyên. Chưa nghiệm thu chạy thực tế qua Windows/iPhone; không suy diễn CI thành đồng bộ thành công.
+
+---
 # PROJECT_STATE — chốt nghiệm thu import kho thật ngày 15/10/2026
 
 > **Trạng thái mới nhất (ưu tiên đọc trước hồ sơ bàn giao lịch sử bên dưới).**

@@ -18,3 +18,11 @@ test('retained old images only delete after identical SHA, ready asset, and expl
  for(const token of ['current_asset.sha256=h.sha256','current_asset.ready','current_object.name=current_asset.object_path'])assert.ok(sql.includes(token))
  assert.ok(guard.includes('as restrictive'))
 })
+
+test('V8 Cloud sync checks existing registrations and reuses identical content',()=>{
+ for(const token of ['existingImages=new Map','group.filter((item:any)=>!existingImages.has(Number(item.id)))','mc_v8_catalog_variants','mc_v8_reuse_image','reuse.reused&&reuse.ready','ready.set(Number(image.id),hash)'])assert.ok(ui.includes(token),token)
+})
+const dedup=fs.readFileSync(new URL('../../supabase/migrations/20261015190000_v8_reuse_content_hash_across_versions.sql',import.meta.url),'utf8')
+test('Cloud SHA reuse checks physical JPEG, legacy archive and prevents deleting active references',()=>{
+ for(const token of ['mc_v8_catalog_variants','mc_v8_reuse_image','mc_v8_handoff_assets','a.sha256=p_sha',"stored.metadata->>'mimetype'='image/jpeg'",'active.object_path=p_path AND active.ready'])assert.ok(dedup.includes(token),token)
+})
