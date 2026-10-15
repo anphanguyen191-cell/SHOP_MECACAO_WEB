@@ -1,6 +1,6 @@
 import {markPriceSet} from './priceBulk.js'
 import { db } from './db.js'
-import { physicalImagesByVariant } from './physicalInventory.js'
+import { physicalImagesByVariant,unregisteredPhysicalByVariant } from './physicalInventory.js'
 
 export type VariantInput = { size: string; sku?: string; openingStock?: number; costPrice?: number; salePrice?: number }
 export type ProductInput = {
@@ -60,11 +60,12 @@ export function listProducts(search = '',filters:ProductListFilters={}) {
   const matchedIds=new Set(rows.map(p=>p.id))
   const matchedVariants=variants.filter(v=>matchedIds.has(v.product_id))
   const imageMap=physicalImagesByVariant(matchedVariants.map(v=>v.id))
+  const pending=unregisteredPhysicalByVariant()
   const variantsByProduct=new Map<number,typeof matchedVariants>()
   for(const v of matchedVariants){const group=variantsByProduct.get(v.product_id)??[];group.push(v);variantsByProduct.set(v.product_id,group)}
   const result=rows.map(p=>{
     const productVariants=variantsByProduct.get(p.id)??[]
-    const sizes=productVariants.map(v=>({size:v.size,stock:(imageMap.get(v.id)??[]).filter(x=>x.product_id===p.id&&x.exists).length}))
+    const sizes=productVariants.map(v=>({size:v.size,stock:(imageMap.get(v.id)??[]).filter(x=>x.product_id===p.id&&x.exists).length+(pending.get(v.id)??0)}))
     const totalStock=sizes.reduce((n,v)=>n+v.stock,0)
     const filteredStock=selectedSize?sizes.filter(v=>v.size===selectedSize).reduce((n,v)=>n+v.stock,0):totalStock
     return {...p,image_id:productVariants.flatMap(v=>imageMap.get(v.id)??[]).find(i=>i.product_id===p.id&&i.exists)?.id??null,ledger_stock:productVariants.reduce((n,v)=>n+Number(v.ledger_stock),0),variant_count:sizes.length,total_stock:totalStock,filtered_stock:filteredStock,sizes:sizes.map(v=>v.size),stock_by_size:sizes}
@@ -90,7 +91,8 @@ export function getProduct(id: number) {
     WHERE v.product_id = ? ORDER BY v.id
   `).all(id) as Array<any>
   const imageMap=physicalImagesByVariant(variants.map(v=>v.id))
-  const physicalVariants=variants.map(v=>({...v,ledger_stock:v.stock,stock:(imageMap.get(v.id)??[]).filter(x=>x.product_id===id&&x.exists).length}))
+  const pending=unregisteredPhysicalByVariant()
+  const physicalVariants=variants.map(v=>({...v,ledger_stock:v.stock,stock:(imageMap.get(v.id)??[]).filter(x=>x.product_id===id&&x.exists).length+(pending.get(v.id)??0),pendingImages:pending.get(v.id)??0}))
   const images = db.prepare('SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order, id').all(id)
   return { product, variants:physicalVariants, images }
 }
