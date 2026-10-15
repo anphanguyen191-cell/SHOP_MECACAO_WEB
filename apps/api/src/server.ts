@@ -212,9 +212,10 @@ app.get('/api/health', (_req, res) => res.json({
 app.get('/api/local/warehouse/preflight',(req,res)=>{
  if(!v8Home||res.locals.lanUser)return res.status(403).json({error:'Chỉ chọn kho trên Windows V8'})
  try{
-  const warehouse=validateNewWarehouse(req.query.warehouse)
+  const warehouse=validateNewWarehouse(req.query.warehouse,true)
   if(path.parse(warehouse).root.toUpperCase()!=='D:\\')throw Error('Kho V8 phải thuộc ổ D:')
-  res.set('Cache-Control','no-store').json({warehouse,legacyOwnership:['LEGACY','ORPHAN'].includes(inspectWarehouseOwner(warehouse,v8Home))})
+  const ownership=inspectWarehouseOwner(warehouse,v8Home,true)
+  res.set('Cache-Control','no-store').json({warehouse,legacyOwnership:['LEGACY','ORPHAN','ORPHAN_UNVERIFIED'].includes(ownership),ownership,requiresManualConfirmation:ownership==='ORPHAN_UNVERIFIED'})
  }catch(e){res.status(409).json({error:e instanceof Error?e.message:String(e)})}
 })
 app.post('/api/local/warehouse',(req,res)=>{
@@ -222,14 +223,14 @@ app.post('/api/local/warehouse',(req,res)=>{
  try{
   if(!v8Home&&(customWarehouse||fs.existsSync(warehouseConfig)))throw Error('Kho đã được chọn và khóa cho bản cài này.')
   if(['products','product_images','sales_orders','shop_customers','inventory_transactions','sales_units','finance_entries','stocktake_sessions','cloud_sync_cursors'].filter(t=>db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(t)).some(t=>db.prepare('SELECT 1 FROM '+t+' LIMIT 1').get())||db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())throw Error('Chỉ chọn kho trước khi nhập dữ liệu. Giữ kho hiện tại hoặc giải nén bản main vào thư mục mới.')
-  const warehouse=validateNewWarehouse(req.body.warehouse)
-  if(v8Home&&['LEGACY','ORPHAN'].includes(inspectWarehouseOwner(warehouse,v8Home))&&req.body.allowLegacyHandoff!==true)
+  const warehouse=validateNewWarehouse(req.body.warehouse,req.body.allowLegacyHandoff===true)
+  if(v8Home&&['LEGACY','ORPHAN','ORPHAN_UNVERIFIED'].includes(inspectWarehouseOwner(warehouse,v8Home,true))&&req.body.allowLegacyHandoff!==true)
    throw Error('Để dùng lại kho LOCAL cũ, hãy xác nhận chuyển quyền sử dụng tại Import kho.')
   if(v8Home&&path.parse(warehouse).root.toUpperCase()!=='D:\\')throw Error('Kho chính thức V8 phải thuộc ổ D:')
   if(v8Home&&(taskActivity.busy||salesActivity.busy||tasks.pendingReview()))throw Error('Hãy đợi các tác vụ đang chạy hoàn tất trước khi đổi kho')
   if(freshWarehouse===warehouse&&customWarehouse)return res.json({warehouse,restarting:false})
   if(v8Home){
-   const undo=adoptWarehouse(warehouse,v8Home)
+   const undo=adoptWarehouse(warehouse,v8Home,req.body.allowLegacyHandoff===true)
    const previousConfig=fs.existsSync(warehouseConfig)?fs.readFileSync(warehouseConfig):null
    const temp=warehouseConfig+'.'+randomUUID()+'.tmp'
    try{

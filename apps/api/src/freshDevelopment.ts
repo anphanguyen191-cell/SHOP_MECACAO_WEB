@@ -3,7 +3,22 @@ import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {inspectWarehouseOwner} from './warehouseOwnership.js'
 export const freshDevelopment=process.env.SHOP_FRESH_DEVELOPMENT==='1'
-export const release={version:process.env.SHOP_V8_HOME?(process.env.SHOP_RELEASE_CHANNEL==='STABLE'?'8.0.0':'8.0.0-preview'):'7.3.0',channel:process.env.SHOP_V8_HOME?(process.env.SHOP_RELEASE_CHANNEL==='STABLE'?'stable':'preview'):'release',stage:process.env.SHOP_V8_HOME?8:7,status:process.env.SHOP_V8_HOME?(process.env.SHOP_RELEASE_CHANNEL==='STABLE'?'RELEASED':'DEVELOPMENT'):'RELEASED',next:'Windows và iPhone dùng chung dữ liệu Cloud'}
+// Identified by each installed release's own immutable metadata. Do not infer
+// version from installation.json (which never changes) or a hardcoded "8.0.0".
+function releaseIdentity(){
+ if(!process.env.SHOP_V8_HOME)return null
+ try{
+  const metadata=JSON.parse(fs.readFileSync(path.join(process.cwd(),'release-info.json'),'utf8'))
+  if(metadata.format!==8||!/^v8\.0\.[0-9]+-(stable|preview)$/.test(metadata.tag)||!(/^[a-f0-9]{40}$/.test(metadata.sourceCommit)))throw Error('invalid release metadata')
+  return metadata as {format:8;tag:string;sourceCommit:string}
+ }catch{
+  // Older installs lack metadata; show an explicit unidentified version
+  // instead of asserting that every V8 release is 8.0.0.
+  return null
+ }
+}
+const currentIdentity=releaseIdentity()
+export const release={version:process.env.SHOP_V8_HOME?(currentIdentity?currentIdentity.tag.replace(/^v/,'').replace('-stable','').replace('-preview','-preview'):'V8 (không rõ bản)'):'7.3.0',sourceCommit:currentIdentity?.sourceCommit??null,tag:currentIdentity?.tag??null,channel:process.env.SHOP_V8_HOME?(process.env.SHOP_RELEASE_CHANNEL==='STABLE'?'stable':'preview'):'release',stage:process.env.SHOP_V8_HOME?8:7,status:process.env.SHOP_V8_HOME?(process.env.SHOP_RELEASE_CHANNEL==='STABLE'?'RELEASED':'DEVELOPMENT'):'RELEASED',next:'Windows và iPhone dùng chung dữ liệu Cloud'}
 const legacyRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../../data/stage6-main-test')
 export const managedHome=process.env.SHOP_MANAGED_HOME?path.resolve(process.env.SHOP_MANAGED_HOME):null
 // V8 is a fresh, isolated installation. Never infer it from a V7 test directory.
@@ -22,12 +37,12 @@ if(freshDevelopment&&managedHome){
 if(freshDevelopment&&!managedHome&&!v8Home&&fs.existsSync(path.join(legacyRoot,'managed-installation.json')))throw Error('Dữ liệu đã chuyển sang vùng cố định. Mở biểu tượng Shop hoặc START_SHOP mới.')
 export const warehouseConfig=path.join(freshRoot,'warehouse-config.json')
 function contains(a:string,b:string){const r=path.relative(a,b);return r===''||(!path.isAbsolute(r)&&r!=='..'&&!r.startsWith('..'+path.sep))}
-export function validateNewWarehouse(value:unknown){
+export function validateNewWarehouse(value:unknown,allowUnverified=false){
  if(typeof value!=='string'||!path.isAbsolute(value))throw Error('Chọn thư mục kho có sẵn trên máy')
  const root=path.resolve(value)
  if(fs.realpathSync(root)!==root||!fs.lstatSync(root).isDirectory()||fs.lstatSync(root).isSymbolicLink())throw Error('Kho phải là thư mục vật lý, không dùng liên kết')
  if(root===path.parse(root).root||contains(root,freshRoot)||contains(freshRoot,root))throw Error('Chọn thư mục kho riêng, không chọn cả ổ đĩa hoặc thư mục dữ liệu ứng dụng')
- if(v8Home)inspectWarehouseOwner(root,v8Home)
+ if(v8Home)inspectWarehouseOwner(root,v8Home,allowUnverified)
  else if(fs.existsSync(path.join(root,'.mecacao-local-active.json'))||fs.existsSync(path.join(root,'.mecacao-local-runtime.lock')))throw Error('Kho đang thuộc bản cài khác; chọn thư mục chưa được bản khác sử dụng')
  return root
 }

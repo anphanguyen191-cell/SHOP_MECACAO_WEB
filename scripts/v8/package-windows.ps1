@@ -23,6 +23,13 @@ Copy-Item 'scripts/v8/node-runner.mjs' (Join-Path $release 'scripts/v8/node-runn
 Copy-Item 'scripts/v8/release-fetch.mjs' (Join-Path $release 'scripts/v8/release-fetch.mjs') -Force
 Copy-Item 'scripts/v8/data-snapshot.mjs' (Join-Path $release 'scripts/v8/data-snapshot.mjs') -Force
 Copy-Item 'package.json' (Join-Path $release 'package.json') -Force
+# The immutable version travels with the API and is read from cwd by the running
+# candidate; no hardcoded V8.0.0 in the backend or stale installation marker.
+$runNumber=if($env:GITHUB_RUN_NUMBER){$env:GITHUB_RUN_NUMBER}else{'0'}
+$channel=if($env:V8_BUILD_CHANNEL -eq 'STABLE'){'STABLE'}else{'PREVIEW'}
+$sha=if($env:GITHUB_SHA){$env:GITHUB_SHA}else{('0'*40)}
+$tag='v8.0.'+$runNumber+'-'+$channel.ToLowerInvariant()
+@{ format=8; tag=$tag; sourceCommit=$sha } | ConvertTo-Json | Set-Content -Path (Join-Path $release 'release-info.json') -Encoding utf8
 
 $sha = if($env:GITHUB_SHA){$env:GITHUB_SHA}else{'local-preview'}
 $channel = if($env:V8_BUILD_CHANNEL -eq 'STABLE'){'STABLE'}else{'PREVIEW'}
