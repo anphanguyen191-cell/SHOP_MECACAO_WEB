@@ -108,6 +108,18 @@ app.use('/api',(req,res,next)=>{
 if(lanControl)app.use('/api/local/lan',lanControlRouter(lanControl,PORT))
 app.get('/api/lan/changes',(_req,res)=>res.set('Cache-Control','no-store').json(changeFeed.view()))
 if(freshDevelopment)app.use('/api/lan/photos',phonePhotoRouter())
+// Official V8 must bind the canonical photo warehouse before writing stock.
+// The internal data/shop-v8/warehouse directory is not an operational store.
+app.use('/api',(req,res,next)=>{
+ if(v8Home&&!customWarehouse&&['POST','PUT','PATCH','DELETE'].includes(req.method)&&[
+  '/goods-receipt','/store/import','/store/import-batch-task',
+  '/inventory/import','/inventory/import-batch','/inventory/adjust'
+ ].includes(req.path))return res.status(409).json({
+  error:'Chưa chọn kho chính thức. Vào Import kho → Chọn thư mục → Quét kho trước khi nhập hàng.',
+  code:'V8_WAREHOUSE_NOT_SELECTED'
+ })
+ next()
+})
 // Tasks run in a separate process; fence stock reads/mutations during any task.
 app.use('/api',(req,res,next)=>{
  if(req.path==='/health'||req.path.startsWith('/tasks')||req.path==='/store/import-batch-task'||(req.get('Prefer')==='respond-async'&&['/store/scan','/goods-receipt','/backup/lossless'].includes(req.path)))return next()
