@@ -1,3 +1,7 @@
+## Regression test: tên file ảnh không tái sử dụng
+- Test thực tế trên thư mục tạm (không ảnh thật): đã cấp số, xóa file, đổi phần mở rộng, app khởi động lại, nhiều Size và file đã mất; số mới luôn tăng. Không cần DB riêng.
+
+---
 ## Reset Cloud sạch và quy tắc đồng nhất tên / số thứ tự file — 15/10/2026
 
 - Supabase hiện tại đã sạch: 0 sản phẩm, 0 Size, 0 ảnh, 0 Storage objects; giữ tài khoản/role owner và schema/RPC cùng bucket không công khai. Chưa có đồng bộ thực tế từ laptop sau reset.

@@ -36,6 +36,7 @@ jobs:
           npm run test:v8-layout
           node --test scripts/v8/warehouse-cloud-ui.test.mjs scripts/v8/warehouse-ownership.test.mjs scripts/v8/release-fetch.test.mjs scripts/v8/data-snapshot.test.mjs scripts/v8/cloud-handoff.test.mjs
           node --import tsx --test scripts/v8/cloud-sync-audit.test.mts
+          node --test scripts/v8/image-naming-history.test.mjs
           node --check scripts/v8/node-runner.mjs
           node --check scripts/v8/release-fetch.mjs
       - run: npm run build
