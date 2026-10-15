@@ -1,27 +1,6 @@
 import { db } from './db.js'
-import { physicalImagesByVariant } from './physicalInventory.js'
-import {getWatchSettings} from './warehouseWatch.js'
-import {scanStore} from './storeScanner.js'
-import path from 'node:path'
+import { physicalImagesByVariant,unregisteredPhysicalByVariant } from './physicalInventory.js'
 
-/** All physical images in a known Product/Size are counted, even if their
- * registration is still pending. Registration controls whether a specific
- * image can be sold, never how many files exist in the folder.
- * Recompute on every stock read: manual Explorer deletions cannot leave a
- * stale positive stock in the dashboard.
- */
-function unregisteredPhysicalByVariant(){
- const pending=new Map<number,number>()
- const root=getWatchSettings().rootPath
- if(!root)return pending
- const known=new Set((db.prepare('SELECT file_path FROM product_images').all() as {file_path:string}[]).map(r=>path.resolve(r.file_path).toLowerCase()))
- for(const product of scanStore(root))for(const size of product.sizes){
-  if(!size.existingVariantId)continue
-  const count=size.images.filter(file=>!known.has(path.resolve(file).toLowerCase())).length
-  if(count)pending.set(size.existingVariantId,count)
- }
- return pending
-}
 export type InventoryFilters={search?:string;category?:string;size?:string;status?:'all'|'active'|'inactive';state?:'all'|'out'|'low'|'ok';threshold?:number}
 
 function inventoryMetadata(filters:InventoryFilters={}){
