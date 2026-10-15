@@ -26,3 +26,8 @@ const dedup=fs.readFileSync(new URL('../../supabase/migrations/20261015190000_v8
 test('Cloud SHA reuse checks physical JPEG, legacy archive and prevents deleting active references',()=>{
  for(const token of ['mc_v8_catalog_variants','mc_v8_reuse_image','mc_v8_handoff_assets','a.sha256=p_sha',"stored.metadata->>'mimetype'='image/jpeg'",'active.object_path=p_path AND active.ready'])assert.ok(dedup.includes(token),token)
 })
+
+const soldGuard=fs.readFileSync(new URL('../../supabase/migrations/20261015192000_v8_prevent_shared_sold_asset_deletion.sql',import.meta.url),'utf8')
+test('sold unit archive cannot delete the sole jpeg backing another unsold unit',()=>{
+ for(const key of ['NOT EXISTS','used.object_path=match_source.object_path','used.ready','mc_v8_unsold_object_protected','mc_v8_unsold_storage_file_guard','AS RESTRICTIVE'])assert.ok(soldGuard.includes(key),key)
+})

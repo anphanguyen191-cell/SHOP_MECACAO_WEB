@@ -1,3 +1,10 @@
+## Bảo vệ ảnh SOLD khi dùng lại file Cloud — 15/10/2026
+
+- Đối chiếu SHA-256 để dùng lại file Cloud **chỉ khi file đó chưa được gán cho bộ tồn khác**, giữ nguyên quy tắc mỗi ảnh tồn là một bộ có nghiệp vụ SOLD độc lập.
+- Thêm bảo vệ RLS không cho xóa một file Cloud vẫn phục vụ bộ hàng chưa SOLD, kể cả trường hợp logic dọn ảnh cũ/đơn bán có sai sót.
+- Dọn ảnh test dư chỉ sau khi toàn bộ ảnh V8 khớp; những file Cloud còn được dùng vẫn giữ lại.
+
+---
 ## Cập nhật đồng bộ Cloud theo SHA-256 — 15/10/2026
 
 - Nguyên tắc mới: phát hành phiên bản Windows không được đổi kho Cloud. Đối chiếu ảnh theo SHA-256 JPEG đã tối ưu, không căn cứ phiên bản, tên ảnh hoặc ID.
