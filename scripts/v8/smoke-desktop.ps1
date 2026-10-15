@@ -32,7 +32,7 @@ try{
  $tag=('v8.0.'+$env:GITHUB_RUN_NUMBER+'-'+$Channel.ToLowerInvariant())
  if($health.release.tag -ne $tag){throw ('Version mismatch: actual '+$health.release.tag+' vs '+$tag)}
  if($health.release.sourceCommit -ne $manifest.sourceCommit){throw 'Running API commit differs from package manifest'}
- if($health.version -notmatch '^8[.]0[.][0-9]+
+  if(![string]$health.version.StartsWith('8.0.')){throw 'V8 version is still hardcoded or malformed'}
  if($health.cloudAuthority){throw 'Fresh V8 must not be linked to legacy Cloud automatically'}
  $database=Join-Path $installDir 'data/shop-v8/database/shop-v8.db'
  if(!(Test-Path $database)){ throw 'V8 database missing on D:' }
