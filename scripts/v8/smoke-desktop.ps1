@@ -99,12 +99,12 @@ try{
  $headers=@{Origin='http://127.0.0.1:3000'}
  $receipt1=@{storeRoot=$orphan;name=$importProduct;productCode='V8CISAMPLE';sizes=@(@{size='Size 8';quantity=1;costPrice=23000;salePrice=45000;sourcePath=$source1})}
  $posted1=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/goods-receipt' -Method POST -Headers $headers -ContentType 'application/json' -Body ($receipt1|ConvertTo-Json -Depth 8) -TimeoutSec 30
- $pid=[int]$posted1.result.productId
- if($pid -le 0 -or $posted1.result.copiedImages -ne 1){throw 'New product goods receipt failed'}
- $receipt2=@{storeRoot=$orphan;productId=$pid;sizes=@(@{size='Size 10';quantity=1;costPrice=24000;salePrice=47000;sourcePath=$source2})}
+ $productId=[int]$posted1.result.productId
+ if($productId -le 0 -or $posted1.result.copiedImages -ne 1){throw 'New product goods receipt failed'}
+ $receipt2=@{storeRoot=$orphan;productId=$productId;sizes=@(@{size='Size 10';quantity=1;costPrice=24000;salePrice=47000;sourcePath=$source2})}
  $posted2=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/goods-receipt' -Method POST -Headers $headers -ContentType 'application/json' -Body ($receipt2|ConvertTo-Json -Depth 8) -TimeoutSec 30
  if($posted2.result.copiedImages -ne 1){throw 'Existing product new Size receipt failed'}
- $receipt3=@{storeRoot=$orphan;productId=$pid;sizes=@(@{size='Size 8';quantity=1;costPrice=23000;salePrice=45000;sourcePath=$source3})}
+ $receipt3=@{storeRoot=$orphan;productId=$productId;sizes=@(@{size='Size 8';quantity=1;costPrice=23000;salePrice=45000;sourcePath=$source3})}
  $posted3=Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/goods-receipt' -Method POST -Headers $headers -ContentType 'application/json' -Body ($receipt3|ConvertTo-Json -Depth 8) -TimeoutSec 30
  if($posted3.result.copiedImages -ne 1){throw 'Existing Size restock failed'}
  $size8=Join-Path $orphan ($importProduct+'\Size 8')
