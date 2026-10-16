@@ -36,7 +36,7 @@ try{
  }
  const port=Number(fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0]),targets=await fetch('http://127.0.0.1:'+port+'/json/list').then(r=>r.json())
  ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true})});ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}})
- await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Page.navigate',{url:'http://127.0.0.1:3000'});await until("!!document.querySelector('.overviewStats')");assert(await run("!document.querySelector('.v8InstallSummary')"));
+ await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Emulation.setDeviceMetricsOverride',{width:1366,height:900,deviceScaleFactor:1,mobile:false});await cmd('Page.navigate',{url:'http://127.0.0.1:3000'});await until("!!document.querySelector('.overviewStats')");assert(await run("!document.querySelector('.v8InstallSummary')"));
  // Windows UI MASTER V2 acceptance on an isolated test database, before the legacy screens.
  await until("!!document.querySelector('.luxeWelcomeActions')");
  assert(await run("document.querySelector('.shell').classList.contains('luxeWindows')"))
