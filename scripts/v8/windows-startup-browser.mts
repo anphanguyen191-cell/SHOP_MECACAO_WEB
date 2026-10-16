@@ -27,6 +27,7 @@ const webDist=path.resolve('apps/web/dist')
 app.use(express.static(webDist))
 app.get('*',(_req,res)=>res.sendFile(path.join(webDist,'index.html')))
 const server=app.listen(0,'127.0.0.1')
+await new Promise<void>((resolve,reject)=>{if(server.listening)resolve();else{server.once('listening',resolve);server.once('error',reject)}})
 const port=(server.address() as any).port
 const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/chromium'].find(fs.existsSync)
 assert(chrome,'Chromium required for startup visual acceptance')

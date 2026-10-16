@@ -17,6 +17,7 @@ test('Windows owner login: setup, session gate, remembered one-click, logout, re
   return app
  }
  let server=build().listen(0,'127.0.0.1')
+ await new Promise<void>(resolve=>server.once('listening',resolve))
  const address=()=> 'http://127.0.0.1:'+(server.address() as any).port
  const request=async(route:string,method='GET',body?:unknown,cookies='')=>{
   const r=await fetch(address()+route,{method,headers:{...(body?{'Content-Type':'application/json'}:{}),...(cookies?{Cookie:cookies}:{})},body:body?JSON.stringify(body):undefined})
@@ -45,6 +46,7 @@ test('Windows owner login: setup, session gate, remembered one-click, logout, re
   assert.equal((await request('/api/local/auth/state','GET',undefined,rememberCookie)).json.remembered,true)
   await new Promise<void>(resolve=>server.close(()=>resolve()))
   server=build().listen(0,'127.0.0.1')
+  await new Promise<void>(resolve=>server.once('listening',resolve))
   assert.equal((await request('/api/private','GET',undefined,sessionCookie)).status,401,'Session must expire on server restart')
   const login=await request('/api/local/auth/login','POST',{username:'owner',useRemember:true,remember:true},rememberCookie)
   assert.equal(login.status,200,JSON.stringify(login.json))
