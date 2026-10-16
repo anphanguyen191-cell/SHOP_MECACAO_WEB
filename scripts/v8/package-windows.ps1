@@ -14,7 +14,7 @@ $iconPath = Join-Path $iconDirectory 'ShopMeCaCao.ico'
 if(-not (Test-Path $logoPath)){throw 'Missing original Shop MeCaCao logo for Windows icon'}
 New-Item -ItemType Directory -Force $iconDirectory | Out-Null
 $image = [System.Drawing.Image]::FromFile($logoPath)
-$bitmap = New-Object System.Drawing.Bitmap(256,256,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+$bitmap = [System.Drawing.Bitmap]::new(256,256,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
 $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
 $pngStream = New-Object System.IO.MemoryStream
 try {
