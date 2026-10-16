@@ -18,21 +18,21 @@ const DEMO_DASH:InventoryDashboard={stock:19,products:2,productsInStock:2,skus:7
 export type InventorySource={products:InventoryProduct[];dashboard:InventoryDashboard;urls:Record<string,string>;refresh:()=>Promise<void>;share?:(images:ChosenImage[],onBusy:(busy:boolean)=>void)=>React.ReactNode}
 export default function InventoryView({isDemo=false,onDraft,draftLabel,source,priceTools,desktopMode=false}:{isDemo?:boolean;onDraft?:(ids:number[],key:string)=>Promise<void>;draftLabel?:string;source?:InventorySource;priceTools?:React.ReactNode;desktopMode?:boolean}){
  const [focusedVariantId,setFocusedVariantId]=useState<number|null>(null)
- const [search,setSearch]=useState(''),[category,setCategory]=useState(''),[size,setSize]=useState(''),[products,setProducts]=useState<InventoryProduct[]>(isDemo?DEMO_PRODUCTS:[]),[dashboard,setDashboard]=useState<InventoryDashboard|null>(isDemo?DEMO_DASH:null),[categories,setCategories]=useState<string[]>([]),[sizes,setSizes]=useState<string[]>([]),[expandedProducts,setExpandedProducts]=useState<Set<number>>(new Set()),[expandedVariants,setExpandedVariants]=useState<Set<number>>(new Set()),[selectedImages,setSelectedImages]=useState<Set<number>>(new Set()),[suggestions,setSuggestions]=useState<Suggestion[]>([]),[detailProductId,setDetailProductId]=useState<number|null>(null)
+ const [search,setSearch]=useState(''),[category,setCategory]=useState(''),[productCode,setProductCode]=useState(''),[productOptions,setProductOptions]=useState<Array<{product_code:string;name:string}>>([]),[size,setSize]=useState(''),[products,setProducts]=useState<InventoryProduct[]>(isDemo?DEMO_PRODUCTS:[]),[dashboard,setDashboard]=useState<InventoryDashboard|null>(isDemo?DEMO_DASH:null),[categories,setCategories]=useState<string[]>([]),[sizes,setSizes]=useState<string[]>([]),[expandedProducts,setExpandedProducts]=useState<Set<number>>(new Set()),[expandedVariants,setExpandedVariants]=useState<Set<number>>(new Set()),[selectedImages,setSelectedImages]=useState<Set<number>>(new Set()),[suggestions,setSuggestions]=useState<Suggestion[]>([]),[detailProductId,setDetailProductId]=useState<number|null>(null)
  const [stockState,setStockState]=useState<'all'|'in'|'out'|'low'>('all'),[sort,setSort]=useState<'stock_desc'|'stock_asc'|'name'>('stock_desc'),[threshold,setThreshold]=useState(2),[loadError,setLoadError]=useState('')
  const [dashboardExpanded,setDashboardExpanded]=useBooleanPreference('inventory-expanded',true)
  useEffect(()=>{const changed=()=>setReload(n=>n+1);window.addEventListener('mecacao-server-change',changed);return()=>window.removeEventListener('mecacao-server-change',changed)},[])
  const [loading,setLoading]=useState(!isDemo&&!source),[reload,setReload]=useState(0)
  useEffect(()=>{
-  if(source){const q=search.trim().toLocaleLowerCase('vi');setProducts(source.products.map(p=>{const vs=p.variants.filter(v=>(!size||v.size===size)&&(!q||[p.product_name,p.product_code,v.size,v.sku].join(' ').toLocaleLowerCase('vi').includes(q)));return {...p,variants:vs,stock:vs.reduce((n,v)=>n+v.stock,0)}}).filter(p=>p.variants.length&&(!category||p.category===category)));setDashboard(source.dashboard);setLoadError('');setLoading(false);return}
+  if(source){const q=search.trim().toLocaleLowerCase('vi');setProducts(source.products.filter(p=>!productCode||p.product_code===productCode).map(p=>{const vs=p.variants.filter(v=>(!size||v.size===size)&&(!q||[p.product_name,p.product_code,v.size,v.sku].join(' ').toLocaleLowerCase('vi').includes(q)));return {...p,variants:vs,stock:vs.reduce((n,v)=>n+v.stock,0)}}).filter(p=>p.variants.length&&(!category||(p.category||'Chưa phân loại')===category)));setDashboard(source.dashboard);setLoadError('');setLoading(false);return}
   if(isDemo){
    const q=search.trim().toLocaleLowerCase('vi')
-   const filtered=DEMO_PRODUCTS.map(p=>{
+   const filtered=DEMO_PRODUCTS.filter(p=>!productCode||p.product_code===productCode).map(p=>{
     const matches=p.variants.filter(v=>!size||v.size===size)
     const inProduct=[p.product_name,p.product_code].some(x=>x.toLocaleLowerCase('vi').includes(q))
     const matchingVariants=matches.filter(v=>!q||inProduct||[v.size,v.sku].some(x=>x.toLocaleLowerCase('vi').includes(q)))
     return {...p,variants:matchingVariants,stock:matchingVariants.reduce((n,v)=>n+v.stock,0)}
-   }).filter(p=>p.variants.length>0&&(!category||p.category===category))
+   }).filter(p=>p.variants.length>0&&(!category||(p.category||'Chưa phân loại')===category))
    setProducts(filtered);setDashboard(DEMO_DASH);setLoadError('')
    return
   }
@@ -40,22 +40,22 @@ export default function InventoryView({isDemo=false,onDraft,draftLabel,source,pr
   const controller=new AbortController()
   setLoading(true);setLoadError('');setProducts([])
   const timer=setTimeout(()=>{
-   const q=new URLSearchParams({search,category,size,status:'active'})
+   const q=new URLSearchParams({search,category,productCode,size,status:'active'})
    Promise.all([
     fetch('/api/inventory/explorer?'+q,{signal:controller.signal}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||'Không tải được tồn kho');return j}),
     fetch('/api/inventory/dashboard',{signal:controller.signal}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||'Không tải được thống kê');return j})
    ]).then(([tree,dash])=>{if(!cancelled){setProducts(Array.isArray(tree)?tree:[]);setDashboard(dash);setLoadError('')}}).catch(e=>{if(!cancelled){setLoadError(e instanceof Error?e.message:'Không đọc được dữ liệu');setProducts([]);setDashboard(null)}}).finally(()=>{if(!cancelled)setLoading(false)})
   },180)
   return()=>{cancelled=true;controller.abort();clearTimeout(timer)}
- },[search,category,size,isDemo,reload,source])
+ },[search,category,productCode,size,isDemo,reload,source])
  useEffect(()=>{
-  if(source){setCategories([...new Set(source.products.map(p=>p.category).filter((c):c is string=>!!c))]);setSizes([...new Set(source.products.flatMap(p=>p.variants.map(v=>v.size)))]);return}
-  if(isDemo){setCategories(['Đồ tole bé gái']);setSizes(['Size 1','Size 2','Size 3','Size 4']);return}
+  if(source){setCategories([...new Set(source.products.map(p=>p.category||'Chưa phân loại'))]);setProductOptions(source.products.map(p=>({product_code:p.product_code,name:p.product_name})));setSizes([...new Set(source.products.flatMap(p=>p.variants.map(v=>v.size)))]);return}
+  if(isDemo){setCategories(['Đồ tole bé gái']);setProductOptions(DEMO_PRODUCTS.map(p=>({product_code:p.product_code,name:p.product_name})));setSizes(['Size 1','Size 2','Size 3','Size 4']);return}
   let cancelled=false
-  fetch('/api/inventory/filter-options').then(r=>r.json()).then(j=>{if(!cancelled){setCategories(j.categories??[]);setSizes(j.sizes??[])}}).catch(()=>{})
+  fetch('/api/inventory/filter-options').then(r=>r.json()).then(j=>{if(!cancelled){setCategories(Array.isArray(j.categories)?j.categories:[]);setProductOptions(Array.isArray(j.products)?j.products:[]);setSizes(Array.isArray(j.sizes)?j.sizes:[])}}).catch(()=>{})
   fetch('/api/settings').then(r=>r.json()).then(j=>{if(!cancelled&&Number.isInteger(j.lowStockThreshold))setThreshold(j.lowStockThreshold)}).catch(()=>{})
   return()=>{cancelled=true}
- },[isDemo,source])
+ },[isDemo,source,reload])
  useEffect(()=>{
   if(source){const q=search.trim().toLocaleLowerCase('vi');setSuggestions(q?source.products.flatMap(p=>p.variants.map(v=>({product_id:p.product_id,product_code:p.product_code,product_name:p.product_name,variant_id:v.variant_id,sku:v.sku,size:v.size,stock:v.stock}))).filter(v=>[v.product_name,v.product_code,v.sku,v.size].join(' ').toLocaleLowerCase('vi').includes(q)).slice(0,12):[]);return}
   if(search.trim().length<1){setSuggestions([]);return}
@@ -81,7 +81,7 @@ export default function InventoryView({isDemo=false,onDraft,draftLabel,source,pr
  },[products,stockState,sort,threshold])
  const stockBreakdown=useMemo(()=>products.reduce((tot,p)=>{for(const v of p.variants){tot.physical+=v.stock;tot.registered+=v.images.filter(i=>i.exists).length;tot.pending+=v.pendingImages??0}return tot},{physical:0,registered:0,pending:0}),[products])
  function toggle(set:Set<number>,id:number,setter:(v:Set<number>)=>void){const n=new Set(set);n.has(id)?n.delete(id):n.add(id);setter(n)}
- function chooseSuggestion(s:Suggestion){setSearch(s.product_name);setSize(s.size);setExpandedProducts(new Set([s.product_id]));setExpandedVariants(new Set([s.variant_id]));setSuggestions([])}
+ function chooseSuggestion(s:Suggestion){setSearch(s.product_name);setProductCode(s.product_code);setSize(s.size);setExpandedProducts(new Set([s.product_id]));setExpandedVariants(new Set([s.variant_id]));setSuggestions([])}
  const chosen=useRef(new Map<number,ChosenImage>()),anchor=useRef<{variant:number;id:number}|null>(null)
  const [sending,setSending]=useState(false),[selectionError,setSelectionError]=useState(''),[viewer,setViewer]=useState<{images:ChosenImage[];index:number}|null>(null)
  useEffect(()=>{if(!source)return;const valid=new Set(source.products.flatMap(p=>p.variants.filter(v=>v.variant_status!=='inactive').flatMap(v=>v.images.filter(i=>i.exists).map(i=>i.id))));setSelectedImages(old=>new Set([...old].filter(id=>valid.has(id))))},[source])
@@ -113,7 +113,7 @@ export default function InventoryView({isDemo=false,onDraft,draftLabel,source,pr
  return <section className={"inventoryPage"+(selectedImages.size?" hasImageSelection":"")}>
   <div className="inventoryHeading"><div><p className="eyebrow">{isDemo?'DỮ LIỆU MINH HỌA · DEMO':'KHO HÀNG THỰC TẾ'}</p><h2>Tồn kho</h2><p>{isDemo?'Số liệu mẫu để kiểm tra giao diện, không phải tồn hàng của Shop. LOCAL mới kết nối kho ảnh.':source?'Tồn Cloud theo từng Mẫu / Size; đối soát Windows tại Cài đặt. Chọn ảnh để tạo đơn hoặc gửi khách.':'Tồn thực tế đếm ảnh hợp lệ theo từng Size. Chọn sản phẩm để xem ảnh và đối soát.'}</p></div>{isDemo?<span className="okPill">BẢN XEM THỬ</span>:!dashboard?<span className="reconcileAlert">Đang tải / không có dữ liệu kho</span>:dashboard.mismatches?<span className="reconcileAlert">⚠ {dashboard.mismatches} Size lệch sổ / ảnh</span>:<span className="okPill">{source?'✓ Đã đọc dữ liệu Cloud':'✓ Đã so sánh ảnh và sổ'}</span>}</div>
   {priceTools}
-  {desktopMode&&<section className="luxeStockBreakdown" aria-label="Đối soát ảnh và tồn trong kết quả đang xem"><article><span>{source?'TỒN THEO NGUỒN':'TỒN ẢNH VẬT LÝ'}</span><strong>{loading||loadError?'—':stockBreakdown.physical}</strong><small>Trong danh sách đang xem{search||category||size?' · đã lọc':''}</small></article><article><span>ẢNH ĐÃ ĐĂNG KÝ</span><strong>{loading||loadError?'—':stockBreakdown.registered}</strong><small>Ảnh còn hiện hữu và có ID để chọn</small></article><article><span>ẢNH CHỜ DUYỆT</span><strong>{source||loading||loadError?'—':stockBreakdown.pending}</strong><small>{source?'Chỉ đối soát tại kho Windows':'Chưa có ID để đưa vào đơn bán'}</small></article></section>}
+  {desktopMode&&<section className="luxeStockBreakdown" aria-label="Đối soát ảnh và tồn trong kết quả đang xem"><article><span>{source?'TỒN THEO NGUỒN':'TỒN ẢNH VẬT LÝ'}</span><strong>{loading||loadError?'—':stockBreakdown.physical}</strong><small>Trong danh sách đang xem{search||category||productCode||size?' · đã lọc':''}</small></article><article><span>ẢNH ĐÃ ĐĂNG KÝ</span><strong>{loading||loadError?'—':stockBreakdown.registered}</strong><small>Ảnh còn hiện hữu và có ID để chọn</small></article><article><span>ẢNH CHỜ DUYỆT</span><strong>{source||loading||loadError?'—':stockBreakdown.pending}</strong><small>{source?'Chỉ đối soát tại kho Windows':'Chưa có ID để đưa vào đơn bán'}</small></article></section>}
   {loadError&&<p className="notice warning" role="alert">{loadError} <button onClick={()=>setReload(x=>x+1)}>THỬ LẠI</button></p>}
   <section className="inventoryDashboardBlock" aria-label="Dashboard tồn kho">
    <div className="dashboardFoldHeader">
@@ -137,11 +137,12 @@ export default function InventoryView({isDemo=false,onDraft,draftLabel,source,pr
   </section>
   <div className="inventoryFilters">
    <div className="smartSearch"><label htmlFor="inventory-search">Tìm sản phẩm / mã / Size / SKU</label><input id="inventory-search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Nhập tên, mã, Size hoặc SKU..." autoComplete="off"/>{suggestions.length>0&&<div className="suggestions" role="listbox" aria-label="Gợi ý tồn kho">{suggestions.map(s=><button type="button" key={s.variant_id} onClick={()=>chooseSuggestion(s)}><b>{s.product_name}</b><span>{s.product_code} · {s.size} · {s.sku} · {s.stock} bộ {isDemo?'minh họa':'tồn thực tế'}</span></button>)}</div>}</div>
-   <select value={category} onChange={e=>setCategory(e.target.value)}><option value="">Tất cả danh mục</option>{categories.map(x=><option key={x}>{x}</option>)}</select>
+   <select aria-label="Chọn sản phẩm trong kho" value={productCode} onChange={e=>{setProductCode(e.target.value);setSuggestions([])}}><option value="">Tất cả sản phẩm ({productOptions.length})</option>{productOptions.map(p=><option key={p.product_code} value={p.product_code}>{p.name} · {p.product_code}</option>)}</select>
+   <select aria-label="Lọc theo danh mục sản phẩm" value={category} onChange={e=>setCategory(e.target.value)}><option value="">Tất cả danh mục</option>{categories.map(x=><option key={x} value={x}>{x}</option>)}</select>
    <select aria-label="Lọc theo Size" value={size} onChange={e=>setSize(e.target.value)}><option value="">Tất cả Size</option>{sizes.map(x=><option key={x}>{x}</option>)}</select>
    <select aria-label="Lọc theo trạng thái tồn" value={stockState} onChange={e=>setStockState(e.target.value as 'all'|'in'|'out'|'low')}><option value="all">Tất cả tồn</option><option value="in">Còn hàng</option><option value="out">Hết hàng</option><option value="low">Tồn thấp (≤ {threshold})</option></select>
    <select aria-label="Sắp xếp tồn kho" value={sort} onChange={e=>setSort(e.target.value as 'stock_desc'|'stock_asc'|'name')}><option value="stock_desc">Tồn nhiều nhất</option><option value="stock_asc">Tồn ít nhất</option><option value="name">Tên A–Z</option></select>
-   {(search||category||size||stockState!=='all'||sort!=='stock_desc')&&<button className="clearFilter" onClick={()=>{setSearch('');setCategory('');setSize('');setStockState('all');setSort('stock_desc');setSuggestions([])}}>XÓA LỌC</button>}
+   {(search||category||productCode||size||stockState!=='all'||sort!=='stock_desc')&&<button className="clearFilter" onClick={()=>{setSearch('');setCategory('');setProductCode('');setSize('');setStockState('all');setSort('stock_desc');setSuggestions([])}}>XÓA LỌC</button>}
   </div>
 
   <div className="inventoryToolbar"><button className="refreshInventory" disabled={loading&&!isDemo} onClick={()=>source?void source.refresh().catch(e=>setLoadError(e.message)):setReload(x=>x+1)}>↻ LÀM MỚI TỒN ẢNH</button></div><p className="inventoryResultCount">{loading&&!isDemo?'Đang đọc kho...':visibleProducts.length+' mẫu'} phù hợp bộ lọc{size?' · '+size:''}{isDemo?' · dữ liệu minh họa':''}</p>
