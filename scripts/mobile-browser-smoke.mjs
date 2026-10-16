@@ -91,7 +91,7 @@ async function command(method,params={}){
 }
 async function run(expression){
  const r=await command('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true})
- if(r.exceptionDetails)throw Error('Browser exception '+r.exceptionDetails.text)
+ if(r.exceptionDetails)throw Error('Browser exception '+JSON.stringify(r.exceptionDetails))
  return r.result?.value
 }
 async function until(expression,label){
@@ -400,7 +400,7 @@ try{
   await run('window.scrollTo(0,document.body.scrollHeight)');await sleep(100)
   assert((await run('document.documentElement.scrollWidth'))<=width+2,'Image sending overflow at '+width)
   assert(await run("document.querySelector('.inventoryImage').getBoundingClientRect().bottom<=document.querySelector('.imageSendBar').getBoundingClientRect().top"),'Bottom send bar must not cover last stock image')
-  const panelGeometry=await run("(()=>{const el=document.querySelector('.floatingActions'),p=el.getBoundingClientRect(),nav=document.querySelector('.mobileQuickNav'),n=nav?.getBoundingClientRect(),shell=document.querySelector('.shell');return {ok:p.left>=0&&p.right<=innerWidth&&innerWidth-p.right<40&&(!nav||getComputedStyle(nav).display==='none'||p.bottom<n.top),viewport:{width:innerWidth,height:innerHeight,visualHeight:window.visualViewport?window.visualViewport.height:null},density:shell.className,offset:getComputedStyle(shell).getPropertyValue('--mobile-nav-offset'),cssBottom:getComputedStyle(el).bottom,panel:{left:p.left,right:p.right,top:p.top,bottom:p.bottom,height:p.height},nav:nav?{display:getComputedStyle(nav).display,top:n.top,bottom:n.bottom,height:n.height}:null}}})()")
+  const panelGeometry=JSON.parse(await run("(()=>{const el=document.querySelector('.floatingActions');const nav=document.querySelector('.mobileQuickNav');const shell=document.querySelector('.shell');const p=el.getBoundingClientRect();const display=nav?getComputedStyle(nav).display:'none';const n=nav&&display!=='none'?nav.getBoundingClientRect():null;return JSON.stringify({ok:p.left>=0&&p.right<=innerWidth&&innerWidth-p.right<40&&(!n||p.bottom<n.top),viewport:{width:innerWidth,height:innerHeight},density:shell?shell.className:'',offset:shell?getComputedStyle(shell).getPropertyValue('--mobile-nav-offset'):'',cssBottom:getComputedStyle(el).bottom,panel:{left:p.left,right:p.right,top:p.top,bottom:p.bottom,height:p.height},nav:n?{display:display,top:n.top,bottom:n.bottom,height:n.height}:null})})()"))
   assert(panelGeometry.ok,'Right floating panel must clear bottom navigation: '+JSON.stringify(panelGeometry))
   await shot('inventory-send-'+width+'-'+(dark?'dark':'light')+'-'+density+'.png')
  }
