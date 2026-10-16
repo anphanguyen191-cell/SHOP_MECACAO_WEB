@@ -1,0 +1,64 @@
+/* CaCao Travel Luxe — Windows workspaces. No API or business state is styled here. */
+.shell.luxeWindows :is(.salesDraftPage,.receiptOverview,.stage4Page,.settingsPage,.warehouseWorkspace){min-width:0}
+.shell.luxeWindows .luxeCustomerHeader{padding:4px 0 16px;border-bottom:1px solid var(--v8-edge);margin-bottom:12px}
+.shell.luxeWindows .luxeCustomerHeader h3{font-size:clamp(20px,2.1vw,28px);margin:5px 0 7px;line-height:1.25}
+.shell.luxeWindows .luxeCustomerHeader small{color:var(--v8-muted);line-height:1.5;overflow-wrap:anywhere}
+.shell.luxeWindows .luxeCustomerTabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--v8-edge);margin:0 0 16px}
+.shell.luxeWindows .luxeCustomerTabs button{border:0;background:transparent;color:var(--v8-muted);padding:11px 15px;border-bottom:3px solid transparent;font-weight:750}
+.shell.luxeWindows .luxeCustomerTabs button[aria-current=page]{color:var(--v8-accent);border-bottom-color:var(--v8-accent)}
+.shell.luxeWindows .luxeCustomerTabs button:disabled{opacity:.45}
+.shell.luxeWindows .salesOrderRow.luxeCustomerSelected{background:var(--v8-soft);border-left:3px solid var(--v8-accent);color:var(--v8-ink)}
+.shell.luxeWindows .luxeCustomerLinked{border:1px solid var(--v8-edge);background:var(--v8-soft);border-radius:17px;padding:20px}
+.shell.luxeWindows .luxeCustomerLinked b{font-size:16px}
+.shell.luxeWindows .luxeCustomerLinked p{line-height:1.6;color:var(--v8-muted);max-width:650px}
+.shell.luxeWindows .luxeCustomerLinked button{border:1px solid var(--v8-edge);background:var(--v8-surface);border-radius:11px;color:var(--v8-accent);font-weight:750;padding:10px 15px}
+.shell.luxeWindows .stage4Page .stage4Heading{margin:0 0 17px;align-items:center;gap:14px}
+.shell.luxeWindows .stage4Page .stage4Heading h2{letter-spacing:-.025em}
+.shell.luxeWindows .stage4Page .stage4Metrics article{background:var(--v8-surface);border:1px solid var(--v8-edge);box-shadow:var(--v8-shadow);border-radius:18px}
+.shell.luxeWindows .stage4Page .stage4Metrics :is(b,small){overflow-wrap:anywhere}
+.shell.luxeWindows .luxeReportCharts{background:var(--v8-surface);border:1px solid var(--v8-edge);box-shadow:var(--v8-shadow);border-radius:19px;padding:20px 23px;margin:19px 0}
+.shell.luxeWindows .luxeReportChartHead{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:18px}
+.shell.luxeWindows .luxeReportChartHead span{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--v8-accent)}
+.shell.luxeWindows .luxeReportChartHead h3{font-size:19px;margin:5px 0}
+.shell.luxeWindows .luxeReportChartHead small{font-size:11px;color:var(--v8-muted)}
+.shell.luxeWindows .luxeReportBars{display:grid;gap:13px}
+.shell.luxeWindows .luxeReportBar{display:grid;grid-template-columns:minmax(150px,1.3fr) minmax(140px,3fr) 75px;gap:13px;align-items:center}
+.shell.luxeWindows .luxeReportBar>span{font-size:12px;font-weight:650;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.shell.luxeWindows .luxeReportBar>div{height:12px;border-radius:30px;background:var(--v8-soft);overflow:hidden}
+.shell.luxeWindows .luxeReportBar i{height:100%;min-width:2px;display:block;background:linear-gradient(90deg,#c76692,#eebc85);border-radius:30px}
+.shell.luxeWindows .luxeReportBar b{font-size:12px;font-variant-numeric:tabular-nums;text-align:right}
+.shell.luxeWindows .luxeStocktakeWorkspace{display:grid;grid-template-columns:minmax(250px,320px) minmax(0,1fr);gap:17px;align-items:start}
+.shell.luxeWindows .luxeStocktakeSessions{min-width:0;position:sticky;top:83px}
+.shell.luxeWindows .luxeStocktakeSessions h3{font-size:17px;margin:0 0 14px}
+.shell.luxeWindows .luxeStocktakeSessions .stage4Filters{display:grid;grid-template-columns:1fr;gap:8px}
+.shell.luxeWindows .luxeStocktakeSessions .stage4SessionList{display:flex;flex-direction:column;gap:7px;max-height:500px;overflow:auto;padding:4px 1px}
+.shell.luxeWindows .luxeStocktakeSessions .stage4SessionList button{width:100%;min-width:0;text-align:left;display:flex;flex-direction:column;gap:3px;padding:11px 12px;border:1px solid var(--v8-edge);background:var(--v8-surface);border-radius:12px;color:var(--v8-ink)}
+.shell.luxeWindows .luxeStocktakeSessions .stage4SessionList button.selected{border-color:var(--v8-accent);background:var(--v8-soft);box-shadow:inset 3px 0 var(--v8-accent)}
+.shell.luxeWindows .luxeStocktakeSessions .stage4SessionList span{color:var(--v8-muted);font-size:11px}
+.shell.luxeWindows .luxeStocktakeWorkspace .stocktakePanel{min-width:0}
+.shell.luxeWindows .luxeStocktakeWorkspace .stage4Table{max-width:100%;overflow:auto}
+.shell.luxeWindows .luxeControlCenterPage{display:grid;gap:17px}
+.shell.luxeWindows .luxeControlCenterIntro{padding:24px;border:1px solid var(--v8-edge);border-radius:22px;background:linear-gradient(125deg,var(--v8-soft),var(--v8-surface) 72%);box-shadow:var(--v8-shadow)}
+.shell.luxeWindows .luxeControlCenterIntro>h2{margin:4px 0 7px;font-size:clamp(21px,2.4vw,29px)}
+.shell.luxeWindows .luxeControlCenterIntro>p:not(.eyebrow){color:var(--v8-muted);margin:0 0 21px;line-height:1.55}
+.shell.luxeWindows .luxeControlCenterGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.shell.luxeWindows .luxeControlCenterGrid button{text-align:left;display:grid;gap:5px;min-width:0;padding:15px 16px;background:var(--v8-surface);border:1px solid var(--v8-edge);border-radius:15px;box-shadow:0 5px 15px rgba(30,30,48,.035)}
+.shell.luxeWindows .luxeControlCenterGrid button:hover{border-color:var(--v8-accent);background:var(--v8-soft)}
+.shell.luxeWindows .luxeControlCenterGrid b{font-size:13px;color:var(--v8-ink)}
+.shell.luxeWindows .luxeControlCenterGrid span{font-size:11px;color:var(--v8-muted);line-height:1.45}
+.shell.luxeWindows .luxeControlCenterSection{scroll-margin-top:100px;min-width:0}
+.shell.luxeWindows #luxe-settings-data{scroll-margin-top:100px}
+@media(max-width:1180px){
+ .shell.luxeWindows .luxeControlCenterGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .shell.luxeWindows .luxeStocktakeWorkspace{grid-template-columns:1fr}
+ .shell.luxeWindows .luxeStocktakeSessions{position:static}
+}
+@media(max-width:760px){
+ .shell.luxeWindows .luxeControlCenterGrid{grid-template-columns:1fr}
+ .shell.luxeWindows .luxeReportBar{grid-template-columns:minmax(90px,1fr) minmax(90px,1.5fr) 55px;gap:7px}
+ .shell.luxeWindows .luxeReportCharts{padding:14px}
+ .shell.luxeWindows .luxeReportChartHead{display:block}
+ .shell.luxeWindows .luxeReportChartHead small{display:block;margin-top:5px}
+ .shell.luxeWindows .luxeStocktakeSessions .stage4Filters{grid-template-columns:1fr}
+ .shell.luxeWindows .luxeCustomerTabs button{padding:10px}
+}
