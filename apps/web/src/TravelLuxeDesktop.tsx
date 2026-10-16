@@ -29,7 +29,7 @@ export function LuxeDesktopTopbar({mode,active,dark,density,onDensity,onTheme,on
   <button type="button" className="luxeTopMenu" onClick={onMenu} aria-label="Mở danh sách chức năng">☰</button>
   <div className="luxeTopLocation"><small>WORKSPACE / SHOP MẸ CACAO</small><strong>{active}</strong></div>
   <form className="luxeTopSearch" role="search" onSubmit={e=>{e.preventDefault();if(query.trim())onSearch(query.trim())}}><span aria-hidden="true">⌕</span><input ref={searchRef} type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Tìm tên, mã, Size sản phẩm..." aria-label="Tìm sản phẩm toàn cửa hàng"/><kbd>Ctrl K</kbd><button type="submit" aria-label="Tìm sản phẩm" disabled={!query.trim()}>→</button></form>
-  <div className="luxeTopActions"><span className="luxeConnectionTag"><i aria-hidden="true"/>{mode}</span>{children}<DisplayDensity value={density} onChange={onDensity}/><button className="luxeTopTheme" type="button" onClick={onTheme} aria-label={dark?'Chế độ sáng':'Chế độ tối'} title={dark?'Chế độ sáng':'Chế độ tối'}>{dark?'☀':'☾'}</button></div>
+  <div className="luxeTopActions"><span className="luxeConnectionTag"><i aria-hidden="true"/>{mode}</span>{children}<DisplayDensity value={density} onChange={onDensity}/><button className="luxeTopTheme themeToggle" type="button" onClick={onTheme} aria-label={dark?'Chế độ sáng':'Chế độ tối'} title={dark?'Chế độ sáng':'Chế độ tối'}>{dark?'☀':'☾'}</button></div>
  </header>
 }
 const intros:Record<string,[string,string,string]>={
