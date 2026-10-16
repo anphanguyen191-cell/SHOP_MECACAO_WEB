@@ -1,80 +1,100 @@
 /* CaCao Travel Luxe V2.0 — Windows-only presentation layer.
  * No business transaction, stock, roles, or Cloud state is inferred here. */
-.shell{
+.shell.luxeWindows{
  --luxe-rose:#a14970;--luxe-peach:#fff2ee;--luxe-line:var(--v8-edge);
  --luxe-depth:0 15px 44px rgba(65,36,49,.10);
  --luxe-radius:20px;
 }
-.shell .layout{min-width:0}
-.shell main{min-width:0}
-.shell .pageBreadcrumb{background:var(--v8-surface);border:1px solid var(--v8-edge);border-radius:14px;padding:9px 14px;margin-bottom:18px}
-.shell .sidebar{border-radius:0 18px 18px 0}
-.shell .sidebar button{margin:3px 7px;letter-spacing:.005em}
-.shell :is(.inventoryHeading,.catalogPanelHeading,.salesHeading,.dashboardFoldHeader){scroll-margin-top:85px}
-.shell :is(.warehouseProducts,.warehouseTableWrap,.inventoryTree,.productList){min-width:0}
-.shell :is(.warehouseProduct,.treeProduct,.overviewPanel,.inventoryDashboardBlock){box-shadow:0 6px 24px rgba(62,42,54,.055)}
-.shell :is(.warehouseProduct,.treeProduct){border-radius:17px;overflow:hidden}
-.shell :is(button,input,select,textarea){font-family:inherit}
-.shell button.primary{border-radius:13px;box-shadow:0 4px 13px rgba(119,50,76,.13)}
-.shell .luxeStockBreakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:16px 0}
-.shell .luxeStockBreakdown article{background:var(--v8-surface);border:1px solid var(--v8-edge);border-radius:18px;padding:18px 19px;display:flex;flex-direction:column;gap:5px;min-width:0;box-shadow:var(--v8-shadow)}
-.shell .luxeStockBreakdown span{font-size:12px;letter-spacing:.06em;font-weight:750;color:var(--v8-muted)}
-.shell .luxeStockBreakdown strong{font-size:clamp(24px,2.7vw,38px);font-variant-numeric:tabular-nums;line-height:1.15;color:var(--v8-ink)}
-.shell .luxeStockBreakdown small{font-size:12px;color:var(--v8-muted);line-height:1.45}
-.shell .luxeImportImages{margin-top:8px;min-width:200px}
-.shell .luxeImportImages>summary{cursor:pointer;font-size:12px;font-weight:750;color:var(--v8-accent);white-space:normal}
-.shell .luxeImportImages[open]{min-width:min(370px,65vw)}
-.shell .luxeImportImages>small{display:block;max-width:380px;padding-top:6px;line-height:1.45;color:var(--v8-muted)}
-.shell .luxeImportImageGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;padding:8px 0;max-height:360px;overflow:auto}
-.shell .luxeImportImage{background:var(--v8-surface);border:1px solid var(--v8-edge);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px;min-width:0}
-.shell .luxeImportImage img{width:100%;height:93px;object-fit:cover;border-radius:7px}
-.shell .luxeImportImage span{display:flex;align-items:center;gap:5px;font-size:11px;white-space:nowrap;color:var(--v8-ink)}
-.shell .luxeImportImage input{width:17px;height:17px;min-height:unset}
-.shell .luxeImportImage button{font-size:11px;padding:5px 7px;min-height:31px;border-radius:8px}
-.shell .luxeWelcomeBackdrop{position:fixed;inset:0;z-index:9900;display:grid;place-items:center;padding:20px;background:rgba(31,24,42,.56);backdrop-filter:blur(11px)}
-.shell .luxeWelcome{position:relative;width:min(530px,100%);max-height:calc(100vh - 40px);overflow:auto;text-align:center;padding:clamp(25px,4vw,45px);background:var(--v8-surface);border:1px solid var(--v8-edge);color:var(--v8-ink);border-radius:28px;box-shadow:0 24px 80px rgba(15,10,28,.29)}
-.shell .luxeWelcomeMark{display:inline-block;font-size:11px;font-weight:850;letter-spacing:.15em;color:var(--v8-accent)}
-.shell .luxeWelcomeGlow{display:grid;place-items:center;width:92px;height:92px;margin:21px auto 14px;border-radius:27px;background:linear-gradient(140deg,#ffddc7,#f1aeca 62%,#c99fee);color:#fff;font-size:50px;box-shadow:0 15px 38px rgba(158,75,111,.22)}
-.shell .luxeWelcome h1{font-size:clamp(27px,4vw,39px);margin:7px 0 6px;line-height:1.15;letter-spacing:-.045em}
-.shell .luxeWelcome p{color:var(--v8-muted);line-height:1.58;margin:12px 0}
-.shell .luxeWelcome .luxeWelcomeSubtitle{font-size:17px;font-weight:750;color:var(--v8-ink)}
-.shell .luxeWelcomeActions{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin:24px 0 15px}
-.shell .luxeWelcomeActions button{padding:11px 20px;min-height:44px;border:1px solid var(--v8-edge);border-radius:12px}
-.shell .luxeWelcome small{color:var(--v8-muted)}
+.shell.luxeWindows .layout{min-width:0}
+.shell.luxeWindows main{min-width:0}
+.shell.luxeWindows .pageBreadcrumb{background:var(--v8-surface);border:1px solid var(--v8-edge);border-radius:14px;padding:9px 14px;margin-bottom:18px}
+.shell.luxeWindows .sidebar{border-radius:0 18px 18px 0}
+.shell.luxeWindows .sidebar button{margin:3px 7px;letter-spacing:.005em}
+.shell.luxeWindows :is(.inventoryHeading,.catalogPanelHeading,.salesHeading,.dashboardFoldHeader){scroll-margin-top:85px}
+.shell.luxeWindows :is(.warehouseProducts,.warehouseTableWrap,.inventoryTree,.productList){min-width:0}
+.shell.luxeWindows :is(.warehouseProduct,.treeProduct,.overviewPanel,.inventoryDashboardBlock){box-shadow:0 6px 24px rgba(62,42,54,.055)}
+.shell.luxeWindows :is(.warehouseProduct,.treeProduct){border-radius:17px;overflow:hidden}
+.shell.luxeWindows :is(button,input,select,textarea){font-family:inherit}
+.shell.luxeWindows button.primary{border-radius:13px;box-shadow:0 4px 13px rgba(119,50,76,.13)}
+.shell.luxeWindows .luxeStockBreakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:16px 0}
+.shell.luxeWindows .luxeStockBreakdown article{background:var(--v8-surface);border:1px solid var(--v8-edge);border-radius:18px;padding:18px 19px;display:flex;flex-direction:column;gap:5px;min-width:0;box-shadow:var(--v8-shadow)}
+.shell.luxeWindows .luxeStockBreakdown span{font-size:12px;letter-spacing:.06em;font-weight:750;color:var(--v8-muted)}
+.shell.luxeWindows .luxeStockBreakdown strong{font-size:clamp(24px,2.7vw,38px);font-variant-numeric:tabular-nums;line-height:1.15;color:var(--v8-ink)}
+.shell.luxeWindows .luxeStockBreakdown small{font-size:12px;color:var(--v8-muted);line-height:1.45}
+.shell.luxeWindows .luxeImportImages{margin-top:8px;min-width:200px}
+.shell.luxeWindows .luxeImportImages>summary{cursor:pointer;font-size:12px;font-weight:750;color:var(--v8-accent);white-space:normal}
+.shell.luxeWindows .luxeImportImages[open]{min-width:min(370px,65vw)}
+.shell.luxeWindows .luxeImportImages>small{display:block;max-width:380px;padding-top:6px;line-height:1.45;color:var(--v8-muted)}
+.shell.luxeWindows .luxeImportImageGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;padding:8px 0;max-height:360px;overflow:auto}
+.shell.luxeWindows .luxeImportImage{background:var(--v8-surface);border:1px solid var(--v8-edge);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.shell.luxeWindows .luxeImportImage img{width:100%;height:93px;object-fit:cover;border-radius:7px}
+.shell.luxeWindows .luxeImportImage span{display:flex;align-items:center;gap:5px;font-size:11px;white-space:nowrap;color:var(--v8-ink)}
+.shell.luxeWindows .luxeImportImage input{width:17px;height:17px;min-height:unset}
+.shell.luxeWindows .luxeImportImage button{font-size:11px;padding:5px 7px;min-height:31px;border-radius:8px}
+.shell.luxeWindows .luxeWelcomeBackdrop{position:fixed;inset:0;z-index:9900;display:grid;place-items:center;padding:20px;background:rgba(31,24,42,.56);backdrop-filter:blur(11px)}
+.shell.luxeWindows .luxeWelcome{position:relative;width:min(530px,100%);max-height:calc(100vh - 40px);overflow:auto;text-align:center;padding:clamp(25px,4vw,45px);background:var(--v8-surface);border:1px solid var(--v8-edge);color:var(--v8-ink);border-radius:28px;box-shadow:0 24px 80px rgba(15,10,28,.29)}
+.shell.luxeWindows .luxeWelcomeMark{display:inline-block;font-size:11px;font-weight:850;letter-spacing:.15em;color:var(--v8-accent)}
+.shell.luxeWindows .luxeWelcomeGlow{display:grid;place-items:center;width:92px;height:92px;margin:21px auto 14px;border-radius:27px;background:linear-gradient(140deg,#ffddc7,#f1aeca 62%,#c99fee);color:#fff;font-size:50px;box-shadow:0 15px 38px rgba(158,75,111,.22)}
+.shell.luxeWindows .luxeWelcome h1{font-size:clamp(27px,4vw,39px);margin:7px 0 6px;line-height:1.15;letter-spacing:-.045em}
+.shell.luxeWindows .luxeWelcome p{color:var(--v8-muted);line-height:1.58;margin:12px 0}
+.shell.luxeWindows .luxeWelcome .luxeWelcomeSubtitle{font-size:17px;font-weight:750;color:var(--v8-ink)}
+.shell.luxeWindows .luxeWelcomeActions{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin:24px 0 15px}
+.shell.luxeWindows .luxeWelcomeActions button{padding:11px 20px;min-height:44px;border:1px solid var(--v8-edge);border-radius:12px}
+.shell.luxeWindows .luxeWelcome small{color:var(--v8-muted)}
 @media(max-width:900px){
- .shell .luxeStockBreakdown{grid-template-columns:repeat(2,minmax(0,1fr))}
- .shell .luxeStockBreakdown article:last-child{grid-column:1 / -1}
+ .shell.luxeWindows .luxeStockBreakdown{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .shell.luxeWindows .luxeStockBreakdown article:last-child{grid-column:1 / -1}
 }
 @media(max-width:760px){
- .shell .luxeStockBreakdown{grid-template-columns:1fr}
- .shell .luxeStockBreakdown article:last-child{grid-column:auto}
- .shell .luxeStockBreakdown article{padding:13px 15px}
- .shell .luxeStockBreakdown strong{font-size:27px}
- .shell .luxeImportImages[open]{min-width:0}
- .shell .luxeWelcome{padding:24px 18px;border-radius:20px}
+ .shell.luxeWindows .luxeStockBreakdown{grid-template-columns:1fr}
+ .shell.luxeWindows .luxeStockBreakdown article:last-child{grid-column:auto}
+ .shell.luxeWindows .luxeStockBreakdown article{padding:13px 15px}
+ .shell.luxeWindows .luxeStockBreakdown strong{font-size:27px}
+ .shell.luxeWindows .luxeImportImages[open]{min-width:0}
+ .shell.luxeWindows .luxeWelcome{padding:24px 18px;border-radius:20px}
 }
-@media(prefers-reduced-motion:reduce){.shell .luxeWelcomeBackdrop{backdrop-filter:none}}
+@media(prefers-reduced-motion:reduce){.shell.luxeWindows .luxeWelcomeBackdrop{backdrop-filter:none}}
 
 /* Non-destructive workflow navigation: jump to CORE form sections; never submit automatically. */
-.shell .luxeFlowSteps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:13px 0 18px}
-.shell .luxeFlowSteps.luxeFlowStepsSix{grid-template-columns:repeat(6,minmax(0,1fr))}
-.shell .luxeFlowSteps button{display:flex;gap:9px;align-items:center;min-width:0;padding:11px 9px;text-align:left;border:1px solid var(--v8-edge);background:var(--v8-surface);border-radius:14px;color:var(--v8-ink)}
-.shell .luxeFlowSteps button b{flex:0 0 auto;display:grid;place-items:center;width:32px;height:32px;background:var(--v8-soft);border-radius:10px;color:var(--v8-accent);font-variant-numeric:tabular-nums;font-size:12px}
-.shell .luxeFlowSteps button span{font-weight:650;font-size:12px;line-height:1.3;overflow-wrap:anywhere}
-.shell .luxeFlowSteps button:hover:not(:disabled){border-color:var(--v8-accent);background:var(--v8-soft)}
-.shell .luxeWorkflowAnchor,#luxe-receipt-size,#luxe-receipt-confirm{scroll-margin-top:90px}
-@media(max-width:1180px){.shell .luxeFlowSteps.luxeFlowStepsSix{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:760px){.shell .luxeFlowSteps{grid-template-columns:repeat(2,minmax(0,1fr))}.shell .luxeFlowSteps.luxeFlowStepsSix{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:370px){.shell .luxeFlowSteps button{padding:7px 5px}.shell .luxeFlowSteps button b{width:25px;height:25px}}
+.shell.luxeWindows .luxeFlowSteps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:13px 0 18px}
+.shell.luxeWindows .luxeFlowSteps.luxeFlowStepsSix{grid-template-columns:repeat(6,minmax(0,1fr))}
+.shell.luxeWindows .luxeFlowSteps button{display:flex;gap:9px;align-items:center;min-width:0;padding:11px 9px;text-align:left;border:1px solid var(--v8-edge);background:var(--v8-surface);border-radius:14px;color:var(--v8-ink)}
+.shell.luxeWindows .luxeFlowSteps button b{flex:0 0 auto;display:grid;place-items:center;width:32px;height:32px;background:var(--v8-soft);border-radius:10px;color:var(--v8-accent);font-variant-numeric:tabular-nums;font-size:12px}
+.shell.luxeWindows .luxeFlowSteps button span{font-weight:650;font-size:12px;line-height:1.3;overflow-wrap:anywhere}
+.shell.luxeWindows .luxeFlowSteps button:hover:not(:disabled){border-color:var(--v8-accent);background:var(--v8-soft)}
+.shell.luxeWindows .luxeWorkflowAnchor,#luxe-receipt-size,#luxe-receipt-confirm{scroll-margin-top:90px}
+@media(max-width:1180px){.shell.luxeWindows .luxeFlowSteps.luxeFlowStepsSix{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.shell.luxeWindows .luxeFlowSteps{grid-template-columns:repeat(2,minmax(0,1fr))}.shell.luxeWindows .luxeFlowSteps.luxeFlowStepsSix{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:370px){.shell.luxeWindows .luxeFlowSteps button{padding:7px 5px}.shell.luxeWindows .luxeFlowSteps button b{width:25px;height:25px}}
 
 /* Confirmed success: compact toast; operational errors remain visible in their panels. */
-.shell .luxeToast{position:fixed;z-index:10000;top:78px;right:18px;width:min(410px,calc(100vw - 36px));display:flex;align-items:center;gap:11px;padding:12px 13px;border:1px solid var(--v8-edge);border-left:4px solid #28846d;border-radius:14px;background:var(--v8-surface);box-shadow:0 15px 40px rgba(24,35,45,.19);color:var(--v8-ink);font-size:13px;font-weight:650;line-height:1.4}
-.shell .luxeToastIcon{flex:none;width:27px;height:27px;border-radius:50%;display:grid;place-items:center;background:#e2f5eb;color:#236b55}
-.shell .luxeToast>button{flex:none;margin-left:auto;border:0;background:transparent;color:var(--v8-muted);font-size:22px;min-height:32px;min-width:30px}
-.shell .taskHistory{border-color:var(--v8-edge);background:var(--v8-surface);color:var(--v8-ink);border-radius:14px}
-.shell .taskHistory summary{color:var(--v8-accent);list-style-position:inside}
-.shell .taskHistory .taskHistoryRow{background:var(--v8-soft);color:var(--v8-ink);border:1px solid var(--v8-edge)}
+.shell.luxeWindows .luxeToast{position:fixed;z-index:10000;top:78px;right:18px;width:min(410px,calc(100vw - 36px));display:flex;align-items:center;gap:11px;padding:12px 13px;border:1px solid var(--v8-edge);border-left:4px solid #28846d;border-radius:14px;background:var(--v8-surface);box-shadow:0 15px 40px rgba(24,35,45,.19);color:var(--v8-ink);font-size:13px;font-weight:650;line-height:1.4}
+.shell.luxeWindows .luxeToastIcon{flex:none;width:27px;height:27px;border-radius:50%;display:grid;place-items:center;background:#e2f5eb;color:#236b55}
+.shell.luxeWindows .luxeToast>button{flex:none;margin-left:auto;border:0;background:transparent;color:var(--v8-muted);font-size:22px;min-height:32px;min-width:30px}
+.shell.luxeWindows .taskHistory{border-color:var(--v8-edge);background:var(--v8-surface);color:var(--v8-ink);border-radius:14px}
+.shell.luxeWindows .taskHistory summary{color:var(--v8-accent);list-style-position:inside}
+.shell.luxeWindows .taskHistory .taskHistoryRow{background:var(--v8-soft);color:var(--v8-ink);border:1px solid var(--v8-edge)}
 @media(min-width:980px){
- .shell>.taskHistory[open]{position:fixed;right:16px;top:73px;z-index:9800;width:min(410px,calc(100vw - 40px));max-height:calc(100vh - 90px);overflow:auto;box-shadow:0 18px 55px rgba(24,35,45,.23)}
+ .shell.luxeWindows>.taskHistory[open]{position:fixed;right:16px;top:73px;z-index:9800;width:min(410px,calc(100vw - 40px));max-height:calc(100vh - 90px);overflow:auto;box-shadow:0 18px 55px rgba(24,35,45,.23)}
 }
-@media(max-width:760px){.shell .luxeToast{top:65px;right:12px}}
+@media(max-width:760px){.shell.luxeWindows .luxeToast{top:65px;right:12px}}
+
+/* Navigation density and dashboard composition — Windows LOCAL only. */
+@media(min-width:981px){
+ .shell.luxeWindows.luxeSidebarCollapsed .layout{grid-template-columns:82px minmax(0,1fr)}
+ .shell.luxeWindows.luxeSidebarCollapsed .sidebar{padding:16px 8px;overflow-x:hidden}
+ .shell.luxeWindows.luxeSidebarCollapsed .sidebar>button{display:flex;justify-content:center;align-items:center;width:56px;min-width:56px;max-width:56px;min-height:48px;padding:12px 9px;margin:4px auto;border-radius:13px}
+ .shell.luxeWindows.luxeSidebarCollapsed .sidebar>button strong{display:none}
+ .shell.luxeWindows.luxeSidebarCollapsed .sidebar>button svg{width:24px;height:24px}
+ .shell.luxeWindows .sidebar .luxeSidebarTools{display:flex;justify-content:flex-end;padding:0 6px 12px}
+ .shell.luxeWindows.luxeSidebarCollapsed .sidebar .luxeSidebarTools{justify-content:center;padding:0 0 12px}
+ .shell.luxeWindows .luxeSidebarToggle{display:flex;gap:7px;align-items:center;justify-content:center;border:1px solid var(--v8-edge);background:var(--v8-soft);color:var(--v8-accent);border-radius:12px;padding:8px 11px;font-weight:750}
+ .shell.luxeWindows .luxeSidebarToggle span{font-size:12px}
+}
+.shell.luxeWindows .luxeOverviewControls{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 4px}
+.shell.luxeWindows .luxeOverviewControls>span{color:var(--v8-muted);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.shell.luxeWindows .luxeOverviewControls button{padding:7px 12px;border-radius:11px;border:1px solid var(--v8-edge);background:var(--v8-surface);color:var(--v8-accent);font-size:12px;font-weight:750}
+.shell.luxeWindows .productList .product{transition:box-shadow .18s ease,transform .18s ease}
+.shell.luxeWindows .catalogPanel,.shell.luxeWindows .receiptOverview,.shell.luxeWindows .stage4Page{min-width:0}
+.shell.luxeWindows :is(.stage4Filters,.salesWorkspace,.stocktakePanel,.stage4Table){min-width:0}
+@media(max-width:980px){.shell.luxeWindows .luxeSidebarTools{display:none}}
