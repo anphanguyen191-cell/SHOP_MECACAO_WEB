@@ -16,7 +16,7 @@ New-Item -ItemType Directory -Force $iconDirectory | Out-Null
 $image = [System.Drawing.Image]::FromFile($logoPath)
 $bitmap = [System.Drawing.Bitmap]::new(256,256,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
 $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-$pngStream = New-Object System.IO.MemoryStream
+$pngStream = [System.IO.MemoryStream]::new()
 try {
   $graphics.Clear([System.Drawing.Color]::Transparent)
   $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
@@ -27,8 +27,8 @@ try {
   $graphics.DrawImage($image,[int]((256-$w)/2),[int]((256-$h)/2),$w,$h)
   $bitmap.Save($pngStream,[System.Drawing.Imaging.ImageFormat]::Png)
   $bytes = $pngStream.ToArray()
-  $ico = New-Object System.IO.MemoryStream
-  $writer = New-Object System.IO.BinaryWriter($ico)
+  $ico = [System.IO.MemoryStream]::new()
+  $writer = [System.IO.BinaryWriter]::new($ico)
   try {
     $writer.Write([uint16]0);$writer.Write([uint16]1);$writer.Write([uint16]1)
     $writer.Write([byte]0);$writer.Write([byte]0);$writer.Write([byte]0);$writer.Write([byte]0)
