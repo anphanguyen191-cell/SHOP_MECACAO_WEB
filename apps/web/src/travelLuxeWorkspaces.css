@@ -62,3 +62,35 @@
  .shell.luxeWindows .luxeStocktakeSessions .stage4Filters{grid-template-columns:1fr}
  .shell.luxeWindows .luxeCustomerTabs button{padding:10px}
 }
+
+/* Two-pane LOCAL inventory. At narrow widths the original nested gallery remains. */
+@media(min-width:981px){
+ .shell.luxeWindows .luxeInventoryWorkspace{display:grid;grid-template-columns:minmax(320px,42%) minmax(0,1fr);gap:16px;align-items:start}
+ .shell.luxeWindows .luxeInventoryWorkspace .inventoryTree{min-width:0;max-height:calc(100vh - 130px);overflow:auto;padding:2px 5px 20px 2px}
+ .shell.luxeWindows .luxeInventoryWorkspace .treeProduct{overflow:visible}
+ .shell.luxeWindows .luxeInventoryWorkspace .treeVariant .variantGallery{display:none}
+ .shell.luxeWindows .luxeInventoryWorkspace .treeVariantHead{flex-wrap:wrap;gap:7px}
+ .shell.luxeWindows .luxeInventoryWorkspace .treeVariantHead small{flex-basis:100%;margin-left:25px}
+ .shell.luxeWindows .luxeInventoryWorkspace .treeVariantHead .stockGood,.shell.luxeWindows .luxeInventoryWorkspace .treeVariantHead .stockZero{white-space:normal;max-width:100%}
+ .shell.luxeWindows .luxeInventoryInspector{display:block;position:sticky;top:78px;max-height:calc(100vh - 95px);overflow:auto;min-width:0;min-height:360px}
+}
+.shell.luxeWindows .luxeInventoryInspector{padding:19px 20px;background:var(--v8-surface);border:1px solid var(--v8-edge);box-shadow:var(--v8-shadow);border-radius:20px}
+.shell.luxeWindows .luxeInventoryInspectorHeader h3{font-size:21px;margin:6px 0;line-height:1.25;overflow-wrap:anywhere}
+.shell.luxeWindows .luxeInventoryInspectorHeader p:not(.eyebrow){color:var(--v8-muted);margin:0}
+.shell.luxeWindows .luxeInventoryInspectorCounts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0}
+.shell.luxeWindows .luxeInventoryInspectorCounts span{background:var(--v8-soft);border:1px solid var(--v8-edge);padding:10px 7px;border-radius:12px;text-align:center;line-height:1.45;color:var(--v8-muted);font-size:11px}
+.shell.luxeWindows .luxeInventoryInspectorCounts b{display:block;color:var(--v8-ink);font-size:22px}
+.shell.luxeWindows .luxeInventoryInspectorTools{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.shell.luxeWindows .luxeInventoryInspectorTools button{border:1px solid var(--v8-edge);border-radius:11px;padding:8px 12px;color:var(--v8-accent);background:var(--v8-surface);font-weight:750}
+.shell.luxeWindows .luxeInventoryInspectorGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(130px,100%),1fr));gap:10px}
+.shell.luxeWindows .luxeInventoryInspectorPhoto{min-width:0;display:grid;gap:3px;background:var(--v8-surface);border:1px solid var(--v8-edge);padding:6px;border-radius:13px}
+.shell.luxeWindows .luxeInventoryInspectorPhoto.selected{border:2px solid var(--v8-accent);background:var(--v8-soft)}
+.shell.luxeWindows .luxeInventoryInspectorPhoto>.luxeInventorySelectPhoto{background:none;border:0;text-align:left;padding:0;color:var(--v8-ink);min-width:0}
+.shell.luxeWindows .luxeInventoryInspectorPhoto img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:9px}
+.shell.luxeWindows .luxeInventoryInspectorPhoto span{display:block;padding:5px 2px 2px;font-size:11px;color:var(--v8-accent);font-weight:800}
+.shell.luxeWindows .luxeInventoryOpenPhoto{padding:6px 9px;background:var(--v8-soft);color:var(--v8-accent);border:1px solid var(--v8-edge);border-radius:9px;font-size:11px}
+.shell.luxeWindows .luxeInventoryInspectorPhoto small{white-space:nowrap;text-overflow:ellipsis;overflow:hidden;color:var(--v8-muted);font-size:10px}
+.shell.luxeWindows .luxeInventoryInspectorEmpty{display:grid;place-content:center;text-align:center;min-height:280px;padding:20px}
+.shell.luxeWindows .luxeInventoryInspectorEmpty h3{margin:0 0 10px}
+.shell.luxeWindows .luxeInventoryInspectorEmpty p{color:var(--v8-muted);line-height:1.6;max-width:340px}
+@media(max-width:980px){.shell.luxeWindows .luxeInventoryInspector{display:none}}
