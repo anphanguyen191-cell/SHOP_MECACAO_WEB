@@ -40,7 +40,45 @@ internal sealed class ShopContext : ApplicationContext
             ContextMenuStrip = menu
         };
         tray.DoubleClick += (_, _) => OpenBrowser();
+        EnsureDesktopShortcut();
         _ = StartAsync();
+    }
+
+    private void EnsureDesktopShortcut()
+    {
+        // Update an existing shortcut to this EXE when possible, otherwise create
+        // one branded desktop entry. Never overwrite a shortcut to another program.
+        try
+        {
+            var exe = Environment.ProcessPath;
+            var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+            if (string.IsNullOrWhiteSpace(exe) || !Directory.Exists(desktop)) return;
+            var shellType = Type.GetTypeFromProgID("WScript.Shell");
+            if (shellType == null) return;
+            dynamic shell = Activator.CreateInstance(shellType)!;
+            string? existing = null;
+            foreach (var linkPath in Directory.EnumerateFiles(desktop, "*.lnk"))
+            {
+                try
+                {
+                    dynamic candidate = shell.CreateShortcut(linkPath);
+                    string target = (string)candidate.TargetPath;
+                    if (string.Equals(Path.GetFullPath(target), Path.GetFullPath(exe), StringComparison.OrdinalIgnoreCase))
+                    {
+                        existing = linkPath;
+                        break;
+                    }
+                }
+                catch { /* A different or unreadable shortcut is left unchanged. */ }
+            }
+            dynamic shortcut = shell.CreateShortcut(existing ?? Path.Combine(desktop, "Shop Mẹ CaCao.lnk"));
+            shortcut.TargetPath = exe;
+            shortcut.WorkingDirectory = home;
+            shortcut.IconLocation = exe + ",0";
+            shortcut.Description = "Shop Mẹ CaCao · CaCao Travel Luxe";
+            shortcut.Save();
+        }
+        catch (Exception error) { Log("Could not create branded desktop shortcut: " + error.Message); }
     }
 
     private static void WriteOnce(string file, object value)
