@@ -1,0 +1,74 @@
+/* CaCao Travel Luxe V2 — dedicated Windows welcome/login + unified warehouse notices */
+.luxeStartupScreen{--s-ink:#29324d;--s-muted:#7f8198;--s-pink:#d875a4;position:relative;isolation:isolate;display:grid;place-items:center;min-height:100dvh;overflow:hidden;padding:clamp(12px,2.5vw,30px);background:#f7f2f8;color:var(--s-ink);font-family:Inter,ui-sans-serif,system-ui,sans-serif}
+.luxeStartupAmbient{position:absolute;z-index:-1;border-radius:50%;filter:blur(55px);pointer-events:none}
+.luxeAmbientOne{width:560px;height:560px;left:-200px;top:-260px;background:#e8d7f5}
+.luxeAmbientTwo{width:520px;height:520px;right:-180px;bottom:-240px;background:#f8dce9}
+.luxeStartupShell{width:min(1190px,100%);display:grid;gap:16px}
+.luxeStartupBrand{display:flex;align-items:center;gap:12px;padding:5px 12px}
+.luxeStartupBrand img{width:49px;height:49px;border-radius:16px;object-fit:contain;background:white;box-shadow:0 6px 22px #8c67911c}
+.luxeStartupBrand>span:nth-child(2){display:grid;gap:3px}
+.luxeStartupBrand b{font-size:15px;font-weight:900}
+.luxeStartupBrand small{font-size:10px;letter-spacing:.065em;color:var(--s-muted)}
+.luxeStartupSecure{margin-left:auto;border:1px solid #e8d9e9;border-radius:50px;background:#ffffffa8;color:#a27c9b;font-size:10px;font-weight:800;letter-spacing:.09em;padding:9px 14px}
+.luxeStartupColumns{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(360px,.9fr);gap:18px;min-height:590px}
+.luxeStartupStory,.luxeStartupCard{border:1px solid #ffffffc9;border-radius:30px;box-shadow:0 18px 60px #6d507f16;overflow:hidden}
+.luxeStartupStory{display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(150deg,#fce8f0,#f2eafb 50%,#e5f0f5);padding:clamp(25px,4vw,48px) clamp(20px,3vw,42px) 22px}
+.luxeStartupStoryCopy{max-width:520px;position:relative;z-index:1}
+.luxeStartupKicker{color:#b57ba5;font-size:11px;font-weight:900;letter-spacing:.13em}
+.luxeStartupStory h1{font-size:clamp(30px,3.4vw,49px);line-height:1.13;letter-spacing:-.055em;font-weight:900;margin:20px 0 16px;color:#32314f}
+.luxeStartupStory p{font-size:14px;line-height:1.8;color:#746b8a;max-width:490px}
+.luxeStartupLandscape{width:100%;max-height:315px;object-fit:contain;border-radius:22px;filter:drop-shadow(0 16px 20px #77648b1b);margin:10px auto}
+.luxeStartupStoryFooter{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#ab7c9c;font-size:11px;font-weight:800}
+.luxeStartupStoryFooter span:last-child{color:#a7a1b4;font-size:9px;letter-spacing:.09em}
+.luxeStartupCard{background:#fffffff2;display:flex;flex-direction:column;justify-content:center;align-items:stretch;padding:clamp(27px,4.5vw,55px);gap:14px}
+.luxeStartupCardEyebrow{color:#d17eaa;font-size:11px;font-weight:900;letter-spacing:.15em}
+.luxeStartupCardIcon{display:grid;place-items:center;width:69px;height:69px;border-radius:21px;background:linear-gradient(135deg,#fce5ef,#e8e1fb);font-size:39px;color:#d780aa;box-shadow:0 9px 25px #c78da323}
+.luxeStartupCard h2{margin:4px 0 0;color:#30304e;font-size:clamp(25px,2.8vw,34px);letter-spacing:-.045em}
+.luxeStartupCard>p{color:#7e7d94;font-size:13px;line-height:1.75;margin:0}
+.luxeStartupCard>p b{color:#5b5476}
+.luxeStartupPrimary{display:flex;align-items:center;justify-content:center;gap:15px;width:100%;min-height:52px;border:0;border-radius:14px;background:linear-gradient(105deg,#ec94b7,#d37cae);color:white;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 13px 25px #d88eae4d;transition:transform .2s ease,box-shadow .2s ease}
+.luxeStartupPrimary:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 16px 28px #d88eae66}
+.luxeStartupPrimary:disabled{opacity:.55;cursor:wait}
+.luxeStartupForm{display:grid;gap:14px;margin-top:3px}
+.luxeStartupForm>label:not(.luxeStartupCheck){display:grid;gap:7px;color:#53536e;font-size:12px;font-weight:800}
+.luxeStartupForm input:not([type=checkbox]),.luxeStartupSavedPassword{width:100%;height:48px;border:1.5px solid #ece3ef;border-radius:13px;background:#fbf9fd;padding:11px 14px;color:#34324e;font:inherit;font-size:14px}
+.luxeStartupForm input:focus-visible,.luxeStartupCard button:focus-visible{outline:3px solid #edb2cf;outline-offset:2px}
+.luxeStartupSavedPassword{display:flex;align-items:center;justify-content:space-between;gap:9px}
+.luxeStartupSavedPassword span{letter-spacing:.2em;color:#7c6a91;font-size:18px}
+.luxeStartupSavedPassword small{color:#4b9b8c;font-size:10px;font-weight:800;letter-spacing:0}
+.luxeStartupCheck{display:flex;align-items:center;gap:10px;color:#6b6981;font-size:12px;font-weight:700;cursor:pointer}
+.luxeStartupCheck input{accent-color:#d47ba7;width:17px;height:17px}
+.luxeStartupHint{color:#9b879a;line-height:1.5;font-size:11px}
+.luxeStartupError{border:1px solid #f0bac9;border-radius:12px;background:#fff0f3;color:#9e3558;font-size:12px;line-height:1.6;padding:11px 13px;margin:0}
+.luxeStartupLink{border:0;background:none;color:#ac719d;font-size:12px;font-weight:800;cursor:pointer;padding:5px 0;justify-self:start;text-align:left}
+.luxeStartupLink:hover{text-decoration:underline}
+.luxeStartupFooterActions{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.luxeStartupPrivacy{border-top:1px solid #f1eaf2;padding-top:16px;color:#9c99ab;font-size:10px;line-height:1.65;margin-top:8px}
+.luxeStartupBottom{display:flex;justify-content:space-between;padding:0 10px;color:#aaa0b1;font-size:11px}
+.luxeStartupScreen button,.luxeStartupScreen input{font-family:inherit}
+@media(max-width:850px){.luxeStartupColumns{grid-template-columns:1fr}.luxeStartupStory{padding:26px 26px 14px;min-height:260px}.luxeStartupStory h1{font-size:30px;margin:10px 0}.luxeStartupLandscape{max-height:145px}.luxeStartupCard{padding:28px}.luxeStartupSecure{display:none}}
+@media(max-width:480px){.luxeStartupScreen{padding:10px}.luxeStartupColumns{gap:10px}.luxeStartupStory{min-height:190px}.luxeStartupStory h1{font-size:25px}.luxeStartupStory p{font-size:12px}.luxeStartupLandscape{display:none}.luxeStartupCard{border-radius:23px;padding:23px}.luxeStartupBrand{padding:5px}.luxeStartupBrand img{width:42px;height:42px}}
+@media(prefers-reduced-motion:reduce){.luxeStartupPrimary{transition:none}}
+/* Single warehouse notification surface: toast OR expanded bell panel, never a modal. */
+.warehouseNotifications{position:relative}
+.warehouseNotifications>button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:39px;border:1px solid #f0e4f0!important;border-radius:13px!important;background:#fff9fd!important;color:#a76e96!important;padding:8px 10px!important}
+.warehouseNotifications>button span{font-size:11px;font-weight:900}
+.warehouseToast,.warehouseNoticePanel,.warehouseErrorPanel{position:fixed;z-index:350;right:clamp(12px,2.2vw,28px);top:clamp(76px,9vh,108px);width:min(360px,calc(100vw - 24px));max-height:min(70vh,660px);overflow:auto;box-sizing:border-box;border:1px solid #f0e3ef;border-radius:20px;background:#fffcff;box-shadow:0 19px 56px #46354b29;padding:19px;color:#3c3550}
+.warehouseToast{display:grid;gap:10px}
+.warehouseToastHead{display:flex;align-items:center;gap:10px}
+.warehouseToastIcon{display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:13px;background:#fff0f8;color:#ce7ca7;font-size:19px}
+.warehouseToast b,.warehouseNoticePanel h3,.warehouseErrorPanel b{font-size:14px;font-weight:900;color:#39324d}
+.warehouseToast p,.warehouseNoticePanel p,.warehouseErrorPanel p{font-size:12px;line-height:1.65;color:#746b7c;margin:0;overflow-wrap:anywhere}
+.warehouseToastActions{display:flex;gap:9px;flex-wrap:wrap}
+.warehouseToastActions button,.warehouseNoticePanel button,.warehouseErrorPanel button{border:1px solid #ead8e8;border-radius:11px;background:#fff9fc;color:#996e8f;padding:9px 12px;font-size:11px;font-weight:800;min-height:36px}
+.warehouseToastActions button:first-child,.warehouseNoticePanel .warehouseReviewButton{border-color:transparent;background:linear-gradient(110deg,#e88bb3,#d17ba8);color:#fff}
+.warehouseNoticePanel h3{margin:0 0 12px}
+.warehouseNoticePanel article{padding:12px 0;border-bottom:1px solid #f0e7ef}
+.warehouseNoticePanel article>b{font-size:10px;color:#b2789e}
+.warehouseNoticePanel small{font-size:10px;color:#9b93a6}
+.warehouseNoticePanel .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+.warehouseErrorPanel{border-color:#f1c5d0;background:#fff9fa}
+.shell.luxeWindows.themeDark :is(.warehouseToast,.warehouseNoticePanel,.warehouseErrorPanel){background:#333046;color:#f7f0ff;border-color:#51435c}
+.shell.luxeWindows.themeDark :is(.warehouseToast p,.warehouseNoticePanel p,.warehouseErrorPanel p){color:#d5c7df}
+.shell.luxeWindows.themeDark :is(.warehouseToast b,.warehouseNoticePanel h3,.warehouseErrorPanel b){color:#fff}
+@media(max-width:800px){.warehouseToast,.warehouseNoticePanel,.warehouseErrorPanel{top:74px;right:12px}}
