@@ -41,3 +41,13 @@ export async function apiJson<T=any>(url:string,options?:RequestInit):Promise<T>
   return data as T
  }finally{if(timer!==null)clearTimeout(timer);options?.signal?.removeEventListener('abort',forward)}
 }
+
+export type PageMotion='fade'|'slide'|'flip'|'none'
+/** Presentation-only motion, persisted locally, matches approved demo options. */
+export function usePageMotion(){
+ const [value,setValue]=useState<PageMotion>(()=>{
+  try{const v=localStorage.getItem('mecacao-ui-page-motion');return v==='slide'||v==='flip'||v==='none'?v:'fade'}catch{return 'fade'}
+ })
+ useEffect(()=>{try{localStorage.setItem('mecacao-ui-page-motion',value)}catch{}},[value])
+ return [value,setValue] as const
+}
