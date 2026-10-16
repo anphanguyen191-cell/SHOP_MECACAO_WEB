@@ -75,3 +75,51 @@
 .cacaoDemoAuthScreen .lanLoginCard form label input{width:100%;min-height:44px;padding:12px 14px;border:1px solid #ece7f0;border-radius:13px;background:#faf9fc;font-size:13px}
 .cacaoDemoAuthScreen .lanLoginCard form button.cacaoDemoSubmit{background:linear-gradient(110deg,#eb87ac,#d976a5)!important;border:0!important;color:#fff!important;border-radius:13px!important;padding:14px 20px!important}
 @media(max-width:800px){.cacaoDemoAuthScreen .lanLoginCard h2{margin-top:36px}}
+
+/* Responsive Windows-first viewport: avoid a 1398px inner canvas in a wider maximized laptop. */
+html:has(.cacaoDemoSplash),body:has(.cacaoDemoSplash),
+html:has(.cacaoDemoAuthScreen),body:has(.cacaoDemoAuthScreen){width:100%;min-width:0;margin:0}
+.cacaoDemoSplash{width:100vw!important;height:100dvh!important;min-height:100dvh!important;max-width:none!important;max-height:none!important;inset:0!important;padding:clamp(16px,3vw,36px)!important}
+.cacaoDemoSplashCenter{max-width:min(740px,96vw)}
+.cacaoDemoSplashCenter h1{font-size:clamp(32px,4vw,66px)!important;line-height:1.13;letter-spacing:-.045em;margin:20px 0}
+.cacaoDemoSplashCenter>p{font-size:clamp(14px,1.2vw,19px)}
+.cacaoDemoSplashMark{position:relative;overflow:visible;animation:cacaoDemoFloat 3s ease-in-out infinite}
+.cacaoDemoSplashMark img{width:82px;height:82px;object-fit:contain;border-radius:18px}
+.cacaoDemoSplashMark span{position:absolute;top:-15px;right:-16px;color:#df91b9;font-size:26px}
+.cacaoDemoSplash .cacaoDemoSkip{min-height:46px!important;padding:13px 23px!important;font-size:13px!important;color:white!important;background:linear-gradient(110deg,#eb87ac,#d976a5)!important;border:0!important;box-shadow:0 9px 22px #db79ab32!important}
+.cacaoDemoSplashHint{display:block;margin-top:14px;color:#988ba2;font-size:10px;letter-spacing:.02em}
+.cacaoDemoAuthScreen{width:100%!important;max-width:none!important;min-height:100dvh!important}
+.cacaoDemoLogin{width:100%;max-width:1800px;min-height:100dvh;height:100dvh;padding:clamp(12px,2.1vh,28px) clamp(12px,1.5vw,28px);grid-template-columns:minmax(0,1.18fr) minmax(340px,.82fr)}
+.cacaoDemoVisual{min-height:0;height:100%;isolation:isolate}
+.cacaoDemoScene{z-index:0;background-position:center bottom;background-size:cover}
+.cacaoDemoLoginMedia{position:absolute;inset:0;z-index:0}
+.cacaoDemoLoginMedia img,.cacaoDemoLoginMedia video{width:100%;height:100%;object-fit:cover;display:block}
+.cacaoDemoVisual.hasCustomMedia:after{background:linear-gradient(90deg,rgba(32,28,54,.73),rgba(49,39,69,.42) 56%,rgba(41,35,61,.14))}
+.cacaoDemoAuthScreen .cacaoDemoFormZone.luxeStartupCard{min-height:0;height:100%;overflow-y:auto!important;padding:clamp(22px,3vh,58px) clamp(26px,4vw,74px)!important;scrollbar-width:thin}
+.cacaoDemoFields h2{margin-top:clamp(28px,5vh,64px)}
+.cacaoDemoVisualBottom{bottom:82px}
+.cacaoDemoLoginBannerControls{position:absolute;z-index:4;right:16px;bottom:18px;display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.cacaoDemoLoginBannerControls input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.cacaoDemoLoginBannerControls button{font-size:10px;font-weight:800;padding:9px 12px;border-radius:11px;border:1px solid #ffffff9e;background:#ffffffdd;color:#83466c;backdrop-filter:blur(12px);cursor:pointer}
+.cacaoDemoLoginBannerControls button:hover{background:#fff}
+.cacaoDemoMediaMessage{position:absolute;z-index:4;bottom:60px;right:15px;max-width:300px;border-radius:10px;padding:9px 12px;color:#fff;font-size:11px;background:#30283eab}
+@media(max-height:760px) and (min-width:801px){
+ .cacaoDemoWording{top:6%}
+ .cacaoDemoWording h1{font-size:clamp(36px,4vw,58px);margin:12px 0}
+ .cacaoDemoFields h2{margin-top:20px;font-size:27px}
+ .cacaoDemoAuthScreen .cacaoDemoField{margin:10px 0}
+ .cacaoDemoAuthScreen .cacaoDemoFormZone.luxeStartupCard{padding:16px 36px!important}
+ .cacaoDemoVisualBottom{bottom:72px}
+ .cacaoDemoBottomLine{margin-top:10px}
+}
+@media(max-width:800px){
+ .cacaoDemoLogin{height:auto;min-height:100dvh;display:grid;grid-template-columns:minmax(0,1fr);padding:0}
+ .cacaoDemoVisual{height:245px;min-height:245px;max-height:245px;border-radius:0}
+ .cacaoDemoVisualBottom{display:none}
+ .cacaoDemoLoginBannerControls{bottom:9px;right:9px}
+ .cacaoDemoLoginBannerControls button{font-size:9px;padding:7px 9px}
+ .cacaoDemoWording h1{font-size:clamp(28px,6vw,37px)}
+ .cacaoDemoAuthScreen .cacaoDemoFormZone.luxeStartupCard{height:auto;overflow:visible!important;min-height:calc(100dvh - 225px);padding:24px 25px!important}
+ .cacaoDemoFields h2{margin-top:24px}
+}
+@media(prefers-reduced-motion:reduce){.cacaoDemoSplashMark,.cacaoDemoSplashLine:before{animation:none}}
