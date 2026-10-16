@@ -1,3 +1,23 @@
+# UI Travel Luxe laptop — owner acceptance and release baseline (17/10/2026)
+
+## Trạng thái mới nhất
+
+- Chủ shop đã yêu cầu khắc phục đồng bộ 5 nhóm: lỗi chồng lấn mobile, style sáng không đồng nhất, trải nghiệm từng tab, trạng thái phát hành, và ghi nhận nghiệm thu laptop; đồng thời tuyên bố nghiệm thu toàn bộ nền tảng sau khi hoàn thiện và cho phép cập nhật chính thức một lượt.
+- Bản nền tảng được chốt qua `docs/ui/windows-ui-v2-accepted.md`. Đây là **owner acceptance theo chỉ thị trực tiếp của chủ shop**; không ghi nhận giả rằng bản mới đã chạy trên laptop trước khi họ cập nhật.
+- Mục tiêu phát hành: cùng `main` → Windows Release STABLE và GitHub Pages sau khi workflow chính xác của commit đạt. Chỉ một main, một DB LOCAL V8; không tạo nhánh PREVIEW/DB test.
+- Giao diện Cloud chưa được chủ shop chốt và nằm ngoài scope thiết kế laptop lần này. Không thay đổi dữ liệu, schema hoặc cấu hình Supabase.
+- Sau release, chủ shop cập nhật laptop một lần qua Cài đặt → Kiểm tra & cập nhật. Nếu có lỗi sử dụng, tiếp tục sửa trên đúng baseline `main` này.
+
+## Scope hoàn thiện giao diện
+
+1. Bảng thao tác nổi có khoảng cách ổn định với thanh điều hướng, đo lại đồng bộ sau resize/đổi mật độ và chừa safe area.
+2. Theme sáng dùng surface, viền và focus chung; bỏ các khối màu/viền theo thứ tự phần tử.
+3. Mỗi workspace laptop có lộ trình thao tác riêng, ưu tiên Cài đặt và các luồng nhiều bước; Cloud không bị thiết kế lại.
+4. Cài đặt và thông tin build giữ tag/commit thật rõ ràng; release chính thức không nhầm với archive nghiệm thu.
+5. CI đúng commit được lưu độc lập với việc chạy thực tế trên laptop.
+
+---
+
 ## Đợt V8.0.70 — giao diện kiểm tra trước đồng bộ (16/10/2026 theo kế hoạch)
 
 - Bổ sung "Xem trước đối soát (không ghi)" để xem tên Product Windows/Cloud, số Size, ảnh thực hiện hữu, ảnh thiếu, số ảnh Cloud sẵn sàng và ảnh dự kiến cần tải lên. Nút chỉ đọc, không đăng ký hoặc xoá dữ liệu Cloud.

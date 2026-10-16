@@ -1,9 +1,9 @@
-# UI-DESKTOP-013 — Splash/Login visual fidelity to Travel Luxe V2 demo (OWNER UAT, not accepted)
+# UI-DESKTOP-013 — Splash/Login visual fidelity to Travel Luxe V2 demo
 
 Date: 2026-10-16
 Source of truth: user-supplied `Shop_MeCaCao_Travel_Luxe_Laptop_Demo_V2.html`.
 User's evidence: `Recording 2026-10-16 220137.mp4` (7.8 s): alternating narrow LAN login and Dashboard; no original scenic split-screen or demo welcome in the captured login state.
-Status: implementation on main; requires CI and owner Windows laptop visual acceptance.
+Status: Implementation details are retained here; the owner later accepted the unified Travel Luxe V2 baseline and authorized its official release on 2026-10-17. See [`windows-ui-v2-accepted.md`](windows-ui-v2-accepted.md). First launch on the shop laptop remains the practical point to report runtime issues.
 
 ## Scope
 - Reuse the exact scenic SVG artwork embedded in the approved HTML demo as `apps/web/public/brand/travel-luxe-login-scene.svg`.
@@ -21,4 +21,4 @@ Status: implementation on main; requires CI and owner Windows laptop visual acce
 5. Verify actual data and CORE remain unchanged.
 6. Browser acceptance checks scenic layout geometry, exact SVG asset, secure remembered login and logout; CI must pass.
 
-**This file is not `windows-ui-v2-accepted.md` and does not assert owner acceptance.**
+This is a historical visual/functional implementation record. The owner's current acceptance is captured in `windows-ui-v2-accepted.md`.

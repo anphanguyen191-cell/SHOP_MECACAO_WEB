@@ -42,6 +42,8 @@ jobs:
       - run: npm run build
       - run: npm run typecheck
       - run: npm run test:gate
+      - name: Mobile floating actions and safe-area browser gate
+        run: node scripts/mobile-browser-smoke.mjs
       - run: npm run test:cloud
       - run: npm run test:windows-update
       - shell: pwsh
@@ -86,7 +88,7 @@ jobs:
           make_latest: true
           files: artifacts/ShopMeCaCao-V8-STABLE-win-x64.zip
           body: |
-            ${{ steps.ui_v2_acceptance.outputs.early_access == 'true' && 'CHỦ SHOP ĐÃ CHO PHÉP CẬP NHẬT SỚM UI V2.0 ĐỂ KIỂM THỬ TRÊN LAPTOP. CHƯA NGHIỆM THU WINDOWS.' || 'Đã phê duyệt nghiệm thu Windows UI V2.0.' }}
+            Chủ shop đã trực tiếp phê duyệt Travel Luxe V2.0 làm bản nền tảng chính thức ngày 17/10/2026. Build và CI kiểm tra theo commit phát hành; lần cập nhật laptop kế tiếp là mốc xác nhận vận hành thực tế trên dữ liệu và thiết bị của cửa hàng.
             Nâng cấp bằng nút Cài đặt > Kiểm tra & cập nhật từ bản V8 đang sử dụng; không cần cài mới.
             Database, cấu hình và ảnh gốc vẫn được giữ bên ngoài bộ chương trình tại ổ D:.
             Trước khi thao tác nghiệp vụ trên kho thật, đối chiếu đường dẫn kho, phiên bản, số ảnh và các giao dịch.

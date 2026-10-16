@@ -72,7 +72,8 @@ const server=http.createServer(async (req,res)=>{
  fs.createReadStream(file).pipe(res)
 })
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve))
-const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium','/usr/bin/chromium-browser'].find(fs.existsSync)
+const windowsChrome=process.platform==='win32'?[path.join(process.env.PROGRAMFILES||'C:\\Program Files','Google/Chrome/Application/chrome.exe'),path.join(process.env['PROGRAMFILES(X86)']||'C:\\Program Files (x86)','Google/Chrome/Application/chrome.exe'),path.join(process.env.LOCALAPPDATA||'','Google/Chrome/Application/chrome.exe')]:[]
+const chrome=process.env.CHROME_BIN||[...windowsChrome,'/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium','/usr/bin/chromium-browser'].find(fs.existsSync)
 assert(chrome,'Chrome/Chromium not installed on test runner')
 const profile=fs.mkdtempSync(path.join(os.tmpdir(),'mecacao-cdp-'))
 const child=spawn(chrome,['--headless=new','--no-sandbox','--no-proxy-server','--disable-gpu','--disable-dev-shm-usage','--disable-background-networking','--no-first-run','--remote-debugging-port=0','--window-size=390,844','--user-data-dir='+profile,'about:blank'],{stdio:['ignore','ignore','pipe']})

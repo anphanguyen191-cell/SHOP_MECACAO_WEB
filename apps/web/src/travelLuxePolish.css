@@ -135,6 +135,20 @@
 .shell.luxeWindows .luxePageContent :is(.folderOverlay,.modalback,.drawerback,.warehouseImageModal){z-index:150}
 .shell.luxeWindows.themeDark .luxeControlCenterIntro,.shell.luxeWindows.themeDark .luxeControlCenterSection,.shell.luxeWindows.themeDark .displayPreferences,.shell.luxeWindows.themeDark .cloudSettings{background:var(--luxe-paper);color:var(--luxe-ink);border-color:var(--luxe-border)}
 
+/* Every workspace opens with its own clear three-step route, like the demo's
+   focused mini-stories. These are orientation cues, not workflow state. */
+.shell.luxeWindows .luxeWorkspaceIntro{min-height:194px}
+.shell.luxeWindows .luxeIntroCopy{max-width:min(76%,790px)}
+.shell.luxeWindows .luxeIntroCopy>p{max-width:68ch}
+.shell.luxeWindows .luxeJourney{display:flex;flex-wrap:wrap;gap:8px;margin:13px 0 0;padding:0;list-style:none}
+.shell.luxeWindows .luxeJourney li{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:4px 10px 4px 5px;border:1px solid rgba(255,255,255,.5);border-radius:999px;background:rgba(38,27,57,.15);color:#fff;font-size:10px;line-height:1.25;text-shadow:0 1px 5px rgba(39,23,62,.35)}
+.shell.luxeWindows .luxeJourney li>span{display:grid;place-items:center;width:20px;height:20px;flex:none;border-radius:50%;background:rgba(255,255,255,.92);color:#754468;font-size:10px;font-weight:900;text-shadow:none}
+.shell.luxeWindows .luxeJourney li>b{font-size:inherit;font-weight:750}
+.shell.luxeWindows .luxeIntroArt>span{display:grid;place-items:center;width:150px;height:150px;right:17px;top:17px;font-size:88px;line-height:1;text-shadow:0 9px 25px rgba(49,26,77,.2)}
+.shell.luxeWindows.themeDark .luxeJourney li{background:rgba(18,16,31,.38);border-color:rgba(255,255,255,.32)}
+@media(max-width:1000px){.shell.luxeWindows .luxeIntroCopy{max-width:88%}.shell.luxeWindows .luxeJourney{gap:6px}.shell.luxeWindows .luxeJourney li{font-size:9px;padding-right:8px}}
+@media(max-width:650px){.shell.luxeWindows .luxeIntroCopy{max-width:100%}.shell.luxeWindows .luxeJourney{max-width:100%}}
+
 /* Receipt journey: replace the legacy mint rectangle seen in the owner's screenshot. */
 .shell.luxeWindows:not(.themeDark) .receiptV2 .receiptHero{
  border:1px solid #e6e5f0!important;border-radius:21px!important;

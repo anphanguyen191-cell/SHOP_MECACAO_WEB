@@ -48,6 +48,26 @@ const intros:Record<string,[string,string,string]>={
  'Ảnh iPhone':['MOBILE INBOX','Ảnh từ điện thoại','Tiếp nhận và duyệt ảnh trước khi đưa vào kho.'],
  'Mobile LAN':['LAN CONNECTIVITY','Kết nối Mobile LAN','Quản lý thiết bị, phiên đăng nhập và quyền trong mạng nội bộ.']
 }
+const workspaceJourney:Record<string,string[]>={
+ 'Danh mục sản phẩm':['Tìm sản phẩm','Kiểm tra Size & giá','Mở chi tiết'],
+ 'Nhập hàng':['Chọn nguồn hàng','Rà soát từng Size','Xác nhận nhập'],
+ 'Import kho':['Quét thư mục ảnh','Duyệt Product / Size','Đăng ký kho'],
+ 'Tồn kho':['Lọc Product','Mở Size','Xem ảnh thực tế'],
+ 'Bán hàng':['Chọn ảnh tồn','Hoàn thiện đơn','Xác nhận nghiệp vụ'],
+ 'Khách hàng':['Tìm hồ sơ','Xem lịch sử','Cập nhật thông tin'],
+ 'Công nợ':['Chọn khoản thu','Đối chiếu đã thu','Theo dõi còn lại'],
+ 'Báo cáo':['Chọn thời gian','Đối chiếu số liệu','Xuất báo cáo'],
+ 'Kiểm kê':['Mở phiên kiểm','Ghi số đếm','Đối chiếu & chốt'],
+ 'Cài đặt':['Cá nhân hóa','Cấu hình vận hành','Kiểm tra phiên bản'],
+ 'Ảnh SOLD':['Tìm hồ sơ bán','Kiểm chứng ảnh','Xem lưu trữ'],
+ 'Ảnh iPhone':['Tiếp nhận ảnh','Rà soát nguồn','Chuyển sang nhập kho'],
+ 'Mobile LAN':['Thiết lập thiết bị','Kiểm tra vai trò','Xác nhận kết nối']
+}
+const workspaceArt:Record<string,string>={
+ 'Danh mục sản phẩm':'✧','Nhập hàng':'↓','Import kho':'▤','Tồn kho':'◉','Bán hàng':'♡',
+ 'Khách hàng':'♧','Công nợ':'₫','Báo cáo':'⌁','Kiểm kê':'✓','Cài đặt':'⚙',
+ 'Ảnh SOLD':'▧','Ảnh iPhone':'⌕','Mobile LAN':'⌁'
+}
 export function LuxeWorkspaceIntro({section}: {section:string}){
  const [eyebrow,title,description]=intros[section]||['SHOP MẸ CACAO',section,'Quản lý hoạt động cửa hàng trên phần mềm chính thức.']
  const [media,setMedia]=useState<{url:string;video:boolean}|null>(null)
@@ -85,8 +105,8 @@ export function LuxeWorkspaceIntro({section}: {section:string}){
  return <div className="luxeWorkspaceIntroGroup">
   <section className={'luxeWorkspaceIntro'+(media?' hasCustomMedia':'')} data-section={section} aria-label={'Không gian '+section}>
    {media&&<div className="luxeIntroMedia" aria-hidden="true">{media.video?<video src={media.url} autoPlay muted loop playsInline/>:<img src={media.url} alt=""/>}</div>}
-   <div className="luxeIntroCopy"><span className="luxeKicker">✦ {eyebrow}</span><h1>{title}</h1><p>{description}</p></div>
-   {!media&&<div className="luxeIntroArt" aria-hidden="true"><span>✿</span><i/><i/><i/></div>}
+   <div className="luxeIntroCopy"><span className="luxeKicker">✦ {eyebrow}</span><h1>{title}</h1><p>{description}</p>{workspaceJourney[section]&&<ol className="luxeJourney" aria-label={'Các bước trong '+section}>{workspaceJourney[section].map((step,index)=><li key={step}><span>{index+1}</span><b>{step}</b></li>)}</ol>}</div>
+   {!media&&<div className="luxeIntroArt" aria-hidden="true"><span>{workspaceArt[section]||'✿'}</span><i/><i/><i/></div>}
    <div className="luxeIntroControls"><input ref={inputRef} className="luxeVisuallyHidden" type="file" accept="image/*,video/mp4,video/webm" aria-label={'Chọn ảnh bìa '+section} onChange={e=>void chooseMedia(e)}/><button type="button" onClick={()=>inputRef.current?.click()} aria-label={'Đổi ảnh hoặc video bìa '+section}>Đổi ảnh / video bìa</button>{media&&<button type="button" onClick={()=>void resetMedia()}>Nền mặc định</button>}</div>
   </section>
   {note&&<p className="luxeIntroMediaNote" role="status">{note}</p>}

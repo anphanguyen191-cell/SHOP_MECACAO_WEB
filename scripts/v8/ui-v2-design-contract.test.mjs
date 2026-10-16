@@ -36,3 +36,20 @@ test('Visual rewrite is contained to Windows and does not alter cloud/core opera
  assert.ok(!styles.includes('body{'))
  assert.ok(!styles.includes('database'))
 })
+test('Light contrast uses shared semantic surfaces instead of position-colored blocks',()=>{
+ const contrast=source('apps/web/src/lightContrast.css')
+ assert.match(contrast,/--contrast-border:#d7ceda/)
+ assert.match(contrast,/focus-visible/)
+ assert.doesNotMatch(contrast,/nth-child\(3n/)
+ assert.doesNotMatch(contrast,/border-top:\s*5px/)
+})
+test('Workspace introductions describe their own task journey while Cloud stays out of scope',()=>{
+ for(const section of ['Danh mục sản phẩm','Nhập hàng','Import kho','Tồn kho','Bán hàng','Khách hàng','Công nợ','Báo cáo','Kiểm kê','Cài đặt','Ảnh SOLD','Ảnh iPhone','Mobile LAN'])assert.ok(chrome.includes("'"+section+"':[")&&chrome.includes("'"+section+"':'"),section+' gets contextual journey/art')
+ assert.doesNotMatch(chrome,/workspaceJourney:[\s\S]*?'Kết nối Cloud'/)
+ assert.match(chrome,/className="luxeJourney"/)
+})
+test('Mobile floating panel measures nav clearance synchronously and honors safe area',()=>{
+ assert.match(app,/useLayoutEffect\(\(\)=>\{const dock=.*mobileQuickNav/)
+ assert.match(app,/visualViewport\?\.addEventListener\('resize',measure\)/)
+ assert.match(source('apps/web/src/floatingActions.css'),/bottom:calc\(var\(--mobile-nav-offset,0px\) \+ max\(16px,env\(safe-area-inset-bottom,0px\)\)\)/)
+})
