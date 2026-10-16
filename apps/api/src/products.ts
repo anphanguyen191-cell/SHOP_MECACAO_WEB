@@ -36,8 +36,9 @@ export function suggestSku(productCode: string, size: string) {
 }
 
 export type ProductListFilters={size?:string;stockState?:'all'|'in'|'out';sort?:'newest'|'name'|'stock_desc'|'stock_asc'}
+const normalizedProductSearch=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLocaleLowerCase('vi').trim()
 export function listProducts(search = '',filters:ProductListFilters={}) {
-  const q = `%${search.trim()}%`
+  const q = '%%',needle=normalizedProductSearch(search)
   const selectedSize=(filters.size??'').trim()
   const stockState=filters.stockState??'all'
   const sort=filters.sort??'newest'
@@ -56,14 +57,15 @@ export function listProducts(search = '',filters:ProductListFilters={}) {
     WHERE (? = '%%' OR p.name LIKE ? OR p.product_code LIKE ? OR v.sku LIKE ? OR v.size LIKE ?)
     GROUP BY p.id
   `).all(q,q,q,q,q) as Array<any>
-  const variants=db.prepare('SELECT v.id,v.product_id,v.size,COALESCE(s.stock,0) AS ledger_stock FROM product_variants v LEFT JOIN inventory_stock s ON s.variant_id=v.id').all() as Array<{id:number;product_id:number;size:string;ledger_stock:number}>
-  const matchedIds=new Set(rows.map(p=>p.id))
+  const variants=db.prepare('SELECT v.id,v.product_id,v.sku,v.size,COALESCE(s.stock,0) AS ledger_stock FROM product_variants v LEFT JOIN inventory_stock s ON s.variant_id=v.id').all() as Array<{id:number;product_id:number;sku:string;size:string;ledger_stock:number}>
+  const matchedRows=rows.filter(p=>!needle||[p.name,p.product_code,...variants.filter(v=>v.product_id===p.id).flatMap(v=>[v.size,v.sku])].some(value=>normalizedProductSearch(value??'').includes(needle)))
+  const matchedIds=new Set(matchedRows.map(p=>p.id))
   const matchedVariants=variants.filter(v=>matchedIds.has(v.product_id))
   const imageMap=physicalImagesByVariant(matchedVariants.map(v=>v.id))
   const pending=unregisteredPhysicalByVariant()
   const variantsByProduct=new Map<number,typeof matchedVariants>()
   for(const v of matchedVariants){const group=variantsByProduct.get(v.product_id)??[];group.push(v);variantsByProduct.set(v.product_id,group)}
-  const result=rows.map(p=>{
+  const result=matchedRows.map(p=>{
     const productVariants=variantsByProduct.get(p.id)??[]
     const sizes=productVariants.map(v=>({size:v.size,stock:(imageMap.get(v.id)??[]).filter(x=>x.product_id===p.id&&x.exists).length+(pending.get(v.id)??0)}))
     const totalStock=sizes.reduce((n,v)=>n+v.stock,0)

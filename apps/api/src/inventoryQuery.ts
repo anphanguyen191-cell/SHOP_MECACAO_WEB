@@ -1,10 +1,12 @@
 import { db } from './db.js'
 import { physicalImagesByVariant,unregisteredPhysicalByVariant } from './physicalInventory.js'
 
-export type InventoryFilters={search?:string;category?:string;size?:string;status?:'all'|'active'|'inactive';state?:'all'|'out'|'low'|'ok';threshold?:number}
+export type InventoryFilters={search?:string;category?:string;productCode?:string;size?:string;status?:'all'|'active'|'inactive';state?:'all'|'out'|'low'|'ok';threshold?:number}
+const normalizeInventorySearch=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLocaleLowerCase('vi').trim()
+const inventoryMatches=(needle:string,...fields:string[])=>!needle||fields.some(value=>normalizeInventorySearch(value??'').includes(needle))
 
 function inventoryMetadata(filters:InventoryFilters={}){
- const q='%'+(filters.search??'').trim()+'%',category=(filters.category??'').trim(),size=(filters.size??'').trim()
+ const q='%%',needle=normalizeInventorySearch(filters.search??''),category=(filters.category??'').trim(),size=(filters.size??'').trim(),productCode=(filters.productCode??'').trim()
  const state=filters.state??'all',status=filters.status??'all'
  if(!['all','out','low','ok'].includes(state))throw new Error('Trạng thái tồn không hợp lệ')
  if(!['all','active','inactive'].includes(status))throw new Error('Trạng thái sản phẩm không hợp lệ')
@@ -15,12 +17,13 @@ function inventoryMetadata(filters:InventoryFilters={}){
  LEFT JOIN categories c ON c.id=p.category_id
  LEFT JOIN inventory_stock s ON s.variant_id=v.id
  WHERE (?='%%' OR p.name LIKE ? OR p.product_code LIKE ? OR v.sku LIKE ? OR v.size LIKE ?)
- AND (?='' OR c.name=?)
+ AND (?='' OR c.name=? OR (?='Chưa phân loại' AND p.category_id IS NULL))
+ AND (?='' OR p.product_code=?)
  AND (?='' OR v.size=?)
  AND (?='all' OR p.status=?)
 
  ORDER BY p.name,v.id`
- const rows=db.prepare(sql).all(q,q,q,q,q,category,category,size,size,status,status) as Array<any>
+ const rows=(db.prepare(sql).all(q,q,q,q,q,category,category,category,productCode,productCode,size,size,status,status) as Array<any>).filter(r=>inventoryMatches(needle,r.product_name,r.product_code,r.size,r.sku))
  return {rows,state,threshold}
 }
 
@@ -36,7 +39,7 @@ type ExplorerImage={id:number;file_name:string;file_path:string;exists:boolean}
 type ExplorerVariant={variant_status:string;variant_id:number;sku:string;size:string;cost_price:number;sale_price:number;ledger_stock:number;stock:number;pendingImages:number;images:ExplorerImage[]}
 type ExplorerProduct={product_id:number;product_code:string;product_name:string;category:string|null;product_status:string;stock:number;variants:ExplorerVariant[]}
 
-export function inventoryExplorer(filters:Pick<InventoryFilters,'search'|'category'|'size'|'status'>={}){
+export function inventoryExplorer(filters:Pick<InventoryFilters,'search'|'category'|'productCode'|'size'|'status'>={}){
  const {rows}=inventoryMetadata({...filters,state:'all'})
  const imageMap=physicalImagesByVariant(rows.map(r=>r.variant_id))
  const pending=unregisteredPhysicalByVariant()
@@ -68,8 +71,9 @@ export function inventoryDashboard(products=inventoryExplorer({status:'active'})
 }
 
 export function inventorySuggestions(search=''){
- const q='%'+search.trim()+'%'
- const rows=db.prepare(`SELECT p.id AS product_id,p.product_code,p.name AS product_name,v.id AS variant_id,v.sku,v.size FROM product_variants v JOIN products p ON p.id=v.product_id WHERE p.status='active' AND v.status='active' AND (?='%%' OR p.name LIKE ? OR p.product_code LIKE ? OR v.sku LIKE ? OR v.size LIKE ?) ORDER BY CASE WHEN p.name LIKE ? OR p.product_code LIKE ? THEN 0 ELSE 1 END,p.name,v.size LIMIT 20`).all(q,q,q,q,q,search.trim()+'%',search.trim()+'%') as Array<{product_id:number;product_code:string;product_name:string;variant_id:number;sku:string;size:string}>
+ const needle=normalizeInventorySearch(search)
+ const q='%%'
+ const rows=(db.prepare(`SELECT p.id AS product_id,p.product_code,p.name AS product_name,v.id AS variant_id,v.sku,v.size FROM product_variants v JOIN products p ON p.id=v.product_id WHERE p.status='active' AND v.status='active' AND (?='%%' OR p.name LIKE ? OR p.product_code LIKE ? OR v.sku LIKE ? OR v.size LIKE ?) ORDER BY CASE WHEN p.name LIKE ? OR p.product_code LIKE ? THEN 0 ELSE 1 END,p.name,v.size`).all(q,q,q,q,q,search.trim()+'%',search.trim()+'%') as Array<{product_id:number;product_code:string;product_name:string;variant_id:number;sku:string;size:string}>).filter(row=>inventoryMatches(needle,row.product_name,row.product_code,row.sku,row.size)).slice(0,20)
  const images=physicalImagesByVariant(rows.map(row=>row.variant_id))
  const pending=unregisteredPhysicalByVariant()
  return rows.map(row=>({...row,pendingImages:pending.get(row.variant_id)??0,stock:(images.get(row.variant_id)??[]).filter(x=>x.product_id===row.product_id&&x.exists).length+(pending.get(row.variant_id)??0)}))
@@ -80,7 +84,9 @@ export function inventoryHistory(limit=200){
  return db.prepare(`SELECT t.id,t.transaction_type,t.quantity,t.unit_cost,t.note,t.created_at,v.id AS variant_id,v.sku,v.size,p.id AS product_id,p.product_code,p.name AS product_name FROM ${db.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_ledger'").get()?"(SELECT id,variant_id,transaction_type,quantity,unit_cost,note,created_at FROM inventory_transactions UNION ALL SELECT -image_id id,variant_id,transaction_type,quantity,unit_cost,'Đơn '||substr(order_id,1,8) note,created_at FROM sales_ledger)":'inventory_transactions'} t JOIN product_variants v ON v.id=t.variant_id JOIN products p ON p.id=v.product_id ORDER BY t.created_at DESC,t.id DESC LIMIT ?`).all(safe)
 }
 export function inventoryFilterOptions(){
- return {categories:(db.prepare("SELECT DISTINCT c.name FROM categories c JOIN products p ON p.category_id=c.id ORDER BY c.name").all() as Array<{name:string}>).map(x=>x.name),sizes:(db.prepare("SELECT DISTINCT size FROM product_variants ORDER BY size").all() as Array<{size:string}>).map(x=>x.size)}
+ const categories=(db.prepare("SELECT DISTINCT c.name FROM categories c JOIN products p ON p.category_id=c.id WHERE p.status='active' ORDER BY c.name").all() as Array<{name:string}>).map(x=>x.name)
+ if(db.prepare("SELECT 1 FROM products WHERE category_id IS NULL AND status='active' LIMIT 1").get())categories.push('Chưa phân loại')
+ return {categories,sizes:(db.prepare("SELECT DISTINCT size FROM product_variants ORDER BY size").all() as Array<{size:string}>).map(x=>x.size),products:db.prepare("SELECT product_code,name FROM products WHERE status='active' ORDER BY name,product_code").all() as Array<{product_code:string;name:string}>}
 }
 
 
