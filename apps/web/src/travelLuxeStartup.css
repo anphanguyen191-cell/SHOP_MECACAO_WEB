@@ -76,3 +76,23 @@
 .shell.luxeWindows .luxeTopLogout{border:1px solid var(--luxe-border);border-radius:12px;background:#fff8fd;color:#ad6b94;padding:10px 12px;font-size:11px;font-weight:800;white-space:nowrap;min-height:37px}
 .shell.luxeWindows.themeDark .luxeTopLogout{background:#3b3248;color:#f3c0db}
 @media(max-width:1180px){.shell.luxeWindows .luxeTopLogout{padding:8px;font-size:10px}}
+
+/* Owner-approved concept: a dedicated, minimal full-screen splash BEFORE login. */
+.luxeSplashScreen{position:relative;isolation:isolate;min-height:100dvh;display:grid;place-items:center;overflow:hidden;padding:25px;background:radial-gradient(circle at 15% 10%,#fce6ef 0,transparent 34%),radial-gradient(circle at 85% 80%,#e2e7fb 0,transparent 40%),#f9f4fa;color:#37334f;font-family:Inter,ui-sans-serif,system-ui,sans-serif}
+.luxeSplashAura{position:absolute;z-index:-1;pointer-events:none;border-radius:50%;filter:blur(45px)}
+.luxeSplashAuraOne{width:440px;height:440px;left:-200px;bottom:-230px;background:#f1c9e0}
+.luxeSplashAuraTwo{width:490px;height:490px;right:-240px;top:-200px;background:#d7d9f3}
+.luxeSplashCenter{display:flex;flex-direction:column;align-items:center;text-align:center;width:min(620px,100%);gap:16px}
+.luxeSplashMark{position:relative;display:grid;place-items:center;width:112px;height:112px;margin-bottom:13px;border:1px solid #fff;border-radius:34px;background:linear-gradient(140deg,#fff7fa,#f1e7ff);box-shadow:0 20px 65px #a888b53b}
+.luxeSplashMark img{width:78px;height:78px;object-fit:contain;border-radius:21px}
+.luxeSplashMark>span{position:absolute;right:-13px;top:-15px;color:#df91b9;font-size:26px}
+.luxeSplashEyebrow{font-size:12px;font-weight:900;letter-spacing:.19em;color:#b67d9f}
+.luxeSplashCenter h1{font-size:clamp(32px,4.5vw,55px);letter-spacing:-.06em;line-height:1.15;margin:0;font-weight:900;color:#3d3652}
+.luxeSplashCenter>p{font-size:17px;color:#a67f9d;margin:0;font-weight:750}
+.luxeSplashLine{height:5px;width:190px;border-radius:99px;background:#ebdce9;overflow:hidden;margin:10px auto 8px}
+.luxeSplashLine>span{display:block;width:70%;height:100%;border-radius:99px;background:linear-gradient(90deg,#f4abc9,#c7a5db)}
+.luxeSplashContinue{min-width:245px;min-height:50px;border:0;border-radius:14px;padding:13px 22px;background:linear-gradient(105deg,#eb8db4,#cf7da8);color:#fff;font-size:13px;font-weight:900;box-shadow:0 12px 30px #d29cb545;cursor:pointer}
+.luxeSplashContinue:disabled{opacity:.55;cursor:wait}
+.luxeSplashContinue>span{margin-left:9px}
+.luxeSplashCenter>small{font-size:10px;color:#aaa0b3;letter-spacing:.06em;margin-top:10px}
+@media(max-width:480px){.luxeSplashMark{width:94px;height:94px}.luxeSplashMark img{width:65px;height:65px}.luxeSplashCenter h1{font-size:34px}.luxeSplashCenter>p{font-size:14px}}
