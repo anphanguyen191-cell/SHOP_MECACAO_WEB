@@ -36,7 +36,25 @@ try{
  }
  const port=Number(fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0]),targets=await fetch('http://127.0.0.1:'+port+'/json/list').then(r=>r.json())
  ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true})});ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}})
- await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Page.navigate',{url:'http://127.0.0.1:3000'});await until("!!document.querySelector('.overviewStats')");assert(await run("!document.querySelector('.v8InstallSummary')"));await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("!!document.querySelector('.v8InstallSummary')")
+ await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Page.navigate',{url:'http://127.0.0.1:3000'});await until("!!document.querySelector('.overviewStats')");assert(await run("!document.querySelector('.v8InstallSummary')"));
+ // Windows UI MASTER V2 acceptance on an isolated test database, before the legacy screens.
+ await until("!!document.querySelector('.luxeWelcomeActions')");
+ assert(await run("document.querySelector('.shell').classList.contains('luxeWindows')"))
+ await run("Array.from(document.querySelectorAll('.luxeWelcomeActions button')).find(b=>b.textContent==='Bỏ qua').click()")
+ assert(await run("!document.querySelector('.luxeWelcome')"),'Welcome must dismiss without changing auth')
+ await run("document.querySelector('.luxeSidebarToggle').click()")
+ assert(await run("document.querySelector('.shell').classList.contains('luxeSidebarCollapsed')"))
+ await run("document.querySelector('.luxeSidebarToggle').click()")
+ assert(await run("!document.querySelector('.shell').classList.contains('luxeSidebarCollapsed')"))
+ await run("document.querySelector('.luxeOverviewControls button').click()")
+ assert(await run("!document.querySelector('.brandHeroCompact')"),'Dashboard hero must collapse without hiding KPIs')
+ await run("document.querySelector('.luxeOverviewControls button').click()")
+ assert(await run("!!document.querySelector('.brandHeroCompact')"))
+ await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tồn kho').click()")
+ await until("!!document.querySelector('.luxeStockBreakdown')&&!!document.querySelector('.luxeInventoryInspector')")
+ assert(await run("document.querySelectorAll('.luxeStockBreakdown article').length===3"))
+ await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tổng quan').click()")
+ await until("!!document.querySelector('.overviewStats')")await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("!!document.querySelector('.v8InstallSummary')")
  assert(await run("document.querySelector('.v8InstallSummary').textContent.includes('7.3.0')&&!/MAIN TEST|ĐANG PHÁT TRIỂN|chưa STABLE/.test(document.querySelector('.v8InstallSummary').textContent)&&!document.querySelector('.headerActions').textContent.includes('MAIN TEST')"))
  assert.equal((await fetch('http://127.0.0.1:3000/api/local/lan').then(r=>r.json())).enabled,false)
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Import kho').click()");await until("!!document.querySelector('.warehouseConfig button')");await until("!document.querySelector('.warehouseConfig').disabled");await run("Array.from(document.querySelectorAll('.warehouseConfig button')).find(b=>b.textContent==='CHỌN THƯ MỤC').click()");await until("!!document.querySelector('.folderModal')");await run("document.querySelector('[aria-label=\"Đóng chọn thư mục\"]').click()")
