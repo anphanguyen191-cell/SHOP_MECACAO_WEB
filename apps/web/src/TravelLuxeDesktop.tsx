@@ -50,10 +50,46 @@ const intros:Record<string,[string,string,string]>={
 }
 export function LuxeWorkspaceIntro({section}: {section:string}){
  const [eyebrow,title,description]=intros[section]||['SHOP MẸ CACAO',section,'Quản lý hoạt động cửa hàng trên phần mềm chính thức.']
- return <section className="luxeWorkspaceIntro" data-section={section} aria-label={'Không gian '+section}>
-  <div><span className="luxeKicker">✦ {eyebrow}</span><h1>{title}</h1><p>{description}</p></div>
-  <div className="luxeIntroArt" aria-hidden="true"><span>✿</span><i/><i/><i/></div>
- </section>
+ const [media,setMedia]=useState<{url:string;video:boolean}|null>(null)
+ const [note,setNote]=useState('')
+ const inputRef=useRef<HTMLInputElement>(null)
+ useEffect(()=>{
+  let alive=true,objectUrl:string|null=null
+  void openHeroDb().then(db=>{
+   const tx=db.transaction('settings','readonly'),request=tx.objectStore('settings').get('workspace:'+section)
+   request.onsuccess=()=>{if(alive&&request.result instanceof Blob){objectUrl=URL.createObjectURL(request.result);setMedia({url:objectUrl,video:request.result.type.startsWith('video/')})}}
+   tx.oncomplete=()=>db.close();tx.onerror=()=>db.close()
+  }).catch(()=>{})
+  return()=>{alive=false;if(objectUrl)URL.revokeObjectURL(objectUrl)}
+ },[section])
+ async function chooseMedia(e:ChangeEvent<HTMLInputElement>){
+  const file=e.currentTarget.files?.[0];if(!file)return
+  e.currentTarget.value=''
+  if(!file.type.startsWith('image/')&&!['video/mp4','video/webm'].includes(file.type)){setNote('Chỉ chọn ảnh hoặc video MP4/WebM.');return}
+  if(file.size>20*1024*1024){setNote('Tệp vượt quá 20 MB. Chọn ảnh/video nhẹ hơn.');return}
+  const url=URL.createObjectURL(file)
+  setMedia(prev=>{if(prev?.url.startsWith('blob:'))URL.revokeObjectURL(prev.url);return {url,video:file.type.startsWith('video/')}})
+  setNote('Đang lưu ảnh bìa trên thiết bị này...')
+  try{
+   const db=await openHeroDb()
+   await new Promise<void>((resolve,reject)=>{const tx=db.transaction('settings','readwrite');tx.objectStore('settings').put(file,'workspace:'+section);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)})
+   db.close();setNote('Đã lưu ảnh bìa '+section+'. Không thay đổi ảnh kho.')
+  }catch{setNote('Đã hiển thị ảnh bìa nhưng không lưu được trên thiết bị này.')}
+ }
+ async function resetMedia(){
+  setMedia(prev=>{if(prev?.url.startsWith('blob:'))URL.revokeObjectURL(prev.url);return null})
+  try{const db=await openHeroDb();await new Promise<void>(resolve=>{const tx=db.transaction('settings','readwrite');tx.objectStore('settings').delete('workspace:'+section);tx.oncomplete=()=>resolve();tx.onerror=()=>resolve()});db.close()}catch{}
+  setNote('Đã dùng lại hình nền mặc định của '+section+'.')
+ }
+ return <div className="luxeWorkspaceIntroGroup">
+  <section className={'luxeWorkspaceIntro'+(media?' hasCustomMedia':'')} data-section={section} aria-label={'Không gian '+section}>
+   {media&&<div className="luxeIntroMedia" aria-hidden="true">{media.video?<video src={media.url} autoPlay muted loop playsInline/>:<img src={media.url} alt=""/>}</div>}
+   <div className="luxeIntroCopy"><span className="luxeKicker">✦ {eyebrow}</span><h1>{title}</h1><p>{description}</p></div>
+   {!media&&<div className="luxeIntroArt" aria-hidden="true"><span>✿</span><i/><i/><i/></div>}
+   <div className="luxeIntroControls"><input ref={inputRef} className="luxeVisuallyHidden" type="file" accept="image/*,video/mp4,video/webm" aria-label={'Chọn ảnh bìa '+section} onChange={e=>void chooseMedia(e)}/><button type="button" onClick={()=>inputRef.current?.click()} aria-label={'Đổi ảnh hoặc video bìa '+section}>Đổi ảnh / video bìa</button>{media&&<button type="button" onClick={()=>void resetMedia()}>Nền mặc định</button>}</div>
+  </section>
+  {note&&<p className="luxeIntroMediaNote" role="status">{note}</p>}
+ </div>
 }
 const heroText=[['Một ngày thật xinh bắt đầu từ đây','Theo dõi kho ảnh, quản lý đơn hàng và chăm sóc cửa hàng trong một không gian thật thư thái.'],['Khám phá từng góc nhỏ của shop','Từ Product đến Size, mọi bộ đồ tole đều có vị trí rõ ràng và dễ tìm kiếm.'],['Bán hàng hạnh phúc, quản lý nhẹ tênh','Chọn ảnh tồn, tạo đơn và theo dõi hoạt động cửa hàng bằng quy trình an toàn.']]
 function openHeroDb():Promise<IDBDatabase>{
