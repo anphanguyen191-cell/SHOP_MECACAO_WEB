@@ -86,8 +86,8 @@
  .shell.luxeWindows.luxeSidebarCollapsed .sidebar>button{display:flex;justify-content:center;align-items:center;width:56px;min-width:56px;max-width:56px;min-height:48px;padding:12px 9px;margin:4px auto;border-radius:13px}
  .shell.luxeWindows.luxeSidebarCollapsed .sidebar>button strong{display:none}
  .shell.luxeWindows.luxeSidebarCollapsed .sidebar>button svg{width:24px;height:24px}
- .shell.luxeWindows .sidebar .luxeSidebarTools{display:flex;justify-content:flex-end;padding:0 6px 12px}
- .shell.luxeWindows.luxeSidebarCollapsed .sidebar .luxeSidebarTools{justify-content:center;padding:0 0 12px}
+ .shell.luxeWindows .pageBreadcrumb .luxeSidebarTools{display:flex;justify-content:flex-end;padding:0 6px 12px}
+ .shell.luxeWindows.luxeSidebarCollapsed .pageBreadcrumb .luxeSidebarTools{justify-content:center;padding:0 0 12px}
  .shell.luxeWindows .luxeSidebarToggle{display:flex;gap:7px;align-items:center;justify-content:center;border:1px solid var(--v8-edge);background:var(--v8-soft);color:var(--v8-accent);border-radius:12px;padding:8px 11px;font-weight:750}
  .shell.luxeWindows .luxeSidebarToggle span{font-size:12px}
 }
@@ -98,3 +98,5 @@
 .shell.luxeWindows .catalogPanel,.shell.luxeWindows .receiptOverview,.shell.luxeWindows .stage4Page{min-width:0}
 .shell.luxeWindows :is(.stage4Filters,.salesWorkspace,.stocktakePanel,.stage4Table){min-width:0}
 @media(max-width:980px){.shell.luxeWindows .luxeSidebarTools{display:none}}
+
+@media(min-width:981px){.shell.luxeWindows .pageBreadcrumb{display:flex;align-items:center;gap:10px}.shell.luxeWindows .pageBreadcrumb .luxeSidebarTools{margin-left:auto;padding:0}.shell.luxeWindows .luxeSidebarToggle{min-height:34px}}
