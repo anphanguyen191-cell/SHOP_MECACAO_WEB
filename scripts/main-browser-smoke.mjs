@@ -54,7 +54,7 @@ try{
  await until("!!document.querySelector('.luxeStockBreakdown')&&!!document.querySelector('.luxeInventoryInspector')")
  assert(await run("document.querySelectorAll('.luxeStockBreakdown article').length===3"))
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tổng quan').click()")
- await until("!!document.querySelector('.overviewStats')")await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("!!document.querySelector('.v8InstallSummary')")
+ await until("!!document.querySelector('.overviewStats')");await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("!!document.querySelector('.v8InstallSummary')")
  assert(await run("document.querySelector('.v8InstallSummary').textContent.includes('7.3.0')&&!/MAIN TEST|ĐANG PHÁT TRIỂN|chưa STABLE/.test(document.querySelector('.v8InstallSummary').textContent)&&!document.querySelector('.headerActions').textContent.includes('MAIN TEST')"))
  assert.equal((await fetch('http://127.0.0.1:3000/api/local/lan').then(r=>r.json())).enabled,false)
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Import kho').click()");await until("!!document.querySelector('.warehouseConfig button')");await until("!document.querySelector('.warehouseConfig').disabled");await run("Array.from(document.querySelectorAll('.warehouseConfig button')).find(b=>b.textContent==='CHỌN THƯ MỤC').click()");await until("!!document.querySelector('.folderModal')");await run("document.querySelector('[aria-label=\"Đóng chọn thư mục\"]').click()")
