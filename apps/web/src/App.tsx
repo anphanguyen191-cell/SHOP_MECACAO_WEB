@@ -185,7 +185,7 @@ export default function App(){
    {active==='Nhập hàng'&&<ReceiptDashboard isDemo={isDemo} initialSourcePath={receiptPrefill} onInitialSourceApplied={()=>setReceiptPrefill(null)} onChanged={()=>{setProductReload(x=>x+1);window.dispatchEvent(new Event('mecacao-cloud-sync-now'))}}/>}
   {active==='Mobile LAN'&&health?.freshDevelopment&&!health?.lanClient&&<LanSettingsView/>}
   {active==='Ảnh iPhone'&&canPhoneInbox&&<PhonePhotoInboxView mobile={!!health?.lanClient} onChanged={()=>setProductReload(n=>n+1)} onBeginReceipt={folder=>{if(health?.lanClient)return;setReceiptPrefill(folder);goTo('Nhập hàng')}}/>}
-  {active==='Tồn kho'&&<InventoryView isDemo={isDemo} priceTools={!isDemo&&canCount?<PriceWorkbookPanel onChanged={()=>setProductReload(n=>n+1)}/>:undefined} onDraft={health?.salesDrafts&&canSell?chooseForDraft:undefined} draftLabel={addToDraft?'THÊM VÀO ĐƠN NHÁP':'TẠO ĐƠN NHÁP'}/>}
+  {active==='Tồn kho'&&<InventoryView isDemo={isDemo} desktopMode={!isDemo&&!health?.lanClient} priceTools={!isDemo&&canCount?<PriceWorkbookPanel onChanged={()=>setProductReload(n=>n+1)}/>:undefined} onDraft={health?.salesDrafts&&canSell?chooseForDraft:undefined} draftLabel={addToDraft?'THÊM VÀO ĐƠN NHÁP':'TẠO ĐƠN NHÁP'}/>}
   {active==='Báo cáo'&&health?.salesExecution&&canReport&&<BusinessReports onOrder={id=>{setSalesId(id);goTo('Bán hàng')}}/>}
   {active==='Kiểm kê'&&health?.salesExecution&&canCount&&<StocktakeView/>}
   {active==='Ảnh SOLD'&&health?.salesExecution&&canAuditSold&&<SoldRetentionView/>}
