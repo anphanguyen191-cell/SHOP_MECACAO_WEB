@@ -54,4 +54,8 @@ test('LAN 401 cannot oscillate between Dashboard and login, Windows never falls 
  assert.doesNotMatch(expired,/setHealthReload/,'Never silently re-enter Dashboard after expired LAN session')
  assert.match(lan,/TravelLuxeAuthLayout/)
  assert.match(lan,/credentials:'same-origin'/)
+ assert.match(app,/const remoteLan=!isDemo&&location\.protocol==='https:'/)
+ assert.match(main,/location\.protocol==='https:'\|\|location\.hostname\.endsWith/)
+ assert.match(sync,/location\.protocol!=='https:'/)
+
 })
