@@ -13,6 +13,7 @@ import './floatingActions.css'
 import './v8-design.css'
 import './v8-flow.css'
 import './travelLuxeV2.css'
+import './travelLuxeWorkspaces.css'
 
 const updateSW=registerSW({ immediate: true,onNeedRefresh(){window.dispatchEvent(new Event('mecacao-update-ready'))} })
 
