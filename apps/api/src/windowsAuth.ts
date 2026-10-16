@@ -37,6 +37,7 @@ function clearCookie(res:Response,name:string){setCookie(res,name,'',0)}
 export function createWindowsAuth(root:string,lanDirectory=path.join(root,'lan'),clock:()=>number=Date.now){
  const authDir=path.join(root,'auth'),file=path.join(authDir,'windows-auth.json')
  const sessions=new Map<string,Session>()
+ const failed=new Map<string,{count:number;blockedUntil:number}>()
  function read():AuthFile{
   if(!fs.existsSync(file))return {format:1}
   const raw=JSON.parse(exactLanFile(file).toString()) as AuthFile
@@ -90,6 +91,8 @@ export function createWindowsAuth(root:string,lanDirectory=path.join(root,'lan')
  })
  function issueSession(res:Response,state:AuthFile,owner:LanCredential,remember:boolean){
   const token=randomBytes(32).toString('base64url')
+  for(const [key,record] of sessions)if(record.expires<=clock())sessions.delete(key)
+  if(sessions.size>=512)sessions.delete(sessions.keys().next().value!)
   sessions.set(tokenDigest(token),{username:owner.username,expires:clock()+SESSION_AGE})
   setCookie(res,COOKIE_SESSION,token)
   if(remember){
@@ -109,9 +112,15 @@ export function createWindowsAuth(root:string,lanDirectory=path.join(root,'lan')
    if(!owner)return res.status(409).json({error:'Cần thiết lập tài khoản chủ shop lần đầu'})
    const name=typeof req.body?.username==='string'?req.body.username.trim().toLowerCase():''
    const byRemember=req.body?.useRemember===true
-   if(name!==owner.username||!(byRemember?remembered(state,req,owner):checkLanCredential(owner,String(req.body?.password??'')))){
+   const attempt=failed.get(name)
+   if(attempt&&attempt.blockedUntil>clock())return res.status(429).json({error:'Đăng nhập sai nhiều lần. Vui lòng thử lại sau 15 phút.'})
+   const valid=name===owner.username&&(byRemember?remembered(state,req,owner):checkLanCredential(owner,String(req.body?.password??'')))
+   if(!valid){
+    const count=(attempt?.count??0)+1
+    failed.set(name,{count,blockedUntil:count>=5?clock()+15*60*1000:0})
     return res.status(401).json({error:'Thông tin đăng nhập không hợp lệ hoặc ghi nhớ đã hết hiệu lực'})
    }
+   failed.delete(name)
    return issueSession(res,state,owner,req.body?.remember!==false)
   }catch(e){return res.status(503).json({error:e instanceof Error?e.message:'Không xác thực được'})}
  })
@@ -135,7 +144,9 @@ export function createWindowsAuth(root:string,lanDirectory=path.join(root,'lan')
   try{
    // First-run setup does not lock the owner out of their existing warehouse.
    // Once an owner credential exists, API requests need a verified local session.
-   if(!credential(read())||session(req))return next()
+   // Hot path: image previews and dashboards must not read the credential
+   // file on every authenticated request. Only unauthenticated calls inspect it.
+   if(session(req)||!credential(read()))return next()
    return res.status(401).json({error:'Cần đăng nhập Windows trước khi sử dụng kho',code:'WINDOWS_LOGIN_REQUIRED'})
   }catch(e){return res.status(503).json({error:e instanceof Error?e.message:'Không kiểm tra được phiên Windows'})}
  }
