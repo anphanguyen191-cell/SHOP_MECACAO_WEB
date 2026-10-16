@@ -49,13 +49,24 @@ jobs:
       - name: Test real Windows EXE on isolated D drive
         shell: pwsh
         run: ./scripts/v8/smoke-desktop.ps1 -Channel STABLE
-      - name: Gate UI V2 official Windows release on owner acceptance
+      - name: Gate UI V2 release — owner early access or Windows acceptance
         id: ui_v2_acceptance
         shell: pwsh
+        env:
+          # User approved a one-time direct-update UAT on 2026-10-16. The exact
+          # marker is only present on this approval commit, never on future pushes.
+          OWNER_UAT_ONCE: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[UI-V2-OWNER-UAT-ONCE]') }}
         run: |
           $accepted = Test-Path 'docs/ui/windows-ui-v2-accepted.md'
-          "approved=$($accepted.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          if(-not $accepted){ Write-Host 'UI V2 requires owner Windows acceptance. Build remains a CI artifact, not an official release.' }
+          $trial = (-not $accepted) -and ($env:OWNER_UAT_ONCE -eq 'true')
+          $publish = $accepted -or $trial
+          "approved=$($publish.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "early_access=$($trial.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          if($trial){
+            Write-Host 'OWNER-APPROVED EARLY ACCESS: one-time release to the existing V8 one-click STABLE updater. Windows UAT is NOT accepted.'
+          }elseif(-not $accepted){
+            Write-Host 'Windows UI V2 not yet accepted; preserving build as test artifact only.'
+          }
       - name: Archive Windows build for owner acceptance (not STABLE release)
         if: steps.ui_v2_acceptance.outputs.approved != 'true'
         uses: actions/upload-artifact@v4
@@ -69,16 +80,18 @@ jobs:
         with:
           tag_name: v8.0.${{ github.run_number }}-stable
           target_commitish: ${{ github.sha }}
-          name: Shop Mẹ CaCao V8 — Main ${{ github.run_number }}
+          name: ${{ steps.ui_v2_acceptance.outputs.early_access == 'true' && format('Shop Mẹ CaCao V8 — UI V2.0 OWNER UAT {0}', github.run_number) || format('Shop Mẹ CaCao V8 — Main {0}', github.run_number) }}
           prerelease: false
           draft: false
           make_latest: true
           files: artifacts/ShopMeCaCao-V8-STABLE-win-x64.zip
           body: |
-            Bản Windows chính thức được build trực tiếp từ nhánh main.
-            Các lần cập nhật và sửa lỗi sau chỉ cần mở Cài đặt > Kiểm tra & cập nhật.
-            Database, cấu hình và ảnh tồn nằm trên ổ D:, không được đưa vào bộ cài.
-            Vui lòng nghiệm thu trên laptop thật trước khi đưa toàn bộ kho vào vận hành.
+            ${{ steps.ui_v2_acceptance.outputs.early_access == 'true' && 'CHỦ SHOP ĐÃ CHO PHÉP CẬP NHẬT SỚM UI V2.0 ĐỂ KIỂM THỬ TRÊN LAPTOP. CHƯA NGHIỆM THU WINDOWS.' || 'Đã phê duyệt nghiệm thu Windows UI V2.0.' }}
+            Nâng cấp bằng nút Cài đặt > Kiểm tra & cập nhật từ bản V8 đang sử dụng; không cần cài mới.
+            Database, cấu hình và ảnh gốc vẫn được giữ bên ngoài bộ chương trình tại ổ D:.
+            Trước khi thao tác nghiệp vụ trên kho thật, đối chiếu đường dẫn kho, phiên bản, số ảnh và các giao dịch.
+            Nếu cập nhật không vượt qua kiểm tra khởi động/dữ liệu, updater phải phục hồi phiên bản cũ; xem trạng thái trên giao diện.
+            Tên kênh STABLE chỉ để tương thích updater hiện hành và KHÔNG thay thế nghiệm thu laptop thực tế.
       - name: Remove obsolete branches and preview release
         uses: actions/github-script@v7
         with:
