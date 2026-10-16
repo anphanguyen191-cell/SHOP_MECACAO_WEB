@@ -8,12 +8,12 @@ import {pathToFileURL} from 'node:url'
 const source=fs.readFileSync(new URL('../../apps/api/src/imageNaming.ts',import.meta.url),'utf8')
 const cwd=fs.mkdtempSync(path.join(os.tmpdir(),'mecacao-image-name-history-'))
 const meta=new Map()
-fs.writeFileSync(path.join(cwd,'db.mjs'),\`
+fs.writeFileSync(path.join(cwd,'db.mjs'),`
 export const db={prepare(sql){
  if(sql.startsWith('SELECT value FROM app_metadata'))return {get(k){const v=globalThis.__testMeta.get(k);return v===undefined?undefined:{value:v}}}
  if(sql.startsWith('INSERT INTO app_metadata'))return {run(k,v){const prev=globalThis.__testMeta.get(k);if(prev===undefined||Number(prev)<Number(v))globalThis.__testMeta.set(k,v)}}
  throw Error('Unexpected SQL: '+sql)
-}}\`)
+}}`)
 globalThis.__testMeta=meta
 const compiled=ts.transpileModule(source.replace("'./db.js'","'./db.mjs'"),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText
 fs.writeFileSync(path.join(cwd,'naming.mjs'),compiled)
