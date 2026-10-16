@@ -21,20 +21,3 @@
 .cloudWorkspace .catalogPanel .product{margin-bottom:14px}
 
 @media(max-width:600px){.cloudWorkspace input,.cloudWorkspace select,.cloudWorkspace textarea{font-size:16px}.cloudWorkspace .salesButtons{flex-wrap:wrap}.cloudWorkspace textarea{width:100%;min-height:84px;resize:vertical}.cloudWorkspace .cloudShareButtons>*{min-width:0;max-width:100%;overflow-wrap:break-word}.cloudWorkspace .cloudShareButtons button{min-height:44px}}
-
-/* Travel Luxe desktop presentation for the Cloud workspace. Mobile keeps its existing compact navigation and layout. */
-@media(min-width:1100px){
- .cloudWorkspace.luxeCloudDesktop{height:100dvh;min-height:0;overflow:hidden;background:var(--luxe-bg);display:flex;flex-direction:column}
- .cloudWorkspace.luxeCloudDesktop .luxeDesktopTopbar{position:relative;top:auto;flex:0 0 73px;min-height:73px;margin:14px 18px 12px}
- .cloudWorkspace.luxeCloudDesktop .luxeCloudLayout{height:calc(100dvh - 113px);min-height:0;width:100%;max-width:1840px;margin:0 auto;padding:0 18px 14px;display:grid;grid-template-columns:240px minmax(0,1fr);gap:14px;overflow:hidden}
- .cloudWorkspace.luxeCloudDesktop .luxeDesktopSidebar{height:100%;min-height:0;position:relative;top:auto}
- .cloudWorkspace.luxeCloudDesktop .layout>main{height:100%;min-height:0;max-width:none;width:100%;min-width:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:14px;padding:0 5px 28px 1px;scrollbar-width:thin;scrollbar-color:#d8cbdc transparent;overscroll-behavior:contain}
- .cloudWorkspace.luxeCloudDesktop .luxePageContent{min-width:0}
- .cloudWorkspace.luxeCloudDesktop .pageBreadcrumb{position:sticky;top:0;z-index:6;margin:0;padding:12px 8px 10px;background:var(--luxe-bg);border-radius:12px}
- .cloudWorkspace.luxeCloudDesktop .shopSyncStatus{position:sticky;top:44px;z-index:5;backdrop-filter:blur(16px)}
- .cloudWorkspace.luxeCloudDesktop .displayPreferences{grid-template-columns:minmax(200px,1fr) minmax(390px,1.4fr);margin:16px 0}
- .cloudWorkspace.luxeCloudDesktop .mobileQuickNav{display:none}
-}
-@media(max-width:1099px){
- .cloudWorkspace.luxeCloudDesktop{height:auto;min-height:100dvh}
-}
