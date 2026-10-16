@@ -94,3 +94,41 @@
 .shell.luxeWindows .luxeInventoryInspectorEmpty h3{margin:0 0 10px}
 .shell.luxeWindows .luxeInventoryInspectorEmpty p{color:var(--v8-muted);line-height:1.6;max-width:340px}
 @media(max-width:980px){.shell.luxeWindows .luxeInventoryInspector{display:none}}
+
+/* Opt-in true six-stage receipt workflow: only CSS visibility changes, all CORE fields remain mounted. */
+.shell.luxeWindows .luxeReceiptMode{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;margin:8px 0 12px;border:1px solid var(--v8-edge);border-radius:13px;background:var(--v8-surface)}
+.shell.luxeWindows .luxeReceiptMode label{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:800;color:var(--v8-ink);white-space:nowrap}
+.shell.luxeWindows .luxeReceiptMode input{width:18px;height:18px;accent-color:var(--v8-accent)}
+.shell.luxeWindows .luxeReceiptMode small{color:var(--v8-muted);line-height:1.45}
+.shell.luxeWindows .luxeFlowStepsSix button[aria-current=step]{border-color:var(--v8-accent);box-shadow:inset 0 -3px var(--v8-accent);background:var(--v8-soft)}
+.shell.luxeWindows .receiptFields[data-guided=true][data-step="1"]>*:not(.flowTabs){display:none!important}
+.shell.luxeWindows .receiptFields[data-guided=true][data-step="2"]> :is(.flowTabs,.variantChooser,h4,.receiptRowV2,.row){display:none!important}
+.shell.luxeWindows .receiptFields[data-guided=true][data-step="3"]> :is(.flowTabs,.formGrid,.productPicker,.existingContext,.notice,.row.actions){display:none!important}
+.shell.luxeWindows .receiptFields[data-guided=true][data-step="4"]> :is(.flowTabs,.formGrid,.productPicker,.existingContext,.variantChooser,.notice,h4,.row){display:none!important}
+.shell.luxeWindows .receiptFields[data-guided=true][data-step="5"]> :is(.flowTabs,.formGrid,.productPicker,.existingContext,.variantChooser,.notice,h4,.row){display:none!important}
+.shell.luxeWindows .receiptFields[data-guided=true][data-step="6"]>*:not(.luxeReceiptReview):not(.row.actions){display:none!important}
+.shell.luxeWindows .receiptFields[data-guided=true][data-step="3"] .receiptRowV2>:not(:nth-child(1)):not(:nth-child(2)){display:none!important}
+.shell.luxeWindows .receiptFields[data-guided=true][data-step="4"] .receiptRowV2>:not(:nth-child(3)):not(:nth-child(4)){display:none!important}
+.shell.luxeWindows .receiptFields[data-guided=true][data-step="5"] .receiptRowV2>:not(:nth-child(4)):not(:nth-child(5)):not(:nth-child(6)){display:none!important}
+.shell.luxeWindows .receiptFields[data-guided=true]:is([data-step="3"],[data-step="4"]) .receiptRowV2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.shell.luxeWindows .receiptFields[data-guided=true][data-step="5"] .receiptRowV2{grid-template-columns:repeat(3,minmax(0,1fr))}
+.shell.luxeWindows .luxeReceiptWizardFooter{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px;margin-top:13px;background:var(--v8-surface);border:1px solid var(--v8-edge);border-radius:15px}
+.shell.luxeWindows .luxeReceiptWizardFooter>span{font-size:12px;font-weight:750;color:var(--v8-muted)}
+.shell.luxeWindows .luxeReceiptWizardFooter>div{display:flex;gap:9px;flex-wrap:wrap}
+.shell.luxeWindows .luxeReceiptWizardFooter button,.shell.luxeWindows .luxeReceiptAfterSave button{padding:10px 16px;border-radius:11px;border:1px solid var(--v8-edge);background:var(--v8-surface);color:var(--v8-accent);font-weight:750}
+.shell.luxeWindows .luxeReceiptWizardFooter button.primary{background:var(--v8-accent);color:var(--v8-surface)}
+.shell.luxeWindows .luxeReceiptWizardFooter button:disabled{opacity:.5}
+.shell.luxeWindows .luxeReceiptReview{background:var(--v8-surface);border:1px solid var(--v8-edge);border-radius:16px;padding:18px;margin-bottom:14px}
+.shell.luxeWindows .luxeReceiptReview h4{font-size:17px;margin:0 0 13px}
+.shell.luxeWindows .luxeReceiptReview p{line-height:1.55;overflow-wrap:anywhere}
+.shell.luxeWindows .luxeReceiptReviewTable{display:grid;gap:8px}
+.shell.luxeWindows .luxeReceiptReviewTable>div{display:grid;grid-template-columns:minmax(140px,2fr) repeat(3,minmax(80px,1fr));gap:10px;padding:10px 12px;background:var(--v8-soft);border-radius:11px;align-items:center;font-size:12px}
+.shell.luxeWindows .luxeReceiptAfterSave{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+@media(max-width:800px){
+ .shell.luxeWindows .luxeReceiptMode{display:block}
+ .shell.luxeWindows .luxeReceiptMode small{display:block;margin-top:7px}
+ .shell.luxeWindows .luxeReceiptWizardFooter{display:block}
+ .shell.luxeWindows .luxeReceiptWizardFooter>div{margin-top:9px}
+ .shell.luxeWindows .luxeReceiptReviewTable>div{grid-template-columns:1fr 1fr}
+ .shell.luxeWindows .receiptFields[data-guided=true] .receiptRowV2{grid-template-columns:1fr}
+}
