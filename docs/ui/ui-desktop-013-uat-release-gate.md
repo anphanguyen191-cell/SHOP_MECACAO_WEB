@@ -6,3 +6,5 @@ Purpose: a one-time owner-requested in-place Windows update to test exact scenic
 This commit is **not** a final UI acceptance. It permits the existing updater-compatible release only if all Windows packaging and smoke gates pass. It does not create `docs/ui/windows-ui-v2-accepted.md`.
 
 Owner checklist: welcome every open; scenic left and login right; owner/remembered sign-in; no LAN/Windows login confusion or periodic login/Dashboard oscillation; data and original photos untouched.
+
+Regression gate alignment: initial warehouse scan stays in bell without duplicate modal; mobile smoke now verifies bell review, while new post-startup changes may display a compact toast.
