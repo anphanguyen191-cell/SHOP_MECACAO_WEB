@@ -1,0 +1,132 @@
+/* UI-DESKTOP-V2 visual parity: derived from the owner's original Travel Luxe HTML.
+ * One scoped Windows design system, not an override for LAN/mobile/Cloud app.
+ * Contrast remains legible without the legacy thick rectangular category borders.
+ */
+.shell.luxeWindows{
+ --luxe-bg:#f7f2f8;--luxe-paper:#fff;--luxe-ink:#29324d;--luxe-muted:#77788e;
+ --luxe-border:#eae3ef;--luxe-rose:#d66b9a;--luxe-blue:#738ed2;--luxe-mint:#53a99d;--luxe-violet:#9c89c9;
+ --luxe-shadow:0 15px 42px #59467712,0 3px 10px #59467708;
+ height:100dvh;min-height:0;overflow:hidden;background:var(--luxe-bg);
+}
+.shell.luxeWindows.themeDark{--luxe-bg:#1b1b2d;--luxe-paper:#292a3e;--luxe-ink:#f5effc;--luxe-muted:#c0b5c9;--luxe-border:#484359;--luxe-shadow:0 15px 40px #0003}
+.shell.luxeWindows .layout{height:100dvh;min-height:0;overflow:hidden;padding:18px;max-width:1840px;margin:0 auto}
+.shell.luxeWindows .layout>main{height:calc(100dvh - 36px);min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:0;padding:0}
+.shell.luxeWindows .luxeDesktopTopbar{position:relative!important;top:auto!important;flex:0 0 73px;min-height:73px;z-index:12;margin-bottom:16px}
+.shell.luxeWindows .luxePageScene{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#d8cbdc transparent;scrollbar-gutter:stable;padding:0 5px 30px 1px;overscroll-behavior:contain}
+.shell.luxeWindows .luxePageContent{min-width:0;isolation:isolate}
+.shell.luxeWindows .luxePageContent.luxeAppear-fade{animation:cacaoPageFade .33s ease-out}
+.shell.luxeWindows .luxePageContent.luxeAppear-slide{animation:cacaoPageSlide .38s cubic-bezier(.22,1,.36,1)}
+.shell.luxeWindows .luxePageContent.luxeAppear-flip{animation:cacaoPageFlip .45s cubic-bezier(.22,1,.36,1);transform-origin:50% 20%}
+.shell.luxeWindows .luxePageContent.luxeAppear-none{animation:none}
+@keyframes cacaoPageFade{from{opacity:0;filter:blur(5px)}to{opacity:1;filter:blur(0)}}
+@keyframes cacaoPageSlide{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+@keyframes cacaoPageFlip{from{opacity:0;transform:perspective(900px) rotateY(-9deg) translateX(22px)}to{opacity:1;transform:perspective(900px) rotateY(0) translateX(0)}}
+.shell.luxeWindows .luxeDesktopSidebar{height:calc(100dvh - 36px);max-height:none}
+.shell.luxeWindows .luxeSideNavigation.sidebar{overscroll-behavior:contain}
+.shell.luxeWindows:not(.themeDark) :is(.luxeDesktopTopbar,.luxeDesktopSidebar,.luxeWorkspaceIntro,.panel,.luxeFeaturedCard,.overviewPanel,.catalogPanel,.settingsPage,.cloudSettings,.luxeControlCenterIntro,.luxeControlCenterSection){
+ border-radius:22px;border:1px solid rgba(238,228,242,.98);box-shadow:var(--luxe-shadow);
+}
+.shell.luxeWindows:not(.themeDark) :is(.luxeDesktopTopbar,.luxeDesktopSidebar){background:rgba(255,255,255,.88);backdrop-filter:blur(18px)}
+.shell.luxeWindows:not(.themeDark) .luxeSideNavigation.sidebar .luxeSideItem{border:1px solid transparent;border-radius:13px;background:transparent;color:#626179}
+.shell.luxeWindows:not(.themeDark) .luxeSideNavigation.sidebar .luxeSideItem.selected{background:#fae7f1;border:1px solid #f2dce8;color:#ad5785;box-shadow:none}
+.shell.luxeWindows:not(.themeDark) .luxeSideNavigation.sidebar .luxeSideItem.selected:before{background:#e88aaf}
+.shell.luxeWindows:not(.themeDark) :is(.dashboardFoldHeader,.overviewWelcome,.catalogPanelHeading,.salesHeading,.inventoryHeading){
+ background:transparent;border:0;border-radius:0;box-shadow:none;color:var(--luxe-ink);padding:14px 4px 10px;
+}
+.shell.luxeWindows:not(.themeDark) :is(.dashboardFoldHeader,.overviewWelcome,.catalogPanelHeading,.salesHeading,.inventoryHeading) :is(h2,h3){color:var(--luxe-ink)}
+.shell.luxeWindows:not(.themeDark) .overviewStats>*{
+ border:1px solid #f0e5ee!important;border-top:1px solid #f0e5ee!important;
+ border-radius:21px!important;background:linear-gradient(145deg,#fbe7f0,#fff7fa)!important;color:#644f70!important;
+ box-shadow:0 9px 27px #7757750e!important;
+}
+.shell.luxeWindows:not(.themeDark) .overviewStats>*:nth-child(4n+2){background:linear-gradient(145deg,#e8f0ff,#f7faff)!important;border-color:#dbe5f7!important;color:#4b658c!important}
+.shell.luxeWindows:not(.themeDark) .overviewStats>*:nth-child(4n+3){background:linear-gradient(145deg,#e2f6ef,#f7fcf9)!important;border-color:#d6eee4!important;color:#40776b!important}
+.shell.luxeWindows:not(.themeDark) .overviewStats>*:nth-child(4n){background:linear-gradient(145deg,#f0e9ff,#fbf8ff)!important;border-color:#e8dff6!important;color:#715c8d!important}
+.shell.luxeWindows:not(.themeDark) .overviewStats>* :is(strong,span,small,b){color:inherit!important}
+.shell.luxeWindows:not(.themeDark) :is(.catalogMetrics,.inventoryMetrics,.warehouseMetrics,.receiptStats,.salesKpis)>*{
+ background:linear-gradient(145deg,#f8eef7,#fff)!important;border:1px solid #ece1ee!important;border-top:1px solid #ece1ee!important;
+ border-radius:19px!important;box-shadow:0 8px 26px #5a3b6e0a!important;color:#4e486a!important;
+}
+.shell.luxeWindows:not(.themeDark) :is(.catalogMetrics,.inventoryMetrics,.warehouseMetrics,.receiptStats,.salesKpis)>*:nth-child(3n+2){background:linear-gradient(145deg,#e9f3ff,#fff)!important;border-color:#e0eafa!important}
+.shell.luxeWindows:not(.themeDark) :is(.catalogMetrics,.inventoryMetrics,.warehouseMetrics,.receiptStats,.salesKpis)>*:nth-child(3n){background:linear-gradient(145deg,#e9f8f2,#fff)!important;border-color:#d9eee5!important}
+.shell.luxeWindows:not(.themeDark) :is(.catalogMetrics,.inventoryMetrics,.warehouseMetrics,.receiptStats,.salesKpis)>* :is(strong,span,small,b){color:inherit!important}
+.shell.luxeWindows:not(.themeDark) :is(.catalogSearchArea,.inventoryFilters,.warehouseConfig,.warehouseResults,.warehouseProduct,.warehouseConfirm,.renameWorkspace,.contactCard){
+ background:#fff!important;border:1px solid #eee4ef!important;border-left:1px solid #eee4ef!important;border-radius:19px!important;box-shadow:var(--luxe-shadow);
+}
+.shell.luxeWindows:not(.themeDark) :is(.warehouseWorkspace,.receiptOverview,.salesList,.salesEditor,.reportPanel,.stocktakePanel,.luxeControlCenterSection,.luxeControlCenterIntro){
+ background:rgba(255,255,255,.88)!important;border:1px solid #eee4ef!important;border-radius:23px!important;
+}
+.shell.luxeWindows:not(.themeDark) :is(.warehouseWorkspace,.inventoryPage,.receiptOverview,.salesList,.salesEditor,.reportPanel,.stocktakePanel,.settingsPage,.cloudSettings) :is(input:not([type=checkbox]),select,textarea){
+ background:#faf9fc!important;border:1px solid #e6dce9!important;border-radius:12px!important;color:#29324d!important;box-shadow:none;
+}
+.shell.luxeWindows:not(.themeDark) :is(.warehouseWorkspace,.inventoryPage,.receiptOverview,.salesList,.salesEditor,.reportPanel,.stocktakePanel,.settingsPage,.cloudSettings) :is(input,select,textarea):focus-visible{
+ outline:2px solid #d781a9;outline-offset:2px;
+}
+.shell.luxeWindows:not(.themeDark) :is(.warehouseWorkspace,.receiptOverview,.salesList,.salesEditor,.reportPanel,.stocktakePanel,.settingsPage,.cloudSettings) :is(button,.primary){
+ border-radius:12px;transition:background .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro{background:linear-gradient(110deg,#b27baf,#b4a2d8 58%,#d4c0e5);border:1px solid #e9d8ee;border-radius:24px;box-shadow:var(--luxe-shadow)}
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro[data-section="Tồn kho"],
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro[data-section="Báo cáo"]{background:linear-gradient(115deg,#7596c4,#a9b2dc,#e4c1d9)}
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro[data-section="Nhập hàng"],
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro[data-section="Kiểm kê"]{background:linear-gradient(115deg,#66a99e,#a4c8bb,#c7b5d7)}
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro[data-section="Bán hàng"],
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro[data-section="Công nợ"]{background:linear-gradient(115deg,#8c7fbf,#bea2ce,#e9b2c6)}
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro[data-section="Kết nối Cloud"]{background:linear-gradient(115deg,#9380c9,#b4a2df,#a8c5e2)}
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro[data-section="Cài đặt"]{background:linear-gradient(115deg,#bd8cb5,#dfafc8,#d4c7e9)}
+.shell.luxeWindows:not(.themeDark) .luxeIntroCopy{max-width:72%}
+.shell.luxeWindows .luxeControlCenterPage{display:grid;gap:17px;margin:16px 0 30px}
+.shell.luxeWindows .luxeControlCenterIntro{padding:24px;background:rgba(255,255,255,.91)}
+.shell.luxeWindows .luxeControlCenterIntro h2{font-size:22px;letter-spacing:-.5px;color:var(--luxe-ink)}
+.shell.luxeWindows .luxeControlCenterIntro>p{line-height:1.7;color:var(--luxe-muted)}
+.shell.luxeWindows .luxeControlCenterGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:19px}
+.shell.luxeWindows .luxeControlCenterGrid button{min-height:92px;border:1px solid var(--luxe-border);border-radius:16px;background:linear-gradient(145deg,#fff,#fcf6fb);box-shadow:0 8px 22px #57426d0a;text-align:left;padding:16px;display:flex;flex-direction:column;gap:9px;color:var(--luxe-ink)}
+.shell.luxeWindows .luxeControlCenterGrid button:hover{background:#fff1f8;transform:translateY(-1px)}
+.shell.luxeWindows .luxeControlCenterGrid button b{font-size:13px}
+.shell.luxeWindows .luxeControlCenterGrid button span{font-size:11px;color:var(--luxe-muted);line-height:1.5}
+.shell.luxeWindows .luxeControlCenterSection{padding:18px}
+.shell.luxeWindows .displayPreferences{display:grid;grid-template-columns:minmax(180px,1fr) minmax(310px,1.35fr);gap:20px;align-items:center;padding:22px;border:1px solid var(--luxe-border);border-radius:22px;background:rgba(255,255,255,.94);box-shadow:var(--luxe-shadow);margin:16px 0}
+.shell.luxeWindows .displayPreferences h3{font-size:16px;margin:0 0 8px;color:var(--luxe-ink)}
+.shell.luxeWindows .displayPreferences p{font-size:11px;color:var(--luxe-muted);line-height:1.7;margin:0}
+.shell.luxeWindows .luxeAppearanceActions{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap}
+.shell.luxeWindows .luxeMotionSetting{display:grid;gap:6px;font-size:10px;font-weight:800;color:var(--luxe-muted)}
+.shell.luxeWindows .luxeMotionSetting select{min-width:140px;border:1px solid var(--luxe-border);border-radius:12px;background:#faf7fb;padding:10px;color:#3d3856;font-size:12px}
+.shell.luxeWindows .luxeGlassSetting{display:flex;align-items:center;gap:9px;font-size:11px;font-weight:800;color:var(--luxe-ink);white-space:nowrap}
+.shell.luxeWindows .luxeGlassSetting input{width:16px;height:16px;accent-color:#db83ac}
+.shell.luxeWindows.luxeNoGlass :is(.luxeDesktopTopbar,.luxeDesktopSidebar,.panel,.luxeControlCenterIntro,.luxeControlCenterSection){backdrop-filter:none!important;background:var(--luxe-paper)!important}
+.shell.luxeWindows .luxeCloudLivePanel{min-width:0;margin:10px 0 32px}
+.shell.luxeWindows .luxeCloudLivePanel[hidden]{display:none!important}
+.shell.luxeWindows .cloudSettings{background:rgba(255,255,255,.93);padding:24px;border:1px solid var(--luxe-border);border-radius:23px}
+.shell.luxeWindows .cloudSettings>h3{font-size:19px;margin:22px 0 8px;color:var(--luxe-ink)}
+.shell.luxeWindows .cloudSettings>p{font-size:12px;line-height:1.7;color:var(--luxe-muted)}
+.shell.luxeWindows .luxeCloudFlow{display:grid;grid-template-columns:minmax(0,1fr) 60px minmax(0,1fr);gap:12px;align-items:center;padding:15px;background:linear-gradient(125deg,#fbf4fa,#f4f0fc 55%,#f1f8fb);border-radius:23px}
+.shell.luxeWindows .luxeCloudNode{min-height:175px;border-radius:19px;padding:20px;background:rgba(255,255,255,.88);border:1px solid #f0e8f2;text-align:center;display:grid;justify-items:center;align-content:center;gap:8px}
+.shell.luxeWindows .luxeCloudNodeIcon{font-size:27px;color:#c480b3}
+.shell.luxeWindows .luxeCloudNode small{font-size:9px;font-weight:900;letter-spacing:.12em;color:#ab9aaf}
+.shell.luxeWindows .luxeCloudNode h3{font-size:15px;margin:0;color:var(--luxe-ink)}
+.shell.luxeWindows .luxeCloudNode p{font-size:10px;line-height:1.5;color:var(--luxe-muted);margin:0}
+.shell.luxeWindows .luxeCloudNodeBadge{font-size:10px;font-weight:800;color:#8b5b8d;border-radius:99px;padding:6px 10px;background:#f7eafa}
+.shell.luxeWindows .luxeCloudFlowArrow{text-align:center;font-size:30px;color:#aa96cc}
+.shell.luxeWindows .cloudSettings :is(form,details,.cloudDirectLogin){border:1px solid #eee6f1;border-radius:16px;padding:16px;background:#fefcff;margin:14px 0}
+.shell.luxeWindows .cloudSettings form{display:grid;gap:12px}
+.shell.luxeWindows .cloudSettings form label{display:grid;gap:7px;font-size:12px}
+.shell.luxeWindows .cloudSettings .inventoryActions{display:flex;flex-wrap:wrap;gap:9px;margin:15px 0}
+.shell.luxeWindows .cloudSettings .inventoryActions button{min-height:39px;padding:9px 13px}
+.shell.luxeWindows .cloudSettings .notice{border-radius:13px}
+.shell.luxeWindows .cloudSettings details>summary{font-weight:800;color:#675474;cursor:pointer}
+.shell.luxeWindows .cloudSettings img[alt*="QR"]{border:1px solid #eee3ef;border-radius:16px;padding:10px}
+@media(max-width:1160px){
+ .shell.luxeWindows .luxeControlCenterGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .shell.luxeWindows .displayPreferences{grid-template-columns:1fr}
+ .shell.luxeWindows .luxeAppearanceActions{justify-content:flex-start}
+}
+@media(max-width:900px){
+ .shell.luxeWindows .luxeCloudFlow{grid-template-columns:1fr;gap:8px}
+ .shell.luxeWindows .luxeCloudNode{min-height:135px}
+ .shell.luxeWindows .luxeCloudFlowArrow{transform:rotate(90deg)}
+ .shell.luxeWindows .luxeControlCenterGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){
+ .shell.luxeWindows .luxePageContent{animation:none!important}
+ .shell.luxeWindows .luxeControlCenterGrid button{transition:none!important}
+}
