@@ -1,0 +1,239 @@
+/* CaCao Travel Luxe V2.0 — full Windows implementation.
+   Visually follows the owner-approved offline laptop concept. All styles are
+   scoped to .luxeWindows: no CORE mutation, Cloud/mobile re-skin or DB effects. */
+.shell.luxeWindows{
+ --luxe-bg:#f7f2f8;--luxe-paper:#fff;--luxe-ink:#29324d;--luxe-muted:#85859b;
+ --luxe-rose:#e07aa6;--luxe-blue:#7b9de4;--luxe-mint:#69bdb5;--luxe-violet:#a394d6;
+ --luxe-border:#eee8f1;--luxe-shadow:0 15px 42px rgba(89,70,119,.075),0 2px 10px rgba(89,70,119,.035);
+ --luxe-glass:rgba(255,255,255,.86);
+ background:var(--luxe-bg);color:var(--luxe-ink);font-size:13px;min-height:100vh;
+}
+.shell.luxeWindows.themeDark{--luxe-bg:#1b1b2d;--luxe-paper:#292a3e;--luxe-ink:#f5effc;--luxe-muted:#c0b5c9;--luxe-border:#484359;--luxe-glass:rgba(42,39,57,.95);--luxe-shadow:0 15px 40px rgba(0,0,0,.18)}
+.shell.luxeWindows .layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:18px;padding:18px;max-width:1840px;margin:auto;min-height:100vh}
+.shell.luxeWindows.luxeSidebarCollapsed .layout{grid-template-columns:80px minmax(0,1fr)}
+.shell.luxeWindows .layout>main{max-width:none;width:100%;padding:0 0 60px;min-width:0;background:transparent}
+.shell.luxeWindows .luxeDesktopSidebar{display:flex;flex-direction:column;min-height:0;height:calc(100vh - 36px);position:sticky;top:18px;border:1px solid rgba(255,255,255,.8);border-radius:25px;background:var(--luxe-glass);box-shadow:var(--luxe-shadow);overflow:hidden;backdrop-filter:blur(20px)}
+.shell.luxeWindows .luxeSideBrand{display:flex;align-items:center;gap:10px;padding:23px 14px 18px;min-height:85px;position:relative}
+.shell.luxeWindows .luxeSideBrand img{height:42px;width:42px;object-fit:contain;border-radius:13px;background:#f9e6ed}
+.shell.luxeWindows .luxeSideBrandCopy{display:grid;gap:4px;min-width:0}
+.shell.luxeWindows .luxeSideBrandCopy b{font-size:12px;font-weight:900;white-space:nowrap}
+.shell.luxeWindows .luxeSideBrandCopy small{font-size:9px;letter-spacing:.03em;color:var(--luxe-muted)}
+.shell.luxeWindows .luxeSideCollapse{margin-left:auto;background:#f9eff6;border:0;border-radius:9px;color:#b57295;width:27px;height:28px;min-height:28px;flex:none}
+.shell.luxeWindows .luxeSideNavigation{flex:1;overflow-y:auto;scrollbar-width:thin;padding:0 11px 12px;min-height:0}
+.shell.luxeWindows .luxeSideGroup{margin-bottom:13px}
+.shell.luxeWindows .luxeSideLabel{color:#ab9bad;letter-spacing:.13em;font-size:9px;font-weight:900;margin:15px 11px 8px}
+.shell.luxeWindows .luxeSideItem{display:flex;align-items:center;gap:12px;padding:12px 11px;min-height:43px;width:100%;border:0;border-radius:13px;text-align:left;color:var(--luxe-muted);font-size:12px;font-weight:750;background:transparent;margin:3px 0;position:relative;white-space:nowrap;transition:background .18s ease,transform .18s ease}
+.shell.luxeWindows .luxeSideItem:hover{color:#cc668f;background:rgba(250,222,237,.5)}
+.shell.luxeWindows .luxeSideItem.selected{background:linear-gradient(105deg,#fde3ee,#f3edfb);color:#cf6b96;box-shadow:0 7px 18px rgba(217,151,187,.12)}
+.shell.luxeWindows .luxeSideItem.selected::before{content:"";position:absolute;left:0;top:25%;bottom:25%;width:3px;background:#e77da8;border-radius:4px}
+.shell.luxeWindows .luxeSideIcon{width:23px;height:23px;display:grid;place-items:center;flex:none}
+.shell.luxeWindows .luxeSideIcon svg{height:19px;width:19px;stroke-width:1.8}
+.shell.luxeWindows .luxeSideText{flex:1;min-width:0;text-overflow:ellipsis;overflow:hidden}
+.shell.luxeWindows .luxeSideArrow{opacity:0;font-size:20px}
+.shell.luxeWindows .luxeSideItem.selected .luxeSideArrow{opacity:1}
+.shell.luxeWindows .luxeSideFooter{display:flex;align-items:center;gap:10px;margin:0 12px 14px;padding:12px 11px;border:1px solid var(--luxe-border);border-radius:14px;background:var(--luxe-paper)}
+.shell.luxeWindows .luxeSideAvatar{height:35px;width:35px;flex:none;border-radius:50%;background:linear-gradient(135deg,#f3a9bd,#aca7dd);display:grid;place-items:center;color:#fff;font-size:11px;font-weight:900}
+.shell.luxeWindows .luxeSideUser{min-width:0;display:grid;gap:3px}
+.shell.luxeWindows .luxeSideUser b{font-size:11px}
+.shell.luxeWindows .luxeSideUser small{font-size:9px;color:var(--luxe-muted)}
+.shell.luxeWindows .luxeSideShield{margin-left:auto;color:#e38bae}
+.shell.luxeWindows.luxeSidebarCollapsed .luxeSideBrand{flex-direction:column;padding:13px 6px}
+.shell.luxeWindows.luxeSidebarCollapsed :is(.luxeSideBrandCopy,.luxeSideText,.luxeSideArrow,.luxeSideLabel,.luxeSideUser,.luxeSideShield){display:none}
+.shell.luxeWindows.luxeSidebarCollapsed .luxeSideNavigation{padding:0 7px}
+.shell.luxeWindows.luxeSidebarCollapsed .luxeSideItem{justify-content:center;padding:11px 0}
+.shell.luxeWindows.luxeSidebarCollapsed .luxeSideFooter{justify-content:center;padding:9px 0;margin:0 7px 12px}
+.shell.luxeWindows .luxeDesktopTopbar{height:73px;position:sticky;z-index:85;top:12px;display:flex;align-items:center;gap:16px;background:var(--luxe-glass);border:1px solid rgba(255,255,255,.87);border-radius:21px;box-shadow:var(--luxe-shadow);padding:0 21px;backdrop-filter:blur(20px);margin-bottom:19px}
+.shell.luxeWindows .luxeTopMenu{border:0;background:#fcf2f8;border-radius:10px;min-height:36px;width:36px;color:#ce729b;display:none}
+.shell.luxeWindows .luxeTopLocation{display:grid;gap:4px;flex:none;min-width:130px}
+.shell.luxeWindows .luxeTopLocation small{font-size:9px;letter-spacing:.1em;color:var(--luxe-muted)}
+.shell.luxeWindows .luxeTopLocation strong{font-size:13px;font-weight:850}
+.shell.luxeWindows .luxeTopSearch{height:42px;display:flex;align-items:center;gap:9px;padding:0 11px;background:var(--luxe-bg);border:1px solid var(--luxe-border);border-radius:13px;min-width:150px;max-width:420px;flex:1}
+.shell.luxeWindows .luxeTopSearch>span{font-size:23px;color:#a19aaf}
+.shell.luxeWindows .luxeTopSearch input{border:0!important;box-shadow:none!important;background:transparent!important;outline:none;flex:1;min-width:0;font-size:12px;color:var(--luxe-ink);height:40px;padding:0}
+.shell.luxeWindows .luxeTopSearch kbd{border:1px solid var(--luxe-border);border-radius:5px;padding:3px 5px;font-size:10px;white-space:nowrap;color:var(--luxe-muted)}
+.shell.luxeWindows .luxeTopSearch button{border:0;color:#ca6591;background:transparent;font-weight:900;font-size:18px;padding:4px}
+.shell.luxeWindows .luxeTopActions{display:flex;align-items:center;gap:9px;margin-left:auto;min-width:0}
+.shell.luxeWindows .luxeTopActions .displayDensity{max-width:175px}
+.shell.luxeWindows .luxeConnectionTag{display:inline-flex;gap:8px;align-items:center;border-radius:50px;background:var(--luxe-paper);border:1px solid var(--luxe-border);color:var(--luxe-ink);font-size:10px;font-weight:800;padding:8px 10px;white-space:nowrap}
+.shell.luxeWindows .luxeConnectionTag i{width:8px;height:8px;border-radius:50%;background:#72c6b6;box-shadow:0 0 0 4px rgba(125,204,189,.15)}
+.shell.luxeWindows .luxeTopTheme{height:38px;min-width:38px;border:1px solid var(--luxe-border);background:var(--luxe-paper);border-radius:11px;color:#ac7c9e}
+.shell.luxeWindows .pageBreadcrumb{display:none!important}
+.shell.luxeWindows .luxeHeroGroup{margin:0 0 23px}
+.shell.luxeWindows .luxeHeroToolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:4px 3px 11px}
+.shell.luxeWindows .luxeHeroToolbar>span{color:var(--luxe-rose);font-size:10px;letter-spacing:.12em;font-weight:900;text-transform:uppercase}
+.shell.luxeWindows .luxeHeroToolbar>div{display:flex;gap:7px;flex-wrap:wrap}
+.shell.luxeWindows .luxeHeroToolbar button{font-size:11px;padding:9px 12px;background:var(--luxe-paper);border:1px solid var(--luxe-border);border-radius:10px;color:#b36e95;font-weight:750}
+.shell.luxeWindows .luxeVisuallyHidden{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip-path:inset(50%);pointer-events:none}
+.shell.luxeWindows .luxeHeroNote{font-size:11px;color:var(--luxe-muted);margin:0 0 7px}
+.shell.luxeWindows .luxeDashboardHero{position:relative;min-height:282px;border-radius:25px;overflow:hidden;isolation:isolate;background:#eec8df;box-shadow:var(--luxe-shadow)}
+.shell.luxeWindows .luxeHeroScene{position:absolute;inset:0;background:linear-gradient(140deg,#dfd0fa,#ffe2df 50%,#a6d9ea)}
+.shell.luxeWindows .luxeDashboardHero[data-slide="1"] .luxeHeroScene{background:linear-gradient(130deg,#d4d3fd,#fbd8e8 51%,#b1ded3)}
+.shell.luxeWindows .luxeDashboardHero[data-slide="2"] .luxeHeroScene{background:linear-gradient(130deg,#efd2dc,#edcfb5 53%,#c4dce5)}
+.shell.luxeWindows .luxeHeroScene :is(img,video){position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.shell.luxeWindows .luxeHeroScene:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(43,38,72,.54),rgba(50,39,72,.24) 58%,rgba(55,43,72,.06))}
+.shell.luxeWindows .luxeHeroSun{position:absolute;top:35px;right:22%;width:120px;height:120px;border-radius:50%;background:#ffefd9;opacity:.72;box-shadow:0 0 72px #ffeddb}
+.shell.luxeWindows .luxeHeroHill{position:absolute;left:-10%;right:-10%;bottom:-45%;height:80%;border-radius:50% 60% 0 0;transform:rotate(-4deg)}
+.shell.luxeWindows .luxeHeroHillOne{background:linear-gradient(90deg,#a9cadb,#d1c4dd);bottom:-31%;left:17%;transform:rotate(5deg)}
+.shell.luxeWindows .luxeHeroHillTwo{background:linear-gradient(115deg,#e8bdc6,#efd2b4);bottom:-61%;height:93%}
+.shell.luxeWindows .luxeHeroVilla{position:absolute;right:15%;bottom:20%;width:115px;height:85px;border-radius:12px 12px 0 0;background:#fff6f1b8;box-shadow:28px 28px 0 -8px #c2d6df9c;transform:skewY(-3deg)}
+.shell.luxeWindows .luxeHeroVilla:before{content:"";position:absolute;top:-42px;left:-17px;border-left:76px solid transparent;border-right:76px solid transparent;border-bottom:48px solid #f9f5ecb8}
+.shell.luxeWindows .luxeHeroContent{position:relative;z-index:2;padding:35px 40px;color:white;max-width:600px}
+.shell.luxeWindows .luxeHeroEyebrow{font-size:10px;letter-spacing:.14em;font-weight:850;color:#fff2f9}
+.shell.luxeWindows .luxeHeroContent h1{margin:14px 0 11px;font-size:clamp(27px,3.3vw,41px);line-height:1.2;font-weight:900;color:white;letter-spacing:-.04em;max-width:490px;text-shadow:0 2px 10px rgba(44,38,65,.18)}
+.shell.luxeWindows .luxeHeroContent p{font-size:12px;line-height:1.8;color:#fffafc;max-width:450px}
+.shell.luxeWindows .luxeHeroActions{display:flex;flex-wrap:wrap;gap:9px;margin-top:20px}
+.shell.luxeWindows .luxeHeroActions button{font-size:12px;font-weight:850;padding:11px 15px;border:1px solid rgba(255,255,255,.65);color:white;background:rgba(255,255,255,.24);border-radius:12px;backdrop-filter:blur(10px)}
+.shell.luxeWindows .luxeHeroActions button:first-child{background:rgba(255,255,255,.95);color:#b05b87}
+.shell.luxeWindows .luxeHeroDots{position:absolute;right:20px;bottom:17px;display:flex;gap:7px;z-index:2}
+.shell.luxeWindows .luxeHeroDots button{width:9px;height:9px;border-radius:30px;padding:0;background:#ffffff8f;border:0}
+.shell.luxeWindows .luxeHeroDots button.isActive{width:25px;background:white}
+.shell.luxeWindows .luxeWorkspaceIntro{display:flex;align-items:center;justify-content:space-between;min-height:154px;border:1px solid rgba(255,255,255,.8);border-radius:23px;padding:25px 35px;margin-bottom:22px;background:linear-gradient(110deg,#e7afca,#c9b7e9 60%,#bcd9ef);box-shadow:var(--luxe-shadow);overflow:hidden;position:relative}
+.shell.luxeWindows .luxeWorkspaceIntro[data-section="Tồn kho"],.shell.luxeWindows .luxeWorkspaceIntro[data-section="Báo cáo"]{background:linear-gradient(115deg,#93b5e0,#c7cff2,#e6c7dc)}
+.shell.luxeWindows .luxeWorkspaceIntro[data-section="Nhập hàng"],.shell.luxeWindows .luxeWorkspaceIntro[data-section="Kiểm kê"]{background:linear-gradient(115deg,#8ec6bb,#b7ddcc,#e0cadd)}
+.shell.luxeWindows .luxeWorkspaceIntro[data-section="Bán hàng"],.shell.luxeWindows .luxeWorkspaceIntro[data-section="Công nợ"]{background:linear-gradient(115deg,#bca9e5,#dfc5e8,#f0c6d6)}
+.shell.luxeWindows .luxeWorkspaceIntro>div:first-child{z-index:1}
+.shell.luxeWindows .luxeKicker{font-size:10px;font-weight:850;letter-spacing:.12em;color:#fff}
+.shell.luxeWindows .luxeWorkspaceIntro h1{font-size:clamp(24px,2.6vw,34px);color:white;line-height:1.16;margin:10px 0 8px}
+.shell.luxeWindows .luxeWorkspaceIntro p{color:#fff;font-size:12px;line-height:1.6;margin:0}
+.shell.luxeWindows .luxeIntroArt{position:absolute;right:20px;top:-25px;width:230px;height:230px;opacity:.3;border-radius:50%;border:25px solid #fff}
+.shell.luxeWindows .luxeIntroArt>span{font-size:140px;color:#fff;position:absolute;right:26px;top:9px}
+.shell.luxeWindows .luxeIntroArt i{position:absolute;border-radius:50%;background:white;width:15px;height:15px;left:5px;top:25px}
+.shell.luxeWindows .luxeIntroArt i:nth-of-type(2){width:10px;height:10px;left:170px;top:25px}
+.shell.luxeWindows .luxeIntroArt i:nth-of-type(3){width:8px;height:8px;left:0;top:160px}
+.shell.luxeWindows .dashboardFoldHeader{border:0;background:transparent;box-shadow:none;padding:9px 3px 16px;min-height:unset;margin:0}
+.shell.luxeWindows .dashboardFoldHeader :is(h2,h3){color:var(--luxe-ink);font-size:19px;font-weight:900;letter-spacing:-.035em;margin:3px 0}
+.shell.luxeWindows .dashboardFoldHeader p{font-size:11px;color:var(--luxe-muted)}
+.shell.luxeWindows .dashboardFoldEyebrow{font-size:10px;letter-spacing:.12em;color:var(--luxe-rose);font-weight:900}
+.shell.luxeWindows .dashboardFoldToggle{background:var(--luxe-paper);border:1px solid var(--luxe-border);color:#b56f94;border-radius:12px;padding:9px 13px;font-size:11px;font-weight:800}
+.shell.luxeWindows .dashboardFoldBody{display:flex;flex-direction:column;gap:0;min-width:0}
+.shell.luxeWindows .overviewWelcome{display:flex;align-items:center;min-height:0;background:transparent!important;border:0!important;box-shadow:none!important;padding:0 3px 12px;margin:0}
+.shell.luxeWindows .overviewWelcome :is(h2,h3){font-size:16px;letter-spacing:-.03em;margin:3px 0;color:var(--luxe-ink)}
+.shell.luxeWindows .overviewWelcome p{font-size:11px;color:var(--luxe-muted);margin:5px 0}
+.shell.luxeWindows .overviewWelcome .overviewKicker{color:var(--luxe-rose);font-size:10px}
+.shell.luxeWindows .overviewStats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:0 0 20px}
+.shell.luxeWindows .overviewStat{position:relative;display:flex;flex-direction:column;align-items:flex-start;min-width:0;min-height:143px;border:1px solid rgba(255,255,255,.85);border-radius:19px;background:var(--luxe-paper);box-shadow:var(--luxe-shadow);text-align:left;padding:17px 15px 15px;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.shell.luxeWindows .overviewStat:before{content:"✧";position:absolute;top:13px;right:14px;font-size:20px;color:#e9a3c3}
+.shell.luxeWindows .overviewStat:after{content:"";position:absolute;right:-38px;bottom:-92px;width:150px;height:150px;border-radius:50%;background:currentColor;opacity:.035}
+.shell.luxeWindows .overviewStat:nth-child(1){color:#df78a8}
+.shell.luxeWindows .overviewStat:nth-child(2){color:#759bdd}
+.shell.luxeWindows .overviewStat:nth-child(3){color:#65baad}
+.shell.luxeWindows .overviewStat:nth-child(4){color:#a08dd3}
+.shell.luxeWindows .overviewStat:nth-child(5){color:#d1a465}
+.shell.luxeWindows .overviewStat:hover{transform:translateY(-3px);box-shadow:0 18px 35px rgba(89,70,119,.15)}
+.shell.luxeWindows .overviewStat>span:first-child{color:var(--luxe-muted);font-weight:850;font-size:10px;letter-spacing:.03em;line-height:1.4;margin-top:10px}
+.shell.luxeWindows .overviewStat strong{display:block;font-size:clamp(22px,2.2vw,31px);line-height:1.13;color:var(--luxe-ink);font-weight:900;margin:9px 0 4px;font-variant-numeric:tabular-nums}
+.shell.luxeWindows .overviewStat small{font-size:10px;line-height:1.45;color:var(--luxe-muted)}
+.shell.luxeWindows .overviewStatLink{margin-top:auto;color:var(--luxe-rose);font-size:10px}
+.shell.luxeWindows .overviewStat.mainStat{border-color:rgba(255,255,255,.85);background:var(--luxe-paper)}
+.shell.luxeWindows .overviewPanels{order:3;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px;margin:8px 0}
+.shell.luxeWindows .overviewPanels .overviewPanel:last-child{grid-column:1/-1}
+.shell.luxeWindows .overviewPanel,.shell.luxeWindows .overviewShortcuts{background:var(--luxe-paper);border:1px solid var(--luxe-border);border-radius:20px;box-shadow:var(--luxe-shadow);padding:20px}
+.shell.luxeWindows .overviewPanelTitle h3,.shell.luxeWindows .overviewShortcuts h3{font-size:16px;color:var(--luxe-ink);font-weight:900}
+.shell.luxeWindows .overviewRank{border-bottom:1px solid var(--luxe-border);padding:10px 0;background:transparent}
+.shell.luxeWindows .overviewRank:last-child{border-bottom:0}
+.shell.luxeWindows .overviewShortcuts{order:1;margin:0 0 18px}
+.shell.luxeWindows .overviewShortcuts>div{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.shell.luxeWindows .overviewShortcuts button{border:1px solid var(--luxe-border);min-height:68px;background:var(--luxe-paper);color:var(--luxe-ink);font-weight:800;font-size:12px;border-radius:14px;padding:12px;box-shadow:0 4px 11px rgba(100,70,105,.045)}
+.shell.luxeWindows .overviewShortcuts button:hover{background:#fff4f9;transform:translateY(-2px)}
+.shell.luxeWindows .luxeFeatured{order:2;margin:0 0 17px}
+.shell.luxeWindows .luxeFeaturedHead{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:0 3px 12px}
+.shell.luxeWindows .luxeFeaturedHead h3{font-size:17px;font-weight:900;color:var(--luxe-ink);margin:0}
+.shell.luxeWindows .luxeFeaturedHead p{font-size:10px;color:var(--luxe-muted);margin:6px 0 0}
+.shell.luxeWindows .luxeFeaturedHead button{border:0;background:transparent;color:var(--luxe-rose);font-weight:850}
+.shell.luxeWindows .luxeFeaturedGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.shell.luxeWindows .luxeFeaturedCard{display:grid;grid-template-rows:1fr auto auto;gap:6px;min-width:0;background:var(--luxe-paper);border:1px solid var(--luxe-border);padding:8px 8px 12px;border-radius:17px;box-shadow:var(--luxe-shadow);text-align:left;color:var(--luxe-ink);transition:transform .2s}
+.shell.luxeWindows .luxeFeaturedCard:hover{transform:translateY(-3px)}
+.shell.luxeWindows .luxeFeaturedPhoto{position:relative;background:linear-gradient(145deg,#ffe3ed,#e7e3fd);aspect-ratio:1/1.05;border-radius:12px;display:grid;place-items:center;overflow:hidden;color:#b879a3}
+.shell.luxeWindows .luxeFeaturedPhoto img{width:100%;height:100%;object-fit:cover}
+.shell.luxeWindows .luxeFeaturedPhoto span{font-size:25px;opacity:.75}
+.shell.luxeWindows .luxeFeaturedCard b{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shell.luxeWindows .luxeFeaturedCard small{font-size:10px;color:var(--luxe-muted)}
+.shell.luxeWindows .overviewTrack{border-radius:30px;background:#f5eefa}
+.shell.luxeWindows .overviewTrack>span{border-radius:30px;background:linear-gradient(90deg,#e18eaf,#9babe4)}
+.shell.luxeWindows .luxeWindowsProductIntro{margin-bottom:14px}
+.shell.luxeWindows .catalogMetrics article,.shell.luxeWindows .inventoryMetrics article,.shell.luxeWindows .luxeStockBreakdown article{background:var(--luxe-paper);border:1px solid var(--luxe-border);border-radius:18px;box-shadow:var(--luxe-shadow);padding:18px}
+.shell.luxeWindows :is(.panel,.catalogPanel,.inventoryDashboardBlock,.warehouseWorkspace,.receiptOverview,.salesList,.salesEditor,.stocktakePanel,.reportPanel,.stage4Page,.settingsPage,.luxeInventoryInspector){border-color:var(--luxe-border);border-radius:20px;box-shadow:var(--luxe-shadow)}
+.shell.luxeWindows :is(.catalogSearchArea,.inventoryFilters,.salesOverview,.receiptIntro,.luxeControlCenterIntro){border-radius:17px}
+.shell.luxeWindows .productList{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:13px}
+.shell.luxeWindows .productList .product{display:flex;flex-direction:column;align-items:stretch;gap:9px;border:1px solid var(--luxe-border);border-radius:18px;padding:10px 10px 14px;background:var(--luxe-paper);min-width:0}
+.shell.luxeWindows .productList .catalogPhoto{width:100%;height:auto;aspect-ratio:1.12;max-height:230px;border-radius:12px;background:linear-gradient(130deg,#ffebf1,#e9e7f8)}
+.shell.luxeWindows .productList .catalogPhoto img{width:100%;height:100%;object-fit:contain}
+.shell.luxeWindows .productList .catalogInfo{width:100%}
+.shell.luxeWindows .productList .catalogInfo h3{font-size:14px;margin:4px 0;color:var(--luxe-ink)}
+.shell.luxeWindows .productList .product>strong{font-size:19px;color:var(--luxe-rose);margin-top:0}
+.shell.luxeWindows .productList .product>strong small{color:var(--luxe-muted)}
+.shell.luxeWindows .inventoryPage .inventoryHeading{background:var(--luxe-paper);border-color:var(--luxe-border);box-shadow:var(--luxe-shadow);border-radius:18px}
+.shell.luxeWindows .inventoryPage .luxeInventoryWorkspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,300px);gap:16px}
+.shell.luxeWindows .inventoryPage :is(.inventoryTree,.luxeInventoryInspector){min-width:0}
+.shell.luxeWindows .treeProduct{background:var(--luxe-paper);border-radius:15px;border:1px solid var(--luxe-border);box-shadow:0 6px 18px rgba(89,70,119,.06)}
+.shell.luxeWindows .variantGallery{border-radius:12px;background:var(--luxe-paper)}
+.shell.luxeWindows .variantGallery :is(img,.inventoryPhoto){border-radius:10px}
+.shell.luxeWindows .quickImageSelection,.shell.luxeWindows .inventoryToolbar{padding:12px 14px;background:var(--luxe-paper);border:1px solid var(--luxe-border);border-radius:15px}
+.shell.luxeWindows .salesWorkspace{display:grid;grid-template-columns:minmax(230px,310px) minmax(0,1fr);gap:16px}
+.shell.luxeWindows .salesList,.shell.luxeWindows .salesEditor{background:var(--luxe-paper)}
+.shell.luxeWindows .salesItems{display:grid;gap:10px}
+.shell.luxeWindows .salesItem{border:1px solid var(--luxe-border);border-radius:13px}
+.shell.luxeWindows .salesTotals{border-radius:14px;background:linear-gradient(100deg,#fff1f8,#f2ebff);border:1px solid #f4e5f0;padding:14px}
+.shell.luxeWindows .luxeFlowSteps button{background:var(--luxe-paper);border-color:var(--luxe-border);border-radius:14px}
+.shell.luxeWindows .luxeFlowSteps button b{background:linear-gradient(130deg,#ffe4ed,#eee5fc);color:#ce6794}
+.shell.luxeWindows :is(.stage4Metrics,.catalogMetrics,.inventoryMetrics){gap:12px}
+.shell.luxeWindows .luxeReportCharts,.shell.luxeWindows .luxeStocktakeWorkspace .stocktakePanel{background:var(--luxe-paper);border-color:var(--luxe-border)}
+.shell.luxeWindows .luxeControlCenterGrid button{box-shadow:var(--luxe-shadow);border-color:var(--luxe-border)}
+.shell.luxeWindows .luxeWelcomeBackdrop{background:rgba(36,28,59,.52)}
+.shell.luxeWindows .luxeWelcome{border-radius:28px;max-width:560px;border:1px solid rgba(255,255,255,.85);box-shadow:0 30px 100px #36243a5e;background:linear-gradient(160deg,#fff,#fff7fd)}
+.shell.luxeWindows .luxeWelcomeGlow{width:115px;height:115px;background:linear-gradient(135deg,#fbdde8,#eee3ff 53%,#c9e7f1);color:#da7aa6;font-size:54px}
+.shell.luxeWindows .luxeWelcome h1{font-size:36px;letter-spacing:-.06em;color:#34314c}
+.shell.luxeWindows .luxeWelcomeActions .primary{background:linear-gradient(110deg,#ed92b4,#d576a6);color:#fff;border:0;box-shadow:0 12px 29px #ce83af42}
+.shell.luxeWindows .luxeWelcomeMark{color:#d87da5}
+.shell.luxeWindows :is(button,input,select,textarea):focus-visible{outline:3px solid rgba(228,121,174,.6);outline-offset:2px}
+.shell.luxeWindows.themeDark .luxeSideItem.selected{background:#473346;color:#ffb9d4}
+.shell.luxeWindows.themeDark .luxeDesktopTopbar,.shell.luxeWindows.themeDark .luxeDesktopSidebar{border-color:#51465d}
+.shell.luxeWindows.themeDark .luxeOverviewControls button,.shell.luxeWindows.themeDark .luxeHeroToolbar button{color:#f4c2d6}
+@media(max-width:1360px){
+ .shell.luxeWindows .layout{grid-template-columns:212px minmax(0,1fr);gap:12px;padding:12px}
+ .shell.luxeWindows.luxeSidebarCollapsed .layout{grid-template-columns:70px minmax(0,1fr)}
+ .shell.luxeWindows .luxeDesktopSidebar{top:12px;height:calc(100vh - 24px)}
+ .shell.luxeWindows .luxeDesktopTopbar{padding:0 14px;gap:10px}
+ .shell.luxeWindows .luxeTopSearch{max-width:300px}
+ .shell.luxeWindows .overviewStats{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .shell.luxeWindows .luxeFeaturedGrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:1050px){
+ .shell.luxeWindows .overviewStats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .shell.luxeWindows .luxeFeaturedGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .shell.luxeWindows .overviewPanels{grid-template-columns:1fr}
+ .shell.luxeWindows .luxeTopSearch kbd{display:none}
+ .shell.luxeWindows .luxeTopLocation{min-width:92px}
+ .shell.luxeWindows .luxeTopActions .displayDensity{display:none}
+ .shell.luxeWindows .overviewShortcuts>div{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:800px){
+ .shell.luxeWindows .layout,.shell.luxeWindows.luxeSidebarCollapsed .layout{display:block;padding:8px}
+ .shell.luxeWindows .luxeDesktopSidebar{display:none}
+ .shell.luxeWindows .luxeDesktopTopbar{position:sticky;top:5px;min-height:62px;height:auto;padding:9px 12px;gap:8px}
+ .shell.luxeWindows .luxeTopMenu{display:block}
+ .shell.luxeWindows .luxeTopLocation{display:none}
+ .shell.luxeWindows .luxeTopSearch{min-width:0}
+ .shell.luxeWindows .luxeTopActions{gap:4px}
+ .shell.luxeWindows .luxeConnectionTag{display:none}
+ .shell.luxeWindows .luxeWorkspaceIntro{padding:19px 20px;min-height:115px}
+ .shell.luxeWindows .luxeWorkspaceIntro h1{font-size:24px}
+ .shell.luxeWindows .luxeHeroContent{padding:26px 24px 40px}
+ .shell.luxeWindows .luxeHeroContent h1{font-size:28px}
+ .shell.luxeWindows .luxeFeaturedGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .shell.luxeWindows .salesWorkspace,.shell.luxeWindows .inventoryPage .luxeInventoryWorkspace{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+ .shell.luxeWindows .luxeTopSearch input{font-size:11px}
+ .shell.luxeWindows .luxeTopTheme{min-width:32px;height:34px}
+ .shell.luxeWindows .overviewStats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .shell.luxeWindows .overviewStat{min-height:120px;padding:13px}
+ .shell.luxeWindows .overviewStat strong{font-size:24px}
+ .shell.luxeWindows .luxeDashboardHero{min-height:295px}
+ .shell.luxeWindows .luxeHeroActions{margin-top:14px}
+ .shell.luxeWindows .luxeFeaturedGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){
+ .shell.luxeWindows .luxeFeaturedCard,.shell.luxeWindows .overviewStat,.shell.luxeWindows .luxeSideItem{transition:none!important}
+ .shell.luxeWindows .luxeFeaturedCard:hover,.shell.luxeWindows .overviewStat:hover{transform:none}
+}
