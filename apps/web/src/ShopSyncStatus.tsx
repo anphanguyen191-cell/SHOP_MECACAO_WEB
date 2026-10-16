@@ -15,7 +15,7 @@ export default function ShopSyncStatus({enabled}:{enabled:boolean}){
     const r=await fetch('/api/lan/changes',{cache:'no-store',signal:controller.signal})
     if(!active)return
     if(r.status===401){
-     if(['localhost','127.0.0.1','[::1]'].includes(location.hostname)){window.location.reload();return}
+     if(location.protocol!=='https:'){window.location.reload();return}
      // A change-feed failure alone must not force a valid LAN user into an
      // endless login -> dashboard -> login loop. Confirm the actual session.
      const check=await fetch('/api/lan/session',{cache:'no-store',signal:controller.signal}).catch(()=>null)

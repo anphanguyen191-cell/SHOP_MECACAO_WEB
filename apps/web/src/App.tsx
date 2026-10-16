@@ -47,7 +47,7 @@ export default function App(){
  useEffect(()=>{const viewport=window.matchMedia('(min-width: 801px)');const sync=()=>setDesktopWidth(viewport.matches);sync();viewport.addEventListener('change',sync);return()=>viewport.removeEventListener('change',sync)},[])
 
  const [health,setHealth]=useState<Health|null>(null),[active,setActive]=useState('Tổng quan')
- const remoteLan=!isDemo&&location.protocol==='https:'&&!['localhost','127.0.0.1','[::1]'].includes(location.hostname)
+ const remoteLan=!isDemo&&location.protocol==='https:' // HTTPS LAN also supports loopback in isolated acceptance tests
  const [lanLoginRequired,setLanLoginRequired]=useState(remoteLan),[healthReload,setHealthReload]=useState(0),[healthError,setHealthError]=useState('')
  const lanRole=health?.lanClient?health.lanRole:null
  const canSell=!health?.lanClient||lanRole==='owner'||lanRole==='cashier'
