@@ -348,9 +348,12 @@ try{
  watchConfig.popup=true
  warehouseNotices=[{id:'browser-notice',kind:'changes',message:'1 ảnh chờ duyệt',createdAt:new Date().toISOString(),state:'unseen'}]
  await command('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/'})
- await until("!!document.querySelector('[aria-label=\"Kho ảnh có thay đổi\"]')",'opt-in scan notification popup')
- assert((await run("document.querySelector('.warehouseNotifications [role=dialog]').textContent")).includes('1 ảnh chờ duyệt'),'Popup must identify pending stock')
- await run("Array.from(document.querySelectorAll('.warehouseNotifications [role=dialog] button')).find(b=>b.textContent==='XEM & DUYỆT').click()")
+ await until("document.querySelector('.warehouseNotifications>button span')?.textContent==='1'",'initial scan notice in bell')
+ assert.equal(await run("document.querySelectorAll('.warehouseToast,.warehouseNotifications [role=dialog]').length"),0,'Startup inventory scan must not interrupt the dashboard with duplicate popup')
+ await run("document.querySelector('.warehouseNotifications>button').click()")
+ await until("!!document.querySelector('.warehouseNoticePanel')",'compact bell notification panel')
+ assert((await run("document.querySelector('.warehouseNoticePanel').textContent")).includes('1 ảnh chờ duyệt'),'Bell panel must identify pending stock')
+ await run("document.querySelector('.warehouseNoticePanel .warehouseReviewButton').click()")
  await until("!!document.querySelector('.warehouseConfig')",'notification opens review workspace')
  assert.equal(warehouseNotices[0].state,'seen','Review must persist seen state')
  assert.equal(importWrites,1,'Reviewing a notification must not import automatically')
