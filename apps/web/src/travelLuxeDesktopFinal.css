@@ -274,3 +274,9 @@
 }
 @media(max-width:800px){.shell.luxeWindows .inventoryPage .luxeInventorySelectionDetails{max-height:none}}
 .shell.luxeWindows.themeDark .luxeSelectionDetailsSummary{background:#453447;border-color:#554457}
+
+/* Keep legacy E2E and assistive menu selectors pointing to the real navigation,
+   without re-introducing the old bright rectangular sidebar presentation. */
+.shell.luxeWindows .luxeSideNavigation.sidebar{display:block;position:static;top:auto;min-height:0;height:auto;width:auto;border:0;border-radius:0;box-shadow:none;background:transparent;padding:0 11px 12px;margin:0;overflow-y:auto;overflow-x:hidden}
+.shell.luxeWindows .luxeSideItem.selected .luxeSideArrow::before{content:'›'}
+.shell.luxeWindows.luxeSidebarCollapsed .luxeSideNavigation.sidebar{padding:0 7px}
