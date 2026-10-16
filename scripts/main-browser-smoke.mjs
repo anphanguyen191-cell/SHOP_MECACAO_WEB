@@ -56,6 +56,7 @@ try{
  await run("Array.from(document.querySelectorAll('.luxeSideItem')).find(b=>b.querySelector('.luxeSideText')?.textContent==='Tồn kho').click()")
  await until("!!document.querySelector('.luxeStockBreakdown')&&!!document.querySelector('.luxeInventoryInspector')")
  assert(await run("document.querySelectorAll('.luxeStockBreakdown article').length===3"))
+ assert(await run("!!document.querySelector('.luxeInventorySelectionDetails')&&getComputedStyle(document.querySelector('.luxeInventoryWorkspace')).gridTemplateColumns.split(' ').length===3"),'Photo gallery must have three real desktop regions')
  await run("Array.from(document.querySelectorAll('.luxeSideItem')).find(b=>b.querySelector('.luxeSideText')?.textContent==='Nhập hàng').click()")
  await until("!!document.querySelector('.receiptFields[data-guided=true]')")
  assert(await run("document.querySelector('.receiptFields').dataset.step==='1'"))
