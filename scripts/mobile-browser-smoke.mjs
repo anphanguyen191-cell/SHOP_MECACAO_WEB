@@ -400,7 +400,8 @@ try{
   await run('window.scrollTo(0,document.body.scrollHeight)');await sleep(100)
   assert((await run('document.documentElement.scrollWidth'))<=width+2,'Image sending overflow at '+width)
   assert(await run("document.querySelector('.inventoryImage').getBoundingClientRect().bottom<=document.querySelector('.imageSendBar').getBoundingClientRect().top"),'Bottom send bar must not cover last stock image')
-  assert(await run("(()=>{const p=document.querySelector('.floatingActions').getBoundingClientRect(),nav=document.querySelector('.mobileQuickNav');return p.left>=0&&p.right<=innerWidth&&innerWidth-p.right<40&&(!nav||getComputedStyle(nav).display==='none'||p.bottom<nav.getBoundingClientRect().top)})()"),'Right floating panel must clear bottom navigation')
+  const panelGeometry=await run("(()=>{const el=document.querySelector('.floatingActions'),p=el.getBoundingClientRect(),nav=document.querySelector('.mobileQuickNav'),n=nav?.getBoundingClientRect(),shell=document.querySelector('.shell');return {ok:p.left>=0&&p.right<=innerWidth&&innerWidth-p.right<40&&(!nav||getComputedStyle(nav).display==='none'||p.bottom<n.top),viewport:{width:innerWidth,height:innerHeight,visualHeight:visualViewport?.height},density:shell.className,offset:getComputedStyle(shell).getPropertyValue('--mobile-nav-offset'),cssBottom:getComputedStyle(el).bottom,panel:{left:p.left,right:p.right,top:p.top,bottom:p.bottom,height:p.height},nav:nav?{display:getComputedStyle(nav).display,top:n.top,bottom:n.bottom,height:n.height}:null}}})()")
+  assert(panelGeometry.ok,'Right floating panel must clear bottom navigation: '+JSON.stringify(panelGeometry))
   await shot('inventory-send-'+width+'-'+(dark?'dark':'light')+'-'+density+'.png')
  }
  await run("document.querySelector('.imageSendActions button:last-child').click()")
