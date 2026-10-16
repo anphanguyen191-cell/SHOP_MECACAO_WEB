@@ -19,6 +19,7 @@ test('Official V8 always shows splash then credential login before mounting CORE
  assert.match(app,/!health\?\.windowsAuth&&!welcomeDismissed/)
  assert.match(server,/windowsAuth:!!v8Home/)
  assert.match(server,/app\.use\('\/api',windowsAuth\.gate\)/)
+ assert.match(read('apps/web/src/uiState.ts'),/WINDOWS_LOGIN_REQUIRED/)
  assert(!startup.includes('localStorage.setItem('),'No password in browser localStorage')
 })
 test('Warehouse change displays one notice, not two simultaneous modal/toast overlays',()=>{
