@@ -14,7 +14,15 @@ export default function ShopSyncStatus({enabled}:{enabled:boolean}){
    try{
     const r=await fetch('/api/lan/changes',{cache:'no-store',signal:controller.signal})
     if(!active)return
-    if(r.status===401){if(['localhost','127.0.0.1','[::1]'].includes(location.hostname)){window.location.reload();return}window.dispatchEvent(new Event('mecacao-lan-expired'));return}
+    if(r.status===401){
+     if(['localhost','127.0.0.1','[::1]'].includes(location.hostname)){window.location.reload();return}
+     // A change-feed failure alone must not force a valid LAN user into an
+     // endless login -> dashboard -> login loop. Confirm the actual session.
+     const check=await fetch('/api/lan/session',{cache:'no-store',signal:controller.signal}).catch(()=>null)
+     if(!active)return
+     if(check?.ok){setStatus('offline');return}
+     window.dispatchEvent(new Event('mecacao-lan-expired'));return
+    }
     if(!r.ok)throw Error('Máy chủ chưa phản hồi')
     const value=await r.json() as State
     if(typeof value.epoch!=='string'||!Number.isSafeInteger(value.revision))throw Error('Tín hiệu thay đổi không hợp lệ')
