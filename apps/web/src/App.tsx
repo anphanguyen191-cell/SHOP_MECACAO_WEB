@@ -190,7 +190,7 @@ export default function App(){
   {active==='Kiểm kê'&&health?.salesExecution&&canCount&&<StocktakeView/>}
   {active==='Ảnh SOLD'&&health?.salesExecution&&canAuditSold&&<SoldRetentionView/>}
   {active==='Công nợ'&&health?.salesDrafts&&canSell&&<DebtsView onOrder={id=>{setSalesId(id);goTo('Bán hàng')}}/>}
-  {active==='Khách hàng'&&health?.salesDrafts&&canSell&&<CustomersView/>}
+  {active==='Khách hàng'&&health?.salesDrafts&&canSell&&<CustomersView onNavigate={goTo}/>}
   {active==='Bán hàng'&&health?.salesDrafts&&canSell&&<SalesDraftView business={!!health?.localV2Business||!!health?.freshDevelopment} execute={!!health?.salesExecution} hideRecovery={!!health?.lanClient} onStockChanged={()=>setProductReload(n=>n+1)} openId={salesId} onOpen={setSalesId} onSelectImages={id=>{setAddToDraft(id);goTo('Tồn kho')}}/>}
   {active==='Cài đặt'&&<section className="displayPreferences"><div><h3>Cài đặt giao diện · Mật độ hiển thị</h3><p>Nhỏ để xem bao quát, Vừa để dùng hằng ngày, Lớn để dễ đọc và chạm. Áp dụng mọi màn hình; chỉ lưu trên thiết bị / trình duyệt này.</p></div><DisplayDensity value={density} onChange={setDensity}/></section>}
   {active==='Cài đặt'&&(isDemo?<section className="panel"><h3>Cài đặt & Backup</h3><p>DEMO không ghi cài đặt hoặc tạo backup. Các chức năng này chỉ hoạt động ở LOCAL.</p></section>:<SettingsView showCloud={false} sandbox={!!health?.sandbox||!!health?.localV2Business}/>)}
