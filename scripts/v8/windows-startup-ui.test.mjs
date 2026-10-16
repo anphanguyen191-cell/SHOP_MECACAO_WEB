@@ -1,0 +1,29 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {readFileSync} from 'node:fs'
+const read=p=>readFileSync(p,'utf8')
+test('Official V8 always shows splash then credential login before mounting CORE',()=>{
+ const main=read('apps/web/src/main.tsx')
+ const startup=read('apps/web/src/WindowsStartup.tsx')
+ const app=read('apps/web/src/App.tsx')
+ const server=read('apps/api/src/server.ts')
+ assert.match(main,/windowsGate==='enabled'&&!entered\?<WindowsStartup/)
+ assert.match(main,/onEnter=\{\(\)=>setEntered\(true\)\}/)
+ assert.match(startup,/setPhase\(state\.configured\?'login':'setup'\)/)
+ assert.match(startup,/useRemember/)
+ assert.match(startup,/Ghi nhớ đăng nhập trên máy này/)
+ assert.match(startup,/luxeStartupSavedPassword/)
+ assert.match(app,/!health\?\.windowsAuth&&!welcomeDismissed/)
+ assert.match(server,/windowsAuth:!!v8Home/)
+ assert.match(server,/app\.use\('\/api',windowsAuth\.gate\)/)
+ assert(!startup.includes('localStorage.setItem('),'No password in browser localStorage')
+})
+test('Warehouse change displays one notice, not two simultaneous modal/toast overlays',()=>{
+ const notice=read('apps/web/src/WarehouseNotifications.tsx')
+ const css=read('apps/web/src/travelLuxeStartup.css')
+ assert.match(notice,/toast&&!open&&<aside className="warehouseToast"/)
+ assert.match(notice,/open&&<section className="warehouseNoticePanel"/)
+ assert.doesNotMatch(notice,/folderOverlay|folderModal|setPopup|popup&&<div/)
+ assert.match(css,/\.warehouseToast,\.warehouseNoticePanel,\.warehouseErrorPanel/)
+ assert.match(notice,/if\(config\.popup&&unseen\.length/)
+})

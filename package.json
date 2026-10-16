@@ -13,7 +13,7 @@
     "typecheck": "npm --workspace apps/web run typecheck && npm --workspace apps/api run typecheck",
     "test:core": "npm --workspace apps/api run test:core",
     "test:schema": "npm --workspace apps/api run test:schema",
-    "test:ui": "node scripts/ui-regression.mjs && node --test scripts/v8/ui-v2-desktop.test.mjs scripts/v8/ui-v2-design-contract.test.mjs",
+    "test:ui": "node scripts/ui-regression.mjs && node --test scripts/v8/ui-v2-desktop.test.mjs scripts/v8/ui-v2-design-contract.test.mjs scripts/v8/windows-startup-ui.test.mjs && node --import tsx --test scripts/v8/windows-auth.test.mts",
     "test:performance": "npm --workspace apps/api run test:performance",
     "test:warehouse": "npm --workspace apps/api run test:warehouse",
     "test:share": "npm --workspace apps/api run test:share",
