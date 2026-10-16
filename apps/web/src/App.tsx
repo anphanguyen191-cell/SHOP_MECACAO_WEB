@@ -59,6 +59,8 @@ export default function App(){
  const [menuOpen,setMenuOpen]=useState(false),[menuSearch,setMenuSearch]=useState('')
  const [darkMode,setDarkMode]=useBooleanPreference('dark-mode',false)
  const [welcomeDismissed,setWelcomeDismissed]=useBooleanPreference('travel-luxe-v2-welcome',false)
+ const [sidebarCollapsed,setSidebarCollapsed]=useBooleanPreference('travel-luxe-v2-sidebar-collapsed',false)
+ const [heroExpanded,setHeroExpanded]=useBooleanPreference('travel-luxe-v2-hero',true)
  const [density,setDensity]=useDisplaySize()
  const [overviewExpanded,setOverviewExpanded]=useBooleanPreference('overview-expanded',true),[catalogExpanded,setCatalogExpanded]=useBooleanPreference('catalog-expanded',true)
  const [products,setProducts]=useState<ProductRow[]>(isDemo?demo:[]),[search,setSearch]=useState('')
