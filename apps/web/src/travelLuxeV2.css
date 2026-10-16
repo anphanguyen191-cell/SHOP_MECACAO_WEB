@@ -54,3 +54,15 @@
  .shell .luxeWelcome{padding:24px 18px;border-radius:20px}
 }
 @media(prefers-reduced-motion:reduce){.shell .luxeWelcomeBackdrop{backdrop-filter:none}}
+
+/* Non-destructive workflow navigation: jump to CORE form sections; never submit automatically. */
+.shell .luxeFlowSteps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:13px 0 18px}
+.shell .luxeFlowSteps.luxeFlowStepsSix{grid-template-columns:repeat(6,minmax(0,1fr))}
+.shell .luxeFlowSteps button{display:flex;gap:9px;align-items:center;min-width:0;padding:11px 9px;text-align:left;border:1px solid var(--v8-edge);background:var(--v8-surface);border-radius:14px;color:var(--v8-ink)}
+.shell .luxeFlowSteps button b{flex:0 0 auto;display:grid;place-items:center;width:32px;height:32px;background:var(--v8-soft);border-radius:10px;color:var(--v8-accent);font-variant-numeric:tabular-nums;font-size:12px}
+.shell .luxeFlowSteps button span{font-weight:650;font-size:12px;line-height:1.3;overflow-wrap:anywhere}
+.shell .luxeFlowSteps button:hover:not(:disabled){border-color:var(--v8-accent);background:var(--v8-soft)}
+.shell .luxeWorkflowAnchor,#luxe-receipt-size,#luxe-receipt-confirm{scroll-margin-top:90px}
+@media(max-width:1180px){.shell .luxeFlowSteps.luxeFlowStepsSix{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.shell .luxeFlowSteps{grid-template-columns:repeat(2,minmax(0,1fr))}.shell .luxeFlowSteps.luxeFlowStepsSix{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:370px){.shell .luxeFlowSteps button{padding:7px 5px}.shell .luxeFlowSteps button b{width:25px;height:25px}}
