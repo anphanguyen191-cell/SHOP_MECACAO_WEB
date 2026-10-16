@@ -40,3 +40,18 @@ test('Warehouse change displays one notice, not two simultaneous modal/toast ove
  assert.match(css,/\.warehouseToast,\.warehouseNoticePanel,\.warehouseErrorPanel/)
  assert.match(notice,/const allowForeground=!initialLoad\.current&&config\.popup&&unseen\.length>0/)
 })
+
+test('LAN 401 cannot oscillate between Dashboard and login, Windows never falls into LAN login',()=>{
+ const app=read('apps/web/src/App.tsx')
+ const sync=read('apps/web/src/ShopSyncStatus.tsx')
+ const main=read('apps/web/src/main.tsx')
+ const lan=read('apps/web/src/LanLogin.tsx')
+ assert.match(main,/windowsGate==='enabled'&&!entered\?<WindowsStartup/)
+ assert.match(app,/if\(!remoteLan\)\{window\.location\.reload\(\);return\}/)
+ assert.match(sync,/fetch\('\/api\/lan\/session'/)
+ assert.match(sync,/if\(check\?\.ok\)\{setStatus\('offline'\);return\}/)
+ const expired=app.split("const expired=()=>")[1].split("window.addEventListener('mecacao-lan-expired'")[0]
+ assert.doesNotMatch(expired,/setHealthReload/,'Never silently re-enter Dashboard after expired LAN session')
+ assert.match(lan,/TravelLuxeAuthLayout/)
+ assert.match(lan,/credentials:'same-origin'/)
+})
