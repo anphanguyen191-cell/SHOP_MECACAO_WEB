@@ -13,7 +13,7 @@
 .shell.luxeWindows .layout>main{height:calc(100dvh - 36px);min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:0;padding:0}
 .shell.luxeWindows .luxeDesktopTopbar{position:relative!important;top:auto!important;flex:0 0 73px;min-height:73px;z-index:12;margin-bottom:16px}
 .shell.luxeWindows .luxePageScene{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#d8cbdc transparent;scrollbar-gutter:stable;padding:0 5px 30px 1px;overscroll-behavior:contain}
-.shell.luxeWindows .luxePageContent{min-width:0;isolation:isolate}
+.shell.luxeWindows .luxePageContent{min-width:0;position:static}
 .shell.luxeWindows .luxePageContent.luxeAppear-fade{animation:cacaoPageFade .33s ease-out}
 .shell.luxeWindows .luxePageContent.luxeAppear-slide{animation:cacaoPageSlide .38s cubic-bezier(.22,1,.36,1)}
 .shell.luxeWindows .luxePageContent.luxeAppear-flip{animation:cacaoPageFlip .45s cubic-bezier(.22,1,.36,1);transform-origin:50% 20%}
@@ -130,3 +130,7 @@
  .shell.luxeWindows .luxePageContent{animation:none!important}
  .shell.luxeWindows .luxeControlCenterGrid button{transition:none!important}
 }
+
+/* Dialogs and photo viewers are fixed-position CORE overlays: never trap them behind the anchored header. */
+.shell.luxeWindows .luxePageContent :is(.folderOverlay,.modalback,.drawerback,.warehouseImageModal){z-index:150}
+.shell.luxeWindows.themeDark .luxeControlCenterIntro,.shell.luxeWindows.themeDark .luxeControlCenterSection,.shell.luxeWindows.themeDark .displayPreferences,.shell.luxeWindows.themeDark .cloudSettings{background:var(--luxe-paper);color:var(--luxe-ink);border-color:var(--luxe-border)}
