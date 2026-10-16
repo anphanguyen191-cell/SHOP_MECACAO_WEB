@@ -4,7 +4,7 @@ import {TaskMeter} from './TaskProgress'
 import FolderPicker from './FolderPicker'
 import {useUnsavedChanges} from './useUnsavedChanges'
 import {validMoneyInput} from './moneyInput'
-import {apiJson} from './uiState'
+import {apiJson,useBooleanPreference} from './uiState'
 
 type Product={id:number;product_code:string;name:string}
 type Variant={id:number;sku:string;size:string;cost_price:number;sale_price:number}
@@ -17,6 +17,8 @@ const labels:Record<string,string>={VALIDATE:'Kiểm tra dữ liệu',PREPARE:'C
 
 export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceApplied}:{onDone?:()=>void;initialSourcePath?:string|null;onInitialSourceApplied?:()=>void}){
  const [fresh,setFresh]=useState(false)
+ const [guided,setGuided]=useBooleanPreference('travel-luxe-v2-receipt-guided',true)
+ const [wizardStep,setWizardStep]=useState(1),[furthestStep,setFurthestStep]=useState(1)
  const [products,setProducts]=useState<Product[]>([]),[flow,setFlow]=useState<Flow>('EXISTING_SIZE'),[productId,setProductId]=useState(0),[detail,setDetail]=useState<ProductDetail|null>(null)
  const [name,setName]=useState(''),[code,setCode]=useState(''),[category,setCategory]=useState(''),[storeRoot,setStoreRoot]=useState(''),[rows,setRows]=useState<SizeRow[]>([blank()]),[note,setNote]=useState('')
  const [busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[progress,setProgress]=useState<Progress|null>(null),[productSearch,setProductSearch]=useState(''),[pick,setPick]=useState<{kind:'store'|'source';row?:number}|null>(null)
@@ -39,7 +41,7 @@ export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceAp
   }catch(e){if(version===requestVersion.current){setProductId(0);setMsg(e instanceof Error?e.message:'Không đọc được sản phẩm')}}
   finally{if(version===requestVersion.current)setReading(false)}
  }
- function switchFlow(next:Flow){if(edited&&!window.confirm('Bỏ thông tin nhập hàng đang nhập để đổi cách nhập?'))return;setEdited(false);requestVersion.current++;setReading(false);setFlow(next);setMsg('');setProgress(null);setProductId(0);setDetail(null);setProductSearch('');setName('');setCode('');setCategory('');setRows([blank()]);if(reviewedPhotoSource.current)void inspect(0,reviewedPhotoSource.current)}
+ function switchFlow(next:Flow){if(edited&&!window.confirm('Bỏ thông tin nhập hàng đang nhập để đổi cách nhập?'))return;setEdited(false);requestVersion.current++;setReading(false);setFlow(next);setWizardStep(1);setFurthestStep(1);setMsg('');setProgress(null);setProductId(0);setDetail(null);setProductSearch('');setName('');setCode('');setCategory('');setRows([blank()]);if(reviewedPhotoSource.current)void inspect(0,reviewedPhotoSource.current)}
  function patch(i:number,k:keyof SizeRow,v:string|number){setEdited(true);setRows(previous=>previous.map((row,index)=>index===i?{...row,[k]:k==='costPrice'||k==='salePrice'?v:typeof row[k]==='number'?Math.max(0,Number(v)||0):v,...(k==='sourcePath'?{imageCount:0,quantity:0}:{})}:row))}
  async function inspect(i:number,selectedPath?:string){setEdited(true);
   const p=(selectedPath??rows[i].sourcePath).trim()
@@ -76,6 +78,14 @@ export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceAp
  useUnsavedChanges(edited||busy,()=>setMsg(busy?'Nhập hàng đang xử lý; chờ kết quả trước khi rời màn hình.':'Thông tin nhập hàng chưa lưu. Nhập xong hoặc bỏ thay đổi trước khi chuyển màn.'))
  const existingSizes=detail?.variants??[]
  const jump=(selector:string)=>document.querySelector(selector)?.scrollIntoView({behavior:'smooth',block:'start'})
+ const stepReady=wizardStep===1
+  ||wizardStep===2&&(!!storeRoot&&(flow==='NEW_PRODUCT'?!!name.trim():!!productId))
+  ||wizardStep===3&&(rows.length>0&&rows.every(r=>!!r.size.trim()&&(flow!=='EXISTING_SIZE'||!!r.sku.trim())))
+  ||wizardStep===4&&(rows.length>0&&rows.every(r=>!!r.sourcePath&&r.imageCount>0))
+  ||wizardStep===5&&(rows.length>0&&rows.every(r=>validMoneyInput(r.costPrice)&&validMoneyInput(r.salePrice)))
+  ||wizardStep===6
+ const nextStep=()=>{if(!stepReady)return;const next=Math.min(6,wizardStep+1);setWizardStep(next);setFurthestStep(x=>Math.max(x,next))}
+ const stepTo=(n:number,selector:string)=>{if(!guided){jump(selector);return}if(n<=furthestStep)setWizardStep(n)}
  return <section id="goods-receipt-form" className="receipt receiptV2" tabIndex={-1} onChangeCapture={()=>setEdited(true)}>
   <nav className="luxeFlowSteps luxeFlowStepsSix" aria-label="Quy trình nhập hàng 6 bước"><button type="button" onClick={()=>jump('#goods-receipt-form .flowTabs')}><b>01</b><span>Loại nhập</span></button><button type="button" onClick={()=>jump('#luxe-receipt-context')}><b>02</b><span>Sản phẩm</span></button><button type="button" onClick={()=>jump('#luxe-receipt-size')}><b>03</b><span>Size / SKU</span></button><button type="button" onClick={()=>jump('#luxe-receipt-size .sourcePicker')}><b>04</b><span>Ảnh nguồn</span></button><button type="button" onClick={()=>jump('#luxe-receipt-size .imageCountBadge')}><b>05</b><span>Số lượng / giá</span></button><button type="button" onClick={()=>jump('#luxe-receipt-confirm')}><b>06</b><span>Kiểm tra & xác nhận</span></button></nav>
    {edited&&!busy&&<button type="button" onClick={()=>{if(window.confirm('Bỏ thông tin nhập hàng chưa lưu?')){setRows([blank()]);setName('');setCode('');setNote('');setEdited(false)}}}>Bỏ thay đổi đang nhập</button>}
