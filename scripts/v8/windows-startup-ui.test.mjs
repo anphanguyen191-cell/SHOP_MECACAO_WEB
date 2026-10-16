@@ -15,7 +15,7 @@ test('Official V8 always shows splash then credential login before mounting CORE
  assert.match(startup,/setPhase\(state\.configured\?'login':'setup'\)/)
  assert.match(visual,/className="luxeSplashScreen cacaoDemoSplash"/)
  assert.match(visual,/Hành trình xinh đẹp bắt đầu/)
- assert.match(visual,/Mỗi ngày làm việc là một chuyến đi thật đẹp/)
+ assert.match(visual,/Mỗi ngày làm việc<br\/>là một chuyến đi thật đẹp/)
  assert.match(visual,/travel-luxe-login-scene.svg/)
  assert.match(visual,/cacaoDemoVisualBottom/)
  assert.match(css,/grid-template-columns:minmax\(420px,1.25fr\) minmax\(340px,.75fr\)/)
