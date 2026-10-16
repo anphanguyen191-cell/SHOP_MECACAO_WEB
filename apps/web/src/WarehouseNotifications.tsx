@@ -5,7 +5,7 @@ type Notice={id:string;kind:string;message:string;createdAt:string;state:string}
 type WatchConfig={popup?:boolean}
 /**
  * Warehouse notifications have exactly one foreground surface:
- * compact actionable toast OR bell panel. The legacy automatic folderOverlay
+ * compact actionable toast OR bell panel. The legacy automatic centered warehouse
  * modal was duplicated over the toast and is intentionally removed.
  */
 export default function WarehouseNotifications({isDemo,onReview}:{isDemo:boolean;onReview:()=>void}){
