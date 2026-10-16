@@ -125,6 +125,8 @@ try{
  await command('Page.reload',{ignoreCache:true})
  await until("!!document.querySelector('.luxeSplashScreen')",'welcome every reload')
  assert(await run("!document.querySelector('.shell')"),'Page reload must require explicit login click again')
+ await until("!!document.querySelector('.luxeStartupForm')",'splash must advance automatically without any click')
+ assert(await run("!document.querySelector('.shell')"),'Automatic splash advance must never bypass Windows authentication')
  console.log('WINDOWS_STARTUP_BROWSER PASS: welcome -> owner setup -> dashboard, one toast after new warehouse change/no modal, bell pending/history panel, logout, remembered one-click login, welcome on every reload')
 }finally{
  try{ws?.close()}catch{}
