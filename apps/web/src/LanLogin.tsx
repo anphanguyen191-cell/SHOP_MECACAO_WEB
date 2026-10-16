@@ -32,7 +32,7 @@ export default function LanLogin({onLogin,connectionError,onRetry}:{onLogin:()=>
     <label className="cacaoDemoField"><span>Tên đăng nhập</span><input className="cacaoDemoTextInput" value={username} onChange={e=>setUsername(e.target.value)} autoComplete="username" maxLength={40} required/></label>
     <label className="cacaoDemoField"><span>Mật khẩu</span><input className="cacaoDemoTextInput" type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password" required/></label>
     {error&&<p className="cacaoDemoError" role="alert">{error}</p>}
-    <button className="cacaoDemoSubmit" type="submit" disabled={busy}>{busy?'Đang đăng nhập…':'Đăng nhập'} <span aria-hidden="true">→</span></button>
+    <button className="cacaoDemoSubmit" type="submit" disabled={busy}>{busy?'Đang đăng nhập…':'Đăng nhập'}</button>
    </form>
    <p className="cacaoDemoNote"><span aria-hidden="true">♧</span> Kết nối LAN nội bộ qua HTTPS · Sử dụng tài khoản LAN đã được tạo trên Windows. Trình duyệt có thể tự điền thông tin nếu bạn đã lưu bằng trình quản lý mật khẩu.</p>
   </div>
