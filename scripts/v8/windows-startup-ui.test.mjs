@@ -25,9 +25,9 @@ test('Official V8 always shows splash then credential login before mounting CORE
 test('Warehouse change displays one notice, not two simultaneous modal/toast overlays',()=>{
  const notice=read('apps/web/src/WarehouseNotifications.tsx')
  const css=read('apps/web/src/travelLuxeStartup.css')
- assert.match(notice,/toast&&!open&&<aside className="warehouseToast"/)
+ assert.match(notice,/toast&&!open&&!alertNotice&&<aside className="warehouseToast"/)
  assert.match(notice,/open&&<section className="warehouseNoticePanel"/)
  assert.doesNotMatch(notice,/folderOverlay|folderModal|setPopup|popup&&<div/)
  assert.match(css,/\.warehouseToast,\.warehouseNoticePanel,\.warehouseErrorPanel/)
- assert.match(notice,/if\(config\.popup&&unseen\.length/)
+ assert.match(notice,/const allowForeground=!initialLoad\.current&&config\.popup&&unseen\.length>0/)
 })
