@@ -55,6 +55,7 @@ export function LuxeWorkspaceIntro({section}: {section:string}){
  const inputRef=useRef<HTMLInputElement>(null)
  useEffect(()=>{
   let alive=true,objectUrl:string|null=null
+  setMedia(null);setNote('')
   void openHeroDb().then(db=>{
    const tx=db.transaction('settings','readonly'),request=tx.objectStore('settings').get('workspace:'+section)
    request.onsuccess=()=>{if(alive&&request.result instanceof Blob){objectUrl=URL.createObjectURL(request.result);setMedia({url:objectUrl,video:request.result.type.startsWith('video/')})}}

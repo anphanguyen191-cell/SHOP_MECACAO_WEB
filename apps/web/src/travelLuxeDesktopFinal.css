@@ -328,3 +328,9 @@
 @media(max-width:1000px){.shell.luxeWindows .luxeIntroCopy{max-width:85%}.shell.luxeWindows .luxeWorkspaceIntro{padding:24px 20px 64px}}
 @media(max-width:650px){.shell.luxeWindows .luxeIntroCopy{max-width:100%}.shell.luxeWindows .luxeIntroControls{right:10px;bottom:10px}.shell.luxeWindows .luxeWorkspaceIntro{min-height:185px}}
 @media(prefers-reduced-motion:reduce){.shell.luxeWindows .luxeIntroMedia video{animation:none}}
+
+/* Workspace media always sits behind the text-contrast overlay and actions. */
+.shell.luxeWindows .luxeWorkspaceIntro>.luxeIntroMedia{z-index:0}
+.shell.luxeWindows:not(.themeDark) .catalogFilterGrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.shell.luxeWindows:not(.themeDark) .inventoryFilters select[aria-label="Chọn sản phẩm trong kho"]{max-width:290px;flex:2 1 210px}
+@media(max-width:1160px){.shell.luxeWindows:not(.themeDark) .catalogFilterGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
