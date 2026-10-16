@@ -19,6 +19,7 @@ import './travelLuxeDesktopFinal.css'
 import './travelLuxeStartup.css'
 import './travelLuxeDemoAuth.css' // Approved demo splash/login over legacy startup styling
 import './travelLuxePolish.css' // Final Windows-only visual parity and independent workspace scrolling
+import './travelLuxeContrast.css' // Device-local Travel Luxe contrast levels and fixed workspace chrome
 
 const updateSW=registerSW({ immediate: true,onNeedRefresh(){window.dispatchEvent(new Event('mecacao-update-ready'))} })
 

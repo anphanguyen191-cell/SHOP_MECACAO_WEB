@@ -108,6 +108,16 @@ try{
   for(const label of labels){
    await run("Array.from(document.querySelectorAll('.luxeSideItem,.layout .sidebar button')).find(b=>(b.querySelector('.luxeSideText')?.textContent??b.textContent)==="+JSON.stringify(label)+").click();window.scrollTo(0,0)")
    await sleep(120)
+   if(width===1366&&label==='Cài đặt'){
+    const layout=JSON.parse(await run("(()=>{const bar=document.querySelector('.luxeDesktopTopbar'),scene=document.querySelector('.luxePageScene'),brand=document.querySelector('.luxeSideBrand'),owner=document.querySelector('.luxeSideFooter'),nav=document.querySelector('.luxeSideNavigation');const top=bar.getBoundingClientRect().top;const amount=Math.min(240,Math.max(0,scene.scrollHeight-scene.clientHeight));scene.scrollTop=amount;const after=bar.getBoundingClientRect().top;const a=brand.getBoundingClientRect(),b=owner.getBoundingClientRect(),c=nav.getBoundingClientRect();scene.scrollTop=0;return JSON.stringify({top,after,amount,brandBeforeOwner:a.bottom<=b.top,ownerBeforeNav:b.bottom<=c.top,settingsContrast:document.querySelectorAll('.luxeContrastSetting button').length})})()"))
+    assert(layout.amount>0,'Settings content must scroll inside its workspace')
+    assert(Math.abs(layout.after-layout.top)<1,'Laptop toolbar must stay pinned while settings scroll')
+    assert(layout.brandBeforeOwner&&layout.ownerBeforeNav,'Shop account must sit between brand and navigation')
+    assert.equal(layout.settingsContrast,3,'All three contrast controls must be present')
+    await run("document.querySelectorAll('.luxeContrastSetting button')[2].click()")
+    assert(await run("document.querySelector('.shell').classList.contains('contrast-high')"),'High contrast selection applies immediately')
+    await run("document.querySelectorAll('.luxeContrastSetting button')[0].click()")
+   }
    assert(await run('document.documentElement.scrollWidth<=innerWidth+2'),'Main overflow: '+label+' '+width+' '+size+' '+dark)
    assert(await run("document.querySelector('main').textContent.trim().length>0"),'Empty main: '+label)
    if(width===390)assert(await run("(()=>{const b=document.querySelector('.mobileQuickNav button.selected');if(!b)return true;const l=c=>{const a=c.match(/[\\d.]+/g).slice(0,3).map(v=>{const x=Number(v)/255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4});return a[0]*.2126+a[1]*.7152+a[2]*.0722};const x=l(getComputedStyle(b.querySelector('small')).color),y=l(getComputedStyle(b).backgroundColor);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)>=4.5})()"),'Selected mobile label contrast: '+label+' '+dark)
@@ -125,3 +135,4 @@ try{
  assert(await run("document.querySelector('.shell').classList.contains('densityLarge')"),'Device preference persistence')
  console.log('MAIN_BROWSER PASS: canonical launcher, version/progress, picker, own warehouse, automatic restart, 1366/390px all modules, three sizes, light/dark, mobile preference persistence')
 }finally{ws?.close();if(browser)await stop(browser);await stop(app);await sleep(150);try{fs.rmSync(tmp,{recursive:true,force:true,maxRetries:15,retryDelay:150})}catch(e){console.error('Browser profile cleanup:',e)}}
+

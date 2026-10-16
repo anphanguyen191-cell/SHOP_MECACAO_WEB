@@ -1,0 +1,33 @@
+/* Travel Luxe laptop-only preference. Soft preserves the current palette. */
+.shell.luxeWindows .luxeContrastSetting{display:grid;gap:7px;min-width:190px;border:0;padding:0;margin:0}
+.shell.luxeWindows .luxeContrastSetting legend{padding:0;margin:0 0 1px;color:var(--luxe-muted);font-size:10px;font-weight:850}
+.shell.luxeWindows .luxeContrastSetting [role="group"]{display:flex;gap:4px;padding:4px;border:1px solid var(--luxe-border);border-radius:12px;background:var(--luxe-bg)}
+.shell.luxeWindows .luxeContrastSetting button{min-height:34px;flex:1;border:1px solid transparent;border-radius:9px;padding:6px 9px;background:transparent;color:var(--luxe-muted);font-size:11px;font-weight:800;cursor:pointer}
+.shell.luxeWindows .luxeContrastSetting button.isSelected{background:var(--luxe-paper);border-color:var(--luxe-border);color:var(--luxe-rose);box-shadow:0 2px 7px #58406512}
+.shell.luxeWindows .luxeContrastSetting small{max-width:330px;color:var(--luxe-muted);font-size:9px;line-height:1.5}
+.shell.luxeWindows.contrast-clear:not(.themeDark){
+ --luxe-bg:#f5eff7;--luxe-ink:#252139;--luxe-muted:#62596d;--luxe-border:#d2c4d9;
+ --luxe-rose:#bd4e7e;--luxe-blue:#5578c1;--luxe-mint:#36897e;--luxe-violet:#7760b6;
+}
+.shell.luxeWindows.contrast-high:not(.themeDark){
+ --luxe-bg:#f2ebf5;--luxe-ink:#181427;--luxe-muted:#4a4154;--luxe-border:#b9a8c2;
+ --luxe-rose:#a63168;--luxe-blue:#365ba7;--luxe-mint:#20776b;--luxe-violet:#5d459d;
+}
+.shell.luxeWindows.contrast-clear.themeDark{
+ --luxe-ink:#f8f4ff;--luxe-muted:#d0c5dc;--luxe-border:#665b75;
+ --luxe-rose:#ee9fc1;--luxe-blue:#9bb5f1;--luxe-mint:#82d4c7;--luxe-violet:#c1aff0;
+}
+.shell.luxeWindows.contrast-high.themeDark{
+ --luxe-ink:#fff;--luxe-muted:#eee7f5;--luxe-border:#84748f;
+ --luxe-rose:#ffb3d0;--luxe-blue:#b3c8ff;--luxe-mint:#a2eddb;--luxe-violet:#d2c1ff;
+}
+.shell.luxeWindows:is(.contrast-clear,.contrast-high) :is(.luxeDesktopSidebar,.luxeDesktopTopbar,.displayPreferences,.luxeWorkspaceIntro,.luxeControlCenterIntro,.luxeControlCenterSection,.catalogPanel,.settingsPage,.panel,.overviewStat,.catalogMetrics>*,.inventoryMetrics>*,.salesKpis>*){border-color:var(--luxe-border)!important}
+.shell.luxeWindows:is(.contrast-clear,.contrast-high) :is(input:not([type=checkbox]),select,textarea){border-color:var(--luxe-border)!important}
+.shell.luxeWindows.contrast-clear :is(button,a,input,select,textarea):focus-visible{outline-color:#9a4f79;outline-width:3px}
+.shell.luxeWindows.contrast-high :is(button,a,input,select,textarea):focus-visible{outline-color:#82345f;outline-width:3px}
+.shell.luxeWindows.contrast-clear:not(.themeDark) .luxeSideNavigation.sidebar .luxeSideItem{color:#62596d}
+.shell.luxeWindows.contrast-high:not(.themeDark) .luxeSideNavigation.sidebar .luxeSideItem{color:#4a4154}
+.shell.luxeWindows.contrast-clear:not(.themeDark) .luxeSideNavigation.sidebar .luxeSideItem.selected{background:#f4deea;border-color:#d9b3c8;color:#963e68}
+.shell.luxeWindows.contrast-high:not(.themeDark) .luxeSideNavigation.sidebar .luxeSideItem.selected{background:#edd3e1;border-color:#c89bb4;color:#772348}
+@media(max-width:1100px){.shell.luxeWindows .luxeContrastSetting{min-width:min(190px,100%)}.shell.luxeWindows .luxeContrastSetting small{max-width:260px}}
+@media(prefers-reduced-motion:reduce){.shell.luxeWindows .luxeContrastSetting button{transition:none}}

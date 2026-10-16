@@ -17,7 +17,7 @@ const core=source('apps/web/src/SalesPreflight.tsx')
 const release=source('.github/workflows/v8-release.yml')
 
 test('A01 Desktop scope is isolated from CloudWorkspace and Mobile LAN',()=>{
- assert.match(app,/desktopShell\?' luxeWindows'/)
+ assert.match(app,/desktopShell\?' luxeWindows contrast-'/)
  assert.match(css,/\.shell\.luxeWindows \.luxeWelcome/)
  assert.doesNotMatch(css,/(^|\n)\.shell\s+\./)
  assert.match(app,/travel-luxe-v2-sidebar-collapsed/)

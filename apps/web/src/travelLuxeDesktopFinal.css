@@ -31,7 +31,7 @@
 .shell.luxeWindows .luxeSideText{flex:1;min-width:0;text-overflow:ellipsis;overflow:hidden}
 .shell.luxeWindows .luxeSideArrow{opacity:0;font-size:20px}
 .shell.luxeWindows .luxeSideItem.selected .luxeSideArrow{opacity:1}
-.shell.luxeWindows .luxeSideFooter{display:flex;align-items:center;gap:10px;margin:0 12px 14px;padding:12px 11px;border:1px solid var(--luxe-border);border-radius:14px;background:var(--luxe-paper)}
+.shell.luxeWindows .luxeSideFooter{display:flex;align-items:center;gap:9px;margin:0 12px 8px;padding:8px 9px;border:1px solid transparent;border-radius:13px;background:transparent}
 .shell.luxeWindows .luxeSideAvatar{height:35px;width:35px;flex:none;border-radius:50%;background:linear-gradient(135deg,#f3a9bd,#aca7dd);display:grid;place-items:center;color:#fff;font-size:11px;font-weight:900}
 .shell.luxeWindows .luxeSideUser{min-width:0;display:grid;gap:3px}
 .shell.luxeWindows .luxeSideUser b{font-size:11px}

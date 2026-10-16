@@ -13,11 +13,11 @@ type NavProps={sections:string[];active:string;collapsed:boolean;onToggle:()=>vo
 export function LuxeDesktopSidebar({sections,active,collapsed,onToggle,onNavigate}:NavProps){
  return <aside className={'luxeDesktopSidebar'+(collapsed?' isCollapsed':'')} aria-label="Điều hướng CaCao Travel Luxe">
   <div className="luxeSideBrand"><img src={import.meta.env.BASE_URL+'brand/logo.jpg'} alt="Logo Shop Mẹ CaCao" onError={e=>{e.currentTarget.style.display='none'}}/><div className="luxeSideBrandCopy"><b>Shop Mẹ CaCao</b><small>Since 2023 · Travel Luxe</small></div><button type="button" className="luxeSideCollapse" onClick={onToggle} title={collapsed?'Mở rộng menu':'Thu gọn menu'} aria-label={collapsed?'Mở rộng menu':'Thu gọn menu'} aria-expanded={!collapsed}>{collapsed?'»':'«'}</button></div>
+  <div className="luxeSideFooter" aria-label="Tài khoản đang sử dụng"><div className="luxeSideAvatar" aria-hidden="true">MC</div><div className="luxeSideUser"><b>Chủ cửa hàng</b><small>Quản lý Shop Mẹ CaCao</small></div><span aria-hidden="true" className="luxeSideShield">✦</span></div>
   <nav className="luxeSideNavigation sidebar" aria-label="Chức năng cửa hàng">
    {groups.map(group=>{const members=group.items.filter(x=>sections.includes(x));return members.length?<div className="luxeSideGroup" key={group.title}><p className="luxeSideLabel">{group.title}</p>{members.map(n=><button key={n} title={n} type="button" className={'luxeSideItem'+(active===n?' selected':'')} aria-current={active===n?'page':undefined} onClick={()=>onNavigate(n)}><span className="luxeSideIcon"><ShopIcon label={n}/></span><span className="luxeSideText">{n}</span><span className="luxeSideArrow" aria-hidden="true"/></button>)}</div>:null})}
    {sections.filter(s=>!groups.some(g=>g.items.includes(s))).map(n=><button key={n} className={'luxeSideItem'+(active===n?' selected':'')} onClick={()=>onNavigate(n)}><ShopIcon label={n}/><span className="luxeSideText">{n}</span></button>)}
   </nav>
-  <div className="luxeSideFooter"><div className="luxeSideAvatar" aria-hidden="true">MC</div><div className="luxeSideUser"><b>Chủ cửa hàng</b><small>Quản lý Shop Mẹ CaCao</small></div><span aria-hidden="true" className="luxeSideShield">✦</span></div>
  </aside>
 }
 type TopbarProps={mode:string;active:string;dark:boolean;density:DisplaySize;onDensity:(v:DisplaySize)=>void;onTheme:()=>void;onSearch:(v:string)=>void;onMenu:()=>void;onLogout?:()=>void;children?:ReactNode}

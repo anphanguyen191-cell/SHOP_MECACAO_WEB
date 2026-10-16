@@ -17,6 +17,14 @@ export function useDisplaySize(){
  return [value,setValue] as const
 }
 
+export type ContrastMode='soft'|'clear'|'high'
+/** Laptop-only presentation preference; independent of operational/shop data. */
+export function useContrastMode(){
+ const [value,setValue]=useState<ContrastMode>(()=>{try{const v=localStorage.getItem('mecacao-ui-contrast-mode');return v==='clear'||v==='high'?v:'soft'}catch{return 'soft'}})
+ useEffect(()=>{try{localStorage.setItem('mecacao-ui-contrast-mode',value)}catch{}},[value])
+ return [value,setValue] as const
+}
+
 export class ApiError extends Error{constructor(message:string,public status:number,public data:any){super(message)}}
 export async function apiJson<T=any>(url:string,options?:RequestInit):Promise<T>{
  const reading=!options?.method||['GET','HEAD'].includes(options.method.toUpperCase())
