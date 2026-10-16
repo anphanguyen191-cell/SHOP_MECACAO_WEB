@@ -107,3 +107,41 @@
 .warehouseToastActions button,.warehouseNoticePanel .row button,.warehouseErrorPanel .warehouseToastActions button{border-radius:11px;min-height:38px;font-weight:800;transition:filter .16s ease}
 .warehouseToastActions button:hover,.warehouseNoticePanel .row button:hover{filter:brightness(.97)}
 @media(max-width:800px){.warehouseToast,.warehouseNoticePanel,.warehouseErrorPanel{right:12px;top:75px;width:min(360px,calc(100vw - 24px))}}
+
+
+/* UI-DESKTOP-012 — refined bell inbox: short actionable list, calm resolved history. */
+.warehouseNoticePanel{width:min(400px,calc(100vw - 24px));padding:16px;max-height:min(77vh,690px);overflow-y:auto;scrollbar-width:thin}
+.warehouseNoticePanel .warehouseNoticeTitle{margin-bottom:12px;color:#a45a87;font-size:10px;letter-spacing:.13em}
+.warehouseNoticeOverview{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:3px 1px 12px}
+.warehouseNoticeOverview h3{margin:0 0 5px!important;font-size:17px!important;color:#352a48!important;letter-spacing:-.025em}
+.warehouseNoticeOverview p{font-size:11px!important;color:#786982!important;line-height:1.5}
+.warehouseNoticeCount{display:grid;place-items:center;min-width:39px;height:39px;padding:0 10px;background:linear-gradient(135deg,#f7d9e9,#e9dcfa);border-radius:13px;color:#a03b73;font-size:17px;font-weight:900;font-variant-numeric:tabular-nums}
+.warehouseNoticeTabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#f4eef8;border:1px solid #e9ddea;border-radius:13px;padding:5px;margin:0 0 13px}
+.warehouseNotifications .warehouseNoticeTabs button{min-height:35px!important;padding:7px 8px!important;border:0!important;background:transparent!important;border-radius:9px!important;color:#766a86!important;font-size:11px!important;display:flex;justify-content:center;align-items:center;gap:7px}
+.warehouseNotifications .warehouseNoticeTabs button.selected{background:#fff!important;color:#9c326f!important;box-shadow:0 3px 12px #6b456b1c}
+.warehouseNoticeTabs button span{display:grid;place-items:center;min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:#eadce9;font-size:10px;font-weight:900}
+.warehouseNoticeTabs button.selected span{background:#f7d3e5;color:#9c326f}
+.warehouseNoticeList{display:grid;gap:9px}
+.warehouseNoticePanel .warehouseNoticeItem{padding:13px 14px!important;border:1px solid #e9e0eb!important;border-radius:14px;background:#fff!important;box-shadow:0 3px 10px #5139570c}
+.warehouseNoticePanel .warehouseNoticeItem.isNew{background:#fff7fb!important;border-color:#eeb9d5!important}
+.warehouseNoticeItemHead{display:flex;justify-content:space-between;align-items:center;gap:9px;margin-bottom:9px}
+.warehouseNoticeState{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:7px;font-size:10px;font-weight:900}
+.warehouseNoticeState.isUnseen{background:#fde0ec;color:#ad3d78}
+.warehouseNoticeState.isSeen{background:#e9eaff;color:#6158a0}
+.warehouseNoticeState.isResolved{background:#e3f4ee;color:#337965}
+.warehouseNoticeItemHead time{font-size:10px;color:#8b7d95;white-space:nowrap;font-variant-numeric:tabular-nums}
+.warehouseNoticePanel .warehouseNoticeItem p{font-size:12px!important;line-height:1.6!important;color:#4c425d!important}
+.warehouseNoticeItemActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+.warehouseNoticePanel .warehouseNoticeItemActions button{min-height:33px!important;padding:7px 10px!important;font-size:11px!important;border-radius:9px!important}
+.warehouseNoticePanel .warehouseNoticeItemActions button:not(.warehouseReviewButton){background:#f9f5fb;color:#775e83;border:1px solid #e6d9e9}
+.warehouseNoticePanel .warehouseNoticeMore{display:block;width:100%;margin-top:12px;background:#f6eafa!important;color:#9c4c83!important;border:1px solid #e8cce1!important}
+.warehouseNoticeEmpty{display:grid;justify-items:center;gap:7px;text-align:center;padding:25px 15px;border:1px dashed #e9d4e5;border-radius:13px;background:#fcf8fc}
+.warehouseNoticeEmpty span{font-size:30px;color:#ca7da6}
+.warehouseNoticeEmpty b{font-size:12px;color:#47354d}
+.warehouseNoticeEmpty p{font-size:11px!important}
+.warehouseNoticeInlineError{background:#fff0f2;border:1px solid #e6acb9;border-radius:9px;padding:10px;margin:0 0 10px!important}
+.shell.luxeWindows.themeDark .warehouseNoticeOverview h3,.shell.luxeWindows.themeDark .warehouseNoticeItem p{color:#f8f0fc!important}
+.shell.luxeWindows.themeDark .warehouseNoticeItem{background:#353046!important;border-color:#5b4a62!important}
+.shell.luxeWindows.themeDark .warehouseNoticeTabs{background:#40344b;border-color:#65506d}
+.shell.luxeWindows.themeDark .warehouseNoticeTabs button.selected{background:#604768!important;color:#fff!important}
+@media(max-width:800px){.warehouseNoticePanel{right:12px;top:75px;max-height:calc(100dvh - 100px)}}
