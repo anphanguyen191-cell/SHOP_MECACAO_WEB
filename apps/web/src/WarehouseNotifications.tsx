@@ -15,6 +15,7 @@ export default function WarehouseNotifications({isDemo,onReview}:{isDemo:boolean
  const [error,setError]=useState('')
  const [alertNotice,setAlertNotice]=useState<Notice|null>(null)
  const known=useRef(new Set<string>())
+ const initialLoad=useRef(true)
  useEffect(()=>{
   if(isDemo)return
   const c=new AbortController()
@@ -29,7 +30,11 @@ export default function WarehouseNotifications({isDemo,onReview}:{isDemo:boolean
     for(const n of rows)known.current.add(n.id)
     setNotices(rows);setError('')
     const target=document.activeElement?.tagName
-    if(config.popup&&unseen.length&&!['INPUT','TEXTAREA','SELECT'].includes(target??'')&&!document.querySelector('[role=dialog],fieldset:disabled')){
+    // Initial warehouse reconciliation is informational: never cover the Dashboard on launch.
+    // Only newly arriving changes after the first poll may open an actionable notice.
+    const allowForeground=!initialLoad.current&&config.popup&&unseen.length>0
+    initialLoad.current=false
+    if(allowForeground&&!['INPUT','TEXTAREA','SELECT'].includes(target??'')&&!document.querySelector('[role=dialog],fieldset:disabled')){
      if(unseen[0].kind==='error')setAlertNotice(unseen[0]);else setToast(unseen[0])
     }
    }catch(e){if(!c.signal.aborted)setError(e instanceof Error?e.message:'Không đọc được thông báo kho')}
@@ -52,12 +57,12 @@ export default function WarehouseNotifications({isDemo,onReview}:{isDemo:boolean
   <button type="button" aria-label={'Thông báo kho'+(count?' ('+count+' chưa xem)':'')} aria-expanded={open} onClick={()=>{setOpen(v=>!v);setToast(null);setAlertNotice(null)}} title="Thông báo kho">
    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span>{count}</span>
   </button>
-  {toast&&!open&&<aside className="warehouseToast" role="status" aria-live="polite">
-   <div className="warehouseToastHead"><span className="warehouseToastIcon" aria-hidden="true">✿</span><b>{toast.kind==='error'?'Cần kiểm tra kho ảnh':'Kho ảnh có thay đổi'}</b></div>
+  {toast&&!open&&!alertNotice&&<aside className="warehouseToast" role="status" aria-live="polite">
+   <div className="warehouseToastHead"><span className="warehouseToastIcon" aria-hidden="true">✿</span><b>{toast.kind==='error'?'Cần kiểm tra kho ảnh':'Kho ảnh có thay đổi'}</b><button type="button" className="warehouseNoticeClose" aria-label="Đóng thông báo kho" onClick={()=>setToast(null)}>×</button></div>
    <p>{toast.message}</p>
    <div className="warehouseToastActions"><button type="button" onClick={()=>review(toast)}>Xem & duyệt</button><button type="button" onClick={()=>setToast(null)}>Để sau</button></div>
   </aside>}
-  {open&&<section className="warehouseNoticePanel" aria-label="Danh sách thông báo kho">
+  {open&&<section className="warehouseNoticePanel" aria-label="Danh sách thông báo kho"><div className="warehouseNoticeTitle"><span>Thông báo hệ thống</span><button type="button" className="warehouseNoticeClose" aria-label="Đóng bảng thông báo kho" onClick={()=>setOpen(false)}>×</button></div>
    <h3>Thông báo kho ảnh</h3>
    {error&&<p role="alert">{error}</p>}
    {!notices.length&&<p>Chưa có thông báo. Bật quét tự động trong Import kho.</p>}
