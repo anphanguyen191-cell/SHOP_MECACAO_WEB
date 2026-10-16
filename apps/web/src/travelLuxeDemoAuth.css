@@ -123,3 +123,10 @@ html:has(.cacaoDemoAuthScreen),body:has(.cacaoDemoAuthScreen){width:100%;min-wid
  .cacaoDemoFields h2{margin-top:24px}
 }
 @media(prefers-reduced-motion:reduce){.cacaoDemoSplashMark,.cacaoDemoSplashLine:before{animation:none}}
+
+/* Laptop 1366x768–1920x1080: fit complete sign-in, including footer, without an intrusive inner scrollbar. */
+@media(min-width:801px){
+ .cacaoDemoAuthScreen .cacaoDemoFields h2{margin-top:clamp(19px,3.3vh,43px)}
+ .cacaoDemoAuthScreen .cacaoDemoFormZone.luxeStartupCard{scrollbar-width:thin;scrollbar-color:#ece4ee transparent}
+ .cacaoDemoAuthScreen .cacaoDemoField{margin:clamp(10px,1.5vh,16px) 0}
+}
