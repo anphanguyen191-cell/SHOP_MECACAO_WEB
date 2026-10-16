@@ -5,6 +5,7 @@ import {createLanChangeFeed} from './lanChangeFeed.js'
 import {configureLan} from './lanRuntime.js'
 import {createLanControl,lanControlRouter} from './lanControl.js'
 import {installLanGuard} from './lanServer.js'
+import {createWindowsAuth} from './windowsAuth.js'
 import {freshDevelopment,freshWarehouse,freshRoot,managedHome,customWarehouse,warehouseConfig,validateNewWarehouse,release,v8Home} from './freshDevelopment.js'
 import {inspectWarehouseOwner,adoptWarehouse} from './warehouseOwnership.js'
 import {taskManager} from './tasks.js'
@@ -78,6 +79,7 @@ app.use('/api/lan/photos/upload',express.json({limit:'6mb'}))
 app.use(express.json({ limit: '2mb' }))
 const lanControl=freshDevelopment?createLanControl(app,path.join(freshRoot,'lan'),PORT,lan):null
 installLanGuard(app,()=>lanControl?lanControl.current():lan)
+const windowsAuth=v8Home?createWindowsAuth(freshRoot):null
 app.use(changeFeed.middleware)
 app.use('/api',(req,res,next)=>{
  if(localRuntime||freshDevelopment){
@@ -87,6 +89,7 @@ app.use('/api',(req,res,next)=>{
  }else if(req.path!=='/health'&&legacyWarehouseActive(db))return res.status(409).json({error:'Kho đã chuyển LOCAL V2; dừng V1 và mở START_SHOP_V2_LOCAL.bat.'})
  next()
 })
+if(windowsAuth){app.use('/api/local/auth',windowsAuth.router);app.use('/api',windowsAuth.gate)}
 const updateHome=managedHome??v8Home
 app.get('/api/local/update',(_req,res)=>{
  if(res.locals.lanUser)return res.status(403).json({error:'Chỉ cập nhật tại Windows của shop'})
@@ -206,7 +209,7 @@ app.post('/api/tasks/:id/acknowledge',(req,res)=>{if(!taskOrigin(req)||req.body.
 app.post('/api/store/import-batch-task',(req,res)=>{if(req.body.confirmed!==true||!Array.isArray(req.body.products)||!req.body.products.length||req.body.products.length>500)return res.status(400).json({error:'Cần duyệt lô từ 1–500 Product'});return asyncTask(req,res,'REGISTER_BATCH',req.body)})
 
 app.get('/api/health', (_req, res) => res.json({
-  lanClient:!!res.locals.lanUser,lanRole:res.locals.lanUser?.role,
+  lanClient:!!res.locals.lanUser,lanRole:res.locals.lanUser?.role,windowsAuth:!!v8Home,
   ok: true, writeReady:!updateFence&&!updateProbe, app: 'SHOP_MECACAO_WEB', installationId:res.locals.lanUser?undefined:createHash('sha256').update(managedHome??v8Home??path.resolve(process.cwd())).digest('hex'), cloudAuthority:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(), freshDevelopment,customWarehouse,release: freshDevelopment?release:undefined,version: freshDevelopment?release.version:localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:res.locals.lanUser?undefined:(freshDevelopment?freshWarehouse:localRuntime?.warehouse),incoming:res.locals.lanUser?undefined:localRuntime?.incoming,databasePath:res.locals.lanUser?undefined:((managedHome||v8Home)?dbPath:localRuntime?.database),localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
 }))
 app.get('/api/local/warehouse/preflight',(req,res)=>{
