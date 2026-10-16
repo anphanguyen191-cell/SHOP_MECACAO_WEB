@@ -64,7 +64,7 @@ export default function GoodsReceipt({onDone,initialSourcePath,onInitialSourceAp
    const payload={storeRoot,productId:flow==='NEW_PRODUCT'?undefined:productId||undefined,name,productCode:code,category,note,sizes:rows.filter(r=>r.size.trim()).map(r=>({size:r.size,sku:r.sku||undefined,quantity:r.imageCount,costPrice:Number(r.costPrice),salePrice:Number(r.salePrice),sourcePath:r.sourcePath||undefined}))}
    const result=await runTask('/api/goods-receipt',payload,t=>{setTask(t);if(t.progress)setProgress(t.progress)});const j={result,events:[] as Progress[]}
    setProgress((j.events??[]).at(-1)??{phase:'DONE',percent:100,copied:j.result.copiedImages,total:j.result.copiedImages})
-   setMsg('Nhập thành công: '+j.result.totalQuantity+' bộ · '+j.result.copiedImages+' ảnh đã copy vào kho. Tiến độ trực tiếp và kết quả được lưu theo mã tác vụ.')
+   setMsg('Nhập thành công: '+j.result.totalQuantity+' bộ · '+j.result.copiedImages+' ảnh đã copy vào kho. Tiến độ trực tiếp và kết quả được lưu theo mã tác vụ.');window.dispatchEvent(new CustomEvent('mecacao-ui-success',{detail:{message:'Đã nhập '+j.result.totalQuantity+' bộ và xác nhận '+j.result.copiedImages+' ảnh.'}}))
    setRows(previous=>previous.map(row=>({...row,sourcePath:'',imageCount:0,quantity:0})))
    if(flow==='NEW_PRODUCT'){setName('');setCode('');setRows([blank()])}
    apiJson<Product[]>('/api/products').then(setProducts).catch(()=>{})
