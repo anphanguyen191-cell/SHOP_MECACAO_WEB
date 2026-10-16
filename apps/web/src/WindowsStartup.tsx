@@ -48,7 +48,7 @@ export default function WindowsStartup({onEnter}:{onEnter:()=>void}){
  }
  if(phase==='welcome')return <TravelLuxeSplash onContinue={next} busy={loading} error={error}/>
  return <TravelLuxeAuthLayout variant="windows">
-  <h2>{phase==='setup'?'Thiết lập tài khoản chủ shop':<>Chào mừng<br/>chủ shop trở lại 👋</>}</h2>
+  <h2>{phase==='setup'?'Tạo tài khoản chủ shop':<>Chào mừng<br/>chủ shop trở lại 👋</>}</h2>
   <p>{phase==='setup'?'Tạo tài khoản Windows một lần để bảo vệ kho ảnh và dữ liệu hiện có.':'Bắt đầu hành trình quản lý hôm nay bằng một trải nghiệm thật nhẹ nhàng.'}</p>
   <form className="luxeStartupForm cacaoDemoForm" onSubmit={e=>void submit(e)}>
    <label className="cacaoDemoField"><span>Tên đăng nhập</span><input className="cacaoDemoTextInput" name="username" value={username} onChange={e=>setUsername(e.target.value)} autoComplete="username" required maxLength={40} spellCheck={false}/></label>
