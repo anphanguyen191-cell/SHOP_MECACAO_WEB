@@ -114,7 +114,7 @@ export default function InventoryView({isDemo=false,onDraft,draftLabel,source,pr
   {loadError&&<p className="notice warning" role="alert">{loadError} <button onClick={()=>setReload(x=>x+1)}>THỬ LẠI</button></p>}
   <section className="inventoryDashboardBlock" aria-label="Dashboard tồn kho">
    <div className="dashboardFoldHeader">
-    <div><span className="dashboardFoldEyebrow">BÁO CÁO TỒN KHO</span><h3>Dashboard tồn kho</h3><p>{isDemo?'Chỉ số minh họa · không phải tồn kho thật':'Chỉ số tổng theo ảnh vật lý đã đăng ký'}</p></div>
+    <div><span className="dashboardFoldEyebrow">BÁO CÁO TỒN KHO</span><h3>Dashboard tồn kho</h3><p>{isDemo?'Chỉ số minh họa · không phải tồn kho thật':'Chỉ số tồn vật lý gồm cả ảnh chờ duyệt trong Size đã biết'}</p></div>
     <button type="button" className="dashboardFoldToggle" aria-expanded={dashboardExpanded} aria-controls="inventory-dashboard-body" onClick={()=>setDashboardExpanded(v=>!v)}>{dashboardExpanded?'Thu gọn':'Xem dashboard'} <span aria-hidden="true">{dashboardExpanded?'⌃':'⌄'}</span></button>
    </div>
    {dashboardExpanded&&<div id="inventory-dashboard-body" className="dashboardFoldBody">
