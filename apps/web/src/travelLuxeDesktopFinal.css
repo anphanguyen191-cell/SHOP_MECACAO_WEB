@@ -280,3 +280,51 @@
 .shell.luxeWindows .luxeSideNavigation.sidebar{display:block;position:static;top:auto;min-height:0;height:auto;width:auto;border:0;border-radius:0;box-shadow:none;background:transparent;padding:0 11px 12px;margin:0;overflow-y:auto;overflow-x:hidden}
 .shell.luxeWindows .luxeSideItem.selected .luxeSideArrow::before{content:'›'}
 .shell.luxeWindows.luxeSidebarCollapsed .luxeSideNavigation.sidebar{padding:0 7px}
+
+
+/* UI-DESKTOP-012: richer, legible Travel Luxe palette (Windows light only). */
+.shell.luxeWindows:not(.themeDark){
+ --luxe-bg:#f6f0fa;--luxe-paper:#fff;--luxe-ink:#272945;--luxe-muted:#64627b;
+ --luxe-rose:#d34c8b;--luxe-blue:#5679ce;--luxe-mint:#278f82;--luxe-violet:#8360bd;
+ --luxe-border:#dfd5e7;--luxe-glass:rgba(255,255,255,.95);
+ --luxe-shadow:0 12px 35px rgba(72,49,111,.12),0 2px 7px rgba(73,45,110,.045);
+}
+.shell.luxeWindows:not(.themeDark) .luxeDesktopSidebar,
+.shell.luxeWindows:not(.themeDark) .luxeDesktopTopbar{border-color:#e5d9ea}
+.shell.luxeWindows:not(.themeDark) .luxeSideNavigation.sidebar .luxeSideItem{
+ background:transparent;color:#4e4b67;border:1px solid transparent;box-shadow:none
+}
+.shell.luxeWindows:not(.themeDark) .luxeSideNavigation.sidebar .luxeSideItem:hover{background:#f7e3ef;color:#a73873;border-color:#f1b9d5}
+.shell.luxeWindows:not(.themeDark) .luxeSideNavigation.sidebar .luxeSideItem.selected{background:linear-gradient(105deg,#fbd7e8,#e8dcf9);color:#93345f;border-color:#d789b3;box-shadow:0 4px 13px #b66b971f}
+.shell.luxeWindows:not(.themeDark) .luxeTopSearch{background:#f6f0fa;border-color:#ddd0e7}
+.shell.luxeWindows:not(.themeDark) .luxeTopSearch input::placeholder{color:#746d88}
+.shell.luxeWindows:not(.themeDark) :is(.overviewStat,.luxeFeaturedCard,.luxeInventorySelectionDetails,.luxeStockBreakdown article){border-color:#e5d7e6}
+.shell.luxeWindows:not(.themeDark) .overviewStat:nth-child(3n+2){background:linear-gradient(150deg,#dbf7e9,#b9ecd7);border-color:#8dcdb0}
+.shell.luxeWindows:not(.themeDark) .overviewStat:nth-child(3n+3){background:linear-gradient(150deg,#fff1d6,#ffdcaa);border-color:#e4b66f}
+.shell.luxeWindows:not(.themeDark) .overviewStat:nth-child(4n+4){background:linear-gradient(150deg,#e3ebff,#cbdafa);border-color:#a1b8eb}
+.shell.luxeWindows:not(.themeDark) :is(.catalogSearchArea,.inventoryFilters){background:#e7efff;border-color:#8daee0}
+.shell.luxeWindows:not(.themeDark) :is(.catalogSearch input,.inventoryFilters input,.catalogFilterGrid select,.inventoryFilters select){border-color:#aaa0bd;color:#302c4b}
+.shell.luxeWindows:not(.themeDark) :is(.catalogSearch input,.inventoryFilters input):focus-visible{outline:2px solid #c85a95;outline-offset:1px}
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro{border-color:#f2d9e8;background:linear-gradient(110deg,#d983b0,#a88fd8 58%,#88bfe4)}
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro[data-section="Tồn kho"],
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro[data-section="Báo cáo"]{background:linear-gradient(115deg,#729bd5,#a0a6df,#d68ab7)}
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro[data-section="Nhập hàng"],
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro[data-section="Kiểm kê"]{background:linear-gradient(115deg,#6baea2,#92cbb8,#bc98d4)}
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro[data-section="Bán hàng"],
+.shell.luxeWindows:not(.themeDark) .luxeWorkspaceIntro[data-section="Công nợ"]{background:linear-gradient(115deg,#9682d1,#c28dd1,#e99bb8)}
+.shell.luxeWindows .luxeWorkspaceIntroGroup{margin-bottom:22px}
+.shell.luxeWindows .luxeWorkspaceIntroGroup .luxeWorkspaceIntro{margin-bottom:0}
+.shell.luxeWindows .luxeWorkspaceIntro{isolation:isolate;min-height:178px;align-items:flex-start;padding:26px 32px 62px}
+.shell.luxeWindows .luxeIntroCopy{position:relative;z-index:2;max-width:min(68%,670px)}
+.shell.luxeWindows .luxeIntroCopy h1{font-size:clamp(25px,2.5vw,35px);font-weight:900;text-shadow:0 2px 10px rgba(49,26,77,.23)}
+.shell.luxeWindows .luxeIntroCopy p,.shell.luxeWindows .luxeIntroCopy .luxeKicker{color:#fff!important;text-shadow:0 1px 6px rgba(39,23,62,.35)}
+.shell.luxeWindows .luxeIntroMedia{position:absolute;z-index:0;inset:0;overflow:hidden}
+.shell.luxeWindows .luxeIntroMedia img,.shell.luxeWindows .luxeIntroMedia video{width:100%;height:100%;object-fit:cover;display:block}
+.shell.luxeWindows .luxeWorkspaceIntro.hasCustomMedia::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(37,27,64,.75) 0%,rgba(42,31,67,.4) 56%,rgba(36,25,62,.13) 100%);pointer-events:none}
+.shell.luxeWindows .luxeIntroControls{position:absolute;z-index:3;bottom:13px;right:17px;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.shell.luxeWindows .luxeIntroControls button{padding:8px 12px;border:1px solid rgba(255,255,255,.72);border-radius:11px;background:rgba(255,255,255,.91);color:#9b3c77;font-size:11px;font-weight:850;box-shadow:0 4px 15px rgba(50,24,60,.09);cursor:pointer}
+.shell.luxeWindows .luxeIntroControls button:hover{background:#fff;color:#6f2756}
+.shell.luxeWindows .luxeIntroMediaNote{margin:6px 4px 0;color:var(--luxe-muted);font-size:11px}
+@media(max-width:1000px){.shell.luxeWindows .luxeIntroCopy{max-width:85%}.shell.luxeWindows .luxeWorkspaceIntro{padding:24px 20px 64px}}
+@media(max-width:650px){.shell.luxeWindows .luxeIntroCopy{max-width:100%}.shell.luxeWindows .luxeIntroControls{right:10px;bottom:10px}.shell.luxeWindows .luxeWorkspaceIntro{min-height:185px}}
+@media(prefers-reduced-motion:reduce){.shell.luxeWindows .luxeIntroMedia video{animation:none}}
