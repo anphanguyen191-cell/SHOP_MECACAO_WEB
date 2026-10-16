@@ -20,8 +20,8 @@ export function LuxeDesktopSidebar({sections,active,collapsed,onToggle,onNavigat
   <div className="luxeSideFooter"><div className="luxeSideAvatar" aria-hidden="true">MC</div><div className="luxeSideUser"><b>Chủ cửa hàng</b><small>Quản lý Shop Mẹ CaCao</small></div><span aria-hidden="true" className="luxeSideShield">✦</span></div>
  </aside>
 }
-type TopbarProps={mode:string;active:string;dark:boolean;density:DisplaySize;onDensity:(v:DisplaySize)=>void;onTheme:()=>void;onSearch:(v:string)=>void;onMenu:()=>void;children?:ReactNode}
-export function LuxeDesktopTopbar({mode,active,dark,density,onDensity,onTheme,onSearch,onMenu,children}:TopbarProps){
+type TopbarProps={mode:string;active:string;dark:boolean;density:DisplaySize;onDensity:(v:DisplaySize)=>void;onTheme:()=>void;onSearch:(v:string)=>void;onMenu:()=>void;onLogout?:()=>void;children?:ReactNode}
+export function LuxeDesktopTopbar({mode,active,dark,density,onDensity,onTheme,onSearch,onMenu,onLogout,children}:TopbarProps){
  const [query,setQuery]=useState('')
  const searchRef=useRef<HTMLInputElement>(null)
  useEffect(()=>{function keyboard(e:KeyboardEvent){if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();searchRef.current?.focus()}}window.addEventListener('keydown',keyboard);return()=>window.removeEventListener('keydown',keyboard)},[])
@@ -29,7 +29,7 @@ export function LuxeDesktopTopbar({mode,active,dark,density,onDensity,onTheme,on
   <button type="button" className="luxeTopMenu menuToggle" onClick={onMenu} aria-label="Mở danh sách chức năng">☰</button>
   <div className="luxeTopLocation"><small>WORKSPACE / SHOP MẸ CACAO</small><strong>{active}</strong></div>
   <form className="luxeTopSearch" role="search" onSubmit={e=>{e.preventDefault();if(query.trim())onSearch(query.trim())}}><span aria-hidden="true">⌕</span><input ref={searchRef} type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Tìm tên, mã, Size sản phẩm..." aria-label="Tìm sản phẩm toàn cửa hàng"/><kbd>Ctrl K</kbd><button type="submit" aria-label="Tìm sản phẩm" disabled={!query.trim()}>→</button></form>
-  <div className="luxeTopActions"><span className="luxeConnectionTag"><i aria-hidden="true"/>{mode}</span>{children}<DisplayDensity value={density} onChange={onDensity}/><button className="luxeTopTheme themeToggle" type="button" onClick={onTheme} aria-label={dark?'Chế độ sáng':'Chế độ tối'} title={dark?'Chế độ sáng':'Chế độ tối'}>{dark?'☀':'☾'}</button></div>
+  <div className="luxeTopActions"><span className="luxeConnectionTag"><i aria-hidden="true"/>{mode}</span>{children}<DisplayDensity value={density} onChange={onDensity}/><button className="luxeTopTheme themeToggle" type="button" onClick={onTheme} aria-label={dark?'Chế độ sáng':'Chế độ tối'} title={dark?'Chế độ sáng':'Chế độ tối'}>{dark?'☀':'☾'}</button>{onLogout&&<button className="luxeTopLogout" type="button" onClick={onLogout} title="Đăng xuất khỏi Windows" aria-label="Đăng xuất khỏi Windows">Đăng xuất</button>}</div>
  </header>
 }
 const intros:Record<string,[string,string,string]>={

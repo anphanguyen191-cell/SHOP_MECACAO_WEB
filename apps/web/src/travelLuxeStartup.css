@@ -72,3 +72,7 @@
 .shell.luxeWindows.themeDark :is(.warehouseToast p,.warehouseNoticePanel p,.warehouseErrorPanel p){color:#d5c7df}
 .shell.luxeWindows.themeDark :is(.warehouseToast b,.warehouseNoticePanel h3,.warehouseErrorPanel b){color:#fff}
 @media(max-width:800px){.warehouseToast,.warehouseNoticePanel,.warehouseErrorPanel{top:74px;right:12px}}
+
+.shell.luxeWindows .luxeTopLogout{border:1px solid var(--luxe-border);border-radius:12px;background:#fff8fd;color:#ad6b94;padding:10px 12px;font-size:11px;font-weight:800;white-space:nowrap;min-height:37px}
+.shell.luxeWindows.themeDark .luxeTopLogout{background:#3b3248;color:#f3c0db}
+@media(max-width:1180px){.shell.luxeWindows .luxeTopLogout{padding:8px;font-size:10px}}
