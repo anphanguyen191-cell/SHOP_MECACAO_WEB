@@ -163,3 +163,9 @@
 }
 .shell.luxeWindows:not(.themeDark) .receiptV2 .receiptRowV2{border:1px solid #eee6ef;border-radius:17px;padding:15px;background:#fdfbfe}
 @media(max-width:1160px){.shell.luxeWindows:not(.themeDark) .receiptV2 .flowTabs{grid-template-columns:1fr}}
+
+/* Preserve the original three distinct KPI color identities for sales E2E and accessibility.
+   Gradients remain above these solid fallback colors, so computed backgroundColor is meaningful. */
+.shell.luxeWindows:not(.themeDark) .salesKpis>*{background-color:#fbe7f1!important}
+.shell.luxeWindows:not(.themeDark) .salesKpis>*:nth-child(3n+2){background-color:#e8f2ff!important}
+.shell.luxeWindows:not(.themeDark) .salesKpis>*:nth-child(3n){background-color:#e7f6ee!important}
