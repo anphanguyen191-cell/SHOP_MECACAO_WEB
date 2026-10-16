@@ -34,7 +34,7 @@ internal sealed class ShopContext : ApplicationContext
         menu.Items.Add("Thoát ứng dụng", null, async (_, _) => await CloseSafely());
         tray = new NotifyIcon
         {
-            Icon = SystemIcons.Application,
+            Icon = Icon.ExtractAssociatedIcon(Environment.ProcessPath ?? string.Empty) ?? SystemIcons.Application,
             Text = "Shop Mẹ CaCao V8",
             Visible = true,
             ContextMenuStrip = menu
@@ -166,6 +166,24 @@ internal sealed class ShopContext : ApplicationContext
     private void OpenBrowser()
     {
         if (!ready) return;
+        // Prefer a dedicated maximized Edge app window: laptop viewport should
+        // not inherit the last narrow browser size. Fallback preserves compatibility.
+        string? edge = new[] {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Microsoft", "Edge", "Application", "msedge.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Microsoft", "Edge", "Application", "msedge.exe")
+        }.FirstOrDefault(File.Exists);
+        if (edge != null)
+        {
+            try
+            {
+                var info = new ProcessStartInfo(edge) { UseShellExecute = true };
+                info.ArgumentList.Add("--app=http://127.0.0.1:3000");
+                info.ArgumentList.Add("--start-maximized");
+                Process.Start(info);
+                return;
+            }
+            catch (Exception error) { Log("Edge app window fallback: " + error.Message); }
+        }
         Process.Start(new ProcessStartInfo("http://127.0.0.1:3000") { UseShellExecute = true });
     }
 
