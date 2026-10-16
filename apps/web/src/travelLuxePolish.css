@@ -134,3 +134,32 @@
 /* Dialogs and photo viewers are fixed-position CORE overlays: never trap them behind the anchored header. */
 .shell.luxeWindows .luxePageContent :is(.folderOverlay,.modalback,.drawerback,.warehouseImageModal){z-index:150}
 .shell.luxeWindows.themeDark .luxeControlCenterIntro,.shell.luxeWindows.themeDark .luxeControlCenterSection,.shell.luxeWindows.themeDark .displayPreferences,.shell.luxeWindows.themeDark .cloudSettings{background:var(--luxe-paper);color:var(--luxe-ink);border-color:var(--luxe-border)}
+
+/* Receipt journey: replace the legacy mint rectangle seen in the owner's screenshot. */
+.shell.luxeWindows:not(.themeDark) .receiptV2 .receiptHero{
+ border:1px solid #e6e5f0!important;border-radius:21px!important;
+ background:linear-gradient(115deg,#fcebf4 0%,#f4efff 48%,#e8f6f1 100%)!important;
+ box-shadow:0 12px 31px #6d557512!important;padding:24px 27px!important;
+ color:var(--luxe-ink)!important;margin:15px 0!important;
+}
+.shell.luxeWindows:not(.themeDark) .receiptV2 .receiptHero :is(h3,p,.eyebrow){color:var(--luxe-ink)!important}
+.shell.luxeWindows:not(.themeDark) .receiptV2 .receiptHero .eyebrow{color:#b86799!important;letter-spacing:.14em}
+.shell.luxeWindows:not(.themeDark) .receiptV2 .flowTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:0;background:transparent;border:0}
+.shell.luxeWindows:not(.themeDark) .receiptV2 .flowTabs button{
+ min-height:100px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;
+ background:linear-gradient(150deg,#fff,#fdf9fd)!important;border:1px solid #e9e2ef!important;border-radius:18px!important;
+ padding:17px!important;box-shadow:0 8px 24px #7056770d;color:#615b76!important;
+}
+.shell.luxeWindows:not(.themeDark) .receiptV2 .flowTabs button.active{background:linear-gradient(145deg,#fff0f7,#f3eafb)!important;border-color:#dca6c4!important;box-shadow:0 10px 25px #b96f991c}
+.shell.luxeWindows:not(.themeDark) .receiptV2 .flowTabs button b{font-size:13px;color:#6d4d70}
+.shell.luxeWindows:not(.themeDark) .receiptV2 .flowTabs button span{font-size:11px;color:#858097}
+.shell.luxeWindows:not(.themeDark) .receiptV2 .luxeFlowStepsSix{display:flex;gap:7px;flex-wrap:wrap;border:1px solid #eee4f0;border-radius:18px;padding:11px;background:#fff;box-shadow:0 8px 25px #66537a0b}
+.shell.luxeWindows:not(.themeDark) .receiptV2 .luxeFlowStepsSix button{border-radius:12px;border:1px solid transparent;background:transparent;color:#80758d;padding:10px 12px;flex:1 1 110px}
+.shell.luxeWindows:not(.themeDark) .receiptV2 .luxeFlowStepsSix button[aria-current=step]{background:#f8e8f2!important;border-color:#ecc5db!important;color:#aa5383;box-shadow:none}
+.shell.luxeWindows:not(.themeDark) .receiptV2 .luxeReceiptMode,
+.shell.luxeWindows:not(.themeDark) .receiptV2 .luxeReceiptWizardFooter,
+.shell.luxeWindows:not(.themeDark) .receiptV2 .luxeReceiptReview{
+ background:#fff;border:1px solid #eee3f0;border-radius:17px;box-shadow:0 7px 21px #584b7209;
+}
+.shell.luxeWindows:not(.themeDark) .receiptV2 .receiptRowV2{border:1px solid #eee6ef;border-radius:17px;padding:15px;background:#fdfbfe}
+@media(max-width:1160px){.shell.luxeWindows:not(.themeDark) .receiptV2 .flowTabs{grid-template-columns:1fr}}
