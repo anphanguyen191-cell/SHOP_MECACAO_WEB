@@ -23,6 +23,8 @@ jobs:
         run: npm run build
       - name: Main Windows launcher and release UI browser smoke
         run: node scripts/main-browser-smoke.mjs
+      - name: Travel Luxe V2 Windows welcome/login and notification visual browser acceptance
+        run: node --import tsx scripts/v8/windows-startup-browser.mts
       - name: V7 Cloud mobile browser and durable lost-response retry (fake transport)
         run: node scripts/cloud-browser-e2e.mjs
       - name: Dependency security audit
