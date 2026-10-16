@@ -97,13 +97,16 @@ try{
   const pic=await cmd('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(out,width+'-'+(dark?'dark':'light')+'.png'),Buffer.from(pic.data,'base64'))
  }
  // Canonical main: every navigation destination in all display sizes and both themes.
+ await cmd('Emulation.setDeviceMetricsOverride',{width:1366,height:900,deviceScaleFactor:1,mobile:false})
+ await until("!!document.querySelector('.luxeSideItem')")
  const labels=await run("Array.from(document.querySelectorAll('.luxeSideItem .luxeSideText')).map(b=>b.textContent)")
  assert(labels.includes('Bán hàng')&&labels.includes('Ảnh iPhone')&&labels.includes('Mobile LAN'))
  for(const width of [1366,390])for(const size of [0,1,2])for(const dark of [false,true]){
   await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:900,deviceScaleFactor:1,mobile:width===390})
-  await run("document.querySelectorAll('.luxeTopActions .densitySwitch button')["+size+"].click();document.querySelector('.shell').classList.toggle('themeDark',"+dark+")")
+  await until(width===390?"!!document.querySelector('.topbar .menuToggle')":"!!document.querySelector('.luxeDesktopTopbar')")
+  await run("document.querySelectorAll('.luxeTopActions .densitySwitch button,.headerActions .densitySwitch button')["+size+"].click();document.querySelector('.shell').classList.toggle('themeDark',"+dark+")")
   for(const label of labels){
-   await run("Array.from(document.querySelectorAll('.luxeSideItem')).find(b=>b.querySelector('.luxeSideText')?.textContent==="+JSON.stringify(label)+").click();window.scrollTo(0,0)")
+   await run("Array.from(document.querySelectorAll('.luxeSideItem,.layout .sidebar button')).find(b=>(b.querySelector('.luxeSideText')?.textContent??b.textContent)==="+JSON.stringify(label)+").click();window.scrollTo(0,0)")
    await sleep(120)
    assert(await run('document.documentElement.scrollWidth<=innerWidth+2'),'Main overflow: '+label+' '+width+' '+size+' '+dark)
    assert(await run("document.querySelector('main').textContent.trim().length>0"),'Empty main: '+label)

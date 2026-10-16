@@ -29,7 +29,7 @@ test('Approved desktop workflow screens and owner navigation remain available',(
  assert.match(chrome,/role="search"/)
 })
 test('Visual rewrite is contained to Windows and does not alter cloud/core operations',()=>{
- assert.match(app,/!isDemo&&!health\?\.lanClient\?' luxeWindows'/)
+ assert.match(app,/desktopShell\?' luxeWindows'/)
  assert.match(app,/\{!desktopShell&&<ShopHeader/)
  assert.match(app,/desktopShell\?<LuxeDesktopSidebar/)
  assert.match(source('apps/web/src/main.tsx'),/import '\.\/travelLuxeDesktopFinal\.css'/)

@@ -43,6 +43,9 @@ const demoInfo:Record<string,string>={'Khách hàng':'Danh bạ khách, liên h�
 
 export default function App(){
  const isDemo=useMemo(()=>location.hostname.endsWith('github.io')||new URLSearchParams(location.search).get('demo')==='1',[])
+ const [desktopWidth,setDesktopWidth]=useState(()=>window.matchMedia('(min-width: 801px)').matches)
+ useEffect(()=>{const viewport=window.matchMedia('(min-width: 801px)');const sync=()=>setDesktopWidth(viewport.matches);sync();viewport.addEventListener('change',sync);return()=>viewport.removeEventListener('change',sync)},[])
+
  const [health,setHealth]=useState<Health|null>(null),[active,setActive]=useState('Tổng quan')
  const remoteLan=!isDemo&&location.protocol==='https:'&&!['localhost','127.0.0.1','[::1]'].includes(location.hostname)
  const [lanLoginRequired,setLanLoginRequired]=useState(remoteLan),[healthReload,setHealthReload]=useState(0),[healthError,setHealthError]=useState('')
@@ -143,9 +146,9 @@ export default function App(){
   setSalesId(result.id);setAddToDraft(null);goTo('Bán hàng')
  }
  function goTo(section:string){if(!window.dispatchEvent(new Event('mecacao-before-navigate',{cancelable:true}))){setMenuOpen(false);return;}setActive(section);setMenuOpen(false);setMenuSearch('');setDetailProductId(null)}
- const desktopShell=!isDemo&&!health?.lanClient
+ const desktopShell=!isDemo&&!health?.lanClient&&desktopWidth
  if(lanLoginRequired)return <LanLogin connectionError={healthError} onRetry={()=>setHealthReload(n=>n+1)} onLogin={()=>{setActive('Tổng quan');setProducts([]);setDashboard(null);setCatalog(null);setSalesId(null);setAddToDraft(null);setHealthReload(n=>n+1)}}/>
- return <div className={'shell '+(darkMode?'themeDark':'')+(' density'+density[0].toUpperCase()+density.slice(1)+(density==='small'?' densityCompact':' densityComfort'))+(!isDemo&&!health?.lanClient?' luxeWindows':'')+(!isDemo&&!health?.lanClient&&sidebarCollapsed?' luxeSidebarCollapsed':'')}>
+ return <div className={'shell '+(darkMode?'themeDark':'')+(' density'+density[0].toUpperCase()+density.slice(1)+(density==='small'?' densityCompact':' densityComfort'))+ (desktopShell?' luxeWindows':'')+(desktopShell&&sidebarCollapsed?' luxeSidebarCollapsed':'')}>
   {!isDemo&&!health?.lanClient&&health?.ok&&!welcomeDismissed&&<div className="luxeWelcomeBackdrop" role="presentation"><section className="luxeWelcome" role="dialog" aria-modal="true" aria-labelledby="luxe-welcome-heading"><span className="luxeWelcomeMark">SHOP MẸ CACAO · SINCE 2023</span><div className="luxeWelcomeGlow" aria-hidden="true">✦</div><h1 id="luxe-welcome-heading">CaCao Travel Luxe</h1><p className="luxeWelcomeSubtitle">Không gian điều hành Shop Mẹ CaCao</p><p>Quản lý kho ảnh, nhập hàng, bán hàng và theo dõi cửa hàng trên Windows. Các chức năng và phân quyền nghiệp vụ hiện có được giữ nguyên.</p><div className="luxeWelcomeActions"><button type="button" className="primary" onClick={()=>setWelcomeDismissed(true)}>Vào cửa hàng →</button><button type="button" onClick={()=>setWelcomeDismissed(true)}>Bỏ qua</button></div><small>Màn hình giới thiệu một lần, chỉ lưu tùy chọn hiển thị trên thiết bị này.</small></section></div>}
   {conflictChoice.dialog}
   <ToastHost/>

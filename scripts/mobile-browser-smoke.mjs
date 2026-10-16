@@ -144,7 +144,7 @@ try{
   await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false})
   for(const density of [1,2,0]){
    const compact=density===0
-   await run("document.querySelectorAll('.headerActions .densitySwitch button')["+density+"].click()")
+   await run("document.querySelectorAll('.headerActions .densitySwitch button,.luxeTopActions .densitySwitch button')["+density+"].click()")
    await until("document.querySelector('.shell').classList.contains("+JSON.stringify(['densitySmall','densityMedium','densityLarge'][density])+")",'desktop density')
    for(const dark of [false,true]){
     if(await run("document.querySelector('.shell').classList.contains('themeDark')")!==dark)await run("document.querySelector('.themeToggle').click()")
@@ -295,7 +295,7 @@ try{
  await command('Emulation.setDeviceMetricsOverride',{width:1366,height:768,deviceScaleFactor:1,mobile:false})
  for(const density of [1,2,0]){
    const compact=density===0
-  await run("document.querySelectorAll('.headerActions .densitySwitch button')["+density+"].click()")
+  await run("document.querySelectorAll('.headerActions .densitySwitch button,.luxeTopActions .densitySwitch button')["+density+"].click()")
   await run('window.scrollTo(0,0)');await sleep(100)
   await run("document.querySelector('.taskJump').click()")
   await sleep(120)
@@ -390,7 +390,7 @@ try{
  await run("document.querySelector('.selectionToggle').click()")
  assert(await run("document.querySelector('.selectedGroupChips').textContent.includes('Size 2')"),'Product/Size summary')
  for(const density of [0,1,2])for(const width of [320,390,768,1366])for(const dark of [false,true]){
-  await run("document.querySelectorAll('.headerActions .densitySwitch button')["+density+"].click()")
+  await run("document.querySelectorAll('.headerActions .densitySwitch button,.luxeTopActions .densitySwitch button')["+density+"].click()")
   await command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<768})
   if((await run("document.querySelector('.shell').classList.contains('themeDark')"))!==dark)await run("document.querySelector('.themeToggle').click()")
   await run('window.scrollTo(0,document.body.scrollHeight)');await sleep(100)
