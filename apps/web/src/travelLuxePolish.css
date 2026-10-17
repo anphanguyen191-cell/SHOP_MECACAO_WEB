@@ -214,3 +214,13 @@
  .shell.luxeWindows .luxeAppearanceActions>button{grid-column:1 / -1;grid-row:4}
  .shell.luxeWindows .luxeContrastSetting{grid-row:1 / span 3}
 }
+
+/* Desktop frame geometry is invariant across workspace contents. Explicitly size
+   the grid/main/scroll scene so intrinsic tab widths cannot resize the shell. */
+@media(min-width:801px){
+ .shell.luxeWindows{box-sizing:border-box;width:100%;min-width:0}
+ .shell.luxeWindows>.layout{box-sizing:border-box;flex:1 1 0%;width:min(100%,1840px);max-width:1840px;height:0;min-width:0;min-height:0;align-self:center;margin-inline:auto;grid-template-rows:minmax(0,1fr)}
+ .shell.luxeWindows .layout>main{box-sizing:border-box;width:100%;max-width:none;min-width:0;min-height:0;justify-self:stretch;align-self:stretch}
+ .shell.luxeWindows .luxePageScene{box-sizing:border-box;display:block;width:100%;min-width:0;min-height:0;scrollbar-gutter:stable}
+ .shell.luxeWindows .luxePageContent{display:flow-root;width:100%;max-width:none;min-width:0}
+}
