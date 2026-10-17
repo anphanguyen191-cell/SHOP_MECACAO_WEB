@@ -17,6 +17,7 @@
 .shell.luxeWindows>.layout{flex:1 1 auto;height:auto;min-height:0;overflow:hidden;grid-template-rows:minmax(0,1fr)}
 .shell.luxeWindows>.taskHistory{flex:0 0 auto;align-self:stretch;position:relative;z-index:20;max-height:42px;overflow:hidden;margin:0 18px 6px;padding:8px 14px;border-radius:0 0 13px 13px;box-shadow:0 5px 17px rgba(89,70,119,.07)}
 .shell.luxeWindows>.taskHistory[open]{max-height:min(72dvh,680px);overflow:auto}
+.shell.luxeWindows>.layout{box-sizing:border-box}
 .shell.luxeWindows .layout>main{height:100%;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:0;padding:0}
 .shell.luxeWindows .luxeDesktopSidebar{position:relative;top:auto;height:100%;min-height:0}
 .shell.luxeWindows .luxeDesktopTopbar{position:relative!important;top:auto!important;flex:0 0 73px;min-height:73px;margin-bottom:16px}
@@ -191,12 +192,25 @@
 .shell.luxeWindows:not(.themeDark) .salesKpis>*:nth-child(3n+2){background-color:#e8f2ff!important}
 .shell.luxeWindows:not(.themeDark) .salesKpis>*:nth-child(3n){background-color:#e7f6ee!important}
 
-
 /* Keep the laptop frame and toolbar fixed while only the active workspace scrolls. */
 @media(min-width:801px){
- .shell.luxeWindows{position:fixed!important;inset:0!important;width:100vw;height:100vh;height:100dvh;min-height:0;max-height:100dvh;overflow:hidden!important}
- .shell.luxeWindows>.layout{flex:1 1 0%;height:auto;min-height:0;max-height:100%;overflow:hidden}
- .shell.luxeWindows .layout>main{height:100%;min-height:0;max-height:100%;overflow:hidden;display:flex;flex-direction:column}
+ .shell.luxeWindows{position:fixed!important;inset:0!important;width:100vw;height:100vh;height:100dvh;min-height:0;max-height:100dvh;overflow:hidden!important;display:flex;flex-direction:column}
+ .shell.luxeWindows>.layout{flex:1 1 0%;height:0;min-height:0;max-height:none;overflow:hidden;grid-template-rows:minmax(0,1fr);align-self:stretch}
+ .shell.luxeWindows .layout>main{height:100%;min-height:0;max-height:none;overflow:hidden;display:flex;flex:1 1 0%;flex-direction:column;align-self:stretch}
  .shell.luxeWindows .luxeDesktopTopbar{position:relative!important;inset-block-start:auto!important;flex:0 0 73px!important;height:73px;min-height:73px;max-height:73px;align-self:stretch;transform:none!important}
- .shell.luxeWindows .luxePageScene{flex:1 1 0%;height:0;min-height:0;max-height:100%;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+ .shell.luxeWindows .luxePageScene{flex:1 1 0%;height:0;min-height:0;max-height:none;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+ .shell.luxeWindows .luxeAppearanceActions{display:grid;grid-template-columns:minmax(250px,1.4fr) minmax(150px,.85fr) minmax(150px,1fr);gap:14px 18px;align-items:center;justify-content:initial}
+ .shell.luxeWindows .luxeContrastSetting{grid-column:1;grid-row:1 / span 2;min-width:0;padding:13px 14px;border:1px solid var(--luxe-border);border-radius:15px;background:linear-gradient(145deg,var(--luxe-paper),var(--luxe-bg))}
+ .shell.luxeWindows .luxeContrastSetting small{max-width:34ch;line-height:1.55}
+ .shell.luxeWindows .luxeMotionSetting{grid-column:2;grid-row:1}
+ .shell.luxeWindows .luxeGlassSetting{grid-column:3;grid-row:1;align-self:end;min-height:42px;padding:0 12px;border:1px solid var(--luxe-border);border-radius:12px;background:var(--luxe-paper)}
+ .shell.luxeWindows .luxeAppearanceActions>.densitySwitch{grid-column:2;grid-row:2;justify-content:flex-start}
+ .shell.luxeWindows .luxeAppearanceActions>button{grid-column:3;grid-row:2;justify-self:start;max-width:100%;min-height:40px;white-space:normal;text-align:left}
+}
+@media(min-width:801px) and (max-width:1100px){
+ .shell.luxeWindows .luxeAppearanceActions{grid-template-columns:minmax(230px,1.2fr) minmax(170px,1fr)}
+ .shell.luxeWindows .luxeGlassSetting{grid-column:2;grid-row:2}
+ .shell.luxeWindows .luxeAppearanceActions>.densitySwitch{grid-column:2;grid-row:3}
+ .shell.luxeWindows .luxeAppearanceActions>button{grid-column:1 / -1;grid-row:4}
+ .shell.luxeWindows .luxeContrastSetting{grid-row:1 / span 3}
 }
