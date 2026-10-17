@@ -190,3 +190,13 @@
 .shell.luxeWindows:not(.themeDark) .salesKpis>*{background-color:#fbe7f1!important}
 .shell.luxeWindows:not(.themeDark) .salesKpis>*:nth-child(3n+2){background-color:#e8f2ff!important}
 .shell.luxeWindows:not(.themeDark) .salesKpis>*:nth-child(3n){background-color:#e7f6ee!important}
+
+
+/* Keep the laptop frame and toolbar fixed while only the active workspace scrolls. */
+@media(min-width:801px){
+ .shell.luxeWindows{position:fixed!important;inset:0!important;width:100vw;height:100vh;height:100dvh;min-height:0;max-height:100dvh;overflow:hidden!important}
+ .shell.luxeWindows>.layout{flex:1 1 0%;height:auto;min-height:0;max-height:100%;overflow:hidden}
+ .shell.luxeWindows .layout>main{height:100%;min-height:0;max-height:100%;overflow:hidden;display:flex;flex-direction:column}
+ .shell.luxeWindows .luxeDesktopTopbar{position:relative!important;inset-block-start:auto!important;flex:0 0 73px!important;height:73px;min-height:73px;max-height:73px;align-self:stretch;transform:none!important}
+ .shell.luxeWindows .luxePageScene{flex:1 1 0%;height:0;min-height:0;max-height:100%;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+}

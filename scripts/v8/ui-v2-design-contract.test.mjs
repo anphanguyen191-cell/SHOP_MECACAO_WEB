@@ -61,6 +61,7 @@ test('Laptop chrome stays pinned, shop identity sits under the logo, and contras
  assert.match(polish,/\.shell\.luxeWindows \.luxePageScene\{[^}]*overflow-y:auto/)
  assert.match(polish,/\.shell\.luxeWindows>\.taskHistory\{[^}]*position:relative/)
  assert.match(app,/useLayoutEffect\(\(\)=>\{const scene=document\.querySelector<HTMLElement>\('\.luxePageScene'\);if\(scene\)scene\.scrollTop=0/)
+ assert.doesNotMatch(app,/window\.scrollTo\(/,'Laptop tab navigation must not scroll the browser window')
  assert.match(app,/\{desktopShell&&!isDemo&&health\?\.ok&&<TaskProgress\/>\}/)
  assert.match(app,/desktopShell\?' luxeWindows contrast-'\+contrastMode/)
  assert.match(app,/className="luxeContrastSetting"/)

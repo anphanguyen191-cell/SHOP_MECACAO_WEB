@@ -154,8 +154,8 @@ export default function App(){
   }else result=await conflictChoice.submit(token=>apiJson('/api/sales/drafts',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify({items,discount:0,note:'',conflictToken:token})}))
   setSalesId(result.id);setAddToDraft(null);goTo('Bán hàng')
  }
- function goTo(section:string){if(!window.dispatchEvent(new Event('mecacao-before-navigate',{cancelable:true}))){setMenuOpen(false);return;}const scene=document.querySelector<HTMLElement>('.luxePageScene');if(scene)scene.scrollTo({top:0,behavior:'instant'});window.scrollTo({top:0,behavior:'instant'});setActive(section);setMenuOpen(false);setMenuSearch('');setDetailProductId(null)}
- useLayoutEffect(()=>{const scene=document.querySelector<HTMLElement>('.luxePageScene');if(scene)scene.scrollTop=0;window.scrollTo(0,0)},[active])
+ function goTo(section:string){if(!window.dispatchEvent(new Event('mecacao-before-navigate',{cancelable:true}))){setMenuOpen(false);return;}const scene=document.querySelector<HTMLElement>('.luxePageScene');if(scene)scene.scrollTop=0;setActive(section);setMenuOpen(false);setMenuSearch('');setDetailProductId(null)}
+ useLayoutEffect(()=>{const scene=document.querySelector<HTMLElement>('.luxePageScene');if(scene)scene.scrollTop=0},[active])
  const desktopShell=!isDemo&&!health?.lanClient&&desktopWidth
  useLayoutEffect(()=>{if(!desktopShell)return;const html=document.documentElement,body=document.body,oldHtml=html.style.overflow,oldBody=body.style.overflow;html.style.overflow='hidden';body.style.overflow='hidden';return()=>{html.style.overflow=oldHtml;body.style.overflow=oldBody}},[desktopShell])
  if(lanLoginRequired)return <LanLogin connectionError={healthError} onRetry={()=>setHealthReload(n=>n+1)} onLogin={()=>{setActive('Tổng quan');setProducts([]);setDashboard(null);setCatalog(null);setSalesId(null);setAddToDraft(null);setHealthReload(n=>n+1)}}/>
