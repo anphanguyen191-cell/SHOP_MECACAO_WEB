@@ -1,3 +1,9 @@
+## V8 — Travel Luxe laptop frame correction · 18/10/2026
+
+- Khóa chiều cao khung laptop theo cửa sổ; chỉ workspace cuộn khi đổi giữa các tab dài/ngắn.
+- Sắp xếp lại nhóm điều khiển Giao diện & trải nghiệm thành các nhóm tương phản, chuyển trang, hiệu ứng kính và mật độ; tự xếp lại ở màn hình hẹp.
+- Phát hành sớm để chủ shop cập nhật và nghiệm thu trên laptop; CI là kiểm thử tự động, không thay cho xác nhận thiết bị thực tế.
+
 ## V7.1.3 — tự dọn ảnh SOLD Cloud — 11/10/2026
 
 - Laptop chủ shop tự kiểm tra khi mở, nhận sự kiện Cloud và mỗi 30 giây; chạy trên mọi màn hình local và Cloud localhost. Không cần mở màn hình Ảnh SOLD hoặc bật đồng bộ ảnh định kỳ.
