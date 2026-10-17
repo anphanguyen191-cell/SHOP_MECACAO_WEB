@@ -15,6 +15,8 @@
 .shell.luxeWindows .luxePageScene{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#d8cbdc transparent;scrollbar-gutter:stable;padding:0 5px 30px 1px;overscroll-behavior:contain}
 .shell.luxeWindows{position:fixed;inset:0;width:100%;height:100vh;height:100dvh;min-height:0;overflow:hidden;display:flex;flex-direction:column}
 .shell.luxeWindows>.layout{flex:1 1 auto;height:auto;min-height:0;overflow:hidden;grid-template-rows:minmax(0,1fr)}
+.shell.luxeWindows>.taskHistory{flex:0 0 auto;align-self:stretch;position:relative;z-index:20;max-height:42px;overflow:hidden;margin:0 18px 6px;padding:8px 14px;border-radius:0 0 13px 13px;box-shadow:0 5px 17px rgba(89,70,119,.07)}
+.shell.luxeWindows>.taskHistory[open]{max-height:min(72dvh,680px);overflow:auto}
 .shell.luxeWindows .layout>main{height:100%;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:0;padding:0}
 .shell.luxeWindows .luxeDesktopSidebar{position:relative;top:auto;height:100%;min-height:0}
 .shell.luxeWindows .luxeDesktopTopbar{position:relative!important;top:auto!important;flex:0 0 73px;min-height:73px;margin-bottom:16px}

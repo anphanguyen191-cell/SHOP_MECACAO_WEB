@@ -10,16 +10,16 @@
  --luxe-rose:#bd4e7e;--luxe-blue:#5578c1;--luxe-mint:#36897e;--luxe-violet:#7760b6;
 }
 .shell.luxeWindows.contrast-high:not(.themeDark){
- --luxe-bg:#f2ebf5;--luxe-ink:#181427;--luxe-muted:#4a4154;--luxe-border:#b9a8c2;
- --luxe-rose:#a63168;--luxe-blue:#365ba7;--luxe-mint:#20776b;--luxe-violet:#5d459d;
+ --luxe-bg:#ede6f1;--luxe-paper:#fff;--luxe-ink:#100b1b;--luxe-muted:#332a3d;--luxe-border:#81718d;
+ --luxe-rose:#86194f;--luxe-blue:#234783;--luxe-mint:#155e52;--luxe-violet:#4d3489;
 }
 .shell.luxeWindows.contrast-clear.themeDark{
  --luxe-ink:#f8f4ff;--luxe-muted:#d0c5dc;--luxe-border:#665b75;
  --luxe-rose:#ee9fc1;--luxe-blue:#9bb5f1;--luxe-mint:#82d4c7;--luxe-violet:#c1aff0;
 }
 .shell.luxeWindows.contrast-high.themeDark{
- --luxe-ink:#fff;--luxe-muted:#eee7f5;--luxe-border:#84748f;
- --luxe-rose:#ffb3d0;--luxe-blue:#b3c8ff;--luxe-mint:#a2eddb;--luxe-violet:#d2c1ff;
+ --luxe-ink:#fff;--luxe-muted:#fff;--luxe-border:#a596b2;
+ --luxe-rose:#ffc1dc;--luxe-blue:#c3d4ff;--luxe-mint:#b2f5e2;--luxe-violet:#e0d2ff;
 }
 .shell.luxeWindows:is(.contrast-clear,.contrast-high) :is(.luxeDesktopSidebar,.luxeDesktopTopbar,.displayPreferences,.luxeWorkspaceIntro,.luxeControlCenterIntro,.luxeControlCenterSection,.catalogPanel,.settingsPage,.panel,.overviewStat,.catalogMetrics>*,.inventoryMetrics>*,.salesKpis>*){border-color:var(--luxe-border)!important}
 .shell.luxeWindows:is(.contrast-clear,.contrast-high) :is(input:not([type=checkbox]),select,textarea){border-color:var(--luxe-border)!important}
@@ -31,3 +31,15 @@
 .shell.luxeWindows.contrast-high:not(.themeDark) .luxeSideNavigation.sidebar .luxeSideItem.selected{background:#edd3e1;border-color:#c89bb4;color:#772348}
 @media(max-width:1100px){.shell.luxeWindows .luxeContrastSetting{min-width:min(190px,100%)}.shell.luxeWindows .luxeContrastSetting small{max-width:260px}}
 @media(prefers-reduced-motion:reduce){.shell.luxeWindows .luxeContrastSetting button{transition:none}}
+
+.shell.luxeWindows.contrast-high:not(.themeDark) .luxeSideNavigation.sidebar .luxeSideItem{color:#332a3d}
+.shell.luxeWindows.contrast-high:not(.themeDark) :is(.luxeDesktopTopbar,.luxeDesktopSidebar,.displayPreferences,.luxeControlCenterIntro,.luxeControlCenterSection,.catalogPanel,.settingsPage,.panel,.overviewStat,.catalogMetrics>*,.inventoryMetrics>*,.salesKpis>*){border-color:#81718d!important}
+.shell.luxeWindows.contrast-high:not(.themeDark) :is(.luxeTopLocation small,.luxeTopSearch kbd,.luxeSideUser small,.displayPreferences p,.luxeAppearanceActions small,.settingsPage p,.settingsPage small,.settingsPage label,.panel p,.panel small,.panel label,.panel th,.panel td){color:#332a3d}
+.shell.luxeWindows.contrast-high:not(.themeDark) :is(.luxeTopSearch,.luxeContrastSetting [role=group],.displayPreferences input:not([type=checkbox]),.displayPreferences select,.settingsPage input:not([type=checkbox]),.settingsPage select,.settingsPage textarea){background:#f4eef7;border-color:#81718d!important;color:#100b1b}
+.shell.luxeWindows.contrast-high:not(.themeDark) .luxeContrastSetting button.isSelected{background:#86194f;border-color:#86194f;color:#fff;box-shadow:0 2px 8px #86194f38}
+.shell.luxeWindows.contrast-high:not(.themeDark) .luxeContrastSetting button:not(.isSelected){color:#332a3d}
+.shell.luxeWindows.contrast-high:not(.themeDark) .luxeConnectionTag{border-color:#81718d}
+.shell.luxeWindows.contrast-high:not(.themeDark) .settingsPage button{border-color:#81718d}
+.shell.luxeWindows.contrast-high:not(.themeDark) :is(.luxeSideLabel,.luxeSideUser small){color:#51445e}
+.shell.luxeWindows.contrast-high.themeDark :is(.luxeSideLabel,.luxeTopLocation small,.luxeTopSearch kbd,.luxeSideUser small,.displayPreferences p,.luxeAppearanceActions small,.settingsPage p,.settingsPage small,.settingsPage label,.panel p,.panel small,.panel label,.panel th,.panel td){color:#fff}
+.shell.luxeWindows.contrast-high.themeDark :is(.luxeDesktopTopbar,.luxeDesktopSidebar,.displayPreferences,.luxeControlCenterIntro,.luxeControlCenterSection,.catalogPanel,.settingsPage,.panel,.overviewStat,.catalogMetrics>*,.inventoryMetrics>*,.salesKpis>*){border-color:#a596b2!important}

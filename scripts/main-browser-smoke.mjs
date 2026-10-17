@@ -106,12 +106,15 @@ try{
   await until(width===390?"!!document.querySelector('.topbar .menuToggle')":"!!document.querySelector('.luxeDesktopTopbar')")
   await run("document.querySelectorAll('.luxeTopActions .densitySwitch button,.headerActions .densitySwitch button')["+size+"].click();document.querySelector('.shell').classList.toggle('themeDark',"+dark+")")
   for(const label of labels){
-   await run("Array.from(document.querySelectorAll('.luxeSideItem,.layout .sidebar button')).find(b=>(b.querySelector('.luxeSideText')?.textContent??b.textContent)==="+JSON.stringify(label)+").click();window.scrollTo(0,0)")
+   await run("(()=>{const s=document.querySelector('.luxePageScene');s.scrollTop=s.scrollHeight;Array.from(document.querySelectorAll('.luxeSideItem,.layout .sidebar button')).find(b=>(b.querySelector('.luxeSideText')?.textContent??b.textContent)==="+JSON.stringify(label)+").click()})()")
    await sleep(120)
+   if(width===1366)assert(await run("document.querySelector('.luxePageScene').scrollTop===0"),'Every laptop tab must open at the top after navigating from a scrolled workspace: '+label)
    if(width===1366&&label==='Cài đặt'){
     const layout=JSON.parse(await run("(()=>{const bar=document.querySelector('.luxeDesktopTopbar'),scene=document.querySelector('.luxePageScene'),brand=document.querySelector('.luxeSideBrand'),owner=document.querySelector('.luxeSideFooter'),nav=document.querySelector('.luxeSideNavigation');const top=bar.getBoundingClientRect().top;const amount=Math.min(240,Math.max(0,scene.scrollHeight-scene.clientHeight));scene.scrollTop=amount;const after=bar.getBoundingClientRect().top;const a=brand.getBoundingClientRect(),b=owner.getBoundingClientRect(),c=nav.getBoundingClientRect();scene.scrollTop=0;return JSON.stringify({top,after,amount,brandBeforeOwner:a.bottom<=b.top,ownerBeforeNav:b.bottom<=c.top,settingsContrast:document.querySelectorAll('.luxeContrastSetting button').length})})()"))
     assert(layout.amount>0,'Settings content must scroll inside its workspace')
     assert(Math.abs(layout.after-layout.top)<1,'Laptop toolbar must stay pinned while settings scroll')
+    assert(await run("document.querySelector('.taskHistory')?.closest('.shell.luxeWindows')===document.querySelector('.shell.luxeWindows')"),'Laptop task history must remain inside the fixed application frame')
+    assert(await run('document.documentElement.scrollHeight<=innerHeight+1&&document.body.scrollHeight<=innerHeight+1'),'Laptop must not scroll the browser page outside the workspace')
     assert(layout.brandBeforeOwner&&layout.ownerBeforeNav,'Shop account must sit between brand and navigation')
     assert.equal(layout.settingsContrast,3,'All three contrast controls must be present')
     await run("document.querySelectorAll('.luxeContrastSetting button')[2].click()")
