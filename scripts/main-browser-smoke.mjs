@@ -105,9 +105,14 @@ try{
   await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:900,deviceScaleFactor:1,mobile:width===390})
   await until(width===390?"!!document.querySelector('.topbar .menuToggle')":"!!document.querySelector('.luxeDesktopTopbar')")
   await run("document.querySelectorAll('.luxeTopActions .densitySwitch button,.headerActions .densitySwitch button')["+size+"].click();document.querySelector('.shell').classList.toggle('themeDark',"+dark+")")
+  const laptopFrame=width===1366?JSON.parse(await run("(()=>{const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {top:r.top,left:r.left,width:r.width,height:r.height}};return JSON.stringify({layout:rect('.shell.luxeWindows>.layout'),sidebar:rect('.luxeDesktopSidebar'),toolbar:rect('.luxeDesktopTopbar'),scene:rect('.luxePageScene')})})()")):null
   for(const label of labels){
    await run("(()=>{const s=document.querySelector('.luxePageScene');s.scrollTop=s.scrollHeight;Array.from(document.querySelectorAll('.luxeSideItem,.layout .sidebar button')).find(b=>(b.querySelector('.luxeSideText')?.textContent??b.textContent)==="+JSON.stringify(label)+").click()})()")
    await sleep(120)
+   if(laptopFrame){
+    const nextFrame=JSON.parse(await run("(()=>{const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {top:r.top,left:r.left,width:r.width,height:r.height}};return JSON.stringify({layout:rect('.shell.luxeWindows>.layout'),sidebar:rect('.luxeDesktopSidebar'),toolbar:rect('.luxeDesktopTopbar'),scene:rect('.luxePageScene')})})()"))
+    for(const part of ['layout','sidebar','toolbar','scene'])for(const dimension of ['top','left','width','height'])assert(Math.abs(nextFrame[part][dimension]-laptopFrame[part][dimension])<1,'Laptop '+part+' '+dimension+' must remain stable when switching tabs: '+label+' ('+laptopFrame[part][dimension]+' -> '+nextFrame[part][dimension]+')')
+   }
    if(width===1366)assert(await run("document.querySelector('.luxePageScene').scrollTop===0"),'Every laptop tab must open at the top after navigating from a scrolled workspace: '+label)
    if(width===1366&&label==='Cài đặt'){
     const layout=JSON.parse(await run("(()=>{const bar=document.querySelector('.luxeDesktopTopbar'),scene=document.querySelector('.luxePageScene'),brand=document.querySelector('.luxeSideBrand'),owner=document.querySelector('.luxeSideFooter'),nav=document.querySelector('.luxeSideNavigation');const top=bar.getBoundingClientRect().top;const amount=Math.min(240,Math.max(0,scene.scrollHeight-scene.clientHeight));scene.scrollTop=amount;const after=bar.getBoundingClientRect().top;const a=brand.getBoundingClientRect(),b=owner.getBoundingClientRect(),c=nav.getBoundingClientRect();scene.scrollTop=0;return JSON.stringify({top,after,amount,brandBeforeOwner:a.bottom<=b.top,ownerBeforeNav:b.bottom<=c.top,settingsContrast:document.querySelectorAll('.luxeContrastSetting button').length})})()"))
@@ -138,4 +143,3 @@ try{
  assert(await run("document.querySelector('.shell').classList.contains('densityLarge')"),'Device preference persistence')
  console.log('MAIN_BROWSER PASS: canonical launcher, version/progress, picker, own warehouse, automatic restart, 1366/390px all modules, three sizes, light/dark, mobile preference persistence')
 }finally{ws?.close();if(browser)await stop(browser);await stop(app);await sleep(150);try{fs.rmSync(tmp,{recursive:true,force:true,maxRetries:15,retryDelay:150})}catch(e){console.error('Browser profile cleanup:',e)}}
-
