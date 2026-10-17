@@ -68,7 +68,7 @@ test('Laptop chrome stays pinned, shop identity sits under the logo, and contras
  assert.match(state,/mecacao-ui-contrast-mode/)
  assert.match(contrast,/\.contrast-clear:not\(\.themeDark\)/)
  assert.match(contrast,/\.contrast-high:not\(\.themeDark\)/)
- assert.match(contrast,/\.shell\.luxeWindows\.contrast-high:not\(\.themeDark\)\{\\s*--luxe-bg:#ede6f1;--luxe-paper:#fff;--luxe-ink:#100b1b;--luxe-muted:#332a3d;--luxe-border:#81718d/)
+ assert.match(contrast,/\.shell\.luxeWindows\.contrast-high:not\(\.themeDark\)\{\s*--luxe-bg:#ede6f1;--luxe-paper:#fff;--luxe-ink:#100b1b;--luxe-muted:#332a3d;--luxe-border:#81718d/)
  assert.match(app,/active==='Cài đặt'&&<section className="displayPreferences"/)
 })
 test('Mobile floating panel measures nav clearance synchronously and honors safe area',()=>{
