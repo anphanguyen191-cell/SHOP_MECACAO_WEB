@@ -32,3 +32,10 @@ test('M2 CSS is last and scoped; desktop styles remain imported',()=>{
  assert.match(main,/travelLuxeDesktopFinal\.css/)
  assert.doesNotMatch(style,/@media[^\n]+\{\s*(?:body|html)\b/)
 })
+
+test('M2 image-sharing action panel clears the fixed mobile tab dock',()=>{
+ assert.match(style,/\.shell\.mobileLuxeWorkspace \.imageSendBar\s*\{/)
+ assert.match(style,/bottom:calc\(var\(--mobile-nav-offset,90px\) \+ 10px\)!important/)
+ assert.match(style,/\.shell\.mobileLuxeWorkspace \.hasImageSelection/)
+ assert.match(style,/\.shell\.mobileLuxeWorkspace :is\(\.imageSendBar,\.floatingActions\) button\{min-height:44px\}/)
+})
