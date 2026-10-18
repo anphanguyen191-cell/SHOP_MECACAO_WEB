@@ -26,6 +26,19 @@ try{
   Start-Sleep -Milliseconds 400
  }
  if($null -eq $health){ throw 'Desktop never became healthy' }
+ # Startup must repair the actual Desktop link, including an installed old EXE.
+ $shortcutStatus=Join-Path $installDir 'cache/desktop-shortcut-status.json'
+ for($i=0;$i -lt 60 -and !(Test-Path $shortcutStatus);$i++){Start-Sleep -Milliseconds 500}
+ if(!(Test-Path $shortcutStatus)){throw 'Desktop logo shortcut was not repaired by the running backend'}
+ $shortcutResult=Get-Content $shortcutStatus -Raw | ConvertFrom-Json
+ if(@($shortcutResult.links).Count -lt 1){throw 'No Desktop shortcut was verified'}
+ if(!(Test-Path -LiteralPath $shortcutResult.icon) -or $shortcutResult.icon -notmatch 'ShopMeCaCao-[a-f0-9]+\.ico$'){throw 'Shortcut icon must be a durable versioned shop ICO'}
+ $shell=New-Object -ComObject WScript.Shell
+ foreach($linkPath in $shortcutResult.links){
+  $link=$shell.CreateShortcut($linkPath)
+  if($link.TargetPath -ne (Join-Path $installDir 'ShopMeCaCao.exe') -or $link.IconLocation -ne ($shortcutResult.icon+',0')){throw 'Real Desktop shortcut target/icon does not match the running shop'}
+ }
+ Write-Host 'V8_SHORTCUT_SMOKE_PASS: actual EXE startup repaired Desktop logo using a durable versioned ICO.'
  if($health.database -ne 'shop-v8.db' -or $health.schema -ne 130){ throw 'Desktop loaded wrong database/schema' }
  if($health.release.stage -ne 8){throw 'Desktop did not load V8 release'}
  $manifest=Get-Content (Join-Path $installDir 'manifest.json') -Raw | ConvertFrom-Json

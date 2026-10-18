@@ -71,10 +71,21 @@ internal sealed class ShopContext : ApplicationContext
                 }
                 catch { /* A different or unreadable shortcut is left unchanged. */ }
             }
-            dynamic shortcut = shell.CreateShortcut(existing ?? Path.Combine(desktop, "Shop Mẹ CaCao.lnk"));
+            string destination = existing ?? Path.Combine(desktop, "Shop Mẹ CaCao.lnk");
+            if (existing == null && File.Exists(destination))
+            {
+                destination = Path.Combine(desktop, "Shop Mẹ CaCao V8.lnk");
+                if (File.Exists(destination)) return;
+            }
+            dynamic shortcut = shell.CreateShortcut(destination);
             shortcut.TargetPath = exe;
             shortcut.WorkingDirectory = home;
-            shortcut.IconLocation = exe + ",0";
+            // The backend repairs old installed launchers using a versioned ICO.
+            // Preserve that binding across launches instead of restoring a cached EXE icon.
+            string icon = (string)shortcut.IconLocation;
+            string iconFile = icon.Split(',')[0].Trim('"');
+            if (!iconFile.EndsWith(".ico", StringComparison.OrdinalIgnoreCase) || !File.Exists(iconFile))
+                shortcut.IconLocation = exe + ",0";
             shortcut.Description = "Shop Mẹ CaCao · CaCao Travel Luxe";
             shortcut.Save();
         }

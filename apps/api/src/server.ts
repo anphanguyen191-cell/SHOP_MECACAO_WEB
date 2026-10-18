@@ -1,4 +1,5 @@
 import {cloudRouter} from './cloudRoutes.js'
+import {repairShopDesktopShortcut} from './desktopShortcut.js'
 import {createWarehouseLive,type WarehouseLive} from './warehouseLive.js'
 import {priceBulkService} from './priceBulk.js'
 import {phonePhotoRouter} from './lanPhotoRoutes.js'
@@ -450,6 +451,7 @@ if (fs.existsSync(webDist)) {
 
 if(lanControl)void lanControl.startInitial().catch(e=>console.error('LAN không bật được; Windows LOCAL vẫn chạy:',e.message))
 const httpListener=app.listen(PORT, process.env.SHOP_HOST ?? '127.0.0.1', () => {
+  if(v8Home&&process.platform==='win32'&&!updateProbe)void repairShopDesktopShortcut(v8Home,path.join(webDist,'brand','catalog-shop-logo.jpg')).catch(e=>console.error('Desktop shortcut:',e.message))
   liveWarehouse?.start()
   startWarehouseWatcher(rootPath=>{if(!updateFence&&!updateProbe&&!tasks.pendingReview())tasks.start('SCAN',{rootPath,background:true},'watch-'+randomUUID())})
   console.log(`Shop Mẹ CaCao đang chạy: http://localhost:${PORT}`)

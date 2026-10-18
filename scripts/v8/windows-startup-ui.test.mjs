@@ -80,6 +80,7 @@ test('Travel Luxe parity: full laptop, real logo/ICO, independent content scroll
  for(const motion of ['fade','slide','flip','none'])assert.match(app,new RegExp('<option value="'+motion+'">'))
  assert.match(launcher,/--start-maximized/)
  assert.match(launcher,/ExtractAssociatedIcon/)
- assert.match(packageWindows,/logo\.jpg/)
+ assert.match(packageWindows,/build-shop-icon\.mts/)
+ assert.match(read('scripts/v8/build-shop-icon.mts'),/catalog-shop-logo\.jpg/)
  assert.match(csproj,/ApplicationIcon/)
 })

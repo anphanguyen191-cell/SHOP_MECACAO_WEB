@@ -1,0 +1,9 @@
+# Windows Desktop logo repair — 19 October 2026
+
+The V8 updater installs a new version under `releases/` but retains the running root `ShopMeCaCao.exe`. Embedding a new icon only in the packaged launcher therefore did not repair existing installations. Shortcuts pointing at that EXE could also retain the Windows Shell's cached icon.
+
+The running Windows V8 backend now creates a seven-size ICO from the approved full-colour Shop logo and binds matching Desktop shortcuts explicitly to that ICO. Its content-addressed path is retained under the installation's `cache/icons/`, independent of release cleanup. Changed artwork uses a new icon path. The Shell receives a targeted shortcut update notification; Explorer is not restarted and the global icon cache is not deleted.
+
+The repair runs on startup, including after updating through an old retained EXE. All Desktop links pointing to the current installation's EXE are repaired. Unrelated links are preserved, including a link using the shop's preferred display name. The Desktop location comes from Windows, so redirected/OneDrive Desktops work. Paths are passed to PowerShell as Unicode JSON data, never interpolated into executable source. The new launcher preserves a valid external ICO binding and embeds the same seven-size logo for fresh installations.
+
+Tests inspect every ICO frame, preserve the source logo, and on Windows exercise real WScript COM links with a deliberately generic legacy EXE. They verify Unicode/quote-containing paths, multiple matching links, unrelated-link preservation, decoded Windows icon dimensions, repeated repair and changed-artwork cache invalidation. The final packaged EXE smoke test also waits for the backend's repair result and reads the actual Desktop shortcut target and IconLocation. These automated checks do not substitute for viewing the owner's actual Windows Desktop.
