@@ -85,5 +85,9 @@ try{
   await Promise.race([new Promise(resolve=>browser.once('exit',resolve)),delay(3000)])
  }
  server.close()
- fs.rmSync(tmp,{recursive:true,force:true,maxRetries:10,retryDelay:100})
+ try{fs.rmSync(tmp,{recursive:true,force:true,maxRetries:12,retryDelay:150})}
+ catch(error){
+  if(!['ENOTEMPTY','EBUSY','EPERM'].includes(error?.code))throw error
+  console.warn('Browser profile cleanup deferred to runner teardown:',error.code)
+ }
 }
