@@ -274,3 +274,10 @@
 .cc-app[data-ui] .cc-sort-options button{flex:1;font-size:11px;padding:6px 8px;min-height:36px;background:#f8f5fa;border-color:#eee5f1;color:#80658c}
 .cc-app[data-ui] .cc-sort-options button[aria-pressed=true]{background:#f3e6fa;color:#7e439c;border-color:#dec5eb}
 .cc-app[data-ui] .cc-home-note{padding-bottom:8px;margin:4px 0 10px}
+.cc-app[data-ui] .cc-call-float{position:fixed;right:max(14px,calc((100vw - 1160px)/2));bottom:calc(100px + env(safe-area-inset-bottom,0px));z-index:33;display:flex;align-items:center;gap:8px;min-height:44px;padding:9px 15px;border:2px solid #fff;border-radius:999px;background:linear-gradient(120deg,#159b7b,#08755e);box-shadow:0 5px 18px #116c5838;color:#fff;text-decoration:none;font-size:14px;font-weight:750;white-space:nowrap}
+.cc-app[data-ui] .cc-call-float[data-raised=true]{bottom:calc(177px + env(safe-area-inset-bottom,0px))}
+.cc-call-float svg{width:21px;height:21px;flex:none}
+.cc-footer-contacts{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:12px 0}
+.cc-app[data-ui] .cc-footer-contacts a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 13px;border:1px solid #e0ddef;border-radius:12px;background:#fff;color:#345eaf;text-decoration:none;font-size:13px;font-weight:650}
+.cc-app[data-ui] .cc-contact .cc-facebook-link{background:#edf3ff;border-color:#cddcfa;color:#2459b5}
+@media(max-width:600px){.cc-app:has(input:focus,textarea:focus,select:focus) .cc-call-float{display:none}}

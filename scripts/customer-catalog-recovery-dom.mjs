@@ -36,6 +36,7 @@ try{
   return {w,a,act,until,click,close:async()=>{await act(a.unmount);w.close()}}
  }
  const guest=await setup({favorites:[22]});const {w,a,act,until,click}=guest
+ assert.equal(w.document.querySelector('.cc-call-float').getAttribute('href'),'tel:0949656477');assert(w.document.querySelector('.cc-footer-contacts a').href.includes('/share/19715aSnna/'),'Owner-supplied Facebook link is available without optional contact configuration')
  await click('♡ Yêu thích');await until(()=>w.document.querySelector('.cc-product h3')?.textContent==='Mẫu 22')
  assert(a.calls.some(c=>new URL(c.url).searchParams.get('product_id')==='22'),'Wishlist retrieves saved public IDs beyond the first page')
  await act(()=>w.document.querySelector('.cc-filter-pills button').click());await until(()=>w.document.querySelectorAll('.cc-product').length===20)
