@@ -57,6 +57,8 @@ jobs:
         run: node --import tsx scripts/stage6-browser-e2e.mjs
       - name: Mobile browser smoke (390px)
         run: node scripts/mobile-browser-smoke.mjs
+      - name: Travel Luxe M2 mobile viewport acceptance (375/390/430/768)
+        run: node scripts/v8/mobile-m2-browser.mjs
       - name: Upload mobile screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -67,6 +69,7 @@ jobs:
             artifacts/stage6-control
             artifacts/main-release
             artifacts/mobile-smoke
+            artifacts/mobile-m2
             artifacts/v2-drafts
             artifacts/v2-sales
             artifacts/local-v2-review
