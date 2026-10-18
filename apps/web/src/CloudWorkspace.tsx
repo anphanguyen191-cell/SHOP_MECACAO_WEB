@@ -1,6 +1,6 @@
 import MobileLuxeSectionHeader from './MobileLuxeSectionHeader'
 import MobileLuxeNav from './MobileLuxeNav'
-import {MobileAppearance,MobileCloudSummary,MobileLuxeSplash,MobileOverview,MobileSystemPanel,useMobileLuxe} from './MobileLuxeUI'
+import {MobileAppearance,MobileCloudSummary,MobileOverview,MobileSystemPanel,useMobileLuxe} from './MobileLuxeUI'
 import ShopIcon from './ShopIcon'
 import CloudSoldMaintenance from './CloudSoldMaintenance'
 import CloudOrders from './CloudOrders'
@@ -129,7 +129,6 @@ export default function CloudWorkspace(){
 
  const recoveryAction=<button className="salesAction salesActionSecondary mobileRecoveryAction" disabled={busy||!online} onClick={()=>run(async()=>{const pending=await pendingCloudCommand();const result=await retryCloudCommand();if(result&&pending?.action==='draft.save')setSelection([]);if(result&&pending?.action.startsWith('finance.'))await openFinance(pending.payload.id);setStatus(result?'Đã xác minh thao tác trước. Đọc lại đơn trước khi tiếp tục.':'Không có thao tác đang chờ xác minh.');if(result?.id&&pending?.action==='customer.save')setTab('customers');else if(result?.id&&pending?.action.startsWith('draft.')){setCurrent(result.id);setTab('orders')}})}>Kiểm tra thao tác trước</button>
  return <div className={'shell mobileLuxeWorkspace cloudWorkspace'+(!signed?' mobileAuthWorkspace':'')+' density'+density[0].toUpperCase()+density.slice(1)+(density==='small'?' densityCompact':' densityComfort')+(dark?' themeDark':'')}>
- <MobileLuxeSplash/>
  {draftConflict.dialog}<ShopHeader density={density} onDensity={setDensity} dark={dark} onTheme={()=>setDark(v=>!v)} onMenu={()=>setMenuOpen(true)} menuOpen={menuOpen} mode="CLOUD">{mobile&&signed&&<MobileSystemPanel children={recoveryAction} status={status} online={online} disabled={busy} onRefresh={()=>void load()} notices={sections.some(s=>s.key==='orders')?[...(data.sales_orders||[])].sort((a,b)=>String(b.updated_at||b.created_at||'').localeCompare(String(a.updated_at||a.created_at||''))).slice(0,5).map(o=>({id:o.id,title:'Đơn '+o.id.slice(0,8).toUpperCase(),description:o.status==='DRAFT'?'Đơn nháp · chưa trừ tồn':o.status==='SOLD'?'Đã bán · xem lịch sử':'Đã hủy nháp',onOpen:()=>{if(window.dispatchEvent(new Event('mecacao-before-navigate',{cancelable:true}))){setCurrent(o.id);navigate('orders')}}})):[]}/>}</ShopHeader>
  {menuOpen&&<ShopDrawer sections={sections} active={tab} onNavigate={navigate} onClose={()=>setMenuOpen(false)} search={menuSearch} onSearch={setMenuSearch} density={density} onDensity={setDensity} mode="CLOUD" onMobileLogout={mobile&&signed&&!busy?()=>void mobileLogout():undefined}/>}
  <div className="layout"><nav className="sidebar" aria-label="Danh mục chức năng Cloud">{sections.map(s=><button key={s.key} className={tab===s.key?'active':''} onClick={()=>navigate(s.key)}><ShopIcon label={s.label}/><strong>{s.label}</strong></button>)}</nav><main>
