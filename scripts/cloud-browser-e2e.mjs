@@ -91,7 +91,29 @@ try{
  ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}else if(m.method==='Fetch.requestPaused'){const task=intercept(m.params).catch(error=>interceptionErrors.push({error,networkId:m.params.networkId,url:m.params.request.url}));activeInterceptions.add(task);void task.finally(()=>activeInterceptions.delete(task))}else if(m.method==='Network.requestWillBeSent'&&m.params.request.url.startsWith('https://eyckwoewpomssjjggslr.supabase.co/'))inflightNetwork.set(m.params.requestId,m.params.request.url);else if(m.method==='Network.loadingFinished'||m.method==='Network.loadingFailed'){inflightNetwork.delete(m.params.requestId);if(m.params.canceled)cancelledRequests.add(m.params.requestId);}else if(m.method==='Page.javascriptDialogOpening')void cmd('Page.handleJavaScriptDialog',{accept:true})})
  await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Network.enable');await cmd('Network.setBypassServiceWorker',{bypass:true});await cmd('Network.setBlockedURLs',{urls:['wss://eyckwoewpomssjjggslr.supabase.co/*']});await cmd('Fetch.enable',{patterns:[{urlPattern:'https://eyckwoewpomssjjggslr.supabase.co/*'}]})
  const authInit=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`localStorage.setItem('mecacao-v7-auth',${JSON.stringify(JSON.stringify(session))});localStorage.setItem('mecacao-ui-cloud-auto-sync','false')`})
- await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await cmd('Page.navigate',{url});await until("!!document.querySelector('.treeProductHead')");await run("document.querySelector('.treeProductHead').click()");await until("!!document.querySelector('.treeVariantHead')");await run("document.querySelector('.treeVariantHead').click()");await until("!!document.querySelector('.stockImageSelect img')");await run("document.querySelector('.stockImageSelect img').scrollIntoView({block:'center'})");await until("document.querySelector('.stockImageSelect img').complete&&document.querySelector('.stockImageSelect img').naturalWidth>0")
+ await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await cmd('Page.navigate',{url});await until("!!document.querySelector('.mobileStockCard img')&&document.querySelector('.mobileStockCard img').complete&&document.querySelector('.mobileStockCard img').naturalWidth>0")
+ fs.mkdirSync('artifacts/cloud-browser',{recursive:true})
+ for(const width of [375,390,430,768]){
+  await cmd('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true});await delay(120)
+  assert(await run("document.documentElement.scrollWidth<=innerWidth+2&&getComputedStyle(document.querySelector('.mobileStockGrid')).gridTemplateColumns.split(' ').length===(innerWidth>=600?3:2)"),'Dedicated mobile gallery must fit '+width)
+  assert(await run("document.querySelector('.mobileLuxeSectionHeader').getBoundingClientRect().height<80&&!document.body.innerText.includes('· M2')"),'Mobile title must be compact and free of implementation labels')
+  fs.writeFileSync('artifacts/cloud-browser/reform-gallery-'+width+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
+ }
+ await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true})
+ await run("document.querySelector('.mobileOpenProduct').click()");await until("!!document.querySelector('.mobileLuxeSheet.isFull')")
+ assert(await run("document.activeElement.getAttribute('aria-label')==='Đóng Chi tiết sản phẩm'"),'Product detail must receive focus')
+ fs.writeFileSync('artifacts/cloud-browser/reform-product-detail.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
+ await run("document.querySelector('.mobilePhotoCheck').click()");assert(await run("document.querySelector('.mobilePhotoCheck').getAttribute('aria-pressed')==='true'"))
+ await run("document.querySelector('[aria-label=\\\"Đóng Chi tiết sản phẩm\\\"]').click()");await until("!document.querySelector('.mobileLuxeSheet')")
+ assert(await run("document.querySelector('.mobileSelectVariant').getAttribute('aria-pressed')==='true'"),'Closing product detail must retain the exact photo selection')
+ await run("document.querySelector('.imageSendActions>button:last-child').click()");await until("!document.querySelector('.imageSendBar')")
+ await run("document.querySelector('.mobileFilterButton').click()");await until("!!document.querySelector('.mobileInventoryFilterFields')")
+ await run("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',shiftKey:true,bubbles:true,cancelable:true}))")
+ assert(await run("document.activeElement.textContent==='Xem kết quả'"),'Filter sheet must trap reverse keyboard focus')
+ fs.writeFileSync('artifacts/cloud-browser/reform-filters.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
+ await run("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}))");await until("!document.querySelector('.mobileLuxeSheet')")
+ assert.equal(state.orders.length,0,'Browsing and selecting photos must not create a draft')
+ await run("document.querySelector('.mobileInventoryAdvanced').click()");await until("!!document.querySelector('.treeProductHead')");await run("document.querySelector('.treeProductHead').click()");await until("!!document.querySelector('.treeVariantHead')");await run("document.querySelector('.treeVariantHead').click()");await until("!!document.querySelector('.stockImageSelect img')");await run("document.querySelector('.stockImageSelect img').scrollIntoView({block:'center'})");await until("document.querySelector('.stockImageSelect img').complete&&document.querySelector('.stockImageSelect img').naturalWidth>0")
  assert.equal(await run('document.documentElement.scrollWidth<=innerWidth+2'),true)
  assert(await run("!!document.querySelector('.topbar .brandLogo')&&!!document.querySelector('.sidebar')&&!!document.querySelector('.mobileQuickNav')"))
  await run("document.querySelector('[aria-label=\"Mở thêm chức năng\"]').click()");await until("!!document.querySelector('.featureDrawer')")
@@ -100,6 +122,7 @@ try{
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tổng quan').click()")
  await until("!!document.querySelector('.overviewStats')")
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tồn kho').click()")
+ await until("!!document.querySelector('.mobileInventoryAdvanced')");await run("document.querySelector('.mobileInventoryAdvanced').click()")
  await until("!!document.querySelector('.treeProductHead')");await run("document.querySelector('.treeProductHead').click()");await until("!!document.querySelector('.treeVariantHead')");await run("document.querySelector('.treeVariantHead').click()");await until("!!document.querySelector('.stockImageSelect')")
  fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/shared-mobile.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
 
@@ -122,12 +145,14 @@ try{
  await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Kiểm tra thao tác trước'&&!b.disabled)");state.allowRetry=true;await click('Kiểm tra thao tác trước');await until("document.body.innerText.includes('bản 1')&&!!document.querySelector('.cloudOrder')")
  assert.equal(state.orders.length,1);assert.equal(await run("localStorage.getItem('mecacao-v7-pending-command')"),null)
 
+ await run("document.querySelectorAll('.mobileOrderSteps button')[1].click()")
  const recipient=await run("Array.from(document.querySelectorAll('.contactCard .formGrid label')).find(l=>l.textContent.startsWith('Người nhận')).querySelector('input').focus();true")
  await cmd('Input.insertText',{text:'FAKE chưa lưu'});await until("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Lưu thay đổi'&&!b.disabled)")
  assert(await run("Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Chốt SOLD').disabled&&Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Tạo phiếu PNG').disabled"))
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tồn kho').click()")
  assert(await run("!!document.querySelector('.salesEditor')"),'Unsaved draft must block navigation')
  await click('Đọc lại đơn');await until("!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Chốt SOLD').disabled")
+ for(const step of [0,1,2,3]){await run("document.querySelectorAll('.mobileOrderSteps button')["+step+"].click()");await delay(80);assert(await run("document.documentElement.scrollWidth<=innerWidth+2"));fs.writeFileSync('artifacts/cloud-browser/reform-order-step-'+step+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))}
  await run("window.slipText=[];window.slipImages=[];window.originalSlipText=CanvasRenderingContext2D.prototype.fillText;window.originalSlipImage=CanvasRenderingContext2D.prototype.drawImage;CanvasRenderingContext2D.prototype.fillText=function(...a){window.slipText.push(a[0]);return window.originalSlipText.apply(this,a)};CanvasRenderingContext2D.prototype.drawImage=function(...a){window.slipImages.push({width:a[0].width,height:a[0].height,dw:a[3],dh:a[4]});return window.originalSlipImage.apply(this,a)}")
  await click('Tạo phiếu PNG');await until("!!document.querySelector('a[download$=\".png\"]')")
  const png=await run("fetch(document.querySelector('a[download$=\".png\"]').href).then(r=>r.blob()).then(b=>createImageBitmap(b)).then(b=>({width:b.width,height:b.height}))");assert.equal(png.width,1080);assert(png.height>1000);assert.equal(state.confirmations.length,0)
@@ -140,7 +165,7 @@ try{
  await run('CanvasRenderingContext2D.prototype.fillText=window.originalSlipText;CanvasRenderingContext2D.prototype.drawImage=window.originalSlipImage')
  await click('Chốt SOLD');await until("document.body.innerText.includes('SOLD')&&!Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Chốt SOLD')")
  assert.equal(state.confirmations.length,1)
- await click('Tồn kho');await until("document.querySelector('.inventoryMetrics article strong')?.textContent==='0'")
+ await click('Tồn kho');await until("!!document.querySelector('.mobileInventoryAdvanced')");await run("document.querySelector('.mobileInventoryAdvanced').click()");await until("document.querySelector('.inventoryMetrics article strong')?.textContent==='0'")
 
  // Automatic cleanup works away from SOLD/Settings and independently of auto-sync.
  state.autoEnabled=true;state.archiveValid=false;
@@ -203,7 +228,7 @@ try{
  assert(!trace.slice(authStart).some(t=>t.url.includes('/auth/v1/otp')||t.url.includes('/auth/v1/verify')),'Password login must not send emails or use links');assert.equal(await run('location.href'),url)
  assert(!await run("JSON.stringify(localStorage).includes('fake-correct-password')"),'Do not store raw password')
  await cmd('Page.reload');await until("!!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đăng xuất')")
- await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("!!document.querySelector('.cloudPasswordSetup input')")
+ await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Cài đặt').click()");await until("!!document.querySelector('.cloudPasswordSetup input')");await run("document.querySelector('.mobileAccountSettings').open=true")
  const changeStart=trace.length;
  await run("document.querySelectorAll('.cloudPasswordSetup input')[0].focus()");await cmd('Input.insertText',{text:'fake-new-cloud-password'});await run("document.querySelectorAll('.cloudPasswordSetup input')[1].focus()");await cmd('Input.insertText',{text:'fake-password-mismatch'});await click('Lưu mật khẩu Cloud');await until("document.body.textContent.includes('Hai ô mật khẩu chưa giống nhau')")
  assert(!trace.slice(changeStart).some(t=>t.url.includes('/auth/v1/user')&&t.method==='PUT'),'Mismatch must not update password')

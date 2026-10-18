@@ -1,5 +1,6 @@
 import MobileLuxeSectionHeader from './MobileLuxeSectionHeader'
 import MobileLuxeNav from './MobileLuxeNav'
+import {MobileOverview} from './MobileLuxeUI'
 import ShopIcon from './ShopIcon'
 import {LuxeDesktopSidebar,LuxeDesktopTopbar,LuxeDashboardHero,LuxeWorkspaceIntro} from './TravelLuxeDesktop'
 import CloudSoldMaintenance from './CloudSoldMaintenance'
@@ -187,7 +188,8 @@ export default function App(){
 
    {active==='Cài đặt'&&(health?.freshDevelopment||isDemo)&&<ReleaseStatus version={health?.version??'3.5.0-stage6-main-test'} release={health?.release} warehouse={health?.lanClient?undefined:health?.warehouse} custom={health?.customWarehouse} onImport={()=>goTo('Import kho')}/>}
    
-  {active==='Tổng quan'&&<div className="overview">{desktopShell&&<LuxeDashboardHero expanded={heroExpanded} onToggle={()=>setHeroExpanded(v=>!v)} onNavigate={goTo}/>}
+  {active==='Tổng quan'&&!desktopWidth&&<MobileOverview metrics={[{label:isDemo?'Tồn minh họa':'Tồn ảnh thực tế',value:isDemo?19:dashboard?.stock??'—',hint:'Bộ theo ảnh hiện hữu',route:'Tồn kho',icon:'Kho ảnh'},{label:'Mẫu sản phẩm',value:isDemo?2:dashboard?.products??'—',hint:'Mẫu đang quản lý',route:'Danh mục sản phẩm',icon:'Danh mục sản phẩm'},{label:'Size / SKU',value:isDemo?7:dashboard?.skus??'—',hint:'Biến thể sản phẩm',route:'Danh mục sản phẩm',icon:'Danh mục sản phẩm'},{label:'Size cần đối soát',value:isDemo?'—':dashboard?.mismatches??'—',hint:'Chênh lệch ảnh và sổ',route:'Tồn kho',icon:'Báo cáo'}]} products={isDemo?demo.map(x=>({product_id:x.id,product_name:x.name,stock:x.total_stock})):dashboard?.topProducts??[]} onNavigate={goTo} stockRoute="Tồn kho">{dashboardError&&<p className="notice warning" role="alert">{dashboardError}</p>}<div className="mobileQuickLinks"><button onClick={()=>goTo('Tồn kho')}>Chọn ảnh gửi khách</button>{nav.includes('Bán hàng')&&<button onClick={()=>goTo('Bán hàng')}>Xem đơn hàng</button>}</div></MobileOverview>}
+  {active==='Tổng quan'&&desktopWidth&&<div className="overview">{desktopShell&&<LuxeDashboardHero expanded={heroExpanded} onToggle={()=>setHeroExpanded(v=>!v)} onNavigate={goTo}/>}
 
  <div className="dashboardFoldHeader"><div><span className="dashboardFoldEyebrow">BẢNG ĐIỀU HÀNH CỬA HÀNG</span><h2>Dashboard tổng quan</h2><p>Chỉ số tồn theo ảnh vật lý · chọn thẻ để mở chức năng</p></div><button type="button" className="dashboardFoldToggle" aria-expanded={overviewExpanded} aria-controls="overview-dashboard-body" onClick={()=>setOverviewExpanded(v=>!v)}>{overviewExpanded?'Thu gọn':'Xem dashboard'} <span aria-hidden="true">{overviewExpanded?'⌃':'⌄'}</span></button></div>
  {dashboardError&&<p className="notice warning" role="alert">{dashboardError} <button onClick={()=>setProductReload(x=>x+1)}>THỬ LẠI</button></p>}

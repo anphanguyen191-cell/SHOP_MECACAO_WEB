@@ -1,6 +1,7 @@
 # M2 Mobile Travel Luxe V2.0 — Implementation & review
 Date: 2026-10-18
-Status: **CODE INTEGRATED / RELEASE GATE NOT PASSED / OWNER ACCEPTANCE PENDING**
+Status: **M2 REFORM INTEGRATED / OWNER ACCEPTANCE PENDING**
+Current implementation and acceptance criteria: [M2-REFORM-ACCEPTANCE.md](M2-REFORM-ACCEPTANCE.md). The entries below retain the historical audit from the earlier responsive-only implementation; current CI must be checked at the relevant commit.
 Reference: M1 signed off by owner; maintain existing CORE and Windows UX.
 
 ## What was implemented

@@ -2,6 +2,8 @@ import { useEffect,useMemo,useRef,useState } from 'react'
 import ProductDetail from './ProductDetail'
 import {useBooleanPreference} from './uiState'
 import InventorySharing,{InventoryImageViewer,type ChosenImage} from './InventorySharing'
+import MobileInventory from './MobileInventory'
+import {useMobileLuxe} from './MobileLuxeUI'
 
 type Img={id:number;file_name:string;file_path:string;exists:boolean}
 type Variant={variant_status?:string;variant_id:number;sku:string;size:string;cost_price:number;sale_price:number;ledger_stock:number;stock:number;pendingImages?:number;images:Img[]}
@@ -17,6 +19,7 @@ const DEMO_DASH:InventoryDashboard={stock:19,products:2,productsInStock:2,skus:7
 
 export type InventorySource={products:InventoryProduct[];dashboard:InventoryDashboard;urls:Record<string,string>;refresh:()=>Promise<void>;share?:(images:ChosenImage[],onBusy:(busy:boolean)=>void)=>React.ReactNode}
 export default function InventoryView({isDemo=false,onDraft,draftLabel,source,priceTools,desktopMode=false}:{isDemo?:boolean;onDraft?:(ids:number[],key:string)=>Promise<void>;draftLabel?:string;source?:InventorySource;priceTools?:React.ReactNode;desktopMode?:boolean}){
+ const mobile=useMobileLuxe(),[mobileTree,setMobileTree]=useState(false)
  const [focusedVariantId,setFocusedVariantId]=useState<number|null>(null)
  const [search,setSearch]=useState(''),[category,setCategory]=useState(''),[productCode,setProductCode]=useState(''),[productOptions,setProductOptions]=useState<Array<{product_code:string;name:string}>>([]),[size,setSize]=useState(''),[products,setProducts]=useState<InventoryProduct[]>(isDemo?DEMO_PRODUCTS:[]),[dashboard,setDashboard]=useState<InventoryDashboard|null>(isDemo?DEMO_DASH:null),[categories,setCategories]=useState<string[]>([]),[sizes,setSizes]=useState<string[]>([]),[expandedProducts,setExpandedProducts]=useState<Set<number>>(new Set()),[expandedVariants,setExpandedVariants]=useState<Set<number>>(new Set()),[selectedImages,setSelectedImages]=useState<Set<number>>(new Set()),[suggestions,setSuggestions]=useState<Suggestion[]>([]),[detailProductId,setDetailProductId]=useState<number|null>(null)
  const [stockState,setStockState]=useState<'all'|'in'|'out'|'low'>('all'),[sort,setSort]=useState<'stock_desc'|'stock_asc'|'name'>('stock_desc'),[threshold,setThreshold]=useState(2),[loadError,setLoadError]=useState('')
@@ -110,7 +113,22 @@ export default function InventoryView({isDemo=false,onDraft,draftLabel,source,pr
  const selectedDetails=Array.from(selectedImages).map(id=>chosen.current.get(id)).filter((i):i is ChosenImage=>!!i)
  const selectedProducts=new Set(selectedDetails.map(i=>i.product)).size
  const selectedSizes=new Set(selectedDetails.map(i=>i.product+'/'+i.size)).size
+ if(mobile&&!mobileTree)return <section className={'inventoryPage mobileInventoryPage'+(selectedImages.size?' hasImageSelection':'')}>
+  {loadError&&<p className="notice warning" role="alert">{loadError}</p>}
+  <MobileInventory products={visibleProducts} dashboard={dashboard} selected={selectedImages} search={search} onSearch={setSearch} categories={categories} category={category} onCategory={setCategory} loading={loading&&!isDemo} busy={sending} demo={isDemo} urls={source?.urls} onChoose={chooseImage} onSelect={selectGroup} onRemove={ids=>setSelectedImages(old=>new Set([...old].filter(id=>!ids.includes(id))))} onView={(images,index)=>setViewer({images,index})} onRefresh={()=>source?void source.refresh().catch(e=>setLoadError(e.message)):setReload(x=>x+1)} onAdvanced={()=>setMobileTree(true)} filters={<div className="mobileInventoryFilterFields">
+   <label>Sản phẩm<select value={productCode} onChange={e=>setProductCode(e.target.value)}><option value="">Tất cả sản phẩm</option>{productOptions.map(p=><option key={p.product_code} value={p.product_code}>{p.name}</option>)}</select></label>
+   <label>Danh mục<select value={category} onChange={e=>setCategory(e.target.value)}><option value="">Tất cả danh mục</option>{categories.map(c=><option key={c}>{c}</option>)}</select></label>
+   <label>Size<select value={size} onChange={e=>setSize(e.target.value)}><option value="">Tất cả Size</option>{sizes.map(s=><option key={s}>{s}</option>)}</select></label>
+   <label>Tình trạng tồn<select value={stockState} onChange={e=>setStockState(e.target.value as typeof stockState)}><option value="all">Tất cả tồn</option><option value="in">Còn hàng</option><option value="out">Hết hàng</option><option value="low">Tồn thấp (≤ {threshold})</option></select></label>
+   <label>Sắp xếp<select value={sort} onChange={e=>setSort(e.target.value as typeof sort)}><option value="stock_desc">Tồn nhiều nhất</option><option value="stock_asc">Tồn ít nhất</option><option value="name">Tên A–Z</option></select></label>
+   <button type="button" onClick={()=>{setSearch('');setCategory('');setProductCode('');setSize('');setStockState('all');setSort('stock_desc')}}>Xóa bộ lọc</button>
+  </div>}/>
+  {selectionError&&<p className="notice warning" role="alert">{selectionError}</p>}
+  <InventorySharing share={source?.share} onDraft={onDraft} draftLabel={draftLabel} selectionBusy={sending} images={selectedDetails} hidden={selectedDetails.filter(i=>!allVisible.some(x=>x.id===i.id)).length} onBusy={setSending} onClear={()=>{setSelectedImages(new Set());anchor.current=null;setSelectionError('')}}/>
+  {viewer&&<InventoryImageViewer urls={source?.urls} images={viewer.images} index={viewer.index} onIndex={index=>setViewer({...viewer,index})} onClose={()=>setViewer(null)}/>}
+ </section>
  return <section className={"inventoryPage"+(selectedImages.size?" hasImageSelection":"")}>
+  {mobile&&<button className="mobileBackToGallery" onClick={()=>setMobileTree(false)}>‹ Về gallery ảnh</button>}
   <div className="inventoryHeading"><div><p className="eyebrow">{isDemo?'DỮ LIỆU MINH HỌA · DEMO':'KHO HÀNG THỰC TẾ'}</p><h2>Tồn kho</h2><p>{isDemo?'Số liệu mẫu để kiểm tra giao diện, không phải tồn hàng của Shop. LOCAL mới kết nối kho ảnh.':source?'Tồn Cloud theo từng Mẫu / Size; đối soát Windows tại Cài đặt. Chọn ảnh để tạo đơn hoặc gửi khách.':'Tồn thực tế đếm ảnh hợp lệ theo từng Size. Chọn sản phẩm để xem ảnh và đối soát.'}</p></div>{isDemo?<span className="okPill">BẢN XEM THỬ</span>:!dashboard?<span className="reconcileAlert">Đang tải / không có dữ liệu kho</span>:dashboard.mismatches?<span className="reconcileAlert">⚠ {dashboard.mismatches} Size lệch sổ / ảnh</span>:<span className="okPill">{source?'✓ Đã đọc dữ liệu Cloud':'✓ Đã so sánh ảnh và sổ'}</span>}</div>
   {priceTools}
   {desktopMode&&<section className="luxeStockBreakdown" aria-label="Đối soát ảnh và tồn trong kết quả đang xem"><article><span>{source?'TỒN THEO NGUỒN':'TỒN ẢNH VẬT LÝ'}</span><strong>{loading||loadError?'—':stockBreakdown.physical}</strong><small>Trong danh sách đang xem{search||category||productCode||size?' · đã lọc':''}</small></article><article><span>ẢNH ĐÃ ĐĂNG KÝ</span><strong>{loading||loadError?'—':stockBreakdown.registered}</strong><small>Ảnh còn hiện hữu và có ID để chọn</small></article><article><span>ẢNH CHỜ DUYỆT</span><strong>{source||loading||loadError?'—':stockBreakdown.pending}</strong><small>{source?'Chỉ đối soát tại kho Windows':'Chưa có ID để đưa vào đơn bán'}</small></article></section>}

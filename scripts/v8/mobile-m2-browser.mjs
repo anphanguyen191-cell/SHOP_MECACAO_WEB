@@ -65,9 +65,13 @@ try{
    return {viewport:innerWidth,scroll:document.documentElement.scrollWidth,navButtons:nav.querySelectorAll('button').length,
     navBottom:box.bottom,screenHeight:innerHeight,navDisplay:getComputedStyle(nav).display,
     header:!!shell.querySelector('[data-mobile-luxe-version="M2-V2.0"]'),
+    login:!!shell.querySelector('.mobileLoginIntro h1')&&shell.querySelector('.cloudSettings input[type=email]').getBoundingClientRect().height>=44,
+    loginWidth:shell.querySelector('.cloudSettings form').getBoundingClientRect().width,
     style:getComputedStyle(shell).getPropertyValue('--mobile-luxe-rose').trim()}
   })()`)
-  assert(state.header,'Mobile heading missing at '+width+'px')
+  assert(state.header&&state.login,'Mobile login missing at '+width+'px')
+  assert(state.navDisplay==='none','Signed-out mobile must show login rather than application navigation')
+  assert(state.loginWidth>220&&state.loginWidth<=width,'Login form must fit the phone')
   assert(state.style,'Mobile scoped tokens not applied at '+width+'px')
   assert(state.navButtons>=3&&state.navButtons<=5,'Wrong number of nav buttons at '+width+'px: '+state.navButtons)
   assert(state.scroll<=state.viewport+3,'Unexpected horizontal overflow at '+width+'px: '+JSON.stringify(state))

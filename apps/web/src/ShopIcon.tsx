@@ -1,5 +1,7 @@
 import type {SVGProps} from 'react'
 const icons:Record<string,string>={
+ menu:'M4 6h16M4 12h16M4 18h16',
+ bell:'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4',
  home:'M3 10.5 12 3l9 7.5V21h-7v-7h-4v7H3z',
  box:'M3 7l9-4 9 4v10l-9 4-9-4z M3 7l9 4 9-4 M12 11v10',
  photo:'M3 4h18v16H3z M7 13l3-3 3 3 3-4 5 7 M8 8h.01',
@@ -15,6 +17,8 @@ const icons:Record<string,string>={
 }
 function kind(label:string){
  const t=label.toLocaleLowerCase('vi')
+ if(/thêm|menu/.test(t))return 'menu'
+ if(/thông báo/.test(t))return 'bell'
  if(/tổng quan|trang chủ/.test(t))return 'home'
  if(/tồn kho|ảnh|hình/.test(t))return 'photo'
  if(/nhập|giao|ship/.test(t))return 'truck'

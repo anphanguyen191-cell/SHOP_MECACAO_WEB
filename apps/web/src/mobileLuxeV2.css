@@ -1,185 +1,194 @@
-/* Never show the Mobile-only section header in the desktop runtime. */
-@media(min-width:801px){.mobileLuxeSectionHeader{display:none!important}}
-/* M2 Travel Luxe Mobile V2.0: strictly isolated visual implementation.
-   Existing LAN/Cloud business components, authorization, data and routes remain authoritative.
-   Every selector begins with .shell.mobileLuxeWorkspace, plus a mobile breakpoint. */
+/* Mobile Travel Luxe: one scoped presentation system. Desktop CORE remains intact. */
+.mobileDetailBack,.mobileCustomerAvatar,.mobileMenuDescription,.mobileLoginIntro,.mobileLoginFooter,.mobileOrderReview,.mobileWizardFooter{display:none}
+@media(min-width:801px){.mobileReportDetails{padding:0;margin:0;border:0}.mobileReportDetails>summary{display:none}}
+@media(min-width:801px){.mobileLuxeSectionHeader,.mobileAccountSettings>summary{display:none!important}.mobileAccountSettings{border:0;padding:0;margin:0}.mobileOrderStage>.mobilePhotoHeading{display:none}.mobileOrderStatus{font-style:normal;font-size:11px}.mobileOrderOperations{display:contents}}
 @media (max-width:800px){
- .shell.mobileLuxeWorkspace{
-  --mobile-luxe-bg:#f7f2f8;--mobile-luxe-paper:#fff;--mobile-luxe-ink:#29324d;
-  --mobile-luxe-muted:#77748a;--mobile-luxe-rose:#e07aa6;--mobile-luxe-violet:#a394d6;
-  --mobile-luxe-mint:#69bdb5;--mobile-luxe-line:#eee5ef;
-  --mobile-luxe-shadow:0 9px 30px rgba(95,66,111,.075);
-  color:var(--mobile-luxe-ink);background:var(--mobile-luxe-bg);
-  min-height:100dvh;overflow-x:clip;
+ .mobileCloudLaunch{min-height:100dvh;box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(140deg,#f5deea,#f1e9fb 65%,#faf0e8);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#a34773;text-align:center;padding:24px}.mobileCloudLaunch img{width:96px;height:96px;object-fit:cover;border-radius:50%;box-shadow:0 0 0 10px #ffffff60}.mobileCloudLaunch h1{font:42px Georgia,serif;margin:24px 0 10px}.mobileCloudLaunch span{font-size:10px;letter-spacing:.2em}.mobileCloudLaunch p{font-size:12px;margin-top:45px;color:#76617f}
+ .shell.mobileLuxeWorkspace,.mobileLuxeOverlay{
+  --mobile-luxe-bg:#faf6f9;--mobile-luxe-paper:#fff;--mobile-luxe-ink:#30243e;--mobile-luxe-muted:#75677e;
+  --mobile-luxe-rose:#e07aa6;--mobile-luxe-accent:#a83877;--mobile-luxe-line:#eee4ed;--mobile-luxe-soft:#f9e8f1;
+  --mobile-luxe-shadow:0 4px 18px #69436c08;
+  color:var(--mobile-luxe-ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
  }
- .shell.mobileLuxeWorkspace.themeDark{
-  --mobile-luxe-bg:#1b1b2d;--mobile-luxe-paper:#292a3e;--mobile-luxe-ink:#f5effc;
-  --mobile-luxe-muted:#c0b5c9;--mobile-luxe-line:#484359;--mobile-luxe-shadow:0 9px 25px rgba(0,0,0,.25);
+ .shell.mobileLuxeWorkspace.themeDark,.mobileLuxeOverlay.themeDark{
+  --mobile-luxe-bg:#1c1926;--mobile-luxe-paper:#292432;--mobile-luxe-ink:#f7eff8;--mobile-luxe-muted:#c4b6ca;
+  --mobile-luxe-line:#493d50;--mobile-luxe-soft:#443044;--mobile-luxe-accent:#efb5d3;--mobile-luxe-shadow:0 4px 18px #0001;
  }
- .shell.mobileLuxeWorkspace .layout{display:block!important;min-width:0!important;max-width:100%;padding:0!important;margin:0!important}
- .shell.mobileLuxeWorkspace .layout>main{max-width:100%!important;min-width:0!important;width:100%;background:transparent;padding:12px 12px calc(var(--mobile-nav-offset,90px) + 26px)!important;margin:0}
+ .shell.mobileLuxeWorkspace{min-height:100dvh;background:var(--mobile-luxe-bg);overflow-x:clip}
+ .shell.mobileLuxeWorkspace .layout{display:block!important;width:100%;max-width:100%;min-width:0!important;margin:0!important;padding:0!important}
+ .shell.mobileLuxeWorkspace .layout>main{box-sizing:border-box;width:100%;max-width:100%!important;min-width:0!important;margin:0!important;padding:10px 14px calc(var(--mobile-nav-offset,90px) + 26px)!important;background:transparent}
  .shell.mobileLuxeWorkspace .layout>.sidebar{display:none!important}
- .shell.mobileLuxeWorkspace .topbar{
-  position:sticky;top:0;z-index:80;background:color-mix(in srgb,var(--mobile-luxe-paper) 93%,transparent);
-  box-shadow:0 2px 16px rgba(94,63,97,.065);border-bottom:1px solid var(--mobile-luxe-line);
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  padding:max(9px,env(safe-area-inset-top,0px)) 13px 10px;min-width:0;
- }
- .shell.mobileLuxeWorkspace .brandIdentity{min-width:0;gap:8px}
- .shell.mobileLuxeWorkspace .brandIdentity .brandLogo{width:38px;height:38px;object-fit:contain;border-radius:12px}
- .shell.mobileLuxeWorkspace .brandIdentity .eyebrow{font-size:10px;letter-spacing:.06em;white-space:normal}
- .shell.mobileLuxeWorkspace .brandIdentity h1{font-size:15px;line-height:1.3;white-space:nowrap}
- .shell.mobileLuxeWorkspace .topbar .headerActions{gap:6px;min-width:0;flex-wrap:nowrap}
- .shell.mobileLuxeWorkspace .topbar .headerActions .densitySwitch{display:none}
- .shell.mobileLuxeWorkspace .topbar .headerActions button{min-width:44px;min-height:44px}
- .shell.mobileLuxeWorkspace .topbar .badge{font-size:10px;padding:5px 7px}
- .shell.mobileLuxeWorkspace .mobileLuxeSectionHeader{
-  display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
-  padding:18px 17px 16px;margin:2px 0 14px;border-radius:22px;
-  background:linear-gradient(125deg,#f9dce9 0%,#f4eafa 52%,#e8f5f3 100%);
-  color:#45334f;border:1px solid rgba(255,255,255,.85);
-  box-shadow:var(--mobile-luxe-shadow);
- }
- .shell.mobileLuxeWorkspace.themeDark .mobileLuxeSectionHeader{background:linear-gradient(125deg,#51354b,#393450,#2c4949);color:#f5effc;border-color:#62536a}
- .shell.mobileLuxeWorkspace .mobileLuxeSectionHeader small{display:block;font-size:10px;letter-spacing:.10em;font-weight:800;opacity:.76;margin-bottom:5px}
- .shell.mobileLuxeWorkspace .mobileLuxeSectionHeader h2{font-size:clamp(19px,5vw,24px);margin:0;line-height:1.2;color:inherit}
- .shell.mobileLuxeWorkspace .mobileLuxeSectionHeader p{font-size:12px;line-height:1.5;margin:8px 0 0;color:inherit;opacity:.82}
- .shell.mobileLuxeWorkspace .mobileLuxeSource{
-  display:inline-flex;align-items:center;gap:5px;flex-shrink:0;border:1px solid rgba(133,87,129,.18);
-  border-radius:99px;background:rgba(255,255,255,.75);padding:6px 8px;
-  color:#6e4c74;font-size:10px;font-weight:800;white-space:nowrap
- }
- .shell.mobileLuxeWorkspace.themeDark .mobileLuxeSource{background:#332e44;color:#f4d6ef}
- .shell.mobileLuxeWorkspace .pageBreadcrumb{display:none}
- .shell.mobileLuxeWorkspace .mobileQuickNav.mobileLuxeNav{
-  display:flex!important;position:fixed;left:max(10px,env(safe-area-inset-left,0px));
-  right:max(10px,env(safe-area-inset-right,0px));bottom:max(9px,env(safe-area-inset-bottom,0px));
-  padding:6px;gap:2px;min-width:0;z-index:90;
-  background:color-mix(in srgb,var(--mobile-luxe-paper) 93%,#efd7e8);
-  border:1px solid var(--mobile-luxe-line);border-radius:23px;
-  box-shadow:0 10px 32px rgba(95,49,91,.19);
-  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
- }
- .shell.mobileLuxeWorkspace .mobileLuxeNav button{
-  flex:1 1 0;min-width:0;min-height:50px;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:3px;padding:5px 1px;border-radius:17px;touch-action:manipulation;
-  border:1px solid transparent;background:transparent;color:var(--mobile-luxe-ink)
- }
- .shell.mobileLuxeWorkspace .mobileLuxeNav button.selected{
-  background:linear-gradient(140deg,#ab5f8b,#8f5aa2);color:white;border-color:transparent;
-  box-shadow:0 4px 12px rgba(130,72,124,.22)
- }
- .shell.mobileLuxeWorkspace.themeDark .mobileLuxeNav button.selected{
-  background-color:#704080;background-image:linear-gradient(140deg,#82466f,#704180);color:#fff
- }
- .shell.mobileLuxeWorkspace.themeDark .mobileLuxeNav button.selected small{color:#fff!important}
- .shell.mobileLuxeWorkspace .mobileLuxeNav .mobileLuxeNavIcon{
-  display:flex;align-items:center;justify-content:center;font-size:19px;line-height:1.15;min-height:22px
- }
- .shell.mobileLuxeWorkspace .mobileLuxeNav small{
-  font-size:clamp(10px,2.65vw,12px);font-weight:750;line-height:1.15;
-  display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:inherit
- }
- .shell.mobileLuxeWorkspace :is(.overviewWelcome,.overviewStat,.card,.panel,.salesEditor,.salesFold,.insightCard,
-   .inventoryDashboardBlock,.inventoryMetrics article,.treeProduct,.stocktakePanel,.stage4Metrics article,
-   .customerCard,.luxeControlCenterSection,.luxeControlCenterIntro,.cloudSettings,
-   .luxeInventoryInspector,.receiptStats article,.settingsPage,.financePanel){
-  border-radius:20px;border-color:var(--mobile-luxe-line);
-  box-shadow:var(--mobile-luxe-shadow);max-width:100%;min-width:0
- }
- .shell.mobileLuxeWorkspace :is(.overviewStats,.inventoryMetrics,.inventoryInsights,.stage4Metrics,
-   .salesKpis,.luxeStockBreakdown,.receiptStats){
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px
- }
- .shell.mobileLuxeWorkspace :is(.overviewStats,.inventoryMetrics,.stage4Metrics) > *{min-width:0}
- .shell.mobileLuxeWorkspace :is(.overviewStat,.inventoryMetrics article,.stage4Metrics article){
-  padding:13px!important;overflow-wrap:anywhere
- }
- .shell.mobileLuxeWorkspace :is(.overviewStat strong,.inventoryMetrics strong,.stage4Metrics strong){
-  font-variant-numeric:tabular-nums;overflow-wrap:anywhere
- }
- .shell.mobileLuxeWorkspace :is(.inventoryHeading,.salesHeading,.stage4Heading,.salesEditorHead,
-   .inventoryToolbar,.inventoryFilters,.stage4Filters,.salesButtons,.inventoryActions){
-  min-width:0;gap:10px;flex-wrap:wrap
- }
- .shell.mobileLuxeWorkspace :is(.inventoryFilters,.formGrid,.catalogFilters,.luxeControlCenterGrid){
-  display:grid;grid-template-columns:minmax(0,1fr);gap:10px
- }
- .shell.mobileLuxeWorkspace :is(.inventoryFilters input,.inventoryFilters select,.formGrid input,
-   .formGrid select,.formGrid textarea,.cloudSettings input,.cloudSettings select){
-  max-width:100%;width:100%;min-height:44px;font-size:16px
- }
- .shell.mobileLuxeWorkspace :is(.luxeInventoryWorkspace,.salesWorkspace){
-  display:flex;flex-direction:column;gap:12px;min-width:0
- }
- .shell.mobileLuxeWorkspace :is(.inventoryTree,.luxeInventoryInspector,.salesList,.salesEditor){
-  width:100%;max-width:100%;min-width:0;position:static
- }
- .shell.mobileLuxeWorkspace :is(.selectableGallery,.productGallery){
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;min-width:0
- }
- .shell.mobileLuxeWorkspace :is(.selectableGallery>*,.productGallery>*,.stockImageSelect,.luxeInventorySelectPhoto){
-  min-width:0;max-width:100%
- }
- .shell.mobileLuxeWorkspace :is(.stockImageSelect img,.productGallery img,.selectableGallery img){
-  max-width:100%;height:auto;object-fit:cover
- }
- .shell.mobileLuxeWorkspace :is(.salesTotals,.salesMoney,.salesItems,.stage4Table,.warehouseTableWrap){
-  max-width:100%;min-width:0
- }
- .shell.mobileLuxeWorkspace :is(.stage4Table,.warehouseTableWrap,.salesItems){overflow-x:auto;-webkit-overflow-scrolling:touch}
- .shell.mobileLuxeWorkspace :is(.luxeInventorySelectionDetails,.quickImageSelection,.floatingSelectionActions){
-  max-width:100%;overflow-wrap:anywhere
- }
- .shell.mobileLuxeWorkspace :is(.luxeFlowSteps,.luxeCloudFlow){max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
- .shell.mobileLuxeWorkspace .shopSyncStatus{border-radius:16px;min-width:0;overflow-wrap:anywhere;gap:8px}
- .shell.mobileLuxeWorkspace .drawerBackdrop{z-index:120}
- .shell.mobileLuxeWorkspace .featureDrawer{max-width:min(90vw,380px);border-radius:0 22px 22px 0}
- .shell.mobileLuxeWorkspace button:focus-visible{outline:3px solid #bd70a0;outline-offset:2px}
- .shell.mobileLuxeWorkspace :is(.loadingState,.emptyTree,.salesEmpty,.emptySize){padding:22px 14px;text-align:center;border-radius:16px}
-}
-@media(max-width:390px){
- .shell.mobileLuxeWorkspace .layout>main{padding-inline:9px!important}
- .shell.mobileLuxeWorkspace .mobileLuxeSectionHeader{padding:15px 13px}
- .shell.mobileLuxeWorkspace .mobileLuxeNav{left:6px;right:6px;gap:0}
- .shell.mobileLuxeWorkspace .mobileLuxeNav small{font-size:10px}
-}
-@media(max-width:800px) and (orientation:landscape){
- .shell.mobileLuxeWorkspace .topbar{padding-top:6px;padding-bottom:6px}
- .shell.mobileLuxeWorkspace .mobileLuxeSectionHeader{padding:12px 16px}
-}
-@media(max-width:800px) and (prefers-reduced-motion:reduce){
- .shell.mobileLuxeWorkspace :is(.mobileLuxeNav button,.mobileLuxeSectionHeader,.featureDrawer){
-  transition:none!important;animation:none!important
- }
-}
-@media(max-width:800px) and (prefers-reduced-motion:no-preference){
- .shell.mobileLuxeWorkspace .mobileLuxeNav button{transition:background-color .2s ease,box-shadow .2s ease,color .2s ease}
- .shell.mobileLuxeWorkspace .mobileLuxeSectionHeader{animation:mobileLuxeArrive .24s ease-out both}
-}
-@keyframes mobileLuxeArrive{from{opacity:.65;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
-
-/* M2 fix: legacy .imageSendBar otherwise overlays the new fixed mobile tab dock. */
-@media(max-width:800px){
- .shell.mobileLuxeWorkspace .imageSendBar{
-  left:max(10px,env(safe-area-inset-left,0px));
-  right:max(10px,env(safe-area-inset-right,0px));
-  width:auto!important;
-  bottom:calc(var(--mobile-nav-offset,90px) + 10px)!important;
-  transform:none!important;
-  max-height:min(48dvh,370px);
-  overflow-y:auto;
-  z-index:95;
- }
- .shell.mobileLuxeWorkspace .hasImageSelection{
-  padding-bottom:calc(var(--mobile-nav-offset,90px) + var(--selection-panel-height,240px) + 24px)!important;
- }
+ .shell.mobileLuxeWorkspace :is(input:not([type=checkbox]):not([type=radio]),select,textarea){box-sizing:border-box;max-width:100%;min-width:0;min-height:48px;font-size:16px!important;color:var(--mobile-luxe-ink);background:var(--mobile-luxe-paper);border:1px solid var(--mobile-luxe-line);border-radius:12px;padding:11px 12px;box-shadow:none}
+ .shell.mobileLuxeWorkspace :is(button,a){-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+ .shell.mobileLuxeWorkspace button:focus-visible,.mobileLuxeOverlay button:focus-visible{outline:3px solid #bd70a0;outline-offset:2px}
+ .shell.mobileLuxeWorkspace button{font-family:inherit}
+ .shell.mobileLuxeWorkspace .topbar{position:sticky;top:0;z-index:80;min-height:62px;box-sizing:border-box;padding:max(8px,env(safe-area-inset-top,0px)) 14px 8px;gap:8px;background:var(--mobile-luxe-paper);border:0;border-bottom:1px solid var(--mobile-luxe-line);box-shadow:none;backdrop-filter:blur(16px)}
+ .shell.mobileLuxeWorkspace .brandIdentity{gap:8px;min-width:0;flex:1}
+ .shell.mobileLuxeWorkspace .brandIdentity .brandLogo{display:block;width:36px;height:36px;object-fit:cover;border-radius:50%}
+ .shell.mobileLuxeWorkspace .brandMonogram{display:none!important}
+ .shell.mobileLuxeWorkspace .brandIdentity .eyebrow{font-size:8px!important;letter-spacing:.09em;line-height:1.5;white-space:nowrap;margin:0;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace .brandIdentity h1{font-size:17px!important;font-family:Georgia,serif;line-height:1.2;margin:0;color:var(--mobile-luxe-accent)}
+ .shell.mobileLuxeWorkspace .topbar :is(.menuToggle,.headerActions button,.mobileStatusBell){display:grid;place-items:center;min-width:42px;min-height:44px;width:42px;padding:0;border:0;border-radius:13px;background:var(--mobile-luxe-soft);color:var(--mobile-luxe-ink);box-shadow:none}
+ .shell.mobileLuxeWorkspace .topbar .menuToggle{font-size:21px;background:transparent}
+ .shell.mobileLuxeWorkspace .topbar .headerActions{gap:4px;flex-wrap:nowrap}
+ .shell.mobileLuxeWorkspace .topbar .headerActions :is(.densitySwitch,.themeToggle,.badge){display:none}
+ .shell.mobileLuxeWorkspace .topbar .headerActions .lanLogout{width:auto;padding:0 8px;font-size:11px}
+ .shell.mobileLuxeWorkspace .mobileStatusBell{position:relative}
+ .shell.mobileLuxeWorkspace .mobileStatusBell i{position:absolute;width:7px;height:7px;border-radius:50%;background:#b3315f;top:8px;right:8px}
+ .shell.mobileLuxeWorkspace .mobileLuxeSectionHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0;padding:4px 0 14px;background:none;border:0;border-radius:0;box-shadow:none;color:var(--mobile-luxe-ink)}
+ .shell.mobileLuxeWorkspace .mobileLuxeSectionHeader h2{font-size:22px;letter-spacing:-.04em;line-height:1.3;margin:0}
+ .shell.mobileLuxeWorkspace .mobileLuxeSectionHeader p{font-size:12px;margin:5px 0 0}
+ .shell.mobileLuxeWorkspace .mobileLuxeSource{font-size:9px;font-weight:750;padding:5px 7px;border:1px solid var(--mobile-luxe-line);border-radius:8px;background:var(--mobile-luxe-paper);color:var(--mobile-luxe-muted);white-space:nowrap}
+ .shell.mobileLuxeWorkspace .pageBreadcrumb,.shell.mobileLuxeWorkspace .cloudBuildLabel{display:none}
+ .shell.mobileLuxeWorkspace .mobileQuickNav.mobileLuxeNav{position:fixed;display:flex!important;left:0;right:0;bottom:0;z-index:90;gap:2px;padding:7px max(10px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px));background:var(--mobile-luxe-paper);border:0;border-top:1px solid var(--mobile-luxe-line);border-radius:20px 20px 0 0;box-shadow:0 -3px 18px #57375509;overflow:visible}
+ .shell.mobileLuxeWorkspace .mobileLuxeNav button{flex:1 1 0;min-width:0;min-height:50px;max-width:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:4px 1px;border:0;border-radius:13px;background:transparent;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace .mobileLuxeNav button.selected{background:#fae8f2;color:#963265;box-shadow:none}
+ .shell.mobileLuxeWorkspace.themeDark .mobileLuxeNav button.selected{background:#51344c;color:#ffd9ee}
+ .shell.mobileLuxeWorkspace .mobileLuxeNav small,.shell.mobileLuxeWorkspace .mobileLuxeNav button.selected small{font-size:11px;line-height:1.25;font-weight:650;color:inherit!important;white-space:nowrap}
+ .shell.mobileLuxeWorkspace .mobileLuxeNavIcon{display:grid;place-items:center;min-height:22px}
+ .shell.mobileLuxeWorkspace .mobileLuxeNavIcon svg{width:22px;height:22px}
+ .shell.mobileLuxeWorkspace .mobileLuxeNav.isKeyboardOpen{display:none!important}
+ .shell.mobileLuxeWorkspace .shopSyncStatus{display:flex;align-items:center;gap:6px;min-width:0;max-width:100%;font-size:11px;line-height:1.45;padding:7px 9px;margin:0 0 12px;border-radius:10px;border:1px solid var(--mobile-luxe-line);background:var(--mobile-luxe-paper);color:var(--mobile-luxe-muted);box-shadow:none}
+ .shell.mobileLuxeWorkspace .shopSyncStatus>span:nth-child(2){min-width:0;flex:1;overflow-wrap:anywhere}
+ .shell.mobileLuxeWorkspace .shopSyncStatus>button{flex:none;padding:5px 8px;font-size:11px;min-height:32px}
+ .shell.mobileLuxeWorkspace .shopSyncStatus.offline{background:#fff0e6;color:#864627;border-color:#edc8ac}
+ .shell.mobileLuxeWorkspace .mobileRecoveryAction{display:block;min-height:36px;margin:0 0 12px;padding:6px 10px;font-size:11px;border:1px dashed var(--mobile-luxe-line);color:var(--mobile-luxe-muted);background:none;border-radius:10px}
+ .shell.mobileLuxeWorkspace :is(.panel,.card,.overviewPanel,.overviewStat,.insightCard,.inventoryDashboardBlock,.settingsPage,.cloudSettings,.luxeControlCenterIntro,.luxeControlCenterSection,.stocktakePanel,.financePanel,.mobileCard){min-width:0;max-width:100%;border:1px solid var(--mobile-luxe-line);border-radius:18px;background:var(--mobile-luxe-paper);color:var(--mobile-luxe-ink);box-shadow:var(--mobile-luxe-shadow)}
+ .shell.mobileLuxeWorkspace :is(.luxeControlCenterGrid,.formGrid,.inventoryFilters){display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+ .shell.mobileLuxeWorkspace :is(.luxeInventoryWorkspace,.salesWorkspace){display:flex;flex-direction:column;gap:12px;min-width:0}
+ .shell.mobileLuxeWorkspace :is(.inventoryTree,.luxeInventoryInspector,.salesList,.salesEditor){width:100%;min-width:0;max-width:100%;position:static;box-sizing:border-box}
+ .shell.mobileLuxeWorkspace :is(.selectableGallery,.productGallery){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .shell.mobileLuxeWorkspace :is(.stockImageSelect img,.productGallery img,.selectableGallery img){max-width:100%;height:auto;object-fit:cover}
+ .shell.mobileLuxeWorkspace :is(.inventoryMetrics,.stage4Metrics,.receiptStats,.salesKpis,.mobileMetricGrid){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .shell.mobileLuxeWorkspace :is(.inventoryMetrics,.stage4Metrics,.receiptStats)>*{min-width:0;padding:14px!important;overflow-wrap:anywhere}
+ .shell.mobileLuxeWorkspace .mobileOverview{display:grid;gap:16px;margin:0}
+ .shell.mobileLuxeWorkspace .mobileWelcome{display:flex;align-items:center;gap:12px;padding:20px 16px;border-radius:18px;background:linear-gradient(115deg,#f4deeb,#eeeffc 70%,#eaf4f3);color:#493450;min-height:100px;box-sizing:border-box}
+ .shell.mobileLuxeWorkspace .mobileWelcome>img{width:44px;height:44px;object-fit:cover;border:3px solid #fff;border-radius:50%}
+ .shell.mobileLuxeWorkspace .mobileWelcome span{font-size:12px}
+ .shell.mobileLuxeWorkspace .mobileWelcome h2{font-size:18px;line-height:1.3;margin:3px 0 7px}
+ .shell.mobileLuxeWorkspace .mobileWelcome small{font-size:11px;color:#6e5b76}
+ .shell.mobileLuxeWorkspace .mobileMetricGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .shell.mobileLuxeWorkspace .mobileMetric{box-sizing:border-box;display:grid;grid-template-columns:26px minmax(0,1fr);align-content:start;gap:8px;text-align:left;min-width:0;padding:15px 12px!important;margin:0;border:1px solid var(--mobile-luxe-line);border-radius:18px;background:var(--mobile-luxe-paper)!important;color:var(--mobile-luxe-ink);box-shadow:none!important}
+ .shell.mobileLuxeWorkspace .mobileMetric>span:not(.mobileMetricIcon){align-self:center;font-size:11px;line-height:1.35;font-weight:650}
+ .shell.mobileLuxeWorkspace .mobileMetric strong{font-size:25px!important;font-weight:750;letter-spacing:-.05em;grid-column:1 / -1;margin:0;line-height:1.15;overflow-wrap:anywhere;color:inherit}
+ .shell.mobileLuxeWorkspace .mobileMetric>small{font-size:10px;line-height:1.45;grid-column:1 / -1;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace .mobileMetricIcon{display:grid;place-items:center;width:26px;height:28px;background:#e4f6f1;color:#237d6c;border-radius:8px}
+ .shell.mobileLuxeWorkspace .mobileMetricIcon.tone1{background:#eeebff;color:#7356ae}.shell.mobileLuxeWorkspace .mobileMetricIcon.tone2{background:#f8e9f9;color:#9d4ca9}.shell.mobileLuxeWorkspace .mobileMetricIcon.tone3{background:#ffebf0;color:#b54070}
+ .shell.mobileLuxeWorkspace .mobileCard{padding:16px;margin:0}
+ .shell.mobileLuxeWorkspace .mobileCard h3{font-size:16px;margin:0 0 8px;color:inherit}
+ .shell.mobileLuxeWorkspace .mobileCard>p{font-size:13px;line-height:1.6;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace .mobileCloudSummary{margin-bottom:14px}.shell.mobileLuxeWorkspace .mobileCloudSummary .mobileConnectionState{padding:5px 0 12px}.shell.mobileLuxeWorkspace .mobileCloudCounts{display:grid;grid-template-columns:1fr 1fr;gap:14px;border-top:1px solid var(--mobile-luxe-line);padding:16px 0}.shell.mobileLuxeWorkspace .mobileCloudCounts strong{display:block;font-size:22px}.shell.mobileLuxeWorkspace .mobileCloudCounts span{font-size:10px;color:var(--mobile-luxe-muted);line-height:1.5;display:block;margin-top:5px}
+ .shell.mobileLuxeWorkspace .mobileStockChart>header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:8px}
+ .shell.mobileLuxeWorkspace .mobileStockChart>header small{font-size:9px;color:var(--mobile-luxe-muted);letter-spacing:.08em}
+ .shell.mobileLuxeWorkspace .mobileStockChart>header h3{margin:4px 0 0}
+ .shell.mobileLuxeWorkspace .mobileStockChart>header>button{border:0;background:var(--mobile-luxe-soft);color:var(--mobile-luxe-accent);font-size:11px;border-radius:8px;padding:9px;white-space:nowrap}
+ .shell.mobileLuxeWorkspace .mobileChartRow{display:block;width:100%;border:0;background:none;padding:0 0 14px;text-align:left;color:inherit}
+ .shell.mobileLuxeWorkspace .mobileChartRow>span{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:7px;font-size:12px}
+ .shell.mobileLuxeWorkspace .mobileChartRow b{font-weight:550;overflow-wrap:anywhere}.shell.mobileLuxeWorkspace .mobileChartRow strong{white-space:nowrap;font-size:12px}
+ .shell.mobileLuxeWorkspace .mobileChartRow>i{display:block;height:8px;border-radius:99px;background:var(--mobile-luxe-soft);overflow:hidden}.shell.mobileLuxeWorkspace .mobileChartRow>i>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#cb92d5,#d85d99)}
+ .shell.mobileLuxeWorkspace .mobileQuickLinks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.shell.mobileLuxeWorkspace .mobileQuickLinks button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:8px;border:1px solid var(--mobile-luxe-line);border-radius:14px;background:var(--mobile-luxe-paper);color:var(--mobile-luxe-accent);font-size:12px;font-weight:650}
+ .shell.mobileLuxeWorkspace .mobileShopNote{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 0;color:var(--mobile-luxe-muted)}.shell.mobileLuxeWorkspace .mobileShopNote img{width:35px;height:35px;border-radius:50%;object-fit:cover}.shell.mobileLuxeWorkspace .mobileShopNote b{display:block;font-size:12px;font-weight:550}.shell.mobileLuxeWorkspace .mobileShopNote span{display:block;font-size:10px;margin-top:3px}
+ .shell.mobileLuxeWorkspace .mobileInventoryPage{padding:0;margin:0;border:0;background:transparent}
+ .shell.mobileLuxeWorkspace .mobileInventorySearch{display:flex;gap:8px;margin:0 0 12px;min-width:0}
+ .shell.mobileLuxeWorkspace .mobileInventorySearch>div{display:flex;align-items:center;gap:7px;flex:1;min-width:0;background:var(--mobile-luxe-paper);border:1px solid var(--mobile-luxe-line);padding:0 11px;border-radius:12px;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace .mobileInventorySearch input{flex:1;min-width:0;width:100%;border:0;background:transparent;padding:10px 0!important;font-size:14px!important;min-height:46px}
+ .shell.mobileLuxeWorkspace .mobileInventorySearch>div>button{padding:0;min-width:24px;border:0;background:none;color:inherit;font-size:20px}
+ .shell.mobileLuxeWorkspace .mobileFilterButton{display:grid;place-items:center;flex:none;min-width:46px;width:46px;border:1px solid var(--mobile-luxe-line);border-radius:12px;background:var(--mobile-luxe-paper);color:var(--mobile-luxe-ink)}
+ .shell.mobileLuxeWorkspace .mobileFilterChips{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin-bottom:10px;padding:0 0 5px}.shell.mobileLuxeWorkspace .mobileFilterChips button{flex:none;min-height:36px;border:1px solid var(--mobile-luxe-line);border-radius:10px;padding:7px 13px;color:var(--mobile-luxe-muted);background:var(--mobile-luxe-paper);font-size:12px}.shell.mobileLuxeWorkspace .mobileFilterChips button[aria-pressed=true]{background:#aa3875;border-color:#aa3875;color:#fff}
+ .shell.mobileLuxeWorkspace .mobileGalleryMeta{display:flex;align-items:center;gap:8px;min-height:36px;margin-bottom:7px;font-size:11px;color:var(--mobile-luxe-muted)}.shell.mobileLuxeWorkspace .mobileGalleryMeta>span{flex:1}.shell.mobileLuxeWorkspace .mobileGalleryMeta button{border:0;padding:8px 4px;font-size:11px;background:none;color:var(--mobile-luxe-accent)}
+ .shell.mobileLuxeWorkspace .mobileStockGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 10px}
+ .shell.mobileLuxeWorkspace .mobileStockCard{min-width:0;overflow:hidden;border:1px solid var(--mobile-luxe-line);border-radius:15px;background:var(--mobile-luxe-paper);box-shadow:none}.shell.mobileLuxeWorkspace .mobileStockCard.isSelected{border-color:#d768a3;box-shadow:0 0 0 1px #d768a3}
+ .shell.mobileLuxeWorkspace .mobileStockPhoto{position:relative;aspect-ratio:3/4;min-width:0;background:var(--mobile-luxe-soft);overflow:hidden}
+ .shell.mobileLuxeWorkspace .mobileOpenProduct{display:block;width:100%;height:100%;border:0;background:none;padding:0;border-radius:0}
+ .shell.mobileLuxeWorkspace .mobileOpenProduct img{display:block;width:100%;height:100%;object-fit:contain}
+ .shell.mobileLuxeWorkspace .mobileSelectVariant{position:absolute;top:8px;right:8px;display:grid;place-items:center;width:36px;min-height:36px;padding:0;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 6px #34163020;background:#ffffffed;color:#963265;font-size:18px}.shell.mobileLuxeWorkspace .mobileSelectVariant>span{width:14px;height:14px;border:1.5px solid #a87794;border-radius:50%}.shell.mobileLuxeWorkspace .mobileSelectVariant[aria-pressed=true]{background:#b83c7f;color:white}.shell.mobileLuxeWorkspace .mobileSelectVariant:disabled{opacity:.45}
+ .shell.mobileLuxeWorkspace .mobileStockCaption{display:block;width:100%;text-align:left;padding:10px;border:0;border-radius:0;background:none;color:inherit}.shell.mobileLuxeWorkspace .mobileStockCaption b{font-size:13px;font-weight:650;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;min-height:36px}.shell.mobileLuxeWorkspace .mobileStockCaption span{display:block;font-size:11px;margin:4px 0;color:var(--mobile-luxe-muted)}.shell.mobileLuxeWorkspace .mobileStockCaption small{display:block;font-size:10px;color:var(--mobile-luxe-accent)}
+ .shell.mobileLuxeWorkspace .mobileStockBadge{position:absolute;bottom:8px;left:8px;background:#342733d9;color:#fff;font-size:10px;padding:4px 7px;border-radius:6px}
+ .mobileNoPhoto{display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;width:100%;height:100%;color:#82667d;font-size:12px}.mobileNoPhoto svg{width:36px;height:36px}
+ .shell.mobileLuxeWorkspace .mobileInventoryUtilities{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:20px}.shell.mobileLuxeWorkspace .mobileInventoryUtilities button,.shell.mobileLuxeWorkspace .mobileBackToGallery{font-size:11px;background:none;border:0;color:var(--mobile-luxe-muted);padding:10px 0;min-height:44px}
+ .shell.mobileLuxeWorkspace .imageSendBar{position:fixed;left:max(10px,env(safe-area-inset-left,0px));right:max(10px,env(safe-area-inset-right,0px));width:auto!important;bottom:calc(var(--mobile-nav-offset,90px) + 10px)!important;transform:none!important;z-index:95;max-height:min(45dvh,360px);overflow-y:auto;box-sizing:border-box;padding:11px 12px!important;border:1px solid #dc9cbd;border-radius:18px;background:var(--mobile-luxe-paper)!important;color:var(--mobile-luxe-ink);box-shadow:0 6px 26px #54294226}
+ .shell.mobileLuxeWorkspace .imageSendBar .selectionToggle{display:flex;align-items:center;gap:8px;border:0;background:none;color:inherit;padding:0 0 8px;min-height:32px;font-size:12px;width:100%;text-align:left}.shell.mobileLuxeWorkspace .imageSendBar .selectionToggle strong{font-size:12px}
+ .shell.mobileLuxeWorkspace .imageSendActions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.shell.mobileLuxeWorkspace .imageSendActions>button{flex:1;min-width:80px;font-size:10px!important;font-weight:700;border-radius:11px;padding:8px!important;min-height:44px!important;color:var(--mobile-luxe-ink);background:var(--mobile-luxe-soft);border:0}.shell.mobileLuxeWorkspace .imageSendActions>.draftSelectedImages{background:linear-gradient(110deg,#c34c8c,#a74687)!important;color:#fff!important}.shell.mobileLuxeWorkspace .imageSendActions>button:last-child{flex:0 1 auto;min-width:55px;background:transparent}
+ .shell.mobileLuxeWorkspace .imageSendSummary{font-size:11px;padding:0 0 10px}.shell.mobileLuxeWorkspace .imageSendSummary>b{display:none}.shell.mobileLuxeWorkspace .imageSendBar p{font-size:11px;margin:7px 0 0;line-height:1.45;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace .hasImageSelection{padding-bottom:calc(var(--mobile-nav-offset,90px) + var(--selection-panel-height,160px) + 24px)!important}
  .shell.mobileLuxeWorkspace :is(.imageSendBar,.floatingActions) button{min-height:44px}
+ .shell.mobileLuxeWorkspace .stockViewerBackdrop{z-index:260}.shell.mobileLuxeWorkspace .stockViewer{max-height:96dvh;width:100%;border-radius:18px}.shell.mobileLuxeWorkspace .stockViewer>img{object-fit:contain;max-height:65dvh}
+ .shell.mobileLuxeWorkspace :is(.salesHeading,.stage4Heading){gap:10px;flex-wrap:wrap}.shell.mobileLuxeWorkspace .salesDraftPage>.salesHeading h2,.shell.mobileLuxeWorkspace .salesDraftPage>.salesHeading .eyebrow,.shell.mobileLuxeWorkspace .stage4Page>.stage4Heading h2{display:none}.shell.mobileLuxeWorkspace .salesDraftPage>.salesHeading p,.shell.mobileLuxeWorkspace .stage4Page>.stage4Heading p{font-size:12px;color:var(--mobile-luxe-muted);line-height:1.6;margin:0 0 8px}
+ .shell.mobileLuxeWorkspace .salesDraftPage>.salesHeading{display:block;margin-bottom:14px}.shell.mobileLuxeWorkspace .salesDraftPage>.salesHeading>.salesActionPrimary{width:100%;min-height:48px;font-size:14px;border:0;border-radius:13px;background:linear-gradient(110deg,#c34c8c,#a74687);color:#fff}
+ .shell.mobileLuxeWorkspace .salesList{padding:14px!important;margin:0}.shell.mobileLuxeWorkspace .salesListHead h3{font-size:15px}.shell.mobileLuxeWorkspace .salesListHead select{width:auto;font-size:12px!important;min-height:38px}
+ .shell.mobileLuxeWorkspace .salesOrderRow{display:flex;width:100%;text-align:left;gap:12px;align-items:center;padding:15px 0!important;background:none!important;color:var(--mobile-luxe-ink)!important;border:0!important;border-bottom:1px solid var(--mobile-luxe-line)!important;border-radius:0;box-shadow:none!important}.shell.mobileLuxeWorkspace .salesOrderRow>span{flex:1;min-width:0}.shell.mobileLuxeWorkspace .salesOrderRow b{font-size:14px;font-weight:650}.shell.mobileLuxeWorkspace .salesOrderRow small{font-size:11px;display:block;color:var(--mobile-luxe-muted);margin:4px 0 0}.shell.mobileLuxeWorkspace .salesOrderRow>strong{font-size:13px;white-space:nowrap;color:var(--mobile-luxe-accent)}.shell.mobileLuxeWorkspace .salesOrderRow>strong small{font-weight:450;text-align:right}
+ .shell.mobileLuxeWorkspace .mobileOrderStatus{display:inline-block;font-style:normal;font-size:10px;padding:4px 7px;margin-top:7px;border-radius:6px;background:var(--mobile-luxe-soft);color:var(--mobile-luxe-accent)}
+ .shell.mobileLuxeWorkspace :is(.mobileOrdersPage,.mobileCustomersPage):not(.mobileDetailOpen) .salesEditor{display:none}
+ .shell.mobileLuxeWorkspace :is(.mobileOrdersPage,.mobileCustomersPage).mobileDetailOpen>.salesHeading,.shell.mobileLuxeWorkspace :is(.mobileOrdersPage,.mobileCustomersPage).mobileDetailOpen>.salesKpis,.shell.mobileLuxeWorkspace :is(.mobileOrdersPage,.mobileCustomersPage).mobileDetailOpen .salesList{display:none}
+ .shell.mobileLuxeWorkspace .mobileDetailBack{display:block;border:0;padding:0 0 14px;min-height:40px;color:var(--mobile-luxe-accent);background:none;font-size:13px;text-align:left}
+ .shell.mobileLuxeWorkspace :is(.mobileOrdersPage,.mobileCustomersPage) .salesEditor{border:0!important;box-shadow:none!important;background:transparent!important;padding:0!important}
+ .shell.mobileLuxeWorkspace .mobileOrdersPage .cloudOrder>.salesHeading{display:flex;align-items:center;justify-content:space-between}.shell.mobileLuxeWorkspace .mobileOrdersPage .cloudOrder>.salesHeading h3{font-size:18px;margin:0}.shell.mobileLuxeWorkspace .mobileOrderVersion{font-size:11px;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace .mobileOrdersPage .contactCard{padding:0;background:none;border:0;box-shadow:none}.shell.mobileLuxeWorkspace .mobileOrderWizard>h3{display:none}
+ .shell.mobileLuxeWorkspace .mobileOrderSteps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;margin:18px 0 22px}.shell.mobileLuxeWorkspace .mobileOrderSteps button{position:relative;display:flex;align-items:center;flex-direction:column;gap:7px;background:none;border:0;padding:0;color:var(--mobile-luxe-muted)}.shell.mobileLuxeWorkspace .mobileOrderSteps button:before{content:'';position:absolute;left:-50%;right:50%;top:13px;height:2px;background:var(--mobile-luxe-line);z-index:0}.shell.mobileLuxeWorkspace .mobileOrderSteps button:first-child:before{display:none}.shell.mobileLuxeWorkspace .mobileOrderSteps span{display:grid;place-items:center;width:27px;height:27px;position:relative;z-index:1;background:var(--mobile-luxe-line);border-radius:50%;font-size:12px}.shell.mobileLuxeWorkspace .mobileOrderSteps small{font-size:10px;white-space:nowrap}.shell.mobileLuxeWorkspace .mobileOrderSteps [aria-current=step]{color:var(--mobile-luxe-accent)}.shell.mobileLuxeWorkspace .mobileOrderSteps [aria-current=step] span{background:#bd437f;color:white}
+ .shell.mobileLuxeWorkspace .mobileOrderWizard fieldset{min-width:0;border:0;padding:0;margin:0}.shell.mobileLuxeWorkspace .mobileOrderStage{display:none}.shell.mobileLuxeWorkspace .mobileOrderWizard[data-mobile-step="0"] .stageProducts,.shell.mobileLuxeWorkspace .mobileOrderWizard[data-mobile-step="1"] .stageCustomer,.shell.mobileLuxeWorkspace .mobileOrderWizard[data-mobile-step="2"] .stageMoney{display:block}
+ .shell.mobileLuxeWorkspace .mobileOrderReview{display:none}.shell.mobileLuxeWorkspace .mobileOrderWizard[data-mobile-step="3"] .mobileOrderReview{display:block;padding:16px;border:1px solid var(--mobile-luxe-line);background:var(--mobile-luxe-paper);border-radius:16px}.shell.mobileLuxeWorkspace .mobileOrderReview h3{font-size:16px;margin:0 0 14px}.shell.mobileLuxeWorkspace .mobileReviewContact{display:grid;gap:5px;font-size:13px;padding-bottom:14px}
+ .shell.mobileLuxeWorkspace .mobileOrderWizard:not([data-mobile-step="3"]) .mobileOrderSave{display:none}
+ .shell.mobileLuxeWorkspace .mobileLocalOrders.mobileDetailOpen>.salesOverview{display:none}
+ .shell.mobileLuxeWorkspace .mobileLocalOrders .luxeFlowSteps{display:none}
+ .shell.mobileLuxeWorkspace .mobileLocalOrders[data-guided-mobile=true] :is(.mobileLocalCustomer,.mobileLocalItems,.mobileLocalMoney,.mobileLocalSave,.mobileLocalConfirm){display:none}
+ .shell.mobileLuxeWorkspace .mobileLocalOrders[data-guided-mobile=true][data-mobile-step="0"] .mobileLocalItems{display:block}
+ .shell.mobileLuxeWorkspace .mobileLocalOrders[data-guided-mobile=true][data-mobile-step="1"] .mobileLocalCustomer{display:block}
+ .shell.mobileLuxeWorkspace .mobileLocalOrders[data-guided-mobile=true][data-mobile-step="2"] .mobileLocalMoney{display:grid}
+ .shell.mobileLuxeWorkspace .mobileLocalOrders[data-guided-mobile=true][data-mobile-step="3"] :is(.mobileLocalSave,.mobileLocalConfirm){display:block}
+ .shell.mobileLuxeWorkspace .salesItems{min-width:0;max-width:100%;overflow:visible}.shell.mobileLuxeWorkspace .salesItem{display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;padding:12px;margin-bottom:9px;border:1px solid var(--mobile-luxe-line);border-radius:14px;background:var(--mobile-luxe-paper);min-width:0}.shell.mobileLuxeWorkspace .salesItem>img{width:62px;height:82px;object-fit:contain;border-radius:8px}.shell.mobileLuxeWorkspace .salesItem>div b{font-size:13px;line-height:1.4}.shell.mobileLuxeWorkspace .salesItem small{font-size:11px;line-height:1.5;overflow-wrap:anywhere}.shell.mobileLuxeWorkspace .salesItem>label{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;font-size:12px;gap:10px}.shell.mobileLuxeWorkspace .salesItem>label input{max-width:150px;min-height:42px;padding:8px 10px}.shell.mobileLuxeWorkspace .salesItem .salesActionRemove{font-size:11px;padding:6px 0!important;min-height:32px;border:0;background:none;color:var(--mobile-luxe-accent)}
+ .shell.mobileLuxeWorkspace .salesMoney{display:grid;grid-template-columns:1fr;gap:14px}.shell.mobileLuxeWorkspace .formGrid label,.shell.mobileLuxeWorkspace .salesMoney label{display:grid;gap:7px;font-size:13px;color:var(--mobile-luxe-ink)}
+ .shell.mobileLuxeWorkspace .mobileCheckbox{display:flex;gap:9px;align-items:flex-start;font-size:12px;line-height:1.6;margin:16px 0}.shell.mobileLuxeWorkspace .mobileCheckbox input{width:19px;height:19px;min-height:19px;flex:none}
+ .shell.mobileLuxeWorkspace .mobileWizardFooter{position:sticky;bottom:calc(var(--mobile-nav-offset,90px) + 6px);display:grid;gap:10px;margin:18px 0;padding:14px;border:1px solid var(--mobile-luxe-line);border-radius:16px;background:var(--mobile-luxe-paper);z-index:20}.shell.mobileLuxeWorkspace .mobileWizardFooter>span{display:flex;justify-content:space-between;gap:10px;font-size:12px}.shell.mobileLuxeWorkspace .mobileWizardFooter b{color:var(--mobile-luxe-accent);font-size:15px}.shell.mobileLuxeWorkspace .mobileWizardFooter>div{display:flex;gap:8px}.shell.mobileLuxeWorkspace .mobileWizardFooter button{flex:1;min-height:44px;border:1px solid var(--mobile-luxe-line);border-radius:11px;background:var(--mobile-luxe-bg);font-size:12px;color:var(--mobile-luxe-ink)}
+ .shell.mobileLuxeWorkspace .mobileOrderOperations{margin-top:24px;padding:16px;border-radius:16px;background:var(--mobile-luxe-paper);border:1px solid var(--mobile-luxe-line)}.shell.mobileLuxeWorkspace .salesTotals{min-width:0;gap:10px;flex-wrap:wrap;padding:14px 0;border-color:var(--mobile-luxe-line)}.shell.mobileLuxeWorkspace .salesTotals strong{font-size:19px;color:var(--mobile-luxe-accent)}.shell.mobileLuxeWorkspace .salesButtons{gap:7px;flex-wrap:wrap}.shell.mobileLuxeWorkspace .salesButtons button{min-height:44px;font-size:12px;border-radius:11px}
+ .shell.mobileLuxeWorkspace .mobileCustomersPage>.salesHeading>div{display:none}.shell.mobileLuxeWorkspace .mobileCustomerAvatar{display:grid!important;place-items:center;flex:0 0 40px!important;height:40px;width:40px;border-radius:50%;background:var(--mobile-luxe-soft);color:var(--mobile-luxe-accent);font-size:18px}.shell.mobileLuxeWorkspace .mobileCustomersPage .luxeCustomerHeader{padding:16px;background:linear-gradient(110deg,var(--mobile-luxe-soft),var(--mobile-luxe-paper));border-radius:16px;margin-bottom:16px}.shell.mobileLuxeWorkspace .mobileCustomersPage .salesEditor fieldset{display:grid;gap:14px;border:0;padding:0;margin:0;min-width:0}.shell.mobileLuxeWorkspace .mobileCustomersPage .salesEditor fieldset label{display:grid;gap:7px;font-size:13px}
+ .shell.mobileLuxeWorkspace :is(.stage4Filters,.stage4Actions){display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}.shell.mobileLuxeWorkspace .stage4Filters>label{min-width:0;flex:1 1 135px;font-size:12px}.shell.mobileLuxeWorkspace .stage4Filters>button{min-height:44px}.shell.mobileLuxeWorkspace .stage4Metrics article{background:var(--mobile-luxe-paper);border:1px solid var(--mobile-luxe-line);border-radius:16px;box-shadow:none}.shell.mobileLuxeWorkspace .stage4Metrics b{font-size:21px!important;overflow-wrap:anywhere}.shell.mobileLuxeWorkspace .stage4Metrics :is(small,span){font-size:11px;line-height:1.6}.shell.mobileLuxeWorkspace .stage4Table,.shell.mobileLuxeWorkspace .warehouseTableWrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}.shell.mobileLuxeWorkspace .stage4Period{font-size:11px;color:var(--mobile-luxe-muted)}.shell.mobileLuxeWorkspace .stage4Notes{font-size:12px;line-height:1.65;background:var(--mobile-luxe-soft);border:0;border-radius:14px;padding:12px;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace .mobileReportPresets{display:flex;gap:8px;margin-bottom:12px}.shell.mobileLuxeWorkspace .mobileReportPresets button{flex:1;border:1px solid var(--mobile-luxe-line);border-radius:10px;padding:10px;background:var(--mobile-luxe-paper);font-size:12px;color:var(--mobile-luxe-accent)}
+ .shell.mobileLuxeWorkspace .mobileReportDetails{border:0;margin:12px 0;padding:0}.shell.mobileLuxeWorkspace .mobileReportDetails>summary{font-size:12px;padding:12px;background:var(--mobile-luxe-soft);border-radius:10px;cursor:pointer;color:var(--mobile-luxe-accent)}.shell.mobileLuxeWorkspace .mobileReportDetails:not([open])+.salesButtons{display:none}
+ .shell.mobileLuxeWorkspace .stocktakePanel .stage4Table :is(table,tbody){display:block;width:100%;min-width:0}
+ .shell.mobileLuxeWorkspace .stocktakePanel .stage4Table thead{display:none}
+ .shell.mobileLuxeWorkspace .stocktakePanel .stage4Table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px;margin-bottom:12px;border:1px solid var(--mobile-luxe-line);border-radius:14px;background:var(--mobile-luxe-paper)}
+ .shell.mobileLuxeWorkspace .stocktakePanel .stage4Table tr.stocktakeMismatch{border-color:#d6a56b;background:var(--mobile-luxe-soft)}
+ .shell.mobileLuxeWorkspace .stocktakePanel .stage4Table td{display:block;min-width:0;width:auto;padding:0;border:0;font-size:13px;white-space:normal}
+ .shell.mobileLuxeWorkspace .stocktakePanel .stage4Table td:first-child{grid-column:1/-1;font-size:14px}
+ .shell.mobileLuxeWorkspace .stocktakePanel .stage4Table td[data-label]:not(:first-child):before{content:attr(data-label);display:block;font-size:10px;margin-bottom:6px;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace .stocktakePanel .stage4Table input{width:100%;max-width:100%;min-width:0!important}
+ .shell.mobileLuxeWorkspace .stocktakePanel .stage4Table td:last-child{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+ .shell.mobileLuxeWorkspace .luxeReportChartHead{display:block}.shell.mobileLuxeWorkspace .luxeReportChartHead small{font-size:10px}.shell.mobileLuxeWorkspace .luxeReportBar{grid-template-columns:minmax(0,1fr) 45px;gap:6px}.shell.mobileLuxeWorkspace .luxeReportBar>span{grid-column:1/-1;font-size:12px}
+ .shell.mobileLuxeWorkspace .luxeFlowSteps,.shell.mobileLuxeWorkspace .luxeCloudFlow{max-width:100%;overflow-x:auto}.shell.mobileLuxeWorkspace .luxeInventorySelectionDetails{max-width:100%}
+ .shell.mobileLuxeWorkspace .mobileAppearance{display:grid;gap:14px;margin-bottom:16px}.shell.mobileLuxeWorkspace .mobileAppearance .densitySwitch{display:flex;gap:6px}.shell.mobileLuxeWorkspace .mobileAppearance .densitySwitch button{flex:1;min-height:44px;border-radius:10px;font-size:13px}.shell.mobileLuxeWorkspace .mobileAppearance~.displayPreferences{display:none}
+ .shell.mobileLuxeWorkspace .mobileThemeChoices{display:grid;grid-template-columns:1fr 1fr;gap:10px}.shell.mobileLuxeWorkspace .mobileThemeChoices button{padding:9px;border:2px solid var(--mobile-luxe-line);background:var(--mobile-luxe-bg);border-radius:13px;color:var(--mobile-luxe-ink)}.shell.mobileLuxeWorkspace .mobileThemeChoices [aria-pressed=true]{border-color:#b7538d}.shell.mobileLuxeWorkspace .mobileThemeChoices b{display:block;font-size:11px;margin-top:9px}.themeSample{display:block;height:85px;border:1px solid #e1d1e2;border-radius:8px;background:linear-gradient(180deg,#f4e3f0 0 21%,#fff 21% 40%,#f8eff6 40% 60%,#fff 60%)}.themeSample.dark{background:linear-gradient(180deg,#5e3d5b 0 21%,#292432 21% 40%,#3c3345 40% 60%,#292432 60%);border-color:#594a5b}
+ .shell.mobileLuxeWorkspace .mobileSettingsList>button{display:flex;width:100%;gap:12px;align-items:center;text-align:left;border:1px solid var(--mobile-luxe-line);padding:16px;background:var(--mobile-luxe-paper);color:var(--mobile-luxe-ink);border-radius:16px}.shell.mobileLuxeWorkspace .mobileSettingsList>button>span:nth-child(2){flex:1}.shell.mobileLuxeWorkspace .mobileSettingsList b{display:block;font-size:14px}.shell.mobileLuxeWorkspace .mobileSettingsList small{display:block;font-size:11px;margin-top:5px;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace .mobileAccountSettings{padding:0;border:1px solid var(--mobile-luxe-line);border-radius:16px;background:var(--mobile-luxe-paper);margin:0 0 16px;overflow:hidden}.shell.mobileLuxeWorkspace .mobileAccountSettings>summary{font-size:13px;padding:16px;cursor:pointer;list-style:none}.shell.mobileLuxeWorkspace .mobileAccountSettings>summary span{float:right}.shell.mobileLuxeWorkspace .mobileAccountSettings[open]>summary{border-bottom:1px solid var(--mobile-luxe-line)}.shell.mobileLuxeWorkspace .mobileAccountSettings>.cloudSettings{border:0;box-shadow:none;padding:16px;margin:0;border-radius:0}
+ .shell.mobileLuxeWorkspace .cloudSettings>.luxeCloudFlow{display:none}.shell.mobileLuxeWorkspace .cloudSettings>h3{font-size:16px}.shell.mobileLuxeWorkspace .cloudSettings>p{font-size:12px;line-height:1.6}.shell.mobileLuxeWorkspace .cloudSettings form{display:grid;gap:14px}.shell.mobileLuxeWorkspace .cloudSettings label{display:grid;gap:7px;font-size:13px}.shell.mobileLuxeWorkspace .cloudSettings button{min-height:44px;font-size:12px}.shell.mobileLuxeWorkspace .cloudSettings .inventoryActions{display:flex;gap:8px;flex-wrap:wrap}.shell.mobileLuxeWorkspace .cloudPasswordSetup{margin-top:18px;font-size:13px}.shell.mobileLuxeWorkspace .cloudPasswordSetup summary{padding:12px 0}.shell.mobileLuxeWorkspace .cloudPasswordSetup p{font-size:12px;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace.mobileAuthWorkspace{background:linear-gradient(180deg,#f6e5f0,#fffcfe 55%,#f2e9f8);color:#392a43}.shell.mobileLuxeWorkspace.mobileAuthWorkspace.themeDark{background:linear-gradient(180deg,#392638,#211e2c 55%,#2e2136)}
+ .shell.mobileLuxeWorkspace.mobileAuthWorkspace>.topbar,.shell.mobileLuxeWorkspace.mobileAuthWorkspace .mobileLuxeNav,.shell.mobileLuxeWorkspace.mobileAuthWorkspace .mobileLuxeSectionHeader,.shell.mobileLuxeWorkspace.mobileAuthWorkspace .shopSyncStatus,.shell.mobileLuxeWorkspace.mobileAuthWorkspace .overview{display:none!important}
+ .shell.mobileLuxeWorkspace.mobileAuthWorkspace .layout>main{padding:20px 22px 0!important;max-width:500px!important;margin:auto!important}.shell.mobileLuxeWorkspace .mobileLoginIntro{display:block;text-align:center;padding:24px 0 16px}.shell.mobileLuxeWorkspace .mobileLoginIntro img{height:72px;width:72px;object-fit:cover;border-radius:50%;box-shadow:0 0 0 6px #ffffff70}.shell.mobileLuxeWorkspace .mobileLoginIntro h1{font-family:Georgia,serif;color:#ad4e78;font-size:38px;font-weight:450;margin:15px 0 3px;letter-spacing:-.05em}.shell.mobileLuxeWorkspace .mobileLoginIntro>span{font-size:10px;letter-spacing:.18em;color:var(--mobile-luxe-accent)}.shell.mobileLuxeWorkspace .mobileLoginIntro>p{font-size:12px;color:var(--mobile-luxe-muted);margin:18px 0 0}
+ .shell.mobileLuxeWorkspace.mobileAuthWorkspace .mobileAccountSettings{background:transparent;border:0;overflow:visible}.shell.mobileLuxeWorkspace.mobileAuthWorkspace .mobileAccountSettings>summary{display:none}.shell.mobileLuxeWorkspace.mobileAuthWorkspace .cloudSettings{background:transparent;border:0;box-shadow:none;padding:0;margin:0}.shell.mobileLuxeWorkspace.mobileAuthWorkspace .cloudSettings>h3,.shell.mobileLuxeWorkspace.mobileAuthWorkspace .cloudSettings>p:not(.notice){display:none}.shell.mobileLuxeWorkspace.mobileAuthWorkspace .cloudSettings>h4{font-size:17px;margin:14px 0}.shell.mobileLuxeWorkspace.mobileAuthWorkspace .cloudSettings .notice{font-size:12px;border:0;background:transparent;padding:0;color:var(--mobile-luxe-muted)}.shell.mobileLuxeWorkspace.mobileAuthWorkspace .cloudSettings form button[type=submit]{background:linear-gradient(110deg,#c95492,#b94a95);color:white;border:0;border-radius:12px;min-height:49px;font-size:15px}.shell.mobileLuxeWorkspace.mobileAuthWorkspace .cloudSettings form .muted{font-size:11px;margin:0;color:var(--mobile-luxe-muted)}.shell.mobileLuxeWorkspace.mobileAuthWorkspace .cloudSettings>button{display:block;margin:12px auto;background:none;border:0;color:var(--mobile-luxe-accent);font-size:12px}.shell.mobileLuxeWorkspace.mobileAuthWorkspace .cloudEmailLogin{font-size:11px;padding:0}.shell.mobileLuxeWorkspace.mobileAuthWorkspace .cloudEmailLogin>summary{padding:10px 0;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace .mobileLoginFooter{display:block;position:relative;overflow:hidden;height:140px;margin:10px -22px 0}.shell.mobileLuxeWorkspace .mobileLoginFooter img{width:100%;height:100%;object-fit:cover;object-position:50% 70%;opacity:.8;mask-image:linear-gradient(transparent,#000 30%)}.shell.mobileLuxeWorkspace .mobileLoginFooter span{position:absolute;bottom:15px;left:0;right:0;text-align:center;font-size:11px;letter-spacing:.06em;color:#624b6f}
+ .shell.mobileLuxeWorkspace .drawerBackdrop{z-index:210;background:var(--mobile-luxe-bg)}.shell.mobileLuxeWorkspace .featureDrawer{width:100%;max-width:100%;height:100dvh;border:0;border-radius:0;padding:0 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--mobile-luxe-bg)!important;color:var(--mobile-luxe-ink)!important;box-shadow:none}.shell.mobileLuxeWorkspace .drawerHead{position:sticky;top:0;z-index:1;display:flex;gap:10px;margin:0 -16px 16px;padding:max(14px,env(safe-area-inset-top,0px)) 16px 14px;border:0;background:var(--mobile-luxe-paper)!important;color:var(--mobile-luxe-ink)!important}.shell.mobileLuxeWorkspace .drawerHead b{font-size:16px;color:var(--mobile-luxe-ink)!important}.shell.mobileLuxeWorkspace .drawerHead small{font-size:11px;color:var(--mobile-luxe-muted)!important}.shell.mobileLuxeWorkspace .drawerHead img{width:38px;height:38px;border-radius:50%}.shell.mobileLuxeWorkspace .drawerHead>button{background:var(--mobile-luxe-soft);color:var(--mobile-luxe-ink);border:0;border-radius:12px;min-width:40px;min-height:40px}
+ .shell.mobileLuxeWorkspace .drawerSearch{border-radius:12px;border:1px solid var(--mobile-luxe-line);background:var(--mobile-luxe-paper)!important;margin-bottom:16px}.shell.mobileLuxeWorkspace .drawerSearch input{font-size:16px!important;color:var(--mobile-luxe-ink)!important;-webkit-text-fill-color:var(--mobile-luxe-ink)!important}.shell.mobileLuxeWorkspace .drawerSection{font-size:10px;color:var(--mobile-luxe-muted)!important;letter-spacing:.06em}.shell.mobileLuxeWorkspace .drawerLinks{display:block;padding:0 14px;border-radius:17px;border:1px solid var(--mobile-luxe-line);background:var(--mobile-luxe-paper)}.shell.mobileLuxeWorkspace .drawerLinks>button{width:100%;display:flex;align-items:center;gap:12px;padding:13px 0!important;min-height:68px;border:0!important;border-bottom:1px solid var(--mobile-luxe-line)!important;border-radius:0;background:none!important;color:var(--mobile-luxe-ink)!important;box-shadow:none}.shell.mobileLuxeWorkspace .drawerLinks>button:last-child{border-bottom:0!important}.shell.mobileLuxeWorkspace .drawerLinks>button>span:nth-child(2){flex:1;text-align:left}.shell.mobileLuxeWorkspace .drawerLinks b{font-size:14px;font-weight:600}.shell.mobileLuxeWorkspace .mobileMenuDescription{display:block;font-size:11px;font-weight:400;margin-top:4px;color:var(--mobile-luxe-muted)}.shell.mobileLuxeWorkspace .drawerIcon{width:36px;height:36px;display:grid;place-items:center;border-radius:11px;background:var(--mobile-luxe-soft);color:var(--mobile-luxe-accent)}.shell.mobileLuxeWorkspace .drawerArrow{font-size:20px;color:var(--mobile-luxe-muted)}.shell.mobileLuxeWorkspace .drawerLinks .selected .drawerIcon{background:#b84782;color:white}.shell.mobileLuxeWorkspace .drawerDisplay{margin-top:18px;border-radius:16px;border:1px solid var(--mobile-luxe-line);background:var(--mobile-luxe-paper);padding:16px}.shell.mobileLuxeWorkspace .drawerFoot{font-size:11px;border:0;color:var(--mobile-luxe-muted)!important}
+ .shell.mobileLuxeWorkspace .inventoryPage .sizesInsight .productStockBarLabel{flex-wrap:wrap;gap:4px 10px}.shell.mobileLuxeWorkspace .inventoryPage .sizesInsight .productStockBarLabel b{flex:1 1 180px}
+ /* Portal sheets use the same tokens without inheriting desktop component geometry. */
+ .mobileLuxeOverlay{position:fixed;inset:0;z-index:220;display:flex;align-items:flex-end;justify-content:center;background:#24132b66;backdrop-filter:blur(3px)}
+ .mobileLuxeSheet{box-sizing:border-box;display:flex;flex-direction:column;max-height:92dvh;width:min(100%,600px);min-width:0;overflow:hidden;background:var(--mobile-luxe-bg);color:var(--mobile-luxe-ink);border-radius:24px 24px 0 0;box-shadow:0 -10px 50px #23112620}
+ .mobileLuxeSheet.isFull{height:100dvh;max-height:100dvh;border-radius:0;width:min(100%,800px)}
+ .mobileLuxeSheet>header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:none;padding:max(10px,env(safe-area-inset-top,0px)) 12px 10px;background:var(--mobile-luxe-paper);border-bottom:1px solid var(--mobile-luxe-line)}.mobileLuxeSheet>header h2{font-size:16px;line-height:1.35;margin:0;text-align:center}.mobileLuxeSheet>header>button{min-width:44px;min-height:44px;border:0;border-radius:12px;background:none;color:var(--mobile-luxe-ink);font-size:25px}
+ .mobileLuxeSheetBody{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:18px;font-size:14px;line-height:1.6}.mobileLuxeSheet>footer{flex:none;border-top:1px solid var(--mobile-luxe-line);padding:12px 16px max(12px,env(safe-area-inset-bottom,0px));background:var(--mobile-luxe-paper)}
+ .mobilePrimary,.shell.mobileLuxeWorkspace .mobilePrimary{display:block;width:100%;box-sizing:border-box;border:0;border-radius:12px;min-height:48px;padding:12px;background:linear-gradient(110deg,#c34c8c,#a74687)!important;color:#fff!important;font:650 14px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;text-align:center}.mobilePrimary:disabled{opacity:.45}
+ .mobileLuxeSheet :is(input:not([type=checkbox]),select,textarea){box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:48px;border:1px solid var(--mobile-luxe-line);border-radius:12px;background:var(--mobile-luxe-paper);color:var(--mobile-luxe-ink);font-size:16px;padding:10px 12px}
+ .mobileInventoryFilterFields{display:grid;gap:16px}.mobileInventoryFilterFields>label{display:grid;gap:7px;font-size:13px}.mobileInventoryFilterFields>button{padding:12px;border:0;background:var(--mobile-luxe-soft);color:var(--mobile-luxe-accent);border-radius:12px}
+ .mobileLuxeSheet .mobileMetricGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.mobileLuxeSheet .mobileMetric{display:grid;gap:8px;border:1px solid var(--mobile-luxe-line);background:var(--mobile-luxe-paper);padding:15px;border-radius:15px}.mobileLuxeSheet .mobileMetric span{font-size:12px}.mobileLuxeSheet .mobileMetric strong{font-size:23px}
+ .mobileSimpleRow{display:flex;justify-content:space-between;align-items:baseline;gap:15px;font-size:13px;padding:12px 0;border-bottom:1px solid var(--mobile-luxe-line)}.mobileSimpleRow>span{min-width:0;overflow-wrap:anywhere}.mobileSimpleRow>b,.mobileSimpleRow>strong{white-space:nowrap}.mobileSimpleRow>strong{color:var(--mobile-luxe-accent)}
+ .mobileProductHero{aspect-ratio:3/4;max-height:54dvh;margin:-18px -18px 16px;background:var(--mobile-luxe-soft);position:relative}.mobileProductHero>button{border:0;background:none;width:100%;height:100%;padding:0}.mobileProductHero img{width:100%;height:100%;object-fit:contain;display:block}.mobileProductHero button>span{position:absolute;right:12px;bottom:12px;background:#ffffffee;color:#47344a;border-radius:9px;padding:7px 10px;font-size:11px;box-shadow:0 2px 10px #29112b18}
+ .mobileProductInfo>small{color:var(--mobile-luxe-muted);font-size:11px}.mobileProductInfo h2{font-size:21px;line-height:1.4;margin:4px 0 8px;overflow-wrap:anywhere}.mobileProductInfo>p{font-size:13px;color:var(--mobile-luxe-muted)}.mobileSizeChoices{display:flex;gap:8px;overflow-x:auto;padding:8px 0}.mobileSizeChoices button{flex:none;min-width:62px;min-height:54px;background:var(--mobile-luxe-paper);color:var(--mobile-luxe-ink);border:1px solid var(--mobile-luxe-line);border-radius:11px;padding:8px;font-size:13px}.mobileSizeChoices button[aria-pressed=true]{border:1px solid #b94e87;background:var(--mobile-luxe-soft);color:var(--mobile-luxe-accent)}.mobileSizeChoices small{display:block;font-size:10px;margin-top:3px}
+ .mobilePhotoHeading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 12px}.mobilePhotoHeading h3{font-size:15px;margin:0}.mobilePhotoHeading small{font-size:11px;color:var(--mobile-luxe-muted)}.mobileDetailPhotos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.mobileDetailPhotos>article{min-width:0;overflow:hidden;border:1px solid var(--mobile-luxe-line);border-radius:11px;background:var(--mobile-luxe-paper)}.mobileThumbnail{display:block;width:100%;aspect-ratio:3/4;background:var(--mobile-luxe-soft);border:0;padding:0}.mobileThumbnail img{display:block;width:100%;height:100%;object-fit:contain}.mobilePhotoCheck{min-height:42px;width:100%;padding:8px 3px;background:none;border:0;color:var(--mobile-luxe-muted);font-size:11px}.mobilePhotoCheck[aria-pressed=true]{background:#a43d78;color:#fff}
+ .mobileHelp{font-size:11px;line-height:1.6;color:var(--mobile-luxe-muted)}.mobileEmpty{padding:30px 18px;text-align:center;color:var(--mobile-luxe-muted);font-size:13px;line-height:1.6}.mobileEmpty h3{font-size:16px;color:var(--mobile-luxe-ink)}.mobileEmpty>button{border:0;border-radius:10px;padding:12px;background:var(--mobile-luxe-soft);color:var(--mobile-luxe-accent)}
+ .mobileConnectionState{text-align:center;padding:16px 8px 24px}.mobileConnectionState>svg{width:50px;height:50px;color:#2e8b79}.mobileConnectionState h3{font-size:18px}.mobileConnectionState p{font-size:13px;overflow-wrap:anywhere}.mobileConnectionState.isOffline>svg{color:#b46346}
+ .mobileNoticeList{margin-top:24px}.mobileNoticeList h3{font-size:15px}.mobileNoticeList>button{display:flex;align-items:center;gap:12px;width:100%;min-height:66px;border:0;border-bottom:1px solid var(--mobile-luxe-line);background:none;color:var(--mobile-luxe-ink);text-align:left;padding:12px 0}.mobileNoticeList>button>span:first-child{flex:1}.mobileNoticeList b{font-size:13px;display:block}.mobileNoticeList small{font-size:11px;display:block;margin-top:5px;color:var(--mobile-luxe-muted)}
 }
-
-/* Keep long product names readable beside stock totals on narrow phones. */
-@media(max-width:420px){
- .shell.mobileLuxeWorkspace .inventoryPage .sizesInsight .productStockBarLabel{flex-wrap:wrap;gap:4px 10px}
- .shell.mobileLuxeWorkspace .inventoryPage .sizesInsight .productStockBarLabel b{flex:1 1 180px}
- .shell.mobileLuxeWorkspace .inventoryPage .sizesInsight .productStockBarLabel strong{margin-left:auto}
-}
+@media(max-width:390px){.shell.mobileLuxeWorkspace .layout>main{padding-inline:10px!important}.shell.mobileLuxeWorkspace .brandIdentity .eyebrow{font-size:7px!important}.shell.mobileLuxeWorkspace .brandIdentity h1{font-size:16px!important}.shell.mobileLuxeWorkspace .mobileMetric{padding:12px 10px!important}.shell.mobileLuxeWorkspace .mobileLuxeNav small{font-size:10px}.shell.mobileLuxeWorkspace .mobileStockCaption{padding:8px}}
+@media(min-width:600px) and (max-width:800px){.shell.mobileLuxeWorkspace .layout>main{padding-inline:24px!important}.shell.mobileLuxeWorkspace .mobileStockGrid{grid-template-columns:repeat(3,minmax(0,1fr))}.shell.mobileLuxeWorkspace .mobileOverview{grid-template-columns:1fr 1fr}.shell.mobileLuxeWorkspace .mobileOverview>.mobileWelcome,.shell.mobileLuxeWorkspace .mobileOverview>.mobileMetricGrid,.shell.mobileLuxeWorkspace .mobileOverview>.mobileShopNote{grid-column:1/-1}.shell.mobileLuxeWorkspace .mobileMetricGrid.overviewStats{grid-template-columns:repeat(4,minmax(0,1fr))}.shell.mobileLuxeWorkspace .mobileQuickNav.mobileLuxeNav{left:15%;right:15%;border:1px solid var(--mobile-luxe-line);border-bottom:0}}
+@media(max-width:800px) and (orientation:landscape){.mobileLuxeSheet.isFull .mobileProductHero{max-height:65dvh;aspect-ratio:auto}.shell.mobileLuxeWorkspace .topbar{padding-top:5px;padding-bottom:5px}}
+@media(max-width:800px) and (prefers-reduced-motion:reduce){.shell.mobileLuxeWorkspace *,.mobileLuxeOverlay *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+@media(max-width:800px) and (prefers-reduced-motion:no-preference){.shell.mobileLuxeWorkspace .mobileLuxeNav button{transition:background-color .15s,color .15s}.mobileLuxeSheet{animation:mobileLuxeArrive .18s ease-out}}
+@keyframes mobileLuxeArrive{from{opacity:.65;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}

@@ -3,7 +3,11 @@ on:
   push:
     branches: [main]
     paths:
-      - 'apps/web/src/MobileLuxeNav.tsx'
+      - 'apps/web/src/Mobile*.tsx'
+      - 'apps/web/src/InventoryView.tsx'
+      - 'apps/web/src/InventorySharing.tsx'
+      - 'apps/web/src/CloudOrder*.tsx'
+      - 'apps/web/src/CustomersView.tsx'
       - 'apps/web/src/MobileLuxeSectionHeader.tsx'
       - 'apps/web/src/mobileLuxeV2.css'
       - 'apps/web/src/App.tsx'
@@ -12,6 +16,8 @@ on:
       - 'scripts/v8/mobile-luxe-m2-*.test.mjs'
       - 'package.json'
       - 'scripts/v8/mobile-m2-browser.mjs'
+      - 'scripts/mobile-reform-dom.mjs'
+      - 'scripts/cloud-browser-e2e.mjs'
       - '.github/workflows/mobile-m2-verify.yml'
   workflow_dispatch:
 permissions:
@@ -49,5 +55,6 @@ jobs:
           path: |
             artifacts/main-release/
             artifacts/mobile-m2/
+            artifacts/cloud-browser/
           if-no-files-found: ignore
           retention-days: 7

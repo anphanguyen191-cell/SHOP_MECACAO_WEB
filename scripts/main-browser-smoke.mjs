@@ -99,7 +99,7 @@ try{
  for(const width of [1366,390])for(const dark of [false,true]){
   await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:900,deviceScaleFactor:1,mobile:width===390});await run("document.querySelector('.shell').classList.toggle('themeDark',"+dark+")");await sleep(100)
   assert(await run('document.documentElement.scrollWidth<=innerWidth+2'))
-  if(!dark)assert(await run("(()=>{const cards=Array.from(document.querySelectorAll('.overviewStat'));const styles=cards.map(e=>getComputedStyle(e));return cards.length===5&&styles.every(s=>parseFloat(s.borderRadius)>=18&&parseFloat(s.borderTopWidth)<=1.5)&&new Set(styles.map(s=>s.backgroundColor)).size===1})()"),'Light dashboard KPIs must use one rounded surface with subtle borders, not position-colored blocks')
+  if(!dark)assert(await run("(()=>{const cards=Array.from(document.querySelectorAll('.overviewStat'));const styles=cards.map(e=>getComputedStyle(e));return cards.length===(innerWidth<=800?4:5)&&styles.every(s=>parseFloat(s.borderRadius)>=18&&parseFloat(s.borderTopWidth)<=1.5)&&new Set(styles.map(s=>s.backgroundColor)).size===1})()"),'Light dashboard KPIs must use one rounded surface with subtle borders, not position-colored blocks')
   const pic=await cmd('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(out,width+'-'+(dark?'dark':'light')+'.png'),Buffer.from(pic.data,'base64'))
  }
  // Canonical main: every navigation destination in all display sizes and both themes.
