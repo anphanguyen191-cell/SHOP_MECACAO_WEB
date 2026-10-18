@@ -21,6 +21,7 @@ on:
       - 'scripts/mobile-browser-smoke.mjs'
       - 'scripts/v2-drafts-e2e.mjs'
       - 'scripts/v2-sales-e2e.mjs'
+      - 'scripts/stage6-browser-e2e.mjs'
       - '.github/workflows/mobile-m2-verify.yml'
   workflow_dispatch:
 permissions:
@@ -54,6 +55,8 @@ jobs:
         run: node scripts/v2-drafts-e2e.mjs
       - name: LOCAL sales browser acceptance (disposable sandbox)
         run: node scripts/v2-sales-e2e.mjs
+      - name: Real HTTPS LAN roles, offline state and SOLD refresh browser acceptance
+        run: node --import tsx scripts/stage6-browser-e2e.mjs
       - name: Mobile viewport Chromium screenshots (375, 390, 430, 768)
         run: node scripts/v8/mobile-m2-browser.mjs
       - name: Upload available UI evidence
@@ -67,5 +70,6 @@ jobs:
             artifacts/cloud-browser/
             artifacts/v2-drafts/
             artifacts/v2-sales/
+            artifacts/stage6-control/
           if-no-files-found: ignore
           retention-days: 7
