@@ -1,14 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="470" viewBox="0 0 900 470" role="img" aria-label="Shop Mẹ CaCao — Tole xinh cho bé yêu! Since 2023">
-<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#ffe4ef"/><stop offset="1" stop-color="#fff3df"/></linearGradient></defs>
-<rect width="900" height="470" rx="40" fill="url(#bg)"/>
-<circle cx="820" cy="30" r="180" fill="#fff9fb" opacity=".7"/><circle cx="10" cy="470" r="170" fill="#f8ccdd" opacity=".5"/>
-<g font-family="system-ui,-apple-system,Segoe UI,sans-serif" fill="#63223e">
-<text x="56" y="62" font-size="24" font-weight="700" letter-spacing="5">SHOP MẸ CACAO</text>
-<text x="56" y="103" font-size="18" letter-spacing="4">SINCE 2023</text>
-<text x="56" y="190" font-size="66" font-weight="800">Tole xinh</text><text x="56" y="270" font-size="66" font-weight="800">cho bé yêu!</text>
-<text x="60" y="322" font-size="22" fill="#785866">Mềm mại mỗi ngày · Mẹ chọn, bé yêu</text>
-<rect x="56" y="366" width="516" height="64" rx="37" fill="#fff9fb"/><text x="86" y="408" font-size="25" font-weight="700">Hỗ trợ Shop: 0949 656 477</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="510" viewBox="0 0 1000 510" role="img" aria-label="Shop Mẹ CaCao — Tole xinh cho bé yêu! Since 2023">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff3e0"/><stop offset=".47" stop-color="#ffeff6"/><stop offset="1" stop-color="#f8fce8"/></linearGradient><linearGradient id="pink" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ff7dac"/><stop offset="1" stop-color="#ee3d7d"/></linearGradient><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#8fd8f7"/><stop offset="1" stop-color="#a7ebd7"/></linearGradient><filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#af5874" flood-opacity=".19"/></filter></defs>
+<rect width="1000" height="510" rx="35" fill="url(#bg)"/><circle cx="145" cy="94" r="168" fill="#fff" opacity=".45"/><circle cx="883" cy="95" r="150" fill="#fff" opacity=".44"/><path d="M0 451Q210 389 425 452T1000 437V510H0Z" fill="#ffe5ea"/>
+<path d="M45 34Q510 -12 951 34" fill="none" stroke="#e6b58e" stroke-width="4"/><g fill="#ff83a6"><path d="M85 32l24 4-12 47Z"/><path d="M338 14l23-3-8 48Z"/><path d="M795 15l26 6-23 46Z"/></g><g fill="#f9c84e"><path d="M182 15l27 4-14 45Z"/><path d="M650 3l22 6-16 42Z"/></g><g fill="#91d7d2"><path d="M268 18l24-3-6 44Z"/><path d="M890 29l26 5-17 43Z"/></g>
+<g stroke="#eb9db7" stroke-width="3" fill="none"><path d="M55 128c-17-31-53-3-29 23l29 24 29-24c25-26-11-54-29-23Z"/><path d="M957 165c-11-22-39-1-21 18l21 18 21-18c17-19-9-40-21-18Z"/></g>
+<g fill="#ffcd4e" stroke="#f8a94a" stroke-width="4"><path d="M391 56l11 25 28 3-21 19 5 27-23-14-23 14 5-27-21-19 27-3Z"/><path d="M926 341l10 21 23 2-17 17 4 23-20-11-20 11 4-23-17-17 23-2Z"/></g>
+<!-- hanging outfits on the right -->
+<path d="M830 106Q922 82 987 106" fill="none" stroke="#cba079" stroke-width="7" stroke-linecap="round"/><g stroke="#aa7e63" fill="none" stroke-width="4"><path d="M854 109v27q-18 12 0 19l23 8-24-8-23 8"/><path d="M930 102v31q-19 13 0 21l24 8-24-8-24 8"/></g>
+<g filter="url(#shadow)"><path d="M825 171l-23 27 26 21 13-15v90h72v-90l13 15 26-21-23-27-28-10-24 11-24-11Z" fill="#a4d9f7" stroke="#589dc4" stroke-width="4"/><path d="M909 171l-16 30 20 16 9-12v80h66v-80l10 12 2-2v-46l-24-10-24 14-20-14Z" fill="#f9abc5" stroke="#e77fa3" stroke-width="4"/><path d="M838 238h62M919 237h63" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".8"/></g>
+<g fill="#ffe064"><circle cx="862" cy="208" r="9"/><circle cx="884" cy="245" r="8"/></g><g fill="#fff"><circle cx="949" cy="213" r="7"/><circle cx="962" cy="257" r="8"/></g>
+<!-- baby illustration left -->
+<g filter="url(#shadow)">
+<ellipse cx="202" cy="425" rx="174" ry="34" fill="#ebb6b4" opacity=".38"/>
+<path d="M110 290Q69 342 68 404Q110 420 153 406l27-56Z" fill="#f6c46a" stroke="#b97a42" stroke-width="5"/>
+<path d="M264 291q83 62 55 111-47 21-91-6l-18-46Z" fill="#a6e1ca" stroke="#70ac93" stroke-width="5"/>
+<g stroke="#b2d4e8" stroke-width="4" fill="#f9faff"><path d="M80 275l-22 30 19 18 16-15v79h71v-79l16 15 18-18-23-30-38-17h-27Z"/><path d="M260 264l-23 32 18 21 16-17v75h72v-75l16 17 18-21-25-32-36-13-28 13Z"/></g>
+<path d="M97 340h52M270 327h61" stroke="#a9cbea" stroke-width="6"/><g fill="#ffc96e"><circle cx="118" cy="303" r="7"/><circle cx="136" cy="326" r="5"/><circle cx="300" cy="306" r="8"/></g>
+<ellipse cx="200" cy="361" rx="115" ry="109" fill="#8ad4eb" stroke="#5f9bbc" stroke-width="6"/><path d="M132 298v123M157 280v147M183 272v157M214 271v158M242 282v146M269 303v120" stroke="#f6fdff" stroke-width="10" opacity=".9"/>
+<path d="M138 345q57-26 119 0v68q-62 18-119 0Z" fill="#a7e9f3" stroke="#579ebd" stroke-width="5"/><path d="M148 370h101" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+<path d="M126 347q-64 15-65 48 8 31 49 17l39-28Z" fill="#ffd6ba" stroke="#ad745a" stroke-width="5"/><path d="M271 347q67 11 67 48-8 31-51 17l-33-29Z" fill="#ffd6ba" stroke="#ad745a" stroke-width="5"/>
+<ellipse cx="153" cy="439" rx="50" ry="35" fill="#ffdbc0" stroke="#ad745a" stroke-width="5"/><ellipse cx="255" cy="439" rx="50" ry="35" fill="#ffdbc0" stroke="#ad745a" stroke-width="5"/><path d="M139 411l-8 18m31-19l-1 19m75-17l-4 17m25-17l10 16" stroke="#dca38a" stroke-width="4"/>
+<ellipse cx="201" cy="176" rx="124" ry="129" fill="#ffe0c7" stroke="#ad745a" stroke-width="6"/><ellipse cx="75" cy="185" rx="22" ry="31" fill="#ffe0c7" stroke="#ad745a" stroke-width="5"/><ellipse cx="328" cy="185" rx="22" ry="31" fill="#ffe0c7" stroke="#ad745a" stroke-width="5"/>
+<path d="M84 143q-3-113 103-121 103-5 132 100l-25-29-31-30q-53 15-83-9-38 37-96 42Z" fill="#5b342b"/><g stroke="#6b4133" stroke-width="6" stroke-linecap="round"><path d="M111 58l-19 42M137 43l-11 32M160 31l-7 27M185 27l-5 30M208 27l9 35M234 35l16 40"/></g>
+<ellipse cx="158" cy="181" rx="15" ry="21" fill="#4e332b"/><ellipse cx="247" cy="181" rx="15" ry="21" fill="#4e332b"/><circle cx="154" cy="173" r="6" fill="#fff"/><circle cx="243" cy="173" r="6" fill="#fff"/><path d="M132 147q21-16 43 2M225 150q23-18 45 0" stroke="#643d32" stroke-width="5" stroke-linecap="round" fill="none"/>
+<ellipse cx="116" cy="220" rx="23" ry="14" fill="#ff9eab" opacity=".6"/><ellipse cx="285" cy="220" rx="23" ry="14" fill="#ff9eab" opacity=".6"/><path d="M171 232q30 48 64 0Z" fill="#ab3c50" stroke="#8c3c40" stroke-width="4"/><path d="M185 238q17 13 35 0" stroke="#fff2df" stroke-width="9" stroke-linecap="round"/>
 </g>
-<g transform="translate(668 180) rotate(9) scale(.72)" stroke="#a32c59" stroke-width="5" stroke-linejoin="round"><path d="M25 15 70 0h50l45 15 35 55-36 23-16-25v130H52V68L36 93 0 70Z" fill="#f3a1be"/><path d="M70 0q25 42 50 0" fill="#fff9fb"/><path d="M62 217h78l17 91h-39l-17-56-17 56H45Z" fill="#d7598b"/><g fill="#fff2d3" stroke="none"><circle cx="96" cy="105" r="16"/><circle cx="65" cy="150" r="9"/><circle cx="130" cy="164" r="10"/></g></g>
-<g fill="#d85a8b" transform="translate(0 -30)"><path d="M740 150c-22-38-75-10-55 20l55 49 55-49c20-30-33-58-55-20Z"/><circle cx="610" cy="62" r="9"/><circle cx="823" cy="320" r="13"/></g>
+<!-- central storefront sign -->
+<g filter="url(#shadow)"><path d="M453 72q-39-39 16-56 37-12 66 11 49-58 112-11 69-17 95 39 70-2 80 51 9 49-47 53H448q-61 0-54-47 3-39 59-40Z" fill="#fffdf9" stroke="#fff" stroke-width="8"/></g>
+<text x="602" y="83" text-anchor="middle" font-size="51" font-family="system-ui,'Arial Rounded MT Bold',sans-serif" font-weight="850" fill="#5b352c">Shop</text>
+<text x="605" y="147" text-anchor="middle" font-size="75" font-family="system-ui,'Arial Rounded MT Bold',sans-serif" font-weight="900" fill="url(#pink)" stroke="#fff8fc" stroke-width="5" paint-order="stroke">Mẹ CaCao</text>
+<g filter="url(#shadow)"><path d="M449 178h328l-25 80H474Z" fill="#ffce63" stroke="#efb149" stroke-width="5"/><path d="M449 178l-37 14 36 26-20 26 46 14-25-80ZM777 178l38 14-38 26 21 26-46 14 25-80Z" fill="#ffc64b"/></g>
+<text x="612" y="230" text-anchor="middle" font-size="28" font-family="system-ui,sans-serif" font-weight="800" fill="#653b35">Tole xinh cho bé yêu!</text>
+<g filter="url(#shadow)"><rect x="437" y="290" width="342" height="65" rx="34" fill="#fff" stroke="#f9cada" stroke-width="4"/><text x="608" y="332" font-size="25" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="750" fill="#b82b61">SINCE 2023 · MẪU XINH MỖI NGÀY</text></g>
+<g font-family="system-ui,sans-serif" fill="#775269"><text x="610" y="409" text-anchor="middle" font-size="23" font-weight="650">Chọn Size · Xem ảnh thật · Gửi Shop tư vấn</text></g>
+<g fill="#f57ea5"><path d="M736 55c-12-24-42-2-25 18l25 22 25-22c18-20-12-42-25-18Z"/><path d="M387 350c-10-17-32-1-19 13l19 19 18-19c14-14-9-30-18-13Z"/></g>
+<path d="M53 464h892" stroke="#fff" stroke-width="7" stroke-dasharray="14 16" stroke-linecap="round" opacity=".9"/>
 </svg>

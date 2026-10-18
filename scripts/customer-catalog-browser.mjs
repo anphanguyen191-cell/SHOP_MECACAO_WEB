@@ -31,6 +31,9 @@ try{
  await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Fetch.enable',{patterns:[{urlPattern:'*supabase.co/functions/v1/customer-catalog*'},{urlPattern:'*brand/catalog-*.svg'}]});
  await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});const target='http://127.0.0.1:'+server.address().port+'/?catalog=1';assert.equal((await fetch(target)).status,200);await until("document.readyState==='complete'");let navigation=await cmd('Page.navigate',{url:target});if(navigation.errorText==='net::ERR_ABORTED'){await cmd('Page.stopLoading');navigation=await cmd('Page.navigate',{url:target})}assert(!navigation.errorText,JSON.stringify({navigation,staticRequests,log}));await until("document.body?.innerText.includes('Bộ tole hoa thử nghiệm')")
  await until(`document.querySelector('.cc-banner img')?.naturalWidth>0`);
+ assert(await run("!!document.querySelector('.cc-guide-illustration svg')"),'Illustrated Size guide');
+ assert(await run("!!document.querySelector('.cc-header .cc-cart-trigger')"),'Header shopping cart');
+ assert(await run("!!document.querySelector('.cc-product .cc-favorite')"),'Clickable wishlist on product card');
  for(const width of [360,375,390,430,768,1024]){await cmd('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:width<768});await delay(80);assert(await run('document.documentElement.scrollWidth<=innerWidth+1'),'overflow '+width);const shot=await cmd('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(out,'home-'+width+'.png'),Buffer.from(shot.data,'base64'))}
  await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
  assert.equal(await run('document.querySelectorAll(".cc-bottom-nav button").length'),4);
