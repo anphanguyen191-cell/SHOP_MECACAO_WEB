@@ -173,6 +173,7 @@ try{
  await run("document.querySelector('.themeToggle').click()")
  await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:3,mobile:true})
  await until("getComputedStyle(document.querySelector('.headerActions .densitySwitch')).display==='none'",'mobile header density control hidden')
+ await until("document.querySelectorAll('.mobileMetric').length===4",'mobile overview mounted after viewport change')
  console.log('DESKTOP_DENSITY PASS: 1366x768 / 1920x1080, all six modules, light/dark, small/medium/large, less fixture content height, no overflow/overlap, preference persistence')
  assert(await run("document.querySelectorAll('.mobileMetric').length===4&&document.querySelector('.mobileWelcome').getBoundingClientRect().height<150"),'Mobile overview must prioritize a compact greeting and four metrics')
  await run("document.querySelector('.menuToggle').click()")
@@ -428,6 +429,7 @@ try{
  await run("document.querySelector('.quickImageSelection button').click()")
  assert((await run("document.querySelector('.imageSendSummary b').textContent")).includes('1 ảnh'),'Select results must respect filters')
  nativeClipboardEnabled=false
+ await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true})
  await clickMenu('Cài đặt');await clickMenu('Tồn kho')
  await until("!!document.querySelector('.mobileInventoryAdvanced')",'mobile gallery after navigation');await run("document.querySelector('.mobileInventoryAdvanced').click()")
  await run("Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>true});Object.defineProperty(navigator,'share',{configurable:true,value:async d=>{window.sharedFiles=d.files.map(f=>f.name)}})")

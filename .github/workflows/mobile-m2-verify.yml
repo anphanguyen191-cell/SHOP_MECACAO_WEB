@@ -18,6 +18,7 @@ on:
       - 'scripts/v8/mobile-m2-browser.mjs'
       - 'scripts/mobile-reform-dom.mjs'
       - 'scripts/cloud-browser-e2e.mjs'
+      - 'scripts/mobile-browser-smoke.mjs'
       - 'scripts/v2-drafts-e2e.mjs'
       - 'scripts/v2-sales-e2e.mjs'
       - '.github/workflows/mobile-m2-verify.yml'
@@ -47,6 +48,8 @@ jobs:
         run: node scripts/main-browser-smoke.mjs
       - name: Cloud mobile browser acceptance (isolated transport)
         run: node scripts/cloud-browser-e2e.mjs
+      - name: Mobile gallery, density and clipboard browser acceptance (mock LOCAL)
+        run: node scripts/mobile-browser-smoke.mjs
       - name: LOCAL draft mobile steps and real HTTP browser acceptance (disposable sandbox)
         run: node scripts/v2-drafts-e2e.mjs
       - name: LOCAL sales browser acceptance (disposable sandbox)
