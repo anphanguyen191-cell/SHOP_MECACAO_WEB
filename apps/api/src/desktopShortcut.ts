@@ -27,7 +27,7 @@ $links=[Collections.Generic.List[string]]::new()
 foreach($file in Get-ChildItem -LiteralPath $desktop -Filter '*.lnk' -File){
  try{
   $link=[ShopShellLink]::Read($file.FullName)
-  if([string]::Equals([IO.Path]::GetFullPath($link.TargetPath),[IO.Path]::GetFullPath($c.exe),[StringComparison]::OrdinalIgnoreCase)){$links.Add($file.FullName)}
+  if([string]::Equals([ShopShellLink]::Canonical($link.TargetPath),[ShopShellLink]::Canonical($c.exe),[StringComparison]::OrdinalIgnoreCase)){$links.Add($file.FullName)}
  }catch{}
 }
 if($links.Count -eq 0){
@@ -45,6 +45,7 @@ foreach($file in $links){
 `
 export async function repairShopDesktopShortcut(home:string,logoPath:string,desktop?:string){
  if(process.platform!=='win32')return null
+ home=fs.realpathSync.native(home)
  const exe=path.join(home,'ShopMeCaCao.exe')
  if(!fs.statSync(exe).isFile())throw Error('Không tìm thấy EXE của bản cài hiện tại')
  const bytes=await shopWindowsIcon(fs.readFileSync(logoPath)),directory=path.join(home,'cache','icons')

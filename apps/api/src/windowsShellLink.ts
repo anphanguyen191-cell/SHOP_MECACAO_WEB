@@ -35,6 +35,13 @@ public class ShopShellLinkInfo {
  public string Arguments;
 }
 public static class ShopShellLink {
+ [DllImport("kernel32.dll",CharSet=CharSet.Unicode,EntryPoint="GetLongPathNameW",SetLastError=true)]
+ static extern uint GetLongPathName(string path,StringBuilder result,uint count);
+ public static string Canonical(string path) {
+  string full=Path.GetFullPath(path);var result=new StringBuilder(32768);
+  uint count=GetLongPathName(full,result,(uint)result.Capacity);
+  return count>0&&count<result.Capacity?result.ToString():full;
+ }
  static object Create() { return Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("00021401-0000-0000-C000-000000000046"))); }
  public static ShopShellLinkInfo Read(string file) {
   object obj=Create();
