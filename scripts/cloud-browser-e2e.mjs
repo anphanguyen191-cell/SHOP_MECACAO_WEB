@@ -92,6 +92,7 @@ try{
  await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Network.enable');await cmd('Network.setBypassServiceWorker',{bypass:true});await cmd('Network.setBlockedURLs',{urls:['wss://eyckwoewpomssjjggslr.supabase.co/*']});await cmd('Fetch.enable',{patterns:[{urlPattern:'https://eyckwoewpomssjjggslr.supabase.co/*'}]})
  const authInit=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`localStorage.setItem('mecacao-v7-auth',${JSON.stringify(JSON.stringify(session))});localStorage.setItem('mecacao-ui-cloud-auto-sync','false')`})
  await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await cmd('Page.navigate',{url});await until("!!document.querySelector('.mobileStockCard img')&&document.querySelector('.mobileStockCard img').complete&&document.querySelector('.mobileStockCard img').naturalWidth>0")
+ await until("!document.querySelector(\'.mobileLuxeSplash\')")
  fs.mkdirSync('artifacts/cloud-browser',{recursive:true})
  for(const width of [375,390,430,768]){
   await cmd('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true});await delay(120)
@@ -111,6 +112,8 @@ try{
  await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true})
  await run("document.querySelector('.mobileOpenProduct').click()");await until("!!document.querySelector('.mobileLuxeSheet.isFull')")
  assert(await run("document.activeElement.getAttribute('aria-label')==='Đóng Chi tiết sản phẩm'"),'Product detail must receive focus')
+ assert(await run("(()=>{const hero=document.querySelector('.mobileProductHero'),img=hero?.querySelector('img');if(!hero||!img)return false;const a=hero.getBoundingClientRect(),b=img.getBoundingClientRect(),css=getComputedStyle(img);return Math.abs((a.left+a.right)/2-(b.left+b.right)/2)<=2&&css.objectFit==='contain'&&css.objectPosition.includes('50%')&&b.width<=a.width+2})()"),'Mobile product image must be centered and fully contained')
+
  await delay(220)
  fs.writeFileSync('artifacts/cloud-browser/reform-product-detail.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
  await run("document.querySelector('.mobilePhotoCheck').click()");assert(await run("document.querySelector('.mobilePhotoCheck').getAttribute('aria-pressed')==='true'"))
@@ -206,6 +209,9 @@ try{
    await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==="+JSON.stringify(label)+").click();window.scrollTo(0,0)")
    await until("!!document.querySelector("+JSON.stringify(selector)+")")
    await delay(100);assert(await run('document.documentElement.scrollWidth<=innerWidth+2'),'Cloud overflow: '+label+' '+width+' '+dark)
+   if(width===390&&label==='Danh mục sản phẩm')assert(await run("!!document.querySelector('.mobileCatalogHint')&&document.querySelector('.mobileCatalogHint').innerText.includes('Mẫu hàng của shop')"),'Mobile catalog should show concise shop copy instead of dense desktop text')
+   if(width===390&&label==='Báo cáo')assert(await run("(()=>{const dates=[...document.querySelectorAll('.mobileReportDateControl')];return dates.length===2&&dates.every(x=>/\\d{2}\\/\\d{2}\\/\\d{4}/.test(x.textContent))&&dates.every(x=>x.querySelector('input[type=date]')?.getBoundingClientRect().width>250)})()"),'Mobile report dates must be short, accessible and full-width')
+   if(width===390&&label==='Cài đặt')assert(await run("!!document.querySelector('.mobileAccountLogout')"),'Mobile settings must expose explicit Cloud sign-out')
    if(width===390&&label==='Tổng quan')assert(await run("(()=>{const cards=[...document.querySelectorAll('.mobileOverview .mobileMetric')];const a=cards[0].getBoundingClientRect(),b=cards[1].getBoundingClientRect(),c=cards[2].getBoundingClientRect();return cards.length===4&&Math.abs(a.top-b.top)<2&&c.top>a.bottom-2&&Math.abs(a.width-b.width)<2})()"),'Phone overview must have four equal cards in a 2 by 2 grid')
    fs.writeFileSync('artifacts/cloud-browser/'+width+'-'+(dark?'dark':'light')+'-'+pages.findIndex(p=>p[0]===label)+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
    if(width===390&&label==='Khách hàng'){
