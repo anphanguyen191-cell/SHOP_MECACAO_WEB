@@ -1,6 +1,6 @@
 import MobileLuxeSectionHeader from './MobileLuxeSectionHeader'
 import MobileLuxeNav from './MobileLuxeNav'
-import {MobileAppearance,MobileCloudSummary,MobileOverview,MobileSystemPanel,useMobileLuxe} from './MobileLuxeUI'
+import {MobileAppearance,MobileCloudSummary,MobileLuxeSplash,MobileOverview,MobileSystemPanel,useMobileLuxe} from './MobileLuxeUI'
 import ShopIcon from './ShopIcon'
 import CloudSoldMaintenance from './CloudSoldMaintenance'
 import CloudOrders from './CloudOrders'
@@ -113,10 +113,25 @@ export default function CloudWorkspace(){
  async function openFinance(id:string){setCurrent(id);setFinance(await cloudRpc('mc_v7_finance',{p_id:id}));setTab('finance')}
  const sections:ShopSection[]=[{key:'overview',label:'Tổng quan',icon:'⌂'},{key:'catalog',label:'Danh mục sản phẩm',icon:'▦'},...(desktop?[{key:'receipt',label:'Nhập hàng',icon:'＋'},{key:'import',label:'Import kho',icon:'⇩'}]:[]),{key:'inventory',label:'Tồn kho',icon:'▤'},{key:'customers',label:'Khách hàng',icon:'♧'},{key:'orders',label:'Bán hàng',icon:'▧'},{key:'finance',label:'Công nợ',icon:'₫'},{key:'reports',label:'Báo cáo',icon:'▥'},{key:'stocktake',label:'Kiểm kê',icon:'✓'},{key:'soldCloud',label:'Ảnh SOLD',icon:'▧'},{key:'photos',label:'Ảnh iPhone',icon:'▧'},...(desktop?[{key:'phone',label:'Duyệt ảnh trên máy',icon:'▧'},{key:'sold',label:'Lưu trữ SOLD trên máy',icon:'▧'}]:[]),{key:'connect',label:'Kết nối Cloud',icon:'☁'},{key:'settings',label:'Cài đặt',icon:'⚙'}].filter(s=>role!=='inventory'||['overview','inventory','catalog','stocktake','photos','connect','settings'].includes(s.key))
  function navigate(key:string){if(!window.dispatchEvent(new Event('mecacao-before-navigate',{cancelable:true})))return;if(mobile)window.scrollTo(0,0);setTab(key);setMenuOpen(false);setMenuSearch('')}
+ async function mobileLogout(){
+  if(busy||!window.dispatchEvent(new Event('mecacao-before-navigate',{cancelable:true})))return
+  setBusy(true)
+  try{
+   const {error}=await cloud.auth.signOut()
+   if(error)throw error
+   setMenuOpen(false);setTab('connect')
+   setStatus('Đã đăng xuất tài khoản Cloud trên thiết bị này.')
+  }catch(e){
+   setMenuOpen(false)
+   setStatus('Không thể đăng xuất: '+(e as Error).message)
+  }finally{setBusy(false)}
+ }
+
  const recoveryAction=<button className="salesAction salesActionSecondary mobileRecoveryAction" disabled={busy||!online} onClick={()=>run(async()=>{const pending=await pendingCloudCommand();const result=await retryCloudCommand();if(result&&pending?.action==='draft.save')setSelection([]);if(result&&pending?.action.startsWith('finance.'))await openFinance(pending.payload.id);setStatus(result?'Đã xác minh thao tác trước. Đọc lại đơn trước khi tiếp tục.':'Không có thao tác đang chờ xác minh.');if(result?.id&&pending?.action==='customer.save')setTab('customers');else if(result?.id&&pending?.action.startsWith('draft.')){setCurrent(result.id);setTab('orders')}})}>Kiểm tra thao tác trước</button>
  return <div className={'shell mobileLuxeWorkspace cloudWorkspace'+(!signed?' mobileAuthWorkspace':'')+' density'+density[0].toUpperCase()+density.slice(1)+(density==='small'?' densityCompact':' densityComfort')+(dark?' themeDark':'')}>
+ <MobileLuxeSplash/>
  {draftConflict.dialog}<ShopHeader density={density} onDensity={setDensity} dark={dark} onTheme={()=>setDark(v=>!v)} onMenu={()=>setMenuOpen(true)} menuOpen={menuOpen} mode="CLOUD">{mobile&&signed&&<MobileSystemPanel children={recoveryAction} status={status} online={online} disabled={busy} onRefresh={()=>void load()} notices={sections.some(s=>s.key==='orders')?[...(data.sales_orders||[])].sort((a,b)=>String(b.updated_at||b.created_at||'').localeCompare(String(a.updated_at||a.created_at||''))).slice(0,5).map(o=>({id:o.id,title:'Đơn '+o.id.slice(0,8).toUpperCase(),description:o.status==='DRAFT'?'Đơn nháp · chưa trừ tồn':o.status==='SOLD'?'Đã bán · xem lịch sử':'Đã hủy nháp',onOpen:()=>{if(window.dispatchEvent(new Event('mecacao-before-navigate',{cancelable:true}))){setCurrent(o.id);navigate('orders')}}})):[]}/>}</ShopHeader>
- {menuOpen&&<ShopDrawer sections={sections} active={tab} onNavigate={navigate} onClose={()=>setMenuOpen(false)} search={menuSearch} onSearch={setMenuSearch} density={density} onDensity={setDensity} mode="CLOUD"/>}
+ {menuOpen&&<ShopDrawer sections={sections} active={tab} onNavigate={navigate} onClose={()=>setMenuOpen(false)} search={menuSearch} onSearch={setMenuSearch} density={density} onDensity={setDensity} mode="CLOUD" onMobileLogout={mobile&&signed&&!busy?()=>void mobileLogout():undefined}/>}
  <div className="layout"><nav className="sidebar" aria-label="Danh mục chức năng Cloud">{sections.map(s=><button key={s.key} className={tab===s.key?'active':''} onClick={()=>navigate(s.key)}><ShopIcon label={s.label}/><strong>{s.label}</strong></button>)}</nav><main>
  <MobileLuxeSectionHeader title={sections.find(s=>s.key===tab)?.label||'Shop Mẹ CaCao'} mode="CLOUD"/>
  <nav className="pageBreadcrumb" aria-label="Vị trí hiện tại"><button onClick={()=>navigate('overview')}>Tổng quan</button><span>›</span><strong>{sections.find(s=>s.key===tab)?.label||'Shop Mẹ CaCao'}</strong></nav>
@@ -126,7 +141,7 @@ export default function CloudWorkspace(){
 
  {signed&&(!mobile||tab==='connect')&&recoveryAction}
  {!signed&&<div className="mobileLoginIntro"><img src={import.meta.env.BASE_URL+'brand/logo.jpg'} alt="Logo Shop Mẹ CaCao"/><h1>Mẹ CaCao</h1><span>TRAVEL LUXE · SINCE 2023</span><p>Chào mừng trở lại cửa hàng của mình.</p></div>}
- {signed&&mobile&&tab==='settings'&&<MobileAppearance density={density} onDensity={setDensity} dark={dark} onTheme={()=>setDark(v=>!v)} onConnection={()=>navigate('connect')}/>}
+ {signed&&mobile&&tab==='settings'&&<MobileAppearance density={density} onDensity={setDensity} dark={dark} onTheme={()=>setDark(v=>!v)} onConnection={()=>navigate('connect')} onLogout={busy?undefined:()=>void mobileLogout()}/>}
  {signed&&mobile&&tab==='connect'&&<MobileCloudSummary status={status} online={online} images={allCards.length} products={(data.products||[]).length} disabled={busy} onRefresh={()=>void load()}/>}
  <div hidden={signed&&tab!=='connect'&&tab!=='settings'}><details className="mobileAccountSettings" open={!mobile||!signed||cloudRecoveryRequested}><summary>Tài khoản & kết nối Cloud <span>›</span></summary><CloudSettings autoSync desktop={desktop}/></details></div>{!signed&&<div className="mobileLoginFooter"><img src={import.meta.env.BASE_URL+'brand/travel-luxe-login-scene.svg'} alt=""/><span>Good Business · Good Journey</span></div>}
  {tab==='settings'&&<><section className="displayPreferences"><div><h3>Cài đặt giao diện · Mật độ hiển thị</h3><p>Nhỏ để xem bao quát, Vừa để dùng hằng ngày, Lớn để dễ đọc và chạm.</p></div><DisplayDensity value={density} onChange={setDensity}/></section>{desktop&&<details className="mobileLocalSettings" open={!mobile}><summary>Cài đặt trên laptop</summary><SettingsView showCloud={false} sandbox={localRestore}/></details>}</>}
