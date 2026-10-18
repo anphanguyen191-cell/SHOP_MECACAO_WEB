@@ -1,0 +1,49 @@
+name: Mobile Travel Luxe M2 verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/MobileLuxeNav.tsx'
+      - 'apps/web/src/MobileLuxeSectionHeader.tsx'
+      - 'apps/web/src/mobileLuxeV2.css'
+      - 'apps/web/src/App.tsx'
+      - 'apps/web/src/CloudWorkspace.tsx'
+      - 'apps/web/src/main.tsx'
+      - 'scripts/v8/mobile-luxe-m2-*.test.mjs'
+      - 'package.json'
+      - '.github/workflows/mobile-m2-verify.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  m2-verify:
+    name: Build, types, Mobile UI and Windows regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install exactly locked dependencies
+        run: npm ci
+      - name: Compile Windows and Web bundles
+        run: npm run build
+      - name: TypeScript typecheck
+        run: npm run typecheck
+      - name: Mobile and existing Windows UI regression
+        run: npm run test:ui
+      - name: Windows desktop browser acceptance
+        run: node scripts/main-browser-smoke.mjs
+      - name: Cloud mobile browser acceptance (isolated transport)
+        run: node scripts/cloud-browser-e2e.mjs
+      - name: Upload available UI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-m2-ui-evidence
+          path: |
+            artifacts/main-release/
+          if-no-files-found: ignore
+          retention-days: 7
