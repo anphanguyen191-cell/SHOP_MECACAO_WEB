@@ -262,3 +262,11 @@ Tiếp nhận nguyên trạng hồ sơ này. Kiểm tra **GitHub `main`/Release/
 
 ---
 **KẾT LUẬN BÀN GIAO:** Mã nguồn và kênh STABLE đã có, nhưng nghiệm thu kho ảnh gốc vẫn **CHƯA ĐẠT**. Ưu tiên duy nhất của phiên làm việc kế tiếp: **dứt điểm quyền chọn/tiếp nhận kho `D:\1-Me CaCao Store` và thực hiện thành công import kho trên laptop thật**. Các tính năng tiếp theo chỉ được triển khai sau khi nút thắt này được tháo gỡ.
+
+## 2026-10-18 — Customer Catalog V1 implementation
+
+Owner authorized clarification and implementation. Public route `?catalog=1`, mixed Size/photo cart, size guide, secure guest inquiries, owner-only publication/settings/inbox and transactional bridge to existing CORE Cloud drafts are implemented. Admin runtime is extracted into `apps/web/src/AdminRuntime.tsx`; Windows authentication, Cloud/demo routing and CORE server business logic remain intact.
+
+Cloud migrations `customer_catalog_v1` and `catalog_stock_proof_timestamp` plus the public `customer-catalog` Edge Function are deployed. Publication uses independent metadata. Catalog remains OFF; all Products remain hidden until the owner explicitly publishes. Partial/missing source-check timestamps are reported as unknown, never as a fresh complete inventory check. Physical stock cannot be guaranteed while the Windows source is offline.
+
+Evidence and operating instructions: `docs/catalog/DELIVERY_V1.md`; technical decisions: `docs/catalog/TECHNICAL_CONTRACT_V1.md`. Local build/typecheck, core/cloud regression, isolated SQL/DOM, six-viewport Chromium guest flow and real CORE Cloud rollback smoke passed. Main CI/release/Pages must be checked for the final commit; real owner iPhone/Windows and banner/link acceptance remain pending. Do not infer Catalog STABLE from automated release naming.

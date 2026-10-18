@@ -20,6 +20,7 @@ await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_
  CREATE FUNCTION private.mc_v7_command(p_request text,p_action text,p_payload jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$BEGIN INSERT INTO public.sales_orders(id) VALUES(p_payload->>'id'); RETURN jsonb_build_object('id',p_payload->>'id');END$$;
 `)
 await db.exec(fs.readFileSync('supabase/migrations/20261018125303_customer_catalog_v1.sql','utf8'))
+for(const patch of fs.readdirSync('supabase/migrations').filter(n=>n.endsWith('_catalog_stock_proof_timestamp.sql')))await db.exec(fs.readFileSync('supabase/migrations/'+patch,'utf8'))
 const call=async(fn,args)=>(await db.query(`SELECT public.${fn}(${args.map((_,i)=>'$'+(i+1)).join(',')}) AS data`,args)).rows[0].data
 const read=(action,p={})=>call('mc_catalog_public',[action,JSON.stringify(p)])
 const admin=(action,p={})=>call('mc_catalog_admin',[action,JSON.stringify(p)])
@@ -29,6 +30,7 @@ await db.exec(`INSERT INTO public.products VALUES(1,'Mẫu test','P1','active','
 assert.equal((await read('products')).products.length,0)
 await admin('publish',{product_id:1,enabled:true})
 const product=(await read('products')).products[0];assert.equal(product.sizes[0].available_count,4);assert.equal(product.sizes[1].sale_price,null);assert.equal(JSON.stringify(product).includes('cost_price'),false)
+await db.exec('UPDATE public.cloud_image_assets SET source_checked_at=NULL WHERE image_id=1');assert.equal((await read('products')).products[0].stock_as_of,null,'Partial evidence is unknown, not fresh');await db.exec('UPDATE public.cloud_image_assets SET source_checked_at=now() WHERE image_id=1');
 assert.equal((await read('photos',{product_id:1,variant_id:1})).photos.length,4)
 await assert.rejects(()=>read('image',{image_id:5}),/CATALOG_UNAVAILABLE/)
 const payload={name:'Fixture',contact:'0900000000',note:'',consent:true,items:[{product_id:1,variant_id:1,quick_quantity:2,selected_image_ids:[1,2],expected_price:50000}]}
