@@ -11,6 +11,7 @@ on:
       - 'apps/web/src/main.tsx'
       - 'scripts/v8/mobile-luxe-m2-*.test.mjs'
       - 'package.json'
+      - 'scripts/v8/mobile-m2-browser.mjs'
       - '.github/workflows/mobile-m2-verify.yml'
   workflow_dispatch:
 permissions:
@@ -38,6 +39,8 @@ jobs:
         run: node scripts/main-browser-smoke.mjs
       - name: Cloud mobile browser acceptance (isolated transport)
         run: node scripts/cloud-browser-e2e.mjs
+      - name: Mobile viewport Chromium screenshots (375, 390, 430, 768)
+        run: node scripts/v8/mobile-m2-browser.mjs
       - name: Upload available UI evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -45,5 +48,6 @@ jobs:
           name: mobile-m2-ui-evidence
           path: |
             artifacts/main-release/
+            artifacts/mobile-m2/
           if-no-files-found: ignore
           retention-days: 7
