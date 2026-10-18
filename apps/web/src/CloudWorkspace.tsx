@@ -1,3 +1,4 @@
+import MobileLuxeSectionHeader from './MobileLuxeSectionHeader'
 import MobileLuxeNav from './MobileLuxeNav'
 import ShopIcon from './ShopIcon'
 import CloudSoldMaintenance from './CloudSoldMaintenance'
@@ -109,10 +110,11 @@ export default function CloudWorkspace(){
  async function openFinance(id:string){setCurrent(id);setFinance(await cloudRpc('mc_v7_finance',{p_id:id}));setTab('finance')}
  const sections:ShopSection[]=[{key:'overview',label:'Tổng quan',icon:'⌂'},{key:'catalog',label:'Danh mục sản phẩm',icon:'▦'},...(desktop?[{key:'receipt',label:'Nhập hàng',icon:'＋'},{key:'import',label:'Import kho',icon:'⇩'}]:[]),{key:'inventory',label:'Tồn kho',icon:'▤'},{key:'customers',label:'Khách hàng',icon:'♧'},{key:'orders',label:'Bán hàng',icon:'▧'},{key:'finance',label:'Công nợ',icon:'₫'},{key:'reports',label:'Báo cáo',icon:'▥'},{key:'stocktake',label:'Kiểm kê',icon:'✓'},{key:'soldCloud',label:'Ảnh SOLD',icon:'▧'},{key:'photos',label:'Ảnh iPhone',icon:'▧'},...(desktop?[{key:'phone',label:'Duyệt ảnh trên máy',icon:'▧'},{key:'sold',label:'Lưu trữ SOLD trên máy',icon:'▧'}]:[]),{key:'connect',label:'Kết nối Cloud',icon:'☁'},{key:'settings',label:'Cài đặt',icon:'⚙'}].filter(s=>role!=='inventory'||['overview','inventory','catalog','stocktake','photos','connect','settings'].includes(s.key))
  function navigate(key:string){if(!window.dispatchEvent(new Event('mecacao-before-navigate',{cancelable:true})))return;setTab(key);setMenuOpen(false);setMenuSearch('')}
- return <div className={'shell cloudWorkspace density'+density[0].toUpperCase()+density.slice(1)+(density==='small'?' densityCompact':' densityComfort')+(dark?' themeDark':'')}>
+ return <div className={'shell mobileLuxeWorkspace cloudWorkspace density'+density[0].toUpperCase()+density.slice(1)+(density==='small'?' densityCompact':' densityComfort')+(dark?' themeDark':'')}>
  {draftConflict.dialog}<ShopHeader density={density} onDensity={setDensity} dark={dark} onTheme={()=>setDark(v=>!v)} onMenu={()=>setMenuOpen(true)} menuOpen={menuOpen} mode="CLOUD"/>
  {menuOpen&&<ShopDrawer sections={sections} active={tab} onNavigate={navigate} onClose={()=>setMenuOpen(false)} search={menuSearch} onSearch={setMenuSearch} density={density} onDensity={setDensity} mode="CLOUD"/>}
  <div className="layout"><nav className="sidebar" aria-label="Danh mục chức năng Cloud">{sections.map(s=><button key={s.key} className={tab===s.key?'active':''} onClick={()=>navigate(s.key)}><ShopIcon label={s.label}/><strong>{s.label}</strong></button>)}</nav><main>
+ <MobileLuxeSectionHeader title={sections.find(s=>s.key===tab)?.label||'Shop Mẹ CaCao'} mode="CLOUD"/>
  <nav className="pageBreadcrumb" aria-label="Vị trí hiện tại"><button onClick={()=>navigate('overview')}>Tổng quan</button><span>›</span><strong>{sections.find(s=>s.key===tab)?.label||'Shop Mẹ CaCao'}</strong></nav>
  <p className="muted">Shop Mẹ CaCao · {CLOUD_RELEASE}</p>
  <div className={'shopSyncStatus'+(!online?' offline':'')} role="status"><span className="shopSyncDot"/><span>{online?status:'Mất mạng. Chỉ xem dữ liệu đã đọc; kết nối lại để thao tác.'}</span><button disabled={!signed||busy||!online} onClick={()=>void load()}>Đọc lại</button></div>
