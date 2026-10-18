@@ -234,6 +234,6 @@ export default function App(){
   {!isDemo&&!health?.lanClient&&<div hidden={active!=='Kết nối Cloud'} className="luxeCloudLivePanel"><CloudSettings autoSync/></div>}
   </div>
   </main></div>
-  {!isDemo&&health?.ok&&<MobileLuxeNav items={nav.map(n=>({key:n,label:n}))} active={active} onNavigate={goTo} onMore={()=>setMenuOpen(true)}/>
+  {!isDemo&&health?.ok&&<MobileLuxeNav items={nav.map(n=>({key:n,label:n}))} active={active} onNavigate={goTo} onMore={()=>setMenuOpen(true)}/>}
  </div>
 }
