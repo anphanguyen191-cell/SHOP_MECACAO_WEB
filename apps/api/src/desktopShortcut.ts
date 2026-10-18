@@ -3,6 +3,7 @@ import path from 'node:path'
 import {createHash,randomUUID} from 'node:crypto'
 import {spawn} from 'node:child_process'
 import sharp from 'sharp'
+import {shopShellLinkPowerShell} from './windowsShellLink.js'
 
 export async function shopWindowsIcon(logo:Buffer){
  const sizes=[16,24,32,48,64,128,256],frames:Buffer[]=[]
@@ -16,19 +17,18 @@ export async function shopWindowsIcon(logo:Buffer){
 // Paths are data in a Unicode environment variable, never PowerShell source.
 // Only links targeting this installation's EXE may be changed. Other Desktop
 // files, pinned shortcuts, Explorer and the global Windows icon cache are left alone.
-const repairScript=String.raw`
+const repairScript=shopShellLinkPowerShell+String.raw`
 $ErrorActionPreference='Stop'
 [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
 $c=[Environment]::GetEnvironmentVariable('SHOP_SHORTCUT_CONFIG') | ConvertFrom-Json
 $desktop=if($c.desktop){[string]$c.desktop}else{[Environment]::GetFolderPath('DesktopDirectory')}
 if(!(Test-Path -LiteralPath $desktop -PathType Container)){throw 'Desktop folder not found'}
-$shell=New-Object -ComObject WScript.Shell
 $links=[Collections.Generic.List[string]]::new()
 foreach($file in Get-ChildItem -LiteralPath $desktop -Filter '*.lnk' -File){
  try{
-  $link=$shell.CreateShortcut($file.FullName)
+  $link=[ShopShellLink]::Read($file.FullName)
   if([string]::Equals([IO.Path]::GetFullPath($link.TargetPath),[IO.Path]::GetFullPath($c.exe),[StringComparison]::OrdinalIgnoreCase)){$links.Add($file.FullName)}
- }catch{}finally{if($link){[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($link);$link=$null}}
+ }catch{}
 }
 if($links.Count -eq 0){
  $target=Join-Path $desktop 'Shop Mẹ CaCao.lnk'
@@ -38,12 +38,9 @@ if($links.Count -eq 0){
 }
 Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class ShopDesktopNotify { [DllImport("shell32.dll", CharSet=CharSet.Unicode)] public static extern void SHChangeNotify(uint ev, uint flags, string path, IntPtr other); }'
 foreach($file in $links){
- $link=$shell.CreateShortcut($file)
- try{$link.TargetPath=$c.exe;$link.Arguments='';$link.WorkingDirectory=$c.home;$link.IconLocation=$c.icon+',0';$link.Description='Shop Mẹ CaCao · CaCao Travel Luxe';$link.Save()}
- finally{[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($link)}
+ [ShopShellLink]::Write($file,$c.exe,$c.icon,0,$c.home,'Shop Mẹ CaCao · CaCao Travel Luxe')
  [ShopDesktopNotify]::SHChangeNotify(0x2000,0x1005,$file,[IntPtr]::Zero)
 }
-[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
 [Console]::WriteLine((@{links=@($links.ToArray());icon=$c.icon}|ConvertTo-Json -Compress))
 `
 export async function repairShopDesktopShortcut(home:string,logoPath:string,desktop?:string){
