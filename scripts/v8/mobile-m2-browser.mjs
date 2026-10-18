@@ -58,6 +58,15 @@ try{
   let found=false
   for(let i=0;i<85;i++){await delay(100);if(await evaluate("!!document.querySelector('.cloudWorkspace .mobileLuxeNav')")){found=true;break}}
   assert(found,'Cloud Mobile nav absent at '+width+'px; body: '+String(await evaluate('document.body.innerText.slice(0,400)')))
+  if(width===390){
+   assert(await evaluate("!!document.querySelector('.mobileLuxeSplash button')"),'Mobile splash must appear before login')
+   const splashShot=await cmd('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})
+   fs.writeFileSync(path.join(artifacts,'splash-390.png'),Buffer.from(splashShot.data,'base64'))
+  }
+  let dismissed=false
+  for(let i=0;i<40;i++){if(await evaluate("!document.querySelector('.mobileLuxeSplash')")){dismissed=true;break}await delay(100)}
+  assert(dismissed,'Splash should dismiss automatically and reveal actual Cloud login without changing session')
+
   await delay(250)
   const state=await evaluate(`(()=>{
    const nav=document.querySelector('.mobileLuxeNav'),box=nav.getBoundingClientRect()
