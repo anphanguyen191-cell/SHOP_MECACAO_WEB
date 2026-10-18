@@ -204,3 +204,73 @@
 }
 @media(max-width:359px){.cc-app[data-ui] .cc-guide-promo{grid-template-columns:58px minmax(0,1fr)}.cc-guide-illustration{width:58px}.cc-app[data-ui] .cc-guide-content h2{font-size:14px}.cc-app[data-ui] .cc-brand span{font-size:15px}.cc-app[data-ui] .cc-products{gap:7px}.cc-app[data-ui] .cc-main{padding-inline:10px}}
 @media(prefers-reduced-motion:reduce){.cc-app[data-ui] *{scroll-behavior:auto!important}}
+
+/* Original Shop artwork and a compact, colourful customer interface. */
+.cc-brand-baby{display:block;width:100%;height:100%;object-fit:contain;border-radius:18px}
+.cc-app[data-ui] .cc-guide-promo{grid-template-columns:112px minmax(0,1fr);background:linear-gradient(115deg,#fff5df,#fff0f6 65%,#edf9f5);box-shadow:0 6px 22px #ae527415}
+.cc-guide-illustration{width:112px;height:120px;background:none}
+.cc-app[data-ui] .cc-guide-content button{min-height:44px}
+.cc-celebrate-art{width:190px;height:190px;margin:10px auto 20px}
+.cc-detail-guide-icon .cc-brand-baby{border-radius:10px}
+.cc-app[data-ui] .cc-detail-guide-icon{width:64px;height:64px;flex-basis:64px;background:none}
+.cc-app[data-ui] .cc-filter-pills{gap:7px;align-items:center;margin-bottom:16px;flex-wrap:wrap;overflow:visible}
+.cc-app[data-ui] .cc-filter-pills button{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:8px 12px;font-size:12px;box-shadow:none}
+.cc-app[data-ui] .cc-filter-pills svg{width:17px;height:17px;background:none;padding:0;border-radius:0}
+.cc-sort-pill{margin:0;flex:1;min-width:118px}
+.cc-app[data-ui] .cc-sort-pill select{width:100%;min-height:44px;border:1px solid #e8dbf3;border-radius:999px;background:#f7f1fc;color:#73528e;font-size:12px;padding:8px 25px 8px 12px}
+.cc-app[data-ui] .cc-filters{display:flex;flex-wrap:wrap;justify-content:space-between;background:#fff;box-shadow:0 4px 15px #c3577810}
+.cc-app[data-ui] .cc-filters select{min-height:44px}
+.cc-sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.cc-search-symbol svg{display:block;width:20px;height:20px}
+.cc-app[data-ui] .cc-detail-top{grid-column:1/-1}
+.cc-detail-meta{display:flex;align-items:center;gap:14px;margin:7px 0 10px}
+.cc-app[data-ui] .cc-detail-meta .cc-detail-price{margin:0}
+.cc-gallery-stage{position:relative;isolation:isolate}
+.cc-app[data-ui] .cc-gallery-count{position:absolute;right:12px;top:12px;margin:0;background:#48363ecc;color:#fff;border-radius:999px;padding:5px 11px;font-size:12px;pointer-events:none}
+.cc-app[data-ui] .cc-gallery-pick{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:9px;min-height:48px;padding:10px 14px;margin:0;background:#fffcfff2;border:1px solid #f4bdd2;border-radius:14px;color:#bb245a;box-shadow:0 4px 16px #4d1b3320;cursor:pointer;font-size:14px;font-weight:750;backdrop-filter:blur(12px)}
+.cc-app[data-ui] .cc-gallery-pick.is-picked{background:#eb367a;color:#fff;border-color:#eb367a}
+.cc-app[data-ui] .cc-gallery-pick{top:12px;bottom:auto;right:72px}
+.cc-app[data-ui] .cc-gallery-count{top:24px}
+.cc-app[data-ui] .cc-gallery-pick input{width:22px;height:22px;accent-color:#ca225e;margin:0;flex-shrink:0}
+.cc-gallery-pick small{margin-left:auto;font-size:11px}
+.cc-app[data-ui] .cc-thumbnails button{position:relative;flex-shrink:0}
+.cc-photo-tick{position:absolute;right:3px;top:3px;border:2px solid #fff;border-radius:50%;width:21px;height:21px;background:#e93175;color:#fff;font-size:12px;display:grid;place-items:center}
+.cc-gallery-help{font-size:12px;line-height:1.6;color:#867078;margin:0 0 15px}
+.cc-gallery-help strong{color:#c32a61;font-weight:650}
+.cc-app[data-ui] .cc-size-heading{font-size:16px;margin:0 0 8px;display:flex;gap:10px;align-items:center}
+.cc-size-heading small{font-size:11px;font-weight:400;color:#8b7381}
+.cc-app[data-ui] .cc-quick-select{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:5px 12px;background:#fff8ed;border-color:#f3e0bc;padding:14px}
+.cc-quick-select h3{font-size:15px;margin:0 0 5px;color:#79552b}
+.cc-quick-select p{font-size:12px;margin:0;color:#816e59}
+.cc-app[data-ui] .cc-quick-select .cc-stepper{margin:0;gap:10px}
+.cc-quick-select .cc-quick-note{flex-basis:100%;font-size:11px;margin-top:8px;line-height:1.5}
+.cc-app[data-ui] .cc-bottom-nav{background:#fffdfef5;border-top:1px solid #f0dbe4;backdrop-filter:blur(16px)}
+.cc-app[data-ui] .cc-bottom-nav button{gap:4px;min-height:62px;color:#705665;font-weight:700}
+.cc-nav-icon{box-sizing:content-box;width:24px;height:24px;padding:7px;border-radius:14px;transition:transform .18s}
+.cc-nav-home{color:#df3278;background:#ffe5ef}
+.cc-nav-products{color:#1689a0;background:#def5fa}
+.cc-nav-size{color:#8b55b5;background:#f0e4fd}
+.cc-nav-cart{color:#b57710;background:#fff0cc}
+.cc-app[data-ui] .cc-bottom-nav button[aria-current=page]{background:none;color:#c72461}
+.cc-bottom-nav button[aria-current=page] .cc-nav-icon{box-shadow:0 3px 9px #bd3a6b26;transform:translateY(-2px);stroke-width:2}
+.cc-app[data-ui] .cc-cart-dock{bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+@media(max-width:600px){
+ .cc-app[data-ui] .cc-detail{gap:16px}
+ .cc-app[data-ui] .cc-detail-heading h1{font-size:23px;line-height:1.25}
+ .cc-app[data-ui] .cc-guide-promo{grid-template-columns:92px minmax(0,1fr);gap:10px;padding:12px;min-height:164px}
+ .cc-guide-illustration{width:92px;height:110px;align-self:center}
+ .cc-app[data-ui] .cc-guide-content button{min-height:40px;font-size:11px}
+ .cc-app[data-ui] .cc-filter-pills{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:6px}
+ .cc-app[data-ui] .cc-filter-pills button{font-size:11px;padding:8px 10px;justify-content:center}
+ .cc-sort-pill{grid-column:1/-1;max-width:160px;justify-self:end;margin-top:1px}
+ .cc-app[data-ui] .cc-filter-pills{position:relative;margin-bottom:12px}
+ .cc-app[data-ui] .cc-section-heading{margin-top:14px}
+ .cc-app[data-ui] .cc-bottom-nav button{font-size:10px}
+ .cc-app[data-ui] .cc-cart-dock{bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+ .cc-app[data-ui] .cc-banner{border-radius:16px}
+}
+
+.cc-app[data-ui] .cc-sort-options{grid-column:1/-1;display:flex;gap:6px;width:100%;margin:0;padding-top:2px}
+.cc-app[data-ui] .cc-sort-options button{flex:1;font-size:11px;padding:6px 8px;min-height:36px;background:#f8f5fa;border-color:#eee5f1;color:#80658c}
+.cc-app[data-ui] .cc-sort-options button[aria-pressed=true]{background:#f3e6fa;color:#7e439c;border-color:#dec5eb}
+.cc-app[data-ui] .cc-home-note{padding-bottom:8px;margin:4px 0 10px}

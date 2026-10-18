@@ -10,10 +10,11 @@ export function matchSizes(weight:number|null,height:number|null,rows:readonly (
 }
 export const lineCount=(l:CartLine)=>l.quick_quantity+new Set(l.selected_image_ids).size
 export function validateCartLine(l:CartLine,available:number){return Number.isSafeInteger(l.quick_quantity)&&l.quick_quantity>=0&&l.selected_image_ids.every(i=>Number.isSafeInteger(i)&&i>0)&&new Set(l.selected_image_ids).size===l.selected_image_ids.length&&lineCount(l)<=available}
+export const catalogSizeLabel=(value:string)=>value.trim().replace(/^(?:size\s*)+/i,'').trim()
 export const catalogMoney=(n:number|null)=>n===null?'Liên hệ Shop':new Intl.NumberFormat('vi-VN').format(n)+' ₫'
 export function catalogStored(key:string){try{return localStorage.getItem(key)}catch{return null}}
 export function removeCatalogStored(key:string){try{localStorage.removeItem(key)}catch{}}
-export function catalogCartSummary(cart:CartLine[]){return cart.map(l=>`${l.name} · Size ${l.size}: ${lineCount(l)} bộ${l.selected_image_ids.length?' · ảnh #'+l.selected_image_ids.join(', #'):''}`).join('\n')}
+export function catalogCartSummary(cart:CartLine[]){return cart.map(l=>`${l.name} · Size ${catalogSizeLabel(l.size)}: ${lineCount(l)} bộ${l.selected_image_ids.length?' · ảnh #'+l.selected_image_ids.join(', #'):''}`).join('\n')}
 export function sortCatalogProducts(products:CatalogProduct[],sort:string){
  const price=(p:CatalogProduct)=>{const values=p.sizes.map(v=>v.sale_price).filter((n):n is number=>n!==null);return values.length?Math.min(...values):null}
  return [...products].sort((a,b)=>{const x=price(a),y=price(b);if(sort==='asc'||sort==='desc'){if(x===null)return y===null?0:1;if(y===null)return -1;return sort==='asc'?x-y:y-x}return Date.parse(b.updated_at)-Date.parse(a.updated_at)||b.public_product_id-a.public_product_id})
@@ -22,11 +23,11 @@ export function readCart(raw:string|null):CartLine[]{try{const a=JSON.parse(raw|
 
 // Bundled brand assets work without asking the owner to host images elsewhere.
 export const CATALOG_ASSET_BASE='https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/brand/'
-export const CATALOG_BANNER_URL=CATALOG_ASSET_BASE+'catalog-mobile-banner.svg'
-export const CATALOG_SIZE_IMAGE_URL=CATALOG_ASSET_BASE+'catalog-size-guide.svg'
+export const CATALOG_BANNER_URL=CATALOG_ASSET_BASE+'catalog-shop-banner.jpg'
+export const CATALOG_SIZE_IMAGE_URL=CATALOG_ASSET_BASE+'catalog-shop-size.jpg'
 export function catalogDefaults(raw:any){
  const cfg=raw&&typeof raw==='object'?raw:{}
  const guide=cfg.guide,labels=new Set(SIZE_GUIDE.map(r=>r[0] as string))
  const valid=Array.isArray(guide)&&guide.length===12&&new Set(guide.map((r:any)=>r?.[0])).size===12&&guide.every((r:any)=>Array.isArray(r)&&r.length===5&&labels.has(r[0])&&r.slice(1).every((n:any)=>typeof n==='number'&&Number.isFinite(n))&&r[1]>0&&r[2]>=r[1]&&r[3]>0&&r[4]>=r[3])
- return {...cfg,banner_url:cfg.banner_url||CATALOG_BANNER_URL,size_image_url:cfg.size_image_url||CATALOG_SIZE_IMAGE_URL,zalo_url:cfg.zalo_url||'',messenger_url:cfg.messenger_url||'',guide:valid?guide:SIZE_GUIDE}
+ return {...cfg,banner_url:!cfg.banner_url||cfg.banner_url===CATALOG_ASSET_BASE+'catalog-mobile-banner.svg'?CATALOG_BANNER_URL:cfg.banner_url,size_image_url:!cfg.size_image_url||cfg.size_image_url===CATALOG_ASSET_BASE+'catalog-size-guide.svg'?CATALOG_SIZE_IMAGE_URL:cfg.size_image_url,zalo_url:cfg.zalo_url||'',messenger_url:cfg.messenger_url||'',guide:valid?guide:SIZE_GUIDE}
 }

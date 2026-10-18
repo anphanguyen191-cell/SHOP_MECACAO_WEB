@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {catalogDefaults,CATALOG_BANNER_URL,CATALOG_SIZE_IMAGE_URL,SIZE_GUIDE,matchSizes,readCart,validateCartLine,lineCount,catalogCartSummary,sortCatalogProducts,type CatalogProduct,type CartLine} from '../apps/web/src/customerCatalogModel.ts'
+import {catalogSizeLabel,catalogDefaults,CATALOG_ASSET_BASE,CATALOG_BANNER_URL,CATALOG_SIZE_IMAGE_URL,SIZE_GUIDE,matchSizes,readCart,validateCartLine,lineCount,catalogCartSummary,sortCatalogProducts,type CatalogProduct,type CartLine} from '../apps/web/src/customerCatalogModel.ts'
 test('Size guide preserves 12 approved rows, gaps and ambiguous boundaries',()=>{assert.equal(SIZE_GUIDE.length,12);assert.deepEqual(matchSizes(16,98),['8']);assert.deepEqual(matchSizes(11.5,null),[]);assert.deepEqual(matchSizes(null,139),[]);assert.deepEqual(matchSizes(10,80),['4','5']);assert.deepEqual(matchSizes(16,145),[]);assert.deepEqual(matchSizes(NaN,98),[]);assert.deepEqual(matchSizes(null,null),[])})
 const line:CartLine={product_id:1,variant_id:2,name:'Mẫu',size:'8',quick_quantity:3,selected_image_ids:[1,2],expected_price:50000}
 test('Receipt text preserves exact image identities and mixed quantity',()=>{assert.equal(catalogCartSummary([line]),'Mẫu · Size 8: 5 bộ · ảnh #1, #2')})
@@ -20,3 +20,5 @@ test('Empty Cloud settings are ready without image URLs; custom settings survive
  assert.deepEqual(catalogDefaults(custom),{...custom,messenger_url:''})
  assert.deepEqual(catalogDefaults({guide:[null]}).guide,SIZE_GUIDE)
 })
+
+test('Legacy presets upgrade to original Shop assets; size captions never duplicate',()=>{const ready=catalogDefaults({banner_url:CATALOG_ASSET_BASE+'catalog-mobile-banner.svg',size_image_url:CATALOG_ASSET_BASE+'catalog-size-guide.svg'});assert.equal(ready.banner_url,CATALOG_BANNER_URL);assert.equal(ready.size_image_url,CATALOG_SIZE_IMAGE_URL);assert.equal(catalogSizeLabel(' Size 8 '),'8');assert.equal(catalogCartSummary([{...line,size:'Size 8'}]),catalogCartSummary([line]))})

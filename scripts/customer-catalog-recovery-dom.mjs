@@ -9,7 +9,7 @@ const temp=fs.mkdtempSync(path.join(process.cwd(),'.catalog-recovery-test-'))
 const source=`import React,{act} from 'react';import {createRoot} from 'react-dom/client';import Catalog from '../apps/web/src/CustomerCatalog';
 window.IS_REACT_ACT_ENVIRONMENT=true;
 const a=window.fixture={calls:[],refresh:[],failPhotos:false,photoReads:0};
-const products=Array.from({length:22},(_,i)=>({public_product_id:i+1,name:'Mẫu '+(i+1),public_code:'FIX'+(i+1),cover_image_id:i+1,stock_as_of:new Date().toISOString(),updated_at:'2026-10-18T00:00:00Z',sizes:[{variant_id:i+1,size_label:'8',sale_price:50000,available_count:5}]}));
+const products=Array.from({length:22},(_,i)=>({public_product_id:i+1,name:'Mẫu '+(i+1),public_code:'FIX'+(i+1),cover_image_id:i+1,stock_as_of:new Date().toISOString(),updated_at:'2026-10-18T00:00:00Z',sizes:[{variant_id:i+1,size_label:'Size 8',sale_price:50000,available_count:5}]}));
 window.setInterval=(fn,ms)=>{if(ms===30000)a.refresh.push(fn);return 0};
 window.fetch=async(url,options={})=>{const u=new URL(url);a.calls.push({url:String(url),method:options.method||'GET'});let data={};let ok=true;
  if(options.method==='POST'){const body=JSON.parse(options.body);if(body.action!=='receipt')throw Error('Test must never submit a production inquiry');data={reference:'CC-RESTORED',status:'NEW'}}
@@ -44,6 +44,19 @@ try{
  assert.equal(w.document.querySelectorAll('.cc-product').length,22,'Refresh preserves already loaded pages')
  a.failPhotos=true;await click('Xem mẫu');await until(()=>w.document.querySelector('[role=alert]')?.textContent.includes('Ảnh tạm lỗi'))
  await click('Thử lại');await until(()=>w.document.querySelectorAll('.cc-thumbnails button').length===2);assert.equal(a.photoReads,2,'Photo retry reloads the failed gallery without leaving the Product')
+ assert(w.document.querySelector('.cc-detail-top').compareDocumentPosition(w.document.querySelector('.cc-gallery'))&4,'Product name and price precede the gallery')
+ assert(!w.document.querySelector('.cc-detail').textContent.includes('Size Size'),'Size prefix is shown once');assert.equal(w.document.querySelector('.cc-photo-grid'),null,'No duplicate photo selector below the gallery')
+ await act(()=>w.document.querySelector('.cc-gallery-pick input').click())
+ await act(()=>w.document.querySelectorAll('.cc-thumbnails button')[1].click())
+ await act(()=>w.document.querySelector('.cc-gallery-pick input').click())
+ for(let i=0;i<3;i++)await act(()=>w.document.querySelector('[aria-label="Tăng số bộ Shop chọn"]').click())
+ const selected=JSON.parse(w.localStorage.getItem('mecacao-customer-cart-v1'))[0]
+ assert.deepEqual(selected.selected_image_ids,[1,2],'Selecting the displayed photo preserves exact IDs while browsing')
+ assert.equal(selected.quick_quantity,3,'Additional Shop selection coexists with two exact photos')
+ assert(w.document.querySelector('[aria-label="Tăng số bộ Shop chọn"]').disabled,'Mixed choices stop at stock')
+ await click('Xem bảng Size');assert.equal(w.document.querySelectorAll('.cc-size-image').length,1);assert.equal(w.document.querySelectorAll('.cc-modal table').length,0,'Shop tab displays one chart')
+ await act(()=>w.document.querySelector('.cc-size-image').dispatchEvent(new w.Event('error')))
+ assert.equal(w.document.querySelectorAll('.cc-modal tbody tr').length,12,'The text chart is only a fallback if the image fails')
  await guest.close()
  const restored=await setup({pending:{token:'a'.repeat(64),payload:{items:[]},summary:'Bộ đã gửi · Size 8: 3 bộ · ảnh #42, #43'}})
  await restored.act(()=>restored.w.document.querySelector('.cc-cart-trigger').click());await restored.click('Kiểm tra lần gửi trước')
