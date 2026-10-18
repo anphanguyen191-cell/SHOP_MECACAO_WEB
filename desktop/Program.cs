@@ -40,57 +40,11 @@ internal sealed class ShopContext : ApplicationContext
             ContextMenuStrip = menu
         };
         tray.DoubleClick += (_, _) => OpenBrowser();
-        EnsureDesktopShortcut();
+        // The running backend repairs Desktop shortcuts through IShellLinkW,
+        // including installations retaining an older launcher EXE.
         _ = StartAsync();
     }
 
-    private void EnsureDesktopShortcut()
-    {
-        // Update an existing shortcut to this EXE when possible, otherwise create
-        // one branded desktop entry. Never overwrite a shortcut to another program.
-        try
-        {
-            var exe = Environment.ProcessPath;
-            var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-            if (string.IsNullOrWhiteSpace(exe) || !Directory.Exists(desktop)) return;
-            var shellType = Type.GetTypeFromProgID("WScript.Shell");
-            if (shellType == null) return;
-            dynamic shell = Activator.CreateInstance(shellType)!;
-            string? existing = null;
-            foreach (var linkPath in Directory.EnumerateFiles(desktop, "*.lnk"))
-            {
-                try
-                {
-                    dynamic candidate = shell.CreateShortcut(linkPath);
-                    string target = (string)candidate.TargetPath;
-                    if (string.Equals(Path.GetFullPath(target), Path.GetFullPath(exe), StringComparison.OrdinalIgnoreCase))
-                    {
-                        existing = linkPath;
-                        break;
-                    }
-                }
-                catch { /* A different or unreadable shortcut is left unchanged. */ }
-            }
-            string destination = existing ?? Path.Combine(desktop, "Shop Mẹ CaCao.lnk");
-            if (existing == null && File.Exists(destination))
-            {
-                destination = Path.Combine(desktop, "Shop Mẹ CaCao V8.lnk");
-                if (File.Exists(destination)) return;
-            }
-            dynamic shortcut = shell.CreateShortcut(destination);
-            shortcut.TargetPath = exe;
-            shortcut.WorkingDirectory = home;
-            // The backend repairs old installed launchers using a versioned ICO.
-            // Preserve that binding across launches instead of restoring a cached EXE icon.
-            string icon = (string)shortcut.IconLocation;
-            string iconFile = icon.Split(',')[0].Trim('"');
-            if (!iconFile.EndsWith(".ico", StringComparison.OrdinalIgnoreCase) || !File.Exists(iconFile))
-                shortcut.IconLocation = exe + ",0";
-            shortcut.Description = "Shop Mẹ CaCao · CaCao Travel Luxe";
-            shortcut.Save();
-        }
-        catch (Exception error) { Log("Could not create branded desktop shortcut: " + error.Message); }
-    }
 
     private static void WriteOnce(string file, object value)
     {

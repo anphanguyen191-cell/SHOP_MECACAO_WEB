@@ -54,7 +54,7 @@ export async function repairShopDesktopShortcut(home:string,logoPath:string,desk
  else if(!fs.readFileSync(icon).equals(bytes))throw Error('File icon đã thay đổi; chưa ghi đè')
  const result=await new Promise<{links:string[];icon:string}>((resolve,reject)=>{
   const child=spawn('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(repairScript,'utf16le').toString('base64')],{windowsHide:true,env:{...process.env,SHOP_SHORTCUT_CONFIG:JSON.stringify({home,exe,icon,desktop})},stdio:['ignore','pipe','pipe']})
-  let output='',error='';const timer=setTimeout(()=>{child.kill();reject(Error('Windows chưa hoàn tất sửa shortcut'))},20000)
+  let output='',error='';const timer=setTimeout(()=>{child.kill();reject(Error('Windows chưa hoàn tất sửa shortcut'))},40000)
   child.stdout.on('data',b=>output+=b);child.stderr.on('data',b=>error+=b)
   child.once('error',e=>{clearTimeout(timer);reject(e)})
   child.once('exit',code=>{clearTimeout(timer);if(code!==0)return reject(Error(error.slice(-1200)||'Không sửa được shortcut'));try{resolve(JSON.parse(output.replace(/^\uFEFF/,'').trim()))}catch{reject(Error('Windows chưa trả kết quả sửa shortcut hợp lệ'))}})

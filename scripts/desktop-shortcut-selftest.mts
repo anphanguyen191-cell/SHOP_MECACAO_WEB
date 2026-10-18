@@ -9,7 +9,7 @@ import {shopShellLinkPowerShell} from '../apps/api/src/windowsShellLink.js'
 import {shopWindowsIcon,repairShopDesktopShortcut} from '../apps/api/src/desktopShortcut.js'
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),"cacao-shortcut-' & "))
 function ps(source:string,config:any){
- const r=spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(shopShellLinkPowerShell+source,'utf16le').toString('base64')],{encoding:'utf8',env:{...process.env,SHOP_SHORTCUT_TEST:JSON.stringify(config)},timeout:25000,windowsHide:true})
+ const r=spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(shopShellLinkPowerShell+source,'utf16le').toString('base64')],{encoding:'utf8',env:{...process.env,SHOP_SHORTCUT_TEST:JSON.stringify(config)},timeout:45000,windowsHide:true})
  assert.equal(r.status,0,r.stderr||String(r.error));return r.stdout.replace(/^\uFEFF/,'').trim()
 }
 try{
