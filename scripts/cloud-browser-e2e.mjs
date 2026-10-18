@@ -119,6 +119,8 @@ try{
  assert(await run("!!document.querySelector('.topbar .brandLogo')&&!!document.querySelector('.sidebar')&&!!document.querySelector('.mobileQuickNav')"))
  await run("document.querySelector('[aria-label=\"Mở thêm chức năng\"]').click()");await until("!!document.querySelector('.featureDrawer')")
  assert(await run("document.querySelector('.featureDrawer').innerText.includes('Danh mục sản phẩm')&&document.querySelector('.featureDrawer').innerText.includes('Import kho')"))
+ await delay(260)
+ assert(await run("(()=>{const r=document.querySelector('.featureDrawer').getBoundingClientRect();return Math.abs(r.left)<2&&r.width>=innerWidth-2})()"),'Mobile More must fill the phone')
  fs.writeFileSync('artifacts/cloud-browser/reform-more.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
  await run("document.querySelector('[aria-label=\"Đóng danh mục\"]').click()")
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tổng quan').click()")
@@ -195,6 +197,7 @@ try{
    await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==="+JSON.stringify(label)+").click();window.scrollTo(0,0)")
    await until("!!document.querySelector("+JSON.stringify(selector)+")")
    await delay(100);assert(await run('document.documentElement.scrollWidth<=innerWidth+2'),'Cloud overflow: '+label+' '+width+' '+dark)
+   if(width===390&&label==='Tổng quan')assert(await run("(()=>{const cards=[...document.querySelectorAll('.mobileOverview .mobileMetric')];const a=cards[0].getBoundingClientRect(),b=cards[1].getBoundingClientRect(),c=cards[2].getBoundingClientRect();return cards.length===4&&Math.abs(a.top-b.top)<2&&c.top>a.bottom-2&&Math.abs(a.width-b.width)<2})()"),'Phone overview must have four equal cards in a 2 by 2 grid')
    fs.writeFileSync('artifacts/cloud-browser/'+width+'-'+(dark?'dark':'light')+'-'+pages.findIndex(p=>p[0]===label)+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
    if(width===390&&label==='Khách hàng'){
     await run("document.querySelector('.mobileCustomersPage .salesOrderRow').click()");await until("!!document.querySelector('.mobileCustomersPage.mobileDetailOpen')");await delay(120)
