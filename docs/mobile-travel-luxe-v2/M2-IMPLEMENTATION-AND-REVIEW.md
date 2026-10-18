@@ -41,3 +41,11 @@ Reference: M1 signed off by owner; maintain existing CORE and Windows UX.
 
 ## GitHub strategy
 One main branch, small traceable commits, no parallel preview branch. This report adds docs only.
+
+## Additional audit — 2026-10-18
+- Corrected stale assertions in `scripts/v8/mobile-luxe-m2-nav.test.mjs`: stylesheet is now scoped to `.shell.mobileLuxeWorkspace`, uses `@media (max-width:800px)` and sets 50px minimum nav touch height. The old source tests were guaranteed to fail although CSS had changed.
+- Verified the mobile CSS correction for the older `.imageSendBar` component against the bottom navigation offset; regression assertion remains wired into the `test:ui` gate.
+- Re-fetched current GitHub sources and evaluated 14 independent source-level assertions: **14/14 PASS**. This is **NOT** an actual `node --test` execution.
+- Existing `.github/workflows/pages.yml` runs `npm ci`, `npm run build`, `npm run test:gate` and Windows smoke checks on push; however no completed workflow evidence was returned for current M2 commit. Do not infer PASS from workflow configuration.
+- Direct `git ls-remote` and clone via container still fail with `Could not resolve host: github.com`. Build, TypeScript, Browser/iPhone visual screenshots, and Windows physical regression remain UNVERIFIED.
+- Release gate status remains **BLOCKED / NOT STABLE**. M3 must not start.
