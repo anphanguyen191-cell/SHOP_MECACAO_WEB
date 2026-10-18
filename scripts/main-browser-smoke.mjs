@@ -67,6 +67,13 @@ try{
  await run("Array.from(document.querySelectorAll('.luxeSideItem')).find(b=>b.querySelector('.luxeSideText')?.textContent==='Tổng quan').click()")
  await until("!!document.querySelector('.overviewStats')");await run("Array.from(document.querySelectorAll('.luxeSideItem')).find(b=>b.querySelector('.luxeSideText')?.textContent==='Cài đặt').click()");await until("!!document.querySelector('.v8InstallSummary')")
  assert(await run("document.querySelector('.v8InstallSummary').textContent.includes('7.3.0')&&!/MAIN TEST|ĐANG PHÁT TRIỂN|chưa STABLE/.test(document.querySelector('.v8InstallSummary').textContent)&&!document.querySelector('.luxeTopActions').textContent.includes('MAIN TEST')"))
+ const glassBefore=await run("document.querySelector('.luxeGlassSetting input').checked")
+ await run("document.querySelector('.luxeGlassSetting input').click()")
+ await until("document.querySelector('.luxeGlassSetting input')?.checked!=="+glassBefore+"&&document.querySelector('.shell')?.classList.contains('luxeGlassOn')===!"+glassBefore)
+ assert(await run("(()=>{const enabled=document.querySelector('.luxeGlassSetting input').checked,filter=getComputedStyle(document.querySelector('.displayPreferences')).backdropFilter;return enabled?filter.includes('blur(18px)'):filter==='none'})()"),'Glass toggle must visibly blur the appearance panel and restore the non-glass state')
+ await run("document.querySelector('.luxeGlassSetting input').click()")
+ await until("document.querySelector('.luxeGlassSetting input')?.checked==="+glassBefore+"&&document.querySelector('.shell')?.classList.contains('luxeGlassOn')==="+glassBefore)
+
  assert.equal((await fetch('http://127.0.0.1:3000/api/local/lan').then(r=>r.json())).enabled,false)
  await run("Array.from(document.querySelectorAll('.luxeSideItem')).find(b=>b.querySelector('.luxeSideText')?.textContent==='Import kho').click()");await until("!!document.querySelector('.warehouseConfig button')");await until("!document.querySelector('.warehouseConfig').disabled");await run("Array.from(document.querySelectorAll('.warehouseConfig button')).find(b=>b.textContent==='CHỌN THƯ MỤC').click()");await until("!!document.querySelector('.folderModal')");await run("document.querySelector('[aria-label=\"Đóng chọn thư mục\"]').click()")
  // Real folder selection, automatic launcher restart, and UI reload without manual scripts.
