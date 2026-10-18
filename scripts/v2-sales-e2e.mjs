@@ -111,6 +111,7 @@ async function browserTest(base,id){
   for(const width of [1366,390])for(const dark of [false,true]){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:768,deviceScaleFactor:1,mobile:width===390})
    await run("document.querySelector('.shell').classList.toggle('themeDark',"+dark+")")
+   await run("Array.from(document.querySelectorAll('.luxeWelcomeActions button')).find(b=>b.textContent==='Bỏ qua')?.click()")
    await sleep(150)
    if(!dark){assert(await run("new Set(Array.from(document.querySelectorAll('.salesKpis>*')).map(e=>getComputedStyle(e).backgroundColor)).size===3"));checks++}
    if(dark){assert(await run("getComputedStyle(document.querySelector('.salesFold')).color==='rgb(255, 245, 250)'"));checks++}
@@ -210,6 +211,8 @@ async function browserTest(base,id){
   for(const width of [1366,390])for(const dark of [false,true]){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:768,deviceScaleFactor:1,mobile:width===390})
    await run("document.querySelector('.shell').classList.toggle('themeDark',"+dark+")")
+   await run("Array.from(document.querySelectorAll('.luxeWelcomeActions button')).find(b=>b.textContent==='Bỏ qua')?.click()")
+   await until("!document.querySelector('.luxeWelcome')")
    await run("document.querySelector('.stockReturnPanel').scrollIntoView({block:'center'})");await sleep(150)
    assert(await run("document.documentElement.scrollWidth<=innerWidth+2"));checks++
    assert(await run("(()=>{const p=document.querySelector('.stockReturnPanel'),color=c=>{const a=c.match(/[\\d.]+/g).slice(0,3).map(n=>{const v=Number(n)/255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4});return a[0]*.2126+a[1]*.7152+a[2]*.0722};const s=getComputedStyle(p),a=color(s.color),b=color(s.backgroundColor);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)>=4.5})()"));checks++
