@@ -30,7 +30,7 @@ try{
  $shortcutStatus=Join-Path $installDir 'cache/desktop-shortcut-status.json'
  for($i=0;$i -lt 90 -and !(Test-Path $shortcutStatus);$i++){Start-Sleep -Milliseconds 500}
  if(!(Test-Path $shortcutStatus)){throw 'Desktop logo shortcut was not repaired by the running backend'}
- $shortcutResult=Get-Content $shortcutStatus -Raw | ConvertFrom-Json
+ $shortcutResult=Get-Content $shortcutStatus -Raw -Encoding UTF8 | ConvertFrom-Json
  if(@($shortcutResult.links).Count -lt 1){throw 'No Desktop shortcut was verified'}
  if(!(Test-Path -LiteralPath $shortcutResult.icon) -or $shortcutResult.icon -notmatch 'ShopMeCaCao-[a-f0-9]+\.ico$'){throw 'Shortcut icon must be a durable versioned shop ICO'}
  $interop=& node --input-type=module -e "import {shopShellLinkPowerShell} from './apps/api/dist/windowsShellLink.js';console.log(shopShellLinkPowerShell)"
@@ -38,7 +38,7 @@ try{
  $env:SHOP_SHORTCUT_SMOKE_STATUS=$shortcutStatus
  $inspection=@'
 $ErrorActionPreference='Stop'
-$s=Get-Content -LiteralPath $env:SHOP_SHORTCUT_SMOKE_STATUS -Raw | ConvertFrom-Json
+$s=Get-Content -LiteralPath $env:SHOP_SHORTCUT_SMOKE_STATUS -Raw -Encoding UTF8 | ConvertFrom-Json
 foreach($file in $s.links){
  $link=[ShopShellLink]::Read($file)
  $exe=Join-Path (Split-Path (Split-Path $env:SHOP_SHORTCUT_SMOKE_STATUS)) 'ShopMeCaCao.exe'
