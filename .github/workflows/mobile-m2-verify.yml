@@ -32,6 +32,12 @@ on:
       - 'apps/web/src/StockReturnPanel.tsx'
       - 'apps/web/src/stockReturns.css'
       - 'scripts/stock-return-*.m*'
+      - 'apps/api/src/warehouseLive.ts'
+      - 'apps/api/src/cloudRoutes.ts'
+      - 'apps/web/src/liveFolderSync.ts'
+      - 'apps/web/src/CloudSettings.tsx'
+      - 'apps/web/src/cloudSyncAudit.ts'
+      - 'scripts/live-folder-*.m*'
       - '.github/workflows/mobile-m2-verify.yml'
   workflow_dispatch:
 permissions:
@@ -57,6 +63,8 @@ jobs:
         run: npm run test:inventory-value
       - name: Stock return crash recovery, resale and backup lifecycle
         run: npm run test:stock-return
+      - name: Live folder intake, deletion, offline queue and React Cloud sync
+        run: npm run test:live-folder
       - name: Mobile and existing Windows UI regression
         run: npm run test:ui
       - name: Windows desktop browser acceptance

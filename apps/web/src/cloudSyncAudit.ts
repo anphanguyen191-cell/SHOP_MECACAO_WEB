@@ -82,7 +82,9 @@ export async function readCloudSourceSnapshot(read:(offset:number)=>Promise<any>
   if(!Number.isSafeInteger(page.nextOffset)||page.nextOffset<=offset)throw Error('Phân trang Windows không tiến tới; dừng đồng bộ.')
   offset=page.nextOffset
  }
- if(total>0&&present===0)throw Error('Toàn bộ ảnh nguồn Windows đang thiếu. Kiểm tra ổ đĩa/kho; chưa thay đổi tồn Cloud.')
+ const guard=pages[0]?.sourceGuard
+ if(guard&&pages.some(p=>p.sourceGuard?.revision!==guard.revision||p.sourceGuard?.healthy!==true))throw Error('Folder vừa thay đổi trong lúc đọc; tự đồng bộ lại sau khi ổn định.')
+ if(total>0&&present===0&&!(guard?.healthy===true&&guard?.allMissingConfirmed===true&&Number.isSafeInteger(guard.revision)))throw Error('Toàn bộ ảnh nguồn Windows đang thiếu. Kiểm tra ổ đĩa/kho; chưa thay đổi tồn Cloud.')
  return pages
 }
 

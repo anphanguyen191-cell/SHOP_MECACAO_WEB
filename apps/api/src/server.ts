@@ -1,4 +1,5 @@
 import {cloudRouter} from './cloudRoutes.js'
+import {createWarehouseLive,type WarehouseLive} from './warehouseLive.js'
 import {priceBulkService} from './priceBulk.js'
 import {phonePhotoRouter} from './lanPhotoRoutes.js'
 import {createLanChangeFeed} from './lanChangeFeed.js'
@@ -65,6 +66,11 @@ const lan=configureLan()
 const changeFeed=createLanChangeFeed()
 const PORT = Number(process.env.PORT ?? 3000)
 const sandboxRoot=process.env.SHOP_SANDBOX_ROOT?fs.realpathSync(path.resolve(process.env.SHOP_SANDBOX_ROOT)):null
+let liveWarehouse:WarehouseLive|undefined
+if((v8Home&&customWarehouse)||process.env.SHOP_LIVE_WAREHOUSE==='1'){
+ const root=getWatchSettings().rootPath
+ if(root)liveWarehouse=createWarehouseLive(db,root,()=>updateFence||updateProbe||taskActivity.busy||tasks.pendingReview()||salesActivity.busy||salesActivity.readers>0||!!(sandboxRoot&&(pendingStockReturn(db,sandboxRoot)||fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json'))))||!!db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get(),()=>changeFeed.touch())
+}
 function sandboxPathAllowed(value:unknown){
  if(!sandboxRoot)return true
  if(typeof value!=='string'||!value.trim())return false
@@ -135,6 +141,7 @@ app.use('/api',(req,res,next)=>{
 })
 // Coordinate all HTTP reads/writes while async sale preparation/staging runs.
 app.use('/api',(req,res,next)=>{
+ if(req.method==='GET'&&req.path==='/cloud/live/events')return next()
  if(salesExecutionEnabled&&sandboxRoot&&req.path!=='/health'){
   const returnRoute=/^\/sales\/drafts\/(?:returns\/(?:operations\/[^/]+|recover)|[^/]+\/returns)$/.test(req.path)
   if(returnRoute)return next()
@@ -262,7 +269,7 @@ app.post('/api/local/warehouse',(req,res)=>{
   res.once('finish',()=>setTimeout(()=>process.exit(75),250))
  }catch(e){res.status(409).json({error:e instanceof Error?e.message:String(e)})}
 })
-if(salesExecutionEnabled&&sandboxRoot)app.use('/api/cloud',cloudRouter(db,sandboxRoot))
+if(salesExecutionEnabled&&sandboxRoot)app.use('/api/cloud',cloudRouter(db,sandboxRoot,liveWarehouse))
 app.use('/api/sales/drafts',(req,res,next)=>{
  const localStockReturn=req.path==='/returns/recover'||/^\/[^/]+\/returns$/.test(req.path)
  if(!['GET','HEAD'].includes(req.method)&&req.path!=='/recover'&&!localStockReturn&&db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())return res.status(409).json({error:'Kho đang dùng Cloud. Mở giao diện Cloud để tạo đơn, bán, cập nhật tiền và khách hàng.',code:'CLOUD_AUTHORITY_REQUIRED'})
@@ -443,6 +450,7 @@ if (fs.existsSync(webDist)) {
 
 if(lanControl)void lanControl.startInitial().catch(e=>console.error('LAN không bật được; Windows LOCAL vẫn chạy:',e.message))
 const httpListener=app.listen(PORT, process.env.SHOP_HOST ?? '127.0.0.1', () => {
+  liveWarehouse?.start()
   startWarehouseWatcher(rootPath=>{if(!updateFence&&!updateProbe&&!tasks.pendingReview())tasks.start('SCAN',{rootPath,background:true},'watch-'+randomUUID())})
   console.log(`Shop Mẹ CaCao đang chạy: http://localhost:${PORT}`)
   console.log(`Database: ${dbPath}`)
@@ -459,5 +467,6 @@ if(process.send)process.on('message',message=>{
   return
  }
  updateFence=true
+ liveWarehouse?.close()
  httpListener.close(()=>{try{db.close()}catch{}process.exit(0)})
 })

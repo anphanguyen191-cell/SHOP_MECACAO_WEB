@@ -15,5 +15,5 @@ export function createLanChangeFeed(){
   next()
  }
  const view=()=>({epoch,revision,changedAt})
- return {middleware,view}
+ return {middleware,view,touch:()=>{revision++;changedAt=new Date().toISOString()}}
 }
