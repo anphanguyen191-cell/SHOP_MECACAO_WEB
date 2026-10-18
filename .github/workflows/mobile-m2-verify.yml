@@ -28,6 +28,10 @@ on:
       - 'apps/web/src/inventoryValue.css'
       - 'apps/web/src/cloudInventory.ts'
       - 'scripts/inventory-value-selftest.mts'
+      - 'apps/api/src/stockReturn*.ts'
+      - 'apps/web/src/StockReturnPanel.tsx'
+      - 'apps/web/src/stockReturns.css'
+      - 'scripts/stock-return-*.m*'
       - '.github/workflows/mobile-m2-verify.yml'
   workflow_dispatch:
 permissions:

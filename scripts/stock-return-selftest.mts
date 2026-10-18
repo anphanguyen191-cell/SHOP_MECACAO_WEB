@@ -121,7 +121,7 @@ try{
  const socket=net.createServer();await new Promise<void>(resolve=>socket.listen(0,'127.0.0.1',resolve));const actualPort=(socket.address() as any).port;await new Promise<void>(resolve=>socket.close(()=>resolve()))
  const baseUrl='http://127.0.0.1:'+actualPort
  let logs=''
- const processServer=spawn(process.execPath,['apps/api/dist/server.js'],{env:{...process.env,PORT:String(actualPort),SHOP_HOST:'127.0.0.1',SHOP_DB_PATH:production.file,SHOP_SANDBOX_ROOT:production.root,SHOP_ENABLE_V2_DRAFTS:'1',SHOP_ENABLE_V2_SALES:'1'},stdio:['ignore','pipe','pipe']});processServer.stdout.on('data',b=>logs+=b);processServer.stderr.on('data',b=>logs+=b)
+ const processServer=spawn(process.execPath,['--import','tsx','apps/api/src/server.ts'],{env:{...process.env,PORT:String(actualPort),SHOP_HOST:'127.0.0.1',SHOP_DB_PATH:production.file,SHOP_SANDBOX_ROOT:production.root,SHOP_ENABLE_V2_DRAFTS:'1',SHOP_ENABLE_V2_SALES:'1'},stdio:['ignore','pipe','pipe']});processServer.stdout.on('data',b=>logs+=b);processServer.stderr.on('data',b=>logs+=b)
  async function api(route:string,method='GET',body?:any,expected=200){const r=await fetch(baseUrl+'/api'+route,{method,headers:{Origin:baseUrl,'Content-Type':'application/json','Idempotency-Key':'return-production-test-0002'},body:body===undefined?undefined:JSON.stringify(body)}),j=await r.json();assert.equal(r.status,expected,route+': '+JSON.stringify(j));checks++;return j}
  try{
   let health:any
