@@ -113,6 +113,13 @@ try{
  await run("document.querySelector('.mobileOpenProduct').click()");await until("!!document.querySelector('.mobileLuxeSheet.isFull')")
  assert(await run("document.activeElement.getAttribute('aria-label')==='Đóng Chi tiết sản phẩm'"),'Product detail must receive focus')
  assert(await run("(()=>{const hero=document.querySelector('.mobileProductHero'),img=hero?.querySelector('img');if(!hero||!img)return false;const a=hero.getBoundingClientRect(),b=img.getBoundingClientRect(),css=getComputedStyle(img);return Math.abs((a.left+a.right)/2-(b.left+b.right)/2)<=2&&css.objectFit==='contain'&&css.objectPosition.includes('50%')&&b.width<=a.width+2})()"),'Mobile product image must be centered and fully contained')
+ for(const width of [375,390,430,768]){
+  await cmd('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true});await delay(100)
+  assert(await run("(()=>{const h=document.querySelector('.mobileProductHero'),b=h.getBoundingClientRect();return document.documentElement.scrollWidth<=innerWidth+2&&b.left>=-1&&b.right<=innerWidth+2})()"),'Product photo must stay centered within viewport '+width)
+  fs.writeFileSync('artifacts/cloud-browser/m2-product-centered-'+width+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
+ }
+ await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true})
+
 
  await delay(220)
  fs.writeFileSync('artifacts/cloud-browser/reform-product-detail.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
@@ -211,6 +218,14 @@ try{
    await delay(100);assert(await run('document.documentElement.scrollWidth<=innerWidth+2'),'Cloud overflow: '+label+' '+width+' '+dark)
    if(width===390&&label==='Danh mục sản phẩm')assert(await run("!!document.querySelector('.mobileCatalogHint')&&document.querySelector('.mobileCatalogHint').innerText.includes('Mẫu hàng của shop')"),'Mobile catalog should show concise shop copy instead of dense desktop text')
    if(width===390&&label==='Báo cáo')assert(await run("(()=>{const dates=[...document.querySelectorAll('.mobileReportDateControl')];return dates.length===2&&dates.every(x=>/\\d{2}\\/\\d{2}\\/\\d{4}/.test(x.textContent))&&dates.every(x=>x.querySelector('input[type=date]')?.getBoundingClientRect().width>250)})()"),'Mobile report dates must be short, accessible and full-width')
+   if(width===390&&label==='Báo cáo'&&!dark){
+    for(const mobileWidth of [375,390,430,768]){
+     await cmd('Emulation.setDeviceMetricsOverride',{width:mobileWidth,height:844,deviceScaleFactor:1,mobile:true});await delay(100)
+     assert(await run("(()=>{const a=[...document.querySelectorAll('.mobileReportDateControl')];return a.length===2&&a.every(x=>x.getBoundingClientRect().right<=innerWidth+2)&&document.documentElement.scrollWidth<=innerWidth+2})()"),'Mobile report dates overflow at '+mobileWidth)
+     fs.writeFileSync('artifacts/cloud-browser/m2-reports-dates-'+mobileWidth+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
+    }
+    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true})
+   }
    if(width===390&&label==='Cài đặt')assert(await run("!!document.querySelector('.mobileAccountLogout')"),'Mobile settings must expose explicit Cloud sign-out')
    if(width===390&&label==='Tổng quan')assert(await run("(()=>{const cards=[...document.querySelectorAll('.mobileOverview .mobileMetric')];const a=cards[0].getBoundingClientRect(),b=cards[1].getBoundingClientRect(),c=cards[2].getBoundingClientRect();return cards.length===4&&Math.abs(a.top-b.top)<2&&c.top>a.bottom-2&&Math.abs(a.width-b.width)<2})()"),'Phone overview must have four equal cards in a 2 by 2 grid')
    fs.writeFileSync('artifacts/cloud-browser/'+width+'-'+(dark?'dark':'light')+'-'+pages.findIndex(p=>p[0]===label)+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
