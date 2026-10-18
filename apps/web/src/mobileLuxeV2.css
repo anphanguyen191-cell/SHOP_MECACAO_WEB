@@ -1,3 +1,5 @@
+/* Never show the Mobile-only section header in the desktop runtime. */
+@media(min-width:801px){.mobileLuxeSectionHeader{display:none!important}}
 /* M2 Travel Luxe Mobile V2.0: strictly isolated visual implementation.
    Existing LAN/Cloud business components, authorization, data and routes remain authoritative.
    Every selector begins with .shell.mobileLuxeWorkspace, plus a mobile breakpoint. */
