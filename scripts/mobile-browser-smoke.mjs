@@ -362,6 +362,8 @@ try{
  assert((await run("document.querySelector('.warehouseNoticePanel').textContent")).includes('1 ảnh chờ duyệt'),'Bell panel must identify pending stock')
  await run("document.querySelector('.warehouseNoticePanel .warehouseReviewButton').click()")
  await until("!!document.querySelector('.warehouseConfig')",'notification opens review workspace')
+ // Navigation can render before the independent notice PATCH reaches the fixture server.
+ for(let i=0;i<100&&warehouseNotices[0]?.state!=='seen';i++)await sleep(50)
  assert.equal(warehouseNotices[0].state,'seen','Review must persist seen state')
  assert.equal(importWrites,1,'Reviewing a notification must not import automatically')
  await clickMenu('Tồn kho')

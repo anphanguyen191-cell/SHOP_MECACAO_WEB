@@ -55,3 +55,7 @@ Admin: https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1
 - Màn hình cấu hình có xem trước ảnh, bảng Size 12 dòng và nút lưu; các URL/JSON chuyển vào tùy chọn nâng cao.
 - Không tự mở Catalog hoặc bật Product. Không yêu cầu Zalo/Messenger để tiếp nhận vào hộp Admin.
 - Kiểm thử bổ sung: fallback từ cấu hình trống, giữ cấu hình riêng, lưu preset/version, URL mặc định thu gọn; Chromium tải đúng asset đóng gói và kiểm tra sáu kích thước.
+
+## Đối chiếu giao diện khách
+
+Xem `REFERENCE_REVIEW_V1.md` cho 10 màn hình, thay đổi luồng giỏ/liên hệ, bộ kiểm tra và các điểm khác ảnh minh họa.

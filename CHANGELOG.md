@@ -1,3 +1,10 @@
+# Catalog — hoàn thiện luồng khách theo mẫu 10 màn hình · 18/10/2026
+
+- Điều hướng 4 mục; tách trang sản phẩm, giỏ và bước nhập liên hệ; tồn từng Size rõ trên thẻ mẫu.
+- Chỉnh số lượng Shop chọn ngay trong giỏ, kiểm tra lại tồn; xác nhận có mã sao chép và sửa lỗi mã cũ xuất hiện ở giỏ mới.
+- Gợi ý Size có thẻ kết quả; hộp yêu cầu Admin tìm theo mã/tên/liên hệ và lọc trạng thái.
+- Đối chiếu, phạm vi và kiểm tra: docs/catalog/REFERENCE_REVIEW_V1.md.
+
 # Catalog — cài sẵn hình ảnh · 18/10/2026
 
 - Cài sẵn banner Mobile và ảnh bảng Size 12 dòng; xem trước ngay, không cần tự nhập URL.

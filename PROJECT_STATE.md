@@ -274,3 +274,7 @@ Evidence and operating instructions: `docs/catalog/DELIVERY_V1.md`; technical de
 ## 2026-10-18 — Catalog ready-to-use settings
 
 Bundled mobile banner and exact 12-row size-chart SVGs; client defaults fill empty image URLs without overwriting custom settings. Owner setup shows previews and hides technical URL/JSON fields in optional disclosures. Contact phone sourced from existing Shop banner; Zalo/Messenger remain optional pending verified official links. Catalog/Product publication remains owner-controlled.
+
+## 2026-10-18 — Customer reference flow completion
+
+Customer-only four-tab navigation, separate product list/contact step, compact mobile banner, exact size-result cards, fresh-stock cart quantity adjustment and receipt-to-new-cart reset. Admin inquiry search/status chips stay owner-only. Full ten-frame comparison and deliberate limits in docs/catalog/REFERENCE_REVIEW_V1.md. Public presets seeded only for empty URLs, preserving owner publication settings (observed open with one published Product).
