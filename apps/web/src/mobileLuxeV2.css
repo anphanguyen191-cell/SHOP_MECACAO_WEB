@@ -216,3 +216,116 @@
 @media(max-width:800px) and (prefers-reduced-motion:reduce){.shell.mobileLuxeWorkspace *,.mobileLuxeOverlay *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 @media(max-width:800px) and (prefers-reduced-motion:no-preference){.shell.mobileLuxeWorkspace .mobileLuxeNav button{transition:background-color .15s,color .15s}.mobileLuxeSheet{animation:mobileLuxeArrive .18s ease-out}}
 @keyframes mobileLuxeArrive{from{transform:translateY(15px)}to{transform:translateY(0)}}
+
+
+/* M2 P1/P2 visual regression repairs from real iPhone screenshots (2026-10-18).
+   Only applies to Mobile; no stock/auth API changes. */
+@media(max-width:800px){
+ .mobileLuxeSplash{
+  position:fixed;inset:0;z-index:500;display:grid;place-items:center;
+  background:radial-gradient(ellipse at 20% 15%,#fffbff 0,#fce7f1 48%,#f0eafa 100%);
+  color:#793e65;text-align:center;padding:24px;box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif
+ }
+ .mobileLuxeSplashBody{width:min(100%,360px);display:flex;flex-direction:column;align-items:center;gap:10px}
+ .mobileLuxeSplashBody img{height:108px;width:108px;border-radius:50%;object-fit:contain;border:5px solid #fff;box-shadow:0 14px 35px #ad66834a}
+ .mobileLuxeSplashBody>span{margin-top:18px;font-weight:800;letter-spacing:.14em;font-size:11px}
+ .mobileLuxeSplashBody h1{font-family:Georgia,serif;font-size:clamp(38px,10vw,52px);font-weight:500;letter-spacing:-.05em;line-height:1.1;margin:0;color:#9c3c70}
+ .mobileLuxeSplashBody p{margin:2px 0 0;font-size:14px;color:#77596f}
+ .mobileLuxeSplashDecor{height:3px;width:70px;border-radius:10px;background:linear-gradient(90deg,#d876a0,#b0a0d8);margin:20px 0}
+ .mobileLuxeSplashBody>button{
+  min-height:48px;min-width:190px;padding:11px 20px;
+  border:0;border-radius:16px;color:#fff;background:#a83e78;font-size:15px;font-weight:750;
+  box-shadow:0 8px 20px #8b426437
+ }
+ .mobileLuxeSplashBody>button span{font-size:21px;vertical-align:middle;margin-left:6px}
+ .shell.mobileLuxeWorkspace .mobileCatalogHint{
+  display:flex;flex-direction:column;gap:4px;max-width:100%;min-width:0;
+  margin:0 0 14px;padding:12px 14px;border-radius:14px;
+  background:var(--mobile-luxe-soft,#faedf4);border:1px solid var(--mobile-luxe-line,#eadce6)
+ }
+ .shell.mobileLuxeWorkspace .mobileCatalogHint strong{font-size:14px;color:var(--mobile-luxe-ink)}
+ .shell.mobileLuxeWorkspace .mobileCatalogHint span{
+  color:var(--mobile-luxe-muted);font-size:12px;line-height:1.45;overflow-wrap:anywhere
+ }
+ .shell.mobileLuxeWorkspace .catalogPanel.productList .product{min-width:0;gap:10px}
+ .shell.mobileLuxeWorkspace .catalogPanel.productList .catalogInfo{min-width:0}
+ .shell.mobileLuxeWorkspace .catalogPanel.productList .catalogInfo h3{font-size:15px;line-height:1.3;margin:4px 0 6px;overflow-wrap:anywhere}
+ .shell.mobileLuxeWorkspace .catalogPanel.productList .catalogInfo p{font-size:12px;line-height:1.4;color:var(--mobile-luxe-muted);margin:0 0 8px}
+ .shell.mobileLuxeWorkspace .catalogPanel.productList .catalogInfo details>summary{font-size:12px;line-height:1.3;color:var(--mobile-luxe-accent,#a33b78);cursor:pointer}
+ .shell.mobileLuxeWorkspace .stage4Page form.stage4Filters{
+  display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+  gap:10px!important;padding:14px!important;max-width:100%;min-width:0;
+  border-radius:18px
+ }
+ .shell.mobileLuxeWorkspace .stage4Page .stage4Filters>label{width:100%;min-width:0;max-width:100%}
+ .shell.mobileLuxeWorkspace .stage4Page .stage4Filters>button{
+  width:100%;min-height:46px;margin-top:2px
+ }
+ .shell.mobileLuxeWorkspace .stage4Page .mobileReportDateField{
+  display:flex;flex-direction:column;gap:6px;font-weight:650;font-size:12px;color:var(--mobile-luxe-muted)
+ }
+ .shell.mobileLuxeWorkspace .stage4Page .mobileReportDateControl{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;max-width:100%;min-height:49px;position:relative;box-sizing:border-box;
+  background:var(--mobile-luxe-paper,#fff);color:var(--mobile-luxe-ink);
+  border:1px solid var(--mobile-luxe-line);border-radius:13px;
+  padding:11px 14px;font-size:17px;font-weight:750;overflow:hidden
+ }
+ .shell.mobileLuxeWorkspace .stage4Page .mobileReportDateControl:after{
+  content:'▦';font-size:18px;color:var(--mobile-luxe-muted)
+ }
+ .shell.mobileLuxeWorkspace .stage4Page .mobileReportDateControl>span{
+  pointer-events:none;font-variant-numeric:tabular-nums;white-space:nowrap
+ }
+ .shell.mobileLuxeWorkspace .stage4Page .mobileReportDateControl>input[type=date]{
+  position:absolute!important;inset:0!important;box-sizing:border-box!important;
+  width:100%!important;height:100%!important;min-height:49px!important;
+  margin:0!important;padding:0!important;opacity:0.01!important;cursor:pointer
+ }
+ .shell.mobileLuxeWorkspace .stage4Page .mobileReportDateField:focus-within .mobileReportDateControl{
+  outline:3px solid #b24f83;outline-offset:2px
+ }
+ .mobileLuxeSheet .mobileLuxeSheetBody{overflow-x:hidden;box-sizing:border-box}
+ .mobileLuxeSheet .mobileProductHero{
+  display:flex;align-items:center;justify-content:center;position:relative;
+  width:100%;max-width:100%;min-width:0;box-sizing:border-box;
+  height:min(49dvh,480px);min-height:240px;max-height:none;
+  margin:0 auto 16px;aspect-ratio:auto;overflow:hidden;
+  background:var(--mobile-luxe-soft,#f9eaf1);border-radius:16px
+ }
+ .mobileLuxeSheet .mobileProductHero>button{
+  width:100%;height:100%;min-width:0;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;position:relative;
+  margin:0;padding:0;border:0;background:transparent;overflow:hidden
+ }
+ .mobileLuxeSheet .mobileProductHero img{
+  width:100%;height:100%;max-width:100%;max-height:100%;display:block;
+  object-fit:contain;object-position:center center;flex:0 1 auto;margin:0 auto
+ }
+ .mobileLuxeSheet .mobileProductHero button>span{
+  position:absolute;bottom:11px;right:11px;z-index:2;
+  padding:8px 12px;background:#fffc;color:#56394b;border-radius:12px;font-size:12px
+ }
+ .shell.mobileLuxeWorkspace .mobileDrawerLogout{
+  min-height:48px;display:flex;align-items:center;justify-content:center;gap:10px;
+  margin:12px;padding:11px;border-radius:14px;border:1px solid #d8a4bf;
+  background:#fdf0f7;color:#943c70;font-size:14px;font-weight:800;
+ }
+ .shell.mobileLuxeWorkspace .mobileDrawerLogout svg{height:19px;width:19px}
+ .shell.mobileLuxeWorkspace .mobileSettingsList .mobileAccountLogout{
+  color:#a03f72;border-color:#e6c0d2
+ }
+ .shell.mobileLuxeWorkspace .topbar .brandIdentity{gap:9px}
+ .shell.mobileLuxeWorkspace .topbar .brandIdentity h1{font-size:clamp(17px,4.5vw,21px)}
+ .shell.mobileLuxeWorkspace .topbar .brandIdentity .eyebrow{letter-spacing:.085em;line-height:1.2}
+ .shell.mobileLuxeWorkspace .mobileLuxeNav button{border-radius:15px}
+ .shell.mobileLuxeWorkspace .mobileLuxeNav button.selected{box-shadow:0 3px 10px #a0558540}
+}
+@media(max-width:800px) and (prefers-reduced-motion:no-preference){
+ .mobileLuxeSplashBody{animation:mobileLuxeWelcomeIn .45s ease-out both}
+}
+@media(max-width:800px) and (prefers-reduced-motion:reduce){
+ .mobileLuxeSplashBody{animation:none!important;transition:none!important}
+}
+@keyframes mobileLuxeWelcomeIn{from{opacity:.5;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
