@@ -6,18 +6,19 @@ import path from 'node:path'
 import fs from 'node:fs'
 import {salesExecutionService} from './salesExecution.js'
 import {soldProofImage} from './soldProofImage.js'
-import {cloudImageForSync} from './cloudImages.js'
+import {cloudImageForSync,createCloudImageDigestCache} from './cloudImages.js'
 import {isInternalWarehousePath} from './warehouseAreas.js'
 import {reconcileCloudSale} from './cloudReconcile.js'
 const cloudUrl='https://eyckwoewpomssjjggslr.supabase.co'
 const publishable='sb_publishable_iyEI25gFfU4pXxmdFJ823Q_YYG-ViGJ'
 export function cloudRouter(db:DatabaseSync,root:string,live?:WarehouseLive){
  const router=Router()
+ const digestCache=createCloudImageDigestCache(db)
  router.use((req,res,next)=>{
   if(!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress||'')||res.locals.lanUser)return res.status(403).json({error:'Kết nối Cloud của kho chỉ thiết lập trên Windows chủ shop.'})
   res.set('Cache-Control','no-store'); next()
  })
- router.get('/state',(_req,res)=>res.json({instance:db.prepare("SELECT value FROM app_metadata WHERE key='cloud-instance'").get()?.value,enabled:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(),live:live?.snapshot(),reconciled:db.prepare("SELECT substr(key,12) id FROM app_metadata WHERE key LIKE 'cloud-sold:%'").all().map(r=>r.id)}))
+ router.get('/state',(_req,res)=>res.json({imageDigestBatch:true,instance:db.prepare("SELECT value FROM app_metadata WHERE key='cloud-instance'").get()?.value,enabled:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(),live:live?.snapshot(),reconciled:db.prepare("SELECT substr(key,12) id FROM app_metadata WHERE key LIKE 'cloud-sold:%'").all().map(r=>r.id)}))
  router.post('/live/ack',async(req,res)=>{
   try{
    if(!live)throw Error('Kho chưa bật theo dõi folder')
@@ -91,14 +92,32 @@ export function cloudRouter(db:DatabaseSync,root:string,live?:WarehouseLive){
  router.get('/proof-images/:id',async(req,res)=>{
   try{const token=req.get('authorization')||'',health=await rpc(token,'mc_v7_health',{}),instance=db.prepare("SELECT value FROM app_metadata WHERE key='cloud-instance'").get()?.value;if(health.role!=='owner'||health.instance!==instance||!instance)throw Error('Chỉ chủ shop của kho đã kết nối được đọc ảnh chứng từ.');const id=Number(req.params.id),order=String(req.query.order||'');if(!Number.isSafeInteger(id)||id<1||!/^[-A-Za-z0-9_]{1,100}$/.test(order)||!db.prepare('SELECT 1 FROM sales_units WHERE image_id=? AND order_id=?').get(id,order))throw Error('Ảnh chứng từ không thuộc đơn đã bán.');const image=await salesExecutionService(db,root).image(order,id),proof=await soldProofImage(image);res.set('X-Proof-Sha256',proof.sha256).set('X-Warehouse-Instance',String(instance)).type('jpeg').send(proof.data)}catch(e){res.status(409).json({error:e instanceof Error?e.message:'Chưa đọc được ảnh chứng từ'})}
  })
+ function sourceImage(id:number){
+  if(!Number.isSafeInteger(id)||id<1)throw Error('Ảnh không hợp lệ')
+  const row=db.prepare('SELECT file_path FROM product_images WHERE id=? AND NOT EXISTS(SELECT 1 FROM sales_units WHERE image_id=product_images.id)').get(id)
+  if(!row)throw Error('Ảnh đã bán hoặc không còn trong kho')
+  const file=fs.realpathSync(String(row.file_path)),base=fs.realpathSync(root),rel=path.relative(base,file)
+  if(path.isAbsolute(rel)||rel==='..'||rel.startsWith('..'+path.sep)||isInternalWarehousePath(file)||!fs.statSync(file).isFile())throw Error('Ảnh không nằm trong kho hiện tại')
+  return file
+ }
+ // Local-only bulk digest verification: bounded memory/CPU, no JPEG transfer,
+ // no Cloud mutation. Every source is read and hashed, even after a restart.
+ router.post('/images/verify',async(req,res)=>{
+  try{
+   const images=req.body.images
+   if(!Array.isArray(images)||images.length>64||new Set(images.map(i=>i?.id)).size!==images.length||images.some(i=>!i||!Number.isSafeInteger(i.id)||i.id<1||typeof i.sha256!=='string'||!/^[a-f0-9]{64}$/.test(i.sha256)))throw Error('Danh sách xác minh ảnh không hợp lệ')
+   const results:Array<{id:number;sha256:string}>=[];let cursor=0
+   const jobs=await Promise.allSettled(Array.from({length:Math.min(2,images.length)},async()=>{
+    for(;;){const i=images[cursor++];if(!i)return;const result=await cloudImageForSync(sourceImage(i.id),i.sha256,digestCache);results.push({id:i.id,sha256:result.sha256})}
+   }))
+   const failed=jobs.find(j=>j.status==='rejected');if(failed?.status==='rejected')throw failed.reason
+   res.json({images:results})
+  }catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không xác minh được ảnh'})}
+ })
  router.get('/images/:id',async(req,res)=>{
   try{
-   const id=Number(req.params.id);if(!Number.isSafeInteger(id)||id<1)throw Error('Ảnh không hợp lệ')
-   const row=db.prepare('SELECT file_path FROM product_images WHERE id=? AND NOT EXISTS(SELECT 1 FROM sales_units WHERE image_id=product_images.id)').get(id)
-   if(!row)throw Error('Ảnh đã bán hoặc không còn trong kho')
-   const file=fs.realpathSync(String(row.file_path)),base=fs.realpathSync(root),rel=path.relative(base,file)
-   if(path.isAbsolute(rel)||rel==='..'||rel.startsWith('..'+path.sep)||isInternalWarehousePath(file)||!fs.statSync(file).isFile())throw Error('Ảnh không nằm trong kho hiện tại')
-   const result=await cloudImageForSync(file,typeof req.query.knownSha==='string'?req.query.knownSha:undefined)
+   const file=sourceImage(Number(req.params.id))
+   const result=await cloudImageForSync(file,typeof req.query.knownSha==='string'?req.query.knownSha:undefined,digestCache)
    res.set('X-Image-Sha256',result.sha256)
    if(result.data===null){res.status(204).end();return}
    res.type('jpeg').send(result.data)

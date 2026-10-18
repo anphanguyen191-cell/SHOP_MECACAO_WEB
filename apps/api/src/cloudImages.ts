@@ -1,6 +1,7 @@
 import sharp from 'sharp'
 import {createHash} from 'node:crypto'
 import fs from 'node:fs'
+import type {DatabaseSync} from 'node:sqlite'
 export const CLOUD_IMAGE_LIMIT=150000
 /** One JPEG; no write to the source. Bound decoding prevents decompression bombs. */
 export async function optimizeCloudImage(source:string|Buffer){
@@ -23,16 +24,28 @@ export async function optimizeCloudImage(source:string|Buffer){
 // Only digest pairs are cached (no source copies or JPEG copies). Re-read and
 // hash source bytes on every request so same-size/mtime replacements are detected.
 const verifiedDigests=new Map<string,string>()
-export async function cloudImageForSync(source:string,knownSha?:string){
+// Version the digest pairs with the encoder. A new encoding policy must use a
+// different key; old JPEG hashes must never certify bytes from another policy.
+const encoding='jpeg-1080-150k-v1:sharp-'+sharp.versions.sharp+':vips-'+sharp.versions.vips
+export function createCloudImageDigestCache(db:DatabaseSync){
+ db.exec('CREATE TABLE IF NOT EXISTS cloud_image_digests(encoding TEXT NOT NULL,source_sha TEXT NOT NULL,jpeg_sha TEXT NOT NULL,PRIMARY KEY(encoding,source_sha))')
+ const read=db.prepare('SELECT jpeg_sha FROM cloud_image_digests WHERE encoding=? AND source_sha=?')
+ const write=db.prepare('INSERT INTO cloud_image_digests(encoding,source_sha,jpeg_sha) VALUES(?,?,?) ON CONFLICT(encoding,source_sha) DO UPDATE SET jpeg_sha=excluded.jpeg_sha')
+ return {get:(sourceSha:string)=>{const value=read.get(encoding,sourceSha)?.jpeg_sha;return typeof value==='string'&&/^[a-f0-9]{64}$/.test(value)?value:undefined},set:(sourceSha:string,jpegSha:string)=>{write.run(encoding,sourceSha,jpegSha)}}
+}
+type DigestCache=ReturnType<typeof createCloudImageDigestCache>
+export async function cloudImageForSync(source:string,knownSha?:string,cache?:DigestCache){
  if(fs.statSync(source).size>32*1024*1024)throw Error('Ảnh nguồn vượt 32MB.')
  const input=fs.readFileSync(source),sourceSha=createHash('sha256').update(input).digest('hex')
- const previous=verifiedDigests.get(sourceSha)
+ if(knownSha===sourceSha){cache?.set(sourceSha,sourceSha);return {sha256:sourceSha,data:null,optimized:false}}
+ const previous=cache?cache.get(sourceSha):verifiedDigests.get(sourceSha)
  if(knownSha&&previous===knownSha){
   verifiedDigests.delete(sourceSha);verifiedDigests.set(sourceSha,previous)
-  return {sha256:previous,data:null}
+  return {sha256:previous,data:null,optimized:false}
  }
  const result=await optimizeCloudImage(input)
+ cache?.set(sourceSha,result.sha256)
  verifiedDigests.delete(sourceSha);verifiedDigests.set(sourceSha,result.sha256)
  if(verifiedDigests.size>10000)verifiedDigests.delete(verifiedDigests.keys().next().value!)
- return {sha256:result.sha256,data:result.data}
+ return {sha256:result.sha256,data:knownSha===result.sha256?null:result.data,optimized:true}
 }

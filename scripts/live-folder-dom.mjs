@@ -10,7 +10,7 @@ const bytes=new Uint8Array([1,2,3]),sha=createHash('sha256').update(bytes).diges
 const entry=`import React,{act} from 'react';import {createRoot} from 'react-dom/client';import CloudSettings from '../apps/web/src/CloudSettings';import {cloud} from '../apps/web/src/cloudClient';
 window.IS_REACT_ACT_ENVIRONMENT=true;
 window.MessageChannel=class{constructor(){this.port1={onmessage:null};this.port2={postMessage:()=>setTimeout(()=>this.port1.onmessage?.(),0)}}};
-const a=window.audit={revision:1,ack:0,present:[1],images:[{id:1,product_id:1,variant_id:1}],acks:[],tables:{products:[],product_variants:[],product_images:[],cloud_image_assets:[],inventory_transactions:[]},calls:[],ticks:[],blockId:0,release:()=>{},online:true,mobileStock:[],uploads:[]};
+const a=window.audit={revision:1,ack:0,present:[1],images:[{id:1,product_id:1,variant_id:1}],acks:[],tables:{products:[],product_variants:[],product_images:[],cloud_image_assets:[],inventory_transactions:[]},calls:[],ticks:[],blockId:0,release:()=>{},online:true,mobileStock:[],uploads:[],verifiedBatches:[],imageReads:[],integrityBlock:false,releaseIntegrity:null};
 const interval=window.setInterval.bind(window);window.setInterval=(fn,ms)=>{if(ms===1000)a.ticks.push(fn);return interval(fn,ms===1000?100000:ms)};
 Object.defineProperty(navigator,'onLine',{get:()=>a.online});
 cloud.auth.getSession=async()=>({data:{session:{user:{id:'fake-owner'},access_token:'fake'}}});cloud.auth.onAuthStateChange=()=>({data:{subscription:{unsubscribe(){}}}});
@@ -18,22 +18,23 @@ const upsert=(table,row)=>{const list=a.tables[table]||=[];const key=table==='cl
 cloud.rpc=async(name,args)=>{
  a.calls.push({name,args});let result={};
  if(name==='mc_v7_health')result={contract:1,schema:130,role:'owner',instance:'fake',status:'CLOUD_TEST_READY'};
- else if(name==='mc_v7_rows'){const start=Number(args.p_after||0),rows=(a.tables[args.p_table]||[]).slice(start,start+200);result={rows,nextOffset:start+rows.length}}
+ else if(name==='mc_v7_rows'){const start=Number(args.p_after||0),rows=(a.tables[args.p_table]||[]).slice(start,start+args.p_limit);result={rows,nextOffset:start+rows.length}}
  else if(name==='mc_v7_catalog'){for(const [table,rows] of Object.entries(args.p_payload)){const target={products:'products',variants:'product_variants',images:'product_images',categories:'categories'}[table];for(const r of rows)upsert(target,r)}}
  else if(name==='mc_v8_catalog_variants')for(const row of args.p_rows)upsert('product_variants',row);
  else if(name==='mc_v7_ledger')for(const row of args.p_rows)upsert('inventory_transactions',row);
  else if(name==='mc_v8_reuse_image')result={reused:false,ready:false};
  else if(name==='mc_v7_image')upsert('cloud_image_assets',{image_id:args.p_image,ready:true,source_present:true,sha256:args.p_sha,object_path:'v7/fake/'+args.p_image+'.jpg'});
  else if(name==='mc_v7_presence'){for(const p of args.p_images){const asset=a.tables.cloud_image_assets.find(i=>i.image_id===p.id);if(asset)asset.source_present=p.present}a.mobileStock.push(a.tables.cloud_image_assets.filter(i=>i.ready&&i.source_present!==false).length)}
- else if(name==='mc_v8_stock_integrity')result={ready:a.tables.cloud_image_assets.filter(i=>i.ready&&i.source_present!==false).length,missingOrInvalidFiles:0,sharedActivePaths:0,invalidHashes:0};
+ else if(name==='mc_v8_stock_integrity'){if(a.integrityBlock){a.integrityBlock=false;await new Promise(r=>a.releaseIntegrity=r)}result={ready:a.tables.cloud_image_assets.filter(i=>i.ready&&i.source_present!==false).length,missingOrInvalidFiles:0,sharedActivePaths:0,invalidHashes:0};}
  return {data:result,error:null};
 };
 cloud.storage.from=()=>({upload:async(path,data)=>{a.uploads.push(path);if(a.blockId&&path.endsWith('/'+a.blockId+'.jpg')){a.blockId=0;await new Promise(r=>a.release=r)}return {error:null}},download:async()=>({data:{arrayBuffer:async()=>new Uint8Array([1,2,3]).buffer},error:null}),remove:async()=>({error:null})});
 window.fetch=async(url,options)=>{
  const route=String(url);let data={};
- if(route==='/api/cloud/state')data={enabled:true,instance:'fake',reconciled:[],live:{ready:true,phase:'READY',revision:a.revision,acknowledged:a.ack,pendingSync:a.ack<a.revision}};
+ if(route==='/api/cloud/state')data={imageDigestBatch:true,enabled:true,instance:'fake',reconciled:[],live:{ready:true,phase:'READY',revision:a.revision,acknowledged:a.ack,pendingSync:a.ack<a.revision}};
  else if(route.includes('/catalog'))data={instance:'fake',products:[{id:1,name:'Test',product_code:'P1'}],variants:[{id:1,product_id:1,sku:'P1-S',size:'S'}],categories:[],images:a.images.map(i=>({...i})),transactions:a.images.map(i=>({id:i.id,variant_id:1,transaction_type:'IMPORT',quantity:1})),sourceState:a.images.map(i=>({id:i.id,present:a.present.includes(i.id)})),sourceGuard:{revision:a.revision,healthy:true,allMissingConfirmed:true},done:true};
- else if(route.includes('/images/'))return {ok:true,status:200,arrayBuffer:async()=>new Uint8Array([1,2,3]).buffer,headers:{get:()=>${JSON.stringify(sha)}}};
+ else if(route==='/api/cloud/images/verify'){const images=JSON.parse(options.body).images;a.verifiedBatches.push(images);data={images:a.badVerify?[]:images};}
+ else if(route.includes('/images/')){a.imageReads.push(route);return {ok:true,status:200,arrayBuffer:async()=>new Uint8Array([1,2,3]).buffer,headers:{get:()=>${JSON.stringify(sha)}}};}
  else if(route==='/api/cloud/live/ack'){const r=JSON.parse(options.body).revision;a.ack=Math.max(a.ack,r);a.acks.push(r);data={revision:a.revision,acknowledged:a.ack}}
  else if(route==='/api/health')data={release:{stage:8},customWarehouse:true};
  return {ok:true,status:200,json:async()=>data};
@@ -52,10 +53,32 @@ try{
  await until(()=>a.ack===3)
  assert.equal(a.tables.cloud_image_assets.filter(i=>i.ready&&i.source_present!==false).length,3,'Queued upload catches the newest revision')
  assert.equal(a.uploads.filter(p=>p==='v7/fake/2.jpg').length,1,'Completed file not uploaded twice on retry')
- a.revision=4;a.present=[];a.online=false;await act(()=>a.ticks.forEach(fn=>fn()));assert.equal(a.ack,3,'Offline changes remain pending')
- a.online=true;await act(()=>w.dispatchEvent(new w.Event('online')));await until(()=>a.ack===4)
+ // Model the reported shop size: 3,057 ready photos and 49 missing uploads.
+ const beforeUploads=a.uploads.length,beforeReads=a.imageReads.length,beforeBatches=a.verifiedBatches.length
+ a.images=Array.from({length:3106},(_,i)=>({id:i+1,product_id:1,variant_id:1}));a.present=a.images.map(i=>i.id)
+ a.tables.product_images=a.images.map(i=>({...i}));a.tables.cloud_image_assets=a.images.slice(0,3057).map(i=>({image_id:i.id,ready:true,source_present:true,sha256:sha,object_path:'v7/fake/'+i.id+'.jpg'}))
+ a.revision=4;a.blockId=3106;a.integrityBlock=true
+ await act(()=>w.dispatchEvent(new w.Event('mecacao-cloud-sync-now')));await until(()=>a.uploads.includes('v7/fake/3106.jpg'))
+ assert.equal(a.verifiedBatches.length,beforeBatches,'Missing 49 uploads must precede verification of 3,057 existing photos')
+ assert(w.document.querySelector('progress[aria-label="Ảnh đã xử lý"]'),'Visible accessible progress bar during upload')
+ assert(w.document.querySelector('.cloudSyncProgress').textContent.includes('Còn lại:'),'Progress shows remaining work')
+ await act(()=>a.release());await until(()=>a.releaseIntegrity!==null)
+ assert.equal(a.uploads.length-beforeUploads,49);assert.equal(a.imageReads.length-beforeReads,49,'Existing images use bulk digests, not individual JPEG requests')
+ assert.equal(a.verifiedBatches.length-beforeBatches,Math.ceil(3057/32));assert(a.verifiedBatches.every(b=>b.length<=32))
+ assert.equal(w.document.querySelector('progress').value,3106);assert(!w.document.querySelector('.cloudSyncProgress').textContent.includes('Đồng bộ hoàn tất'),'100% images is not completion before final integrity verification')
+ await act(()=>a.releaseIntegrity());await until(()=>a.ack===4)
+ assert(w.document.querySelector('.cloudSyncProgress').textContent.includes('Đồng bộ hoàn tất'))
+ const uploadedBeforeRestart=a.uploads.length
+ await act(()=>w.dispatchEvent(new w.Event('mecacao-cloud-sync-now')));await until(()=>a.acks.filter(r=>r===4).length===2)
+ assert.equal(a.uploads.length,uploadedBeforeRestart,'Resumed ready snapshot never reuploads completed photos')
+ a.revision=5;a.badVerify=true;await act(()=>w.dispatchEvent(new w.Event('mecacao-cloud-sync-now')))
+ await until(()=>w.document.querySelector('.cloudSyncProgress').textContent.includes('Chưa hoàn tất'))
+ assert.equal(a.ack,4,'Incomplete batch response must not acknowledge the filesystem revision')
+ a.badVerify=false;await act(()=>w.dispatchEvent(new w.Event('mecacao-cloud-sync-now')));await until(()=>a.ack===5)
+ a.revision=6;a.present=[];a.online=false;await act(()=>a.ticks.forEach(fn=>fn()));assert.equal(a.ack,5,'Offline changes remain pending')
+ a.online=true;await act(()=>w.dispatchEvent(new w.Event('online')));await until(()=>a.ack===6)
  assert.equal(a.tables.cloud_image_assets.filter(i=>i.ready&&i.source_present!==false).length,0,'Confirmed empty folder withdraws stock, preserving historical IDs')
- assert(a.mobileStock.includes(0),'Cloud event consumer sees empty stock');assert.equal(a.tables.product_images.length,3);assert.equal(a.tables.inventory_transactions.length,3)
+ assert(a.mobileStock.includes(0),'Cloud event consumer sees empty stock');assert.equal(a.tables.product_images.length,3106);assert.equal(a.tables.inventory_transactions.length,3106)
  await act(a.unmount);w.close()
- console.log('LIVE_FOLDER_DOM PASS: automatic upload without clicks, folder change during upload, stale revision not acknowledged, verified retry without duplicate upload, offline pending and reconnect, empty-stock withdrawal with retained history; isolated transports')
+ console.log('LIVE_FOLDER_DOM PASS: 3,106 photos/3,057 ready/49 missing, missing-first priority, 96 bounded bulk checks, no duplicate uploads on resume, visible progress and final verification gate, malformed batch refuses acknowledgement, folder changes during upload, offline/reconnect and empty-stock withdrawal; isolated transports')
 }finally{fs.rmSync(temp,{recursive:true,force:true})}

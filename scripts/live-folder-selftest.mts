@@ -74,6 +74,11 @@ try{
   const pushed=new TextDecoder().decode((await reader.read()).value);assert(pushed.includes('"revision":'+added.revision),'Folder changes push immediately over the open stream');assert(!pushed.includes('"root"'),'No local path in event frames')
   assert(image);eq(catalog.sourceGuard.revision,added.revision);eq(catalog.sourceGuard.healthy,true)
   const response=await fetch('http://127.0.0.1:'+port+'/api/cloud/images/'+image.id);eq(response.status,200);assert(Number(response.headers.get('content-length'))<=150000)
+  const digest=response.headers.get('X-Image-Sha256'),verify=(images:any[])=>fetch('http://127.0.0.1:'+port+'/api/cloud/images/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({images})})
+  eq((await api('/cloud/state')).imageDigestBatch,true)
+  const batch=await verify([{id:image.id,sha256:digest}]);eq(batch.status,200);eq((await batch.json()).images[0].sha256,digest)
+  eq((await verify([{id:image.id,sha256:'bad'}])).status,400);eq((await verify([{id:image.id,sha256:digest},{id:image.id,sha256:digest}])).status,400)
+  eq((await verify([{id:999999,sha256:digest}])).status,400);eq((await verify(Array.from({length:65},(_,i)=>({id:i+1,sha256:digest})))).status,400)
   fs.unlinkSync(httpPhoto);await waitRevision(added.revision);const removed=await api('/cloud/catalog');eq(removed.sourceState.find((s:any)=>s.id===image.id).present,false)
  }finally{streamAbort.abort();if(server.exitCode===null)await new Promise<void>(r=>{server.once('exit',()=>r());server.kill()});db=new DatabaseSync(file)}
  // A manual receipt/import that commits during async decoding wins its identity.
