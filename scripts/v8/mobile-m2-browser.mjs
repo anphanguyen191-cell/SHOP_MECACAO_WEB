@@ -78,7 +78,12 @@ try{
  }
 }finally{
  try{ws?.close()}catch{}
- browser.kill('SIGTERM')
+ if(browser.exitCode===null&&browser.signalCode===null)browser.kill('SIGTERM')
+ if(browser.exitCode===null&&browser.signalCode===null)await Promise.race([new Promise(resolve=>browser.once('exit',resolve)),delay(3000)])
+ if(browser.exitCode===null&&browser.signalCode===null){
+  browser.kill('SIGKILL')
+  await Promise.race([new Promise(resolve=>browser.once('exit',resolve)),delay(3000)])
+ }
  server.close()
- fs.rmSync(tmp,{recursive:true,force:true,maxRetries:3})
+ fs.rmSync(tmp,{recursive:true,force:true,maxRetries:10,retryDelay:100})
 }
