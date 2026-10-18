@@ -15,8 +15,6 @@
 .shell.luxeWindows .luxePageScene{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#d8cbdc transparent;scrollbar-gutter:stable;padding:0 5px 30px 1px;overscroll-behavior:contain}
 .shell.luxeWindows{position:fixed;inset:0;width:100%;height:100vh;height:100dvh;min-height:0;overflow:hidden;display:flex;flex-direction:column}
 .shell.luxeWindows>.layout{flex:1 1 auto;height:auto;min-height:0;overflow:hidden;grid-template-rows:minmax(0,1fr)}
-.shell.luxeWindows>.taskHistory{flex:0 0 auto;align-self:stretch;position:relative;z-index:20;max-height:42px;overflow:hidden;margin:0 18px 6px;padding:8px 14px;border-radius:0 0 13px 13px;box-shadow:0 5px 17px rgba(89,70,119,.07)}
-.shell.luxeWindows>.taskHistory[open]{max-height:min(72dvh,680px);overflow:auto}
 .shell.luxeWindows>.layout{box-sizing:border-box}
 .shell.luxeWindows .layout>main{height:100%;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:0;padding:0}
 .shell.luxeWindows .luxeDesktopSidebar{position:relative;top:auto;height:100%;min-height:0}
@@ -194,11 +192,13 @@
 
 /* Keep the laptop frame and toolbar fixed while only the active workspace scrolls. */
 @media(min-width:801px){
- .shell.luxeWindows{position:fixed!important;inset:0!important;width:100vw;height:100vh;height:100dvh;min-height:0;max-height:100dvh;overflow:hidden!important;display:flex;flex-direction:column}
- .shell.luxeWindows>.layout{flex:1 1 0%;height:0;min-height:0;max-height:none;overflow:hidden;grid-template-rows:minmax(0,1fr);align-self:stretch}
- .shell.luxeWindows .layout>main{height:100%;min-height:0;max-height:none;overflow:hidden;display:flex;flex:1 1 0%;flex-direction:column;align-self:stretch}
+ .shell.luxeWindows{position:fixed!important;inset:0!important;width:100%;height:100vh;height:100dvh;min-width:0;min-height:0;max-height:100dvh;overflow:hidden!important;display:flex;flex-direction:column}
+ .shell.luxeWindows>.layout{box-sizing:border-box;flex:1 1 0%;width:min(100%,1840px);max-width:1840px;height:0;min-width:0;min-height:0;max-height:none;overflow:hidden;grid-template-columns:240px minmax(0,1fr);grid-template-rows:minmax(0,1fr);align-self:center;margin-inline:auto}
+ .shell.luxeWindows.luxeSidebarCollapsed>.layout{grid-template-columns:80px minmax(0,1fr)}
+ .shell.luxeWindows .layout>main{box-sizing:border-box;width:100%;max-width:none;height:100%;min-width:0;min-height:0;max-height:none;overflow:hidden;display:flex;flex:1 1 0%;flex-direction:column;align-self:stretch;justify-self:stretch}
  .shell.luxeWindows .luxeDesktopTopbar{position:relative!important;inset-block-start:auto!important;flex:0 0 73px!important;height:73px;min-height:73px;max-height:73px;align-self:stretch;transform:none!important}
- .shell.luxeWindows .luxePageScene{flex:1 1 0%;height:0;min-height:0;max-height:none;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+ .shell.luxeWindows .luxePageScene{box-sizing:border-box;display:block;flex:1 1 0%;width:100%;height:0;min-width:0;min-height:0;max-height:none;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+ .shell.luxeWindows .luxePageContent{display:flow-root;width:100%;max-width:none;min-width:0;flex:0 0 auto}
  .shell.luxeWindows .luxeAppearanceActions{display:grid;grid-template-columns:minmax(250px,1.4fr) minmax(150px,.85fr) minmax(150px,1fr);gap:14px 18px;align-items:center;justify-content:initial}
  .shell.luxeWindows .luxeContrastSetting{grid-column:1;grid-row:1 / span 2;min-width:0;padding:13px 14px;border:1px solid var(--luxe-border);border-radius:15px;background:linear-gradient(145deg,var(--luxe-paper),var(--luxe-bg))}
  .shell.luxeWindows .luxeContrastSetting small{max-width:34ch;line-height:1.55}
@@ -215,21 +215,43 @@
  .shell.luxeWindows .luxeContrastSetting{grid-row:1 / span 3}
 }
 
-/* Desktop frame geometry is invariant across workspace contents. Explicitly size
-   the grid/main/scroll scene so intrinsic tab widths cannot resize the shell. */
-@media(min-width:801px){
- .shell.luxeWindows{box-sizing:border-box;width:100%;min-width:0}
- .shell.luxeWindows>.layout{box-sizing:border-box;flex:1 1 0%;width:min(100%,1840px);max-width:1840px;height:0;min-width:0;min-height:0;align-self:center;margin-inline:auto;grid-template-rows:minmax(0,1fr)}
- .shell.luxeWindows .layout>main{box-sizing:border-box;width:100%;max-width:none;min-width:0;min-height:0;justify-self:stretch;align-self:stretch}
- .shell.luxeWindows .luxePageScene{box-sizing:border-box;display:block;width:100%;min-width:0;min-height:0;scrollbar-gutter:stable}
- .shell.luxeWindows .luxePageContent{display:flow-root;width:100%;max-width:none;min-width:0}
-}
 /* The Glass setting must visibly change real Windows work surfaces. The old
    toggle only removed blur from the header/sidebar, while almost every panel
    stayed opaque, making the on/off states look identical. */
-.shell.luxeWindows.luxeGlassOn:not(.themeDark){background-color:#f7f2f8;background-image:radial-gradient(ellipse at 14% 16%,rgba(236,177,208,.62),transparent 38%),radial-gradient(ellipse at 86% 18%,rgba(183,190,232,.58),transparent 40%),radial-gradient(ellipse at 58% 92%,rgba(180,222,211,.48),transparent 42%)}
-.shell.luxeWindows.luxeGlassOn:not(.themeDark) :is(.luxeDesktopTopbar,.luxeDesktopSidebar,.panel,.luxeFeaturedCard,.overviewPanel,.catalogPanel,.settingsPage,.cloudSettings,.luxeControlCenterIntro,.luxeControlCenterSection,.warehouseWorkspace,.receiptOverview,.salesList,.salesEditor,.reportPanel,.stocktakePanel,.displayPreferences){background-color:rgba(255,255,255,.58)!important;background-image:none!important;-webkit-backdrop-filter:blur(18px) saturate(150%)!important;backdrop-filter:blur(18px) saturate(150%)!important;border-color:rgba(255,255,255,.78)!important;box-shadow:0 14px 38px rgba(91,65,111,.10),inset 0 1px 0 rgba(255,255,255,.72)!important}
-.shell.luxeWindows.luxeGlassOn:not(.themeDark) .luxeWorkspaceIntro{background-color:rgba(255,255,255,.12)!important;background-image:linear-gradient(115deg,rgba(192,119,165,.62),rgba(154,143,204,.54) 58%,rgba(133,184,208,.48))!important;-webkit-backdrop-filter:blur(18px) saturate(150%)!important;backdrop-filter:blur(18px) saturate(150%)!important;border-color:rgba(255,255,255,.58)!important;box-shadow:0 14px 38px rgba(91,65,111,.12),inset 0 1px 0 rgba(255,255,255,.55)!important}
-.shell.luxeWindows.luxeGlassOn.themeDark{background-color:#1b1b2d;background-image:radial-gradient(ellipse at 14% 16%,rgba(116,66,112,.36),transparent 40%),radial-gradient(ellipse at 86% 18%,rgba(65,83,132,.34),transparent 42%),radial-gradient(ellipse at 58% 92%,rgba(53,113,105,.26),transparent 42%)}
-.shell.luxeWindows.luxeGlassOn.themeDark :is(.luxeDesktopTopbar,.luxeDesktopSidebar,.panel,.luxeFeaturedCard,.overviewPanel,.catalogPanel,.settingsPage,.cloudSettings,.luxeControlCenterIntro,.luxeControlCenterSection,.warehouseWorkspace,.receiptOverview,.salesList,.salesEditor,.reportPanel,.stocktakePanel,.displayPreferences){background-color:rgba(42,39,57,.68)!important;background-image:none!important;-webkit-backdrop-filter:blur(18px) saturate(145%)!important;backdrop-filter:blur(18px) saturate(145%)!important;border-color:rgba(255,255,255,.16)!important;box-shadow:0 14px 38px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.10)!important}
-.shell.luxeWindows.luxeGlassOn.themeDark .luxeWorkspaceIntro{-webkit-backdrop-filter:blur(18px) saturate(145%)!important;backdrop-filter:blur(18px) saturate(145%)!important;border-color:rgba(255,255,255,.28)!important}
+.shell.luxeWindows.luxeGlassOn:not(.themeDark){
+ background-color:#f7f2f8;
+ background-image:radial-gradient(ellipse at 14% 16%,rgba(236,177,208,.62),transparent 38%),radial-gradient(ellipse at 86% 18%,rgba(183,190,232,.58),transparent 40%),radial-gradient(ellipse at 58% 92%,rgba(180,222,211,.48),transparent 42%);
+}
+.shell.luxeWindows.luxeGlassOn:not(.themeDark) :is(.luxeDesktopTopbar,.luxeDesktopSidebar,.panel,.luxeFeaturedCard,.overviewPanel,.catalogPanel,.settingsPage,.cloudSettings,.luxeControlCenterIntro,.luxeControlCenterSection,.warehouseWorkspace,.receiptOverview,.salesList,.salesEditor,.reportPanel,.stocktakePanel,.displayPreferences){
+ background-color:rgba(255,255,255,.58)!important;
+ background-image:none!important;
+ -webkit-backdrop-filter:blur(18px) saturate(150%)!important;
+ backdrop-filter:blur(18px) saturate(150%)!important;
+ border-color:rgba(255,255,255,.78)!important;
+ box-shadow:0 14px 38px rgba(91,65,111,.10),inset 0 1px 0 rgba(255,255,255,.72)!important;
+}
+.shell.luxeWindows.luxeGlassOn:not(.themeDark) .luxeWorkspaceIntro{
+ background-color:rgba(255,255,255,.12)!important;
+ background-image:linear-gradient(115deg,rgba(192,119,165,.62),rgba(154,143,204,.54) 58%,rgba(133,184,208,.48))!important;
+ -webkit-backdrop-filter:blur(18px) saturate(150%)!important;
+ backdrop-filter:blur(18px) saturate(150%)!important;
+ border-color:rgba(255,255,255,.58)!important;
+ box-shadow:0 14px 38px rgba(91,65,111,.12),inset 0 1px 0 rgba(255,255,255,.55)!important;
+}
+.shell.luxeWindows.luxeGlassOn.themeDark{
+ background-color:#1b1b2d;
+ background-image:radial-gradient(ellipse at 14% 16%,rgba(116,66,112,.36),transparent 40%),radial-gradient(ellipse at 86% 18%,rgba(65,83,132,.34),transparent 42%),radial-gradient(ellipse at 58% 92%,rgba(53,113,105,.26),transparent 42%);
+}
+.shell.luxeWindows.luxeGlassOn.themeDark :is(.luxeDesktopTopbar,.luxeDesktopSidebar,.panel,.luxeFeaturedCard,.overviewPanel,.catalogPanel,.settingsPage,.cloudSettings,.luxeControlCenterIntro,.luxeControlCenterSection,.warehouseWorkspace,.receiptOverview,.salesList,.salesEditor,.reportPanel,.stocktakePanel,.displayPreferences){
+ background-color:rgba(42,39,57,.68)!important;
+ background-image:none!important;
+ -webkit-backdrop-filter:blur(18px) saturate(145%)!important;
+ backdrop-filter:blur(18px) saturate(145%)!important;
+ border-color:rgba(255,255,255,.16)!important;
+ box-shadow:0 14px 38px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.10)!important;
+}
+.shell.luxeWindows.luxeGlassOn.themeDark .luxeWorkspaceIntro{
+ -webkit-backdrop-filter:blur(18px) saturate(145%)!important;
+ backdrop-filter:blur(18px) saturate(145%)!important;
+ border-color:rgba(255,255,255,.28)!important;
+}

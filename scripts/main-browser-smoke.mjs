@@ -73,7 +73,6 @@ try{
  assert(await run("(()=>{const enabled=document.querySelector('.luxeGlassSetting input').checked,filter=getComputedStyle(document.querySelector('.displayPreferences')).backdropFilter;return enabled?filter.includes('blur(18px)'):filter==='none'})()"),'Glass toggle must visibly blur the appearance panel and restore the non-glass state')
  await run("document.querySelector('.luxeGlassSetting input').click()")
  await until("document.querySelector('.luxeGlassSetting input')?.checked==="+glassBefore+"&&document.querySelector('.shell')?.classList.contains('luxeGlassOn')==="+glassBefore)
-
  assert.equal((await fetch('http://127.0.0.1:3000/api/local/lan').then(r=>r.json())).enabled,false)
  await run("Array.from(document.querySelectorAll('.luxeSideItem')).find(b=>b.querySelector('.luxeSideText')?.textContent==='Import kho').click()");await until("!!document.querySelector('.warehouseConfig button')");await until("!document.querySelector('.warehouseConfig').disabled");await run("Array.from(document.querySelectorAll('.warehouseConfig button')).find(b=>b.textContent==='CHỌN THƯ MỤC').click()");await until("!!document.querySelector('.folderModal')");await run("document.querySelector('[aria-label=\"Đóng chọn thư mục\"]').click()")
  // Real folder selection, automatic launcher restart, and UI reload without manual scripts.
@@ -125,7 +124,10 @@ try{
     const layout=JSON.parse(await run("(()=>{const bar=document.querySelector('.luxeDesktopTopbar'),scene=document.querySelector('.luxePageScene'),brand=document.querySelector('.luxeSideBrand'),owner=document.querySelector('.luxeSideFooter'),nav=document.querySelector('.luxeSideNavigation');const top=bar.getBoundingClientRect().top;const amount=Math.min(240,Math.max(0,scene.scrollHeight-scene.clientHeight));scene.scrollTop=amount;const after=bar.getBoundingClientRect().top;const a=brand.getBoundingClientRect(),b=owner.getBoundingClientRect(),c=nav.getBoundingClientRect();scene.scrollTop=0;return JSON.stringify({top,after,amount,brandBeforeOwner:a.bottom<=b.top,ownerBeforeNav:b.bottom<=c.top,settingsContrast:document.querySelectorAll('.luxeContrastSetting button').length})})()"))
     assert(layout.amount>0,'Settings content must scroll inside its workspace')
     assert(Math.abs(layout.after-layout.top)<1,'Laptop toolbar must stay pinned while settings scroll')
-    assert(await run("document.querySelector('.taskHistory')?.closest('.shell.luxeWindows')===document.querySelector('.shell.luxeWindows')"),'Laptop task history must remain inside the fixed application frame')
+    assert(await run("(()=>{const task=document.querySelector('.taskHistoryCompact'),bell=task?.querySelector(':scope>summary');return !!task&&!!bell&&task.closest('.luxeDesktopTopbar')&&bell.getAttribute('aria-label')?.includes('Tiến độ và lịch sử tác vụ')&&!document.querySelector('.shell.luxeWindows>.taskHistory')})()"),'Laptop task history must be a compact bell beside warehouse notifications, with no top screen strip')
+    await run("document.querySelector('.taskHistoryCompact>summary').click()")
+    assert(await run("(()=>{const task=document.querySelector('.taskHistoryCompact'),panel=task.querySelector('.taskHistoryPopover'),a=task.querySelector(':scope>summary').getBoundingClientRect(),p=panel.getBoundingClientRect();return task.open&&panel.textContent.includes('Tiến độ & lịch sử tác vụ')&&p.left>=0&&p.right<=innerWidth&&p.top>=a.bottom})()"),'Clicking the task bell must open the existing history in a viewport-contained popover')
+    await run("document.querySelector('.taskHistoryCompact>summary').click()")
     assert(await run('document.documentElement.scrollHeight<=innerHeight+1&&document.body.scrollHeight<=innerHeight+1'),'Laptop must not scroll the browser page outside the workspace')
     assert(layout.brandBeforeOwner&&layout.ownerBeforeNav,'Shop account must sit between brand and navigation')
     assert.equal(layout.settingsContrast,3,'All three contrast controls must be present')

@@ -1,3 +1,23 @@
 .taskMeter,.taskHistory{margin:12px 0;padding:14px;border:1px solid #b7d9d0;border-radius:14px;background:#effaf6;color:#234e43;min-width:0;overflow-wrap:anywhere}.taskMeter header{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.taskMeter progress{width:100%;height:12px;accent-color:#24866d}.taskMeter small,.taskMeter code{display:block;margin-top:5px}.taskHistory summary{cursor:pointer;font-weight:800}.taskHistoryRow{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;width:100%;margin:7px 0;padding:9px 12px;border-radius:10px;text-align:left;background:#fff;color:inherit}.taskHistoryRow small{width:100%;font-size:10px}.taskHistory pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px}.themeDark .taskMeter,.themeDark .taskHistory{background:#183c34;color:#d9f6ec;border-color:#446e61}.themeDark .taskHistoryRow{background:#244d42;color:#e4fff5}
 .densityCompact .taskHistory{padding:8px 12px;margin:6px 0;font-size:12px}.densityCompact .taskMeter{padding:10px;margin:8px 0}
 .taskResultStats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px}.taskResultStats>div{padding:10px;border:1px solid #8cbcac;border-radius:10px}.taskResultStats b,.taskResultStats span{display:block}.taskResultStats b{font-size:20px}.taskResult code{display:block;overflow-wrap:anywhere}
+
+.luxeWindows .taskHistoryCompact{position:relative;z-index:160;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--luxe-ink);overflow:visible}
+.luxeWindows .taskHistoryCompact>summary{position:relative;display:grid;place-items:center;list-style:none;width:39px;height:39px;padding:0;border:1px solid var(--luxe-border);border-radius:12px;background:var(--luxe-paper);color:var(--luxe-muted);box-shadow:0 5px 14px rgba(80,62,94,.06);cursor:pointer;transition:background .16s ease,border-color .16s ease,transform .16s ease}
+.luxeWindows .taskHistoryCompact>summary::-webkit-details-marker{display:none}
+.luxeWindows .taskHistoryCompact>summary:hover,.luxeWindows .taskHistoryCompact[open]>summary{background:#fae8f1;border-color:#ecc8dc;color:#a94978;transform:translateY(-1px)}
+.luxeWindows .taskHistoryCompact>summary svg{width:19px;height:19px;overflow:visible}
+.luxeWindows .taskHistoryBadge{position:absolute;top:-5px;right:-5px;display:grid;place-items:center;min-width:17px;height:17px;padding:0 4px;border:2px solid var(--luxe-paper);border-radius:99px;background:#d74970;color:#fff;font-size:9px;font-weight:900;line-height:1}
+.luxeWindows .taskHistoryPopover{position:absolute;top:calc(100% + 10px);right:0;z-index:9800;width:min(520px,calc(100vw - 32px));max-height:min(70dvh,680px);overflow:auto;padding:18px;border:1px solid rgba(224,210,228,.95);border-radius:18px;background:var(--luxe-paper);color:var(--luxe-ink);box-shadow:0 18px 55px rgba(45,33,59,.22);overscroll-behavior:contain}
+.luxeWindows .taskHistoryPopover h3{margin:0 0 10px;color:var(--luxe-ink);font-size:16px;letter-spacing:-.02em}
+.luxeWindows .taskHistoryPopover>p{font-size:11px;line-height:1.55;color:var(--luxe-muted)}
+.luxeWindows .taskHistoryPopover .taskHistoryRow{border:1px solid var(--luxe-border);background:var(--luxe-bg);color:var(--luxe-ink);cursor:pointer}
+.luxeWindows .taskHistoryPopover .taskHistoryRow:hover{border-color:#e7b8d0;background:#fff3f8}
+.luxeWindows .taskHistoryPopover .taskMeter{margin:12px 0;padding:13px;border-radius:13px}
+.luxeWindows.themeDark .taskHistoryCompact>summary{background:var(--luxe-paper);border-color:var(--luxe-border);color:var(--luxe-ink)}
+.luxeWindows.themeDark .taskHistoryCompact>summary:hover,.luxeWindows.themeDark .taskHistoryCompact[open]>summary{background:#49344c;border-color:#765575;color:#ffe7f4}
+.luxeWindows.themeDark .taskHistoryBadge{border-color:var(--luxe-paper)}
+.luxeWindows.themeDark .taskHistoryPopover{background:#292a3e;border-color:#51445d;color:var(--luxe-ink)}
+.luxeWindows.themeDark .taskHistoryPopover .taskHistoryRow{background:#242535;color:var(--luxe-ink);border-color:#51445d}
+.luxeWindows.themeDark .taskHistoryPopover .taskHistoryRow:hover{background:#3b3043}
+@media(max-width:600px){.luxeWindows .taskHistoryPopover{right:-4px;width:min(480px,calc(100vw - 24px));max-height:min(76dvh,680px)}}
