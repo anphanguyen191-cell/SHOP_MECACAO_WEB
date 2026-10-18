@@ -102,6 +102,7 @@ try{
  await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true})
  await run("document.querySelector('.mobileOpenProduct').click()");await until("!!document.querySelector('.mobileLuxeSheet.isFull')")
  assert(await run("document.activeElement.getAttribute('aria-label')==='Đóng Chi tiết sản phẩm'"),'Product detail must receive focus')
+ await delay(220)
  fs.writeFileSync('artifacts/cloud-browser/reform-product-detail.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
  await run("document.querySelector('.mobilePhotoCheck').click()");assert(await run("document.querySelector('.mobilePhotoCheck').getAttribute('aria-pressed')==='true'"))
  await run("document.querySelector('[aria-label=\\\"Đóng Chi tiết sản phẩm\\\"]').click()");await until("!document.querySelector('.mobileLuxeSheet')")
@@ -118,6 +119,7 @@ try{
  assert(await run("!!document.querySelector('.topbar .brandLogo')&&!!document.querySelector('.sidebar')&&!!document.querySelector('.mobileQuickNav')"))
  await run("document.querySelector('[aria-label=\"Mở thêm chức năng\"]').click()");await until("!!document.querySelector('.featureDrawer')")
  assert(await run("document.querySelector('.featureDrawer').innerText.includes('Danh mục sản phẩm')&&document.querySelector('.featureDrawer').innerText.includes('Import kho')"))
+ fs.writeFileSync('artifacts/cloud-browser/reform-more.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
  await run("document.querySelector('[aria-label=\"Đóng danh mục\"]').click()")
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tổng quan').click()")
  await until("!!document.querySelector('.overviewStats')")
@@ -142,7 +144,7 @@ try{
  await click('TẠO ĐƠN NHÁP');await until("document.body.innerText.includes('Tab khác đang gửi thao tác Cloud')");assert.equal(state.orders.length,0);assert.equal(await run("localStorage.getItem('mecacao-v7-pending-command')"),null)
  await run('window.fakeReleaseLock();true');await until('!window.fakeLockHeld')
  await run("(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='TẠO ĐƠN NHÁP');b.click();b.click()})()");await until("!!localStorage.getItem('mecacao-v7-pending-command')")
- await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Kiểm tra thao tác trước'&&!b.disabled)");state.allowRetry=true;await click('Kiểm tra thao tác trước');await until("document.body.innerText.includes('bản 1')&&!!document.querySelector('.cloudOrder')")
+ await run("document.querySelector('.mobileStatusBell').click()");await until("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Kiểm tra thao tác trước'&&!b.disabled)");state.allowRetry=true;await click('Kiểm tra thao tác trước');await until("document.body.innerText.includes('bản 1')&&!!document.querySelector('.cloudOrder')")
  assert.equal(state.orders.length,1);assert.equal(await run("localStorage.getItem('mecacao-v7-pending-command')"),null)
 
  await run("document.querySelectorAll('.mobileOrderSteps button')[1].click()")
@@ -152,7 +154,7 @@ try{
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tồn kho').click()")
  assert(await run("!!document.querySelector('.salesEditor')"),'Unsaved draft must block navigation')
  await click('Đọc lại đơn');await until("!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Chốt SOLD').disabled")
- for(const step of [0,1,2,3]){await run("document.querySelectorAll('.mobileOrderSteps button')["+step+"].click()");await delay(80);assert(await run("document.documentElement.scrollWidth<=innerWidth+2"));fs.writeFileSync('artifacts/cloud-browser/reform-order-step-'+step+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))}
+ for(const step of [0,1,2,3]){await run("document.querySelectorAll('.mobileOrderSteps button')["+step+"].click()");await delay(220);assert(await run("document.documentElement.scrollWidth<=innerWidth+2"));fs.writeFileSync('artifacts/cloud-browser/reform-order-step-'+step+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))}
  await run("window.slipText=[];window.slipImages=[];window.originalSlipText=CanvasRenderingContext2D.prototype.fillText;window.originalSlipImage=CanvasRenderingContext2D.prototype.drawImage;CanvasRenderingContext2D.prototype.fillText=function(...a){window.slipText.push(a[0]);return window.originalSlipText.apply(this,a)};CanvasRenderingContext2D.prototype.drawImage=function(...a){window.slipImages.push({width:a[0].width,height:a[0].height,dw:a[3],dh:a[4]});return window.originalSlipImage.apply(this,a)}")
  await click('Tạo phiếu PNG');await until("!!document.querySelector('a[download$=\".png\"]')")
  const png=await run("fetch(document.querySelector('a[download$=\".png\"]').href).then(r=>r.blob()).then(b=>createImageBitmap(b)).then(b=>({width:b.width,height:b.height}))");assert.equal(png.width,1080);assert(png.height>1000);assert.equal(state.confirmations.length,0)
@@ -185,7 +187,7 @@ try{
  await run("window.dispatchEvent(new Event('mecacao-cloud-sold-check'))");await delay(500);
  assert.equal(trace.filter(t=>t.method==='DELETE').length,deletes,'Completed cleanup must not repeat deletion')
 
- const pages=[['Tồn kho','.inventoryPage'],['Danh mục sản phẩm','.catalogPage'],['Bán hàng','.salesWorkspace'],['Khách hàng','.contactCard'],['Công nợ','.financeMetrics'],['Báo cáo','.stage4Metrics'],['Kiểm kê','.stocktakePanel'],['Ảnh SOLD','.soldRetentionPage'],['Ảnh iPhone','.phoneInbox'],['Cài đặt','.displayPreferences']]
+ const pages=[['Tổng quan','.overviewStats'],['Kết nối Cloud','.cloudSettings'],['Tồn kho','.inventoryPage'],['Danh mục sản phẩm','.catalogPage'],['Bán hàng','.salesWorkspace'],['Khách hàng','.contactCard'],['Công nợ','.financeMetrics'],['Báo cáo','.stage4Metrics'],['Kiểm kê','.stocktakePanel'],['Ảnh SOLD','.soldRetentionPage'],['Ảnh iPhone','.phoneInbox'],['Cài đặt','.displayPreferences']]
  for(const width of [1366,390])for(const dark of [false,true]){
   await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:900,deviceScaleFactor:1,mobile:width===390})
   await run("document.querySelector('.shell').classList.toggle('themeDark',"+dark+")")
@@ -194,6 +196,11 @@ try{
    await until("!!document.querySelector("+JSON.stringify(selector)+")")
    await delay(100);assert(await run('document.documentElement.scrollWidth<=innerWidth+2'),'Cloud overflow: '+label+' '+width+' '+dark)
    fs.writeFileSync('artifacts/cloud-browser/'+width+'-'+(dark?'dark':'light')+'-'+pages.findIndex(p=>p[0]===label)+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
+   if(width===390&&label==='Khách hàng'){
+    await run("document.querySelector('.mobileCustomersPage .salesOrderRow').click()");await until("!!document.querySelector('.mobileCustomersPage.mobileDetailOpen')");await delay(120)
+    fs.writeFileSync('artifacts/cloud-browser/reform-customer-'+(dark?'dark':'light')+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
+    await run("document.querySelector('.mobileCustomersPage .mobileDetailBack').click()");assert(await run("!document.querySelector('.mobileCustomersPage.mobileDetailOpen')"))
+   }
   }
  }
  await run("document.querySelector('.shell').classList.remove('themeDark');Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Kiểm kê').click()")

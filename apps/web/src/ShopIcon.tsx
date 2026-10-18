@@ -17,6 +17,7 @@ const icons:Record<string,string>={
 }
 function kind(label:string){
  const t=label.toLocaleLowerCase('vi')
+ if(/tìm|search/.test(t))return 'search'
  if(/thêm|menu/.test(t))return 'menu'
  if(/thông báo/.test(t))return 'bell'
  if(/tổng quan|trang chủ/.test(t))return 'home'

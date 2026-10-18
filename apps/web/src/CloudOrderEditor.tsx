@@ -1,4 +1,4 @@
-import {useEffect,useState} from 'react'
+import {useEffect,useLayoutEffect,useState} from 'react'
 import {useCloudDraftConflictChoice} from './CloudDraftConflictChoice'
 import {validMoneyInput} from './moneyInput'
 import {useUnsavedChanges} from './useUnsavedChanges'
@@ -6,6 +6,7 @@ import {cloudCommand} from './cloudClient'
 import {useMobileLuxe} from './MobileLuxeUI'
 export default function CloudOrderEditor({order,items,contact,customers=[],urls={},onChanged,onDirty}:{order:any;items:any[];contact:any;customers?:any[];urls?:Record<string,string>;onDirty?:(dirty:boolean)=>void;onChanged:()=>Promise<void>}){
  const mobile=useMobileLuxe(),[step,setStep]=useState(0)
+ useLayoutEffect(()=>{if(mobile)document.querySelector('.mobileOrderWizard')?.scrollIntoView({block:'start'})},[step,mobile])
  const [dirty,setDirty]=useState(false),[baseVersion,setBaseVersion]=useState(order.version)
  useUnsavedChanges(dirty,()=>setError('Lưu thay đổi của đơn hoặc đọc lại trước khi chuyển chức năng.'))
  useEffect(()=>{onDirty?.(dirty);return()=>onDirty?.(false)},[dirty,onDirty])
@@ -31,7 +32,7 @@ export default function CloudOrderEditor({order,items,contact,customers=[],urls=
    <section className="mobileOrderReview"><h3>Kiểm tra trước khi lưu</h3><div className="mobileReviewContact"><b>{details.recipient_name||'Chưa nhập người nhận'}</b><span>{details.phone||'Chưa có điện thoại'}</span><span>{details.address||'Chưa có địa chỉ'}</span></div><div className="mobileSimpleRow"><span>Sản phẩm</span><b>{rows.length} bộ</b></div><div className="mobileSimpleRow"><span>Tiền hàng</span><b>{money(subtotal)}</b></div><div className="mobileSimpleRow"><span>Phí ship</span><b>{money(Number(details.shipping_fee||0))}</b></div><div className="mobileSimpleRow"><span>Giảm giá</span><b>− {money(Number(discount||0))}</b></div><div className="mobileSimpleRow"><span>Tổng đơn</span><strong>{money(subtotal+Number(details.shipping_fee||0)-Number(discount||0))}</strong></div>{note&&<p>{note}</p>}<p className="mobileHelp">Lưu nháp và xuất phiếu không trừ tồn. Chốt SOLD là thao tác riêng có xác nhận.</p></section>
    <p role="status">{!valid?'Kiểm tra giá, phí ship và giảm giá: nhập số nguyên, không để giá trống.':''}</p>
    {mobile&&<div className="mobileWizardFooter"><span>Tổng dự kiến <b>{money(subtotal+Number(details.shipping_fee||0)-Number(discount||0))}</b></span><div><button type="button" disabled={step===0} onClick={()=>setStep(s=>s-1)}>Quay lại</button>{step<3&&<button type="button" className="mobilePrimary" disabled={step===0?!rows.length||!rows.every(i=>validMoneyInput(i.unit_price)):step===2&&!valid} onClick={()=>setStep(s=>s+1)}>Tiếp tục →</button>}</div></div>}
-   <div className="salesButtons mobileOrderSave"><button className="salesAction salesActionPrimary" disabled={!dirty||!valid||order.version!==baseVersion} onClick={()=>void save()}>Lưu thay đổi</button><button className="salesAction salesActionSecondary" onClick={()=>{if(dirty&&!window.confirm('Bỏ thay đổi chưa lưu và đọc lại đơn?'))return;setRows(items.map(i=>({...i})));setDetails({...contact});setDiscount(String(order.discount));setNote(order.note||'');setBaseVersion(order.version);setDirty(false);setError('')}}>Đọc lại đơn</button></div>
+   <div className="salesButtons mobileOrderSave">{mobile&&<button className="mobileOrderBackStep" type="button" onClick={()=>setStep(2)}>‹ Quay lại chi phí</button>}<button className="salesAction salesActionPrimary" disabled={!dirty||!valid||order.version!==baseVersion} onClick={()=>void save()}>Lưu thay đổi</button><button className="salesAction salesActionSecondary" onClick={()=>{if(dirty&&!window.confirm('Bỏ thay đổi chưa lưu và đọc lại đơn?'))return;setRows(items.map(i=>({...i})));setDetails({...contact});setDiscount(String(order.discount));setNote(order.note||'');setBaseVersion(order.version);setDirty(false);setError('')}}>Đọc lại đơn</button></div>
   </fieldset>
  </section>
 }

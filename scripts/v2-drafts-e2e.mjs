@@ -196,10 +196,15 @@ async function browserTest(base,id){
    assert(await run('document.documentElement.scrollWidth')<=width+2,'preview overflow');checks++
   }
 
-  assert(await run("getComputedStyle(document.querySelector('.salesHeading .salesActionPrimary')).backgroundColor==='rgb(163, 63, 107)'"));checks++
+  await cmd('Emulation.setDeviceMetricsOverride',{width:1366,height:768,deviceScaleFactor:1,mobile:false})
+  assert(await run("getComputedStyle(document.querySelector('.salesHeading .salesActionPrimary')).backgroundColor==='rgb(163, 63, 107)'"),'Desktop primary action keeps its accepted styling');checks++
+  await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true})
+  assert(await run("(()=>{const b=Array.from(document.querySelectorAll('.salesActionPrimary,.mobilePrimary')).find(e=>e.getClientRects().length);const s=getComputedStyle(b);return s.backgroundImage.includes('linear-gradient')&&s.color==='rgb(255, 255, 255)'})()"),'Mobile primary action uses the new legible Travel Luxe treatment');checks++
+  await run("document.querySelectorAll('.mobileOrderSteps button')[2].click()")
   assert(await run("document.querySelector('.salesEditorHead').textContent.includes('Phiên bản 1')"));checks++
   await run("(()=>{const i=document.querySelector('.salesMoney input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'1000');i.dispatchEvent(new Event('input',{bubbles:true}))})()")
   await until("Array.from(document.querySelectorAll('.salesButtons button')).some(b=>b.textContent==='Lưu thay đổi'&&!b.disabled)")
+  await run("document.querySelectorAll('.mobileOrderSteps button')[3].click()")
   await run("Array.from(document.querySelectorAll('.salesButtons button')).find(b=>b.textContent==='Lưu thay đổi').click()")
   await until("document.querySelector('.salesEditorHead').textContent.includes('Phiên bản 2')")
   assert(await run("document.querySelector('.salesTotals').textContent.includes('49.000')"));checks++

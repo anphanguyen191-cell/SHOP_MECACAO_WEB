@@ -5,7 +5,7 @@ import CustomerContact,{type Contact} from './CustomerContact'
 import OrderSlip from './OrderSlip'
 import {SalesRecoveryPanel} from './SalesExecutePanel'
 import SalesPreflight from './SalesPreflight'
-import {useEffect,useRef,useState} from 'react'
+import {useEffect,useLayoutEffect,useRef,useState} from 'react'
 import {apiJson,useBooleanPreference} from './uiState'
 import './salesDrafts.css'
 import {useMobileLuxe} from './MobileLuxeUI'
@@ -19,6 +19,7 @@ const vnd=(n:number|bigint)=>n.toLocaleString('vi-VN')+' đ'
 export default function SalesDraftView({openId,onOpen,onSelectImages,execute=false,business=false,hideRecovery=false,desktopMode=false,onStockChanged=()=>{}}:{business?:boolean;execute?:boolean;hideRecovery?:boolean;desktopMode?:boolean;onStockChanged?:()=>void;openId:string|null;onOpen:(id:string|null)=>void;onSelectImages:(id:string|null)=>void}){
  const mobile=useMobileLuxe(),[mobileDetail,setMobileDetail]=useState(!!openId),[mobileStep,setMobileStep]=useState(0)
  useEffect(()=>{if(openId){setMobileDetail(true);setMobileStep(0)}},[openId])
+ useLayoutEffect(()=>{if(mobile)document.querySelector('.salesEditor')?.scrollIntoView({block:'start'})},[mobileStep,mobile])
  const conflictChoice=useDraftConflictChoice()
  const [rows,setRows]=useState<Row[]>([]),[status,setStatus]=useState('DRAFT'),[reload,setReload]=useState(0),[draft,setDraft]=useState<Draft|null>(null)
  const [prices,setPrices]=useState<Record<number,string>>({}),[discount,setDiscount]=useState('0'),[note,setNote]=useState(''),[removed,setRemoved]=useState<Set<number>>(new Set())
