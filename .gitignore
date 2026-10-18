@@ -22,3 +22,7 @@ data/stage4/
 
 data/stage6-main-test/
 data/stage6-main-test-fixture/
+
+supabase/.temp/
+.audit-*/
+.catalog-admin-test-*/

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 const read=p=>readFileSync(p,'utf8')
 test('Official V8 always shows splash then credential login before mounting CORE',()=>{
- const main=read('apps/web/src/main.tsx')
+ const main=read('apps/web/src/AdminRuntime.tsx')
  const startup=read('apps/web/src/WindowsStartup.tsx')
  const visual=read('apps/web/src/TravelLuxeAuthLayout.tsx')
  const css=read('apps/web/src/travelLuxeDemoAuth.css')
@@ -44,7 +44,7 @@ test('Warehouse change displays one notice, not two simultaneous modal/toast ove
 test('LAN 401 cannot oscillate between Dashboard and login, Windows never falls into LAN login',()=>{
  const app=read('apps/web/src/App.tsx')
  const sync=read('apps/web/src/ShopSyncStatus.tsx')
- const main=read('apps/web/src/main.tsx')
+ const main=read('apps/web/src/AdminRuntime.tsx')
  const lan=read('apps/web/src/LanLogin.tsx')
  assert.match(main,/windowsGate==='enabled'&&!entered\?<WindowsStartup/)
  assert.match(app,/if\(!remoteLan\)\{window\.location\.reload\(\);return\}/)

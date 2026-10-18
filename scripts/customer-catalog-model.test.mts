@@ -1,0 +1,7 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {SIZE_GUIDE,matchSizes,readCart,validateCartLine,lineCount,type CartLine} from '../apps/web/src/customerCatalogModel.ts'
+test('Size guide preserves 12 approved rows, gaps and ambiguous boundaries',()=>{assert.equal(SIZE_GUIDE.length,12);assert.deepEqual(matchSizes(16,98),['8']);assert.deepEqual(matchSizes(11.5,null),[]);assert.deepEqual(matchSizes(null,139),[]);assert.deepEqual(matchSizes(10,80),['4','5']);assert.deepEqual(matchSizes(16,145),[]);assert.deepEqual(matchSizes(NaN,98),[]);assert.deepEqual(matchSizes(null,null),[])})
+const line:CartLine={product_id:1,variant_id:2,name:'Mẫu',size:'8',quick_quantity:3,selected_image_ids:[1,2],expected_price:50000}
+test('Mixed quantity: 2 exact + 3 quick fits five, 2 + 4 cannot fit',()=>{assert.equal(lineCount(line),5);assert(validateCartLine(line,5));assert(!validateCartLine({...line,quick_quantity:4},5));assert(!validateCartLine({...line,selected_image_ids:[1,1]},5));assert(!validateCartLine({...line,quick_quantity:-1},5));assert(!validateCartLine({...line,quick_quantity:0.5},5))})
+test('Cart persistence rejects corrupt local data and never invents unknown price',()=>{assert.deepEqual(readCart('{broken'),[]);assert.deepEqual(readCart('[null]'),[]);assert.equal(readCart(JSON.stringify([{...line,expected_price:null}]))[0].expected_price,null);assert.deepEqual(readCart(JSON.stringify([{...line,selected_image_ids:['1']}])) ,[])})

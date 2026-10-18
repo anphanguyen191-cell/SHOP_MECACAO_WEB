@@ -1,0 +1,3 @@
+[functions.customer-catalog]
+# Guest catalog explicitly has no customer login. No admin action is exposed here.
+verify_jwt = false

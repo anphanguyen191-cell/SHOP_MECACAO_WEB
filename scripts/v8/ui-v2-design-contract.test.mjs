@@ -32,7 +32,7 @@ test('Visual rewrite is contained to Windows and does not alter cloud/core opera
  assert.match(app,/desktopShell\?' luxeWindows contrast-'/)
  assert.match(app,/\{!desktopShell&&<ShopHeader/)
  assert.match(app,/desktopShell\?<LuxeDesktopSidebar/)
- assert.match(source('apps/web/src/main.tsx'),/import '\.\/travelLuxeDesktopFinal\.css'/)
+ assert.match(source('apps/web/src/AdminRuntime.tsx'),/import '\.\/travelLuxeDesktopFinal\.css'/)
  assert.ok(!styles.includes('body{'))
  assert.ok(!styles.includes('database'))
 })

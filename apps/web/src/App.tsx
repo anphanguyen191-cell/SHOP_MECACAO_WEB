@@ -1,3 +1,4 @@
+import CustomerCatalogAdmin from './CustomerCatalogAdmin'
 import MobileLuxeSectionHeader from './MobileLuxeSectionHeader'
 import MobileLuxeNav from './MobileLuxeNav'
 import {MobileOverview} from './MobileLuxeUI'
@@ -59,7 +60,8 @@ export default function App(){
  const canAuditSold=!health?.lanClient||lanRole==='owner'
  const canPhoneInbox=!isDemo&&!!health?.freshDevelopment&&(!health?.lanClient||lanRole==='owner'||lanRole==='inventory')
  const baseAccess=health?.lanClient?baseNav.filter(n=>!['Nhập hàng','Import kho','Kết nối Cloud','Cài đặt'].includes(n)):baseNav
- const nav=isDemo?demoNav:health?.salesDrafts?[...baseAccess.filter(n=>n!=='Cài đặt'),...(canSell?['Khách hàng','Bán hàng','Công nợ']:[]),...(health?.salesExecution?[...(canReport?['Báo cáo']:[]),...(canCount?['Kiểm kê']:[]),...(canAuditSold?['Ảnh SOLD']:[])]:[]),...(canPhoneInbox?['Ảnh iPhone']:[]),...(health?.lanClient?[]:[...(health?.freshDevelopment?['Mobile LAN']:[]),'Cài đặt'])]:baseAccess
+ const nativeNav=isDemo?demoNav:health?.salesDrafts?[...baseAccess.filter(n=>n!=='Cài đặt'),...(canSell?['Khách hàng','Bán hàng','Công nợ']:[]),...(health?.salesExecution?[...(canReport?['Báo cáo']:[]),...(canCount?['Kiểm kê']:[]),...(canAuditSold?['Ảnh SOLD']:[])]:[]),...(canPhoneInbox?['Ảnh iPhone']:[]),...(health?.lanClient?[]:[...(health?.freshDevelopment?['Mobile LAN']:[]),'Cài đặt'])]:baseAccess
+ const nav=!isDemo&&!health?.lanClient?[...nativeNav,'Catalog khách hàng']:nativeNav
  const conflictChoice=useDraftConflictChoice()
  const [salesId,setSalesId]=useState<string|null>(null),[addToDraft,setAddToDraft]=useState<string|null>(null)
  const [receiptPrefill,setReceiptPrefill]=useState<string|null>(null)
@@ -211,6 +213,7 @@ export default function App(){
  {(isDemo||health?.lanClient)&&<div className="brandHeroCompact"><section className="hero"><img className="brandBanner" src={`${import.meta.env.BASE_URL}brand/banner.jpg`} alt="Banner Shop Mẹ CaCao" onError={e=>{e.currentTarget.style.display="none"}}/><p className="eyebrow">SHOP MẸ CACAO · SINCE 2023</p><h2>{active}</h2><p>Quản lý sản phẩm, Size và tồn kho theo ảnh vật lý. {isDemo?'Dữ liệu trên trang này là minh họa.':'Xem dữ liệu kho thật tại LOCAL.'}</p></section></div>}
  </div>}
   {isDemo&&demoInfo[active]&&<section className="demoFeaturePreview"><span className="demoPreviewKicker">XEM TRƯỚC CHỨC NĂNG · DEMO</span><h2>{active}</h2><p>{demoInfo[active]}</p><div className="demoPreviewDisabled"><b>Không kết nối Windows</b><span>Đây là bản xem giao diện. Không có dữ liệu khách hàng và không thể ghi đơn, xuất kho, thu tiền hoặc kiểm kê.</span></div><button type="button" disabled>Chỉ thao tác được trên Windows / Mobile LAN</button></section>}
+   {active==='Catalog khách hàng'&&!isDemo&&!health?.lanClient&&<CustomerCatalogAdmin onOrder={id=>window.open(new URL('?cloud=1&order='+encodeURIComponent(id),location.href).href,'_blank')}/>}
    {active==='Nhập hàng'&&<ReceiptDashboard isDemo={isDemo} initialSourcePath={receiptPrefill} onInitialSourceApplied={()=>setReceiptPrefill(null)} onChanged={()=>{setProductReload(x=>x+1);window.dispatchEvent(new Event('mecacao-cloud-sync-now'))}}/>}
   {active==='Mobile LAN'&&health?.freshDevelopment&&!health?.lanClient&&<LanSettingsView/>}
   {active==='Ảnh iPhone'&&canPhoneInbox&&<PhonePhotoInboxView mobile={!!health?.lanClient} onChanged={()=>setProductReload(n=>n+1)} onBeginReceipt={folder=>{if(health?.lanClient)return;setReceiptPrefill(folder);goTo('Nhập hàng')}}/>}

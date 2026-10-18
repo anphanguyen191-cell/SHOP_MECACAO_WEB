@@ -1,0 +1,5 @@
+const endpoint='https://eyckwoewpomssjjggslr.supabase.co/functions/v1/customer-catalog'
+export const catalogImage=(id:number|null)=>id?endpoint+'?image='+id:''
+export async function catalogGet(action:string,params:Record<string,string|number>={}){const r=await fetch(endpoint+'?'+new URLSearchParams({action,...Object.fromEntries(Object.entries(params).map(([k,v])=>[k,String(v)]))}),{cache:'no-store'});const d=await r.json();if(!r.ok)throw Error(d.error||'Chưa tải được danh mục.');return d}
+export async function catalogPost(action:'submit'|'receipt',token:string,payload:unknown={}){const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({action,token,payload})});const d=await r.json();if(!r.ok){const e=Object.assign(new Error(d.error||'Chưa xác định kết quả gửi.'),{code:d.code});throw e}return d}
+export function newCatalogToken(){return Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('')}

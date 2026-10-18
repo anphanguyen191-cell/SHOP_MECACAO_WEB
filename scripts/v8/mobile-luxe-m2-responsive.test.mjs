@@ -6,7 +6,7 @@ const style=source('apps/web/src/mobileLuxeV2.css')
 const app=source('apps/web/src/App.tsx')
 const cloud=source('apps/web/src/CloudWorkspace.tsx')
 const component=source('apps/web/src/MobileLuxeSectionHeader.tsx')
-const main=source('apps/web/src/main.tsx')
+const main=source('apps/web/src/AdminRuntime.tsx')
 test('M2 isolated responsive treatment for LAN and Cloud',()=>{
  assert.match(app,/mobileLuxeWorkspace/)
  assert.match(cloud,/mobileLuxeWorkspace/)
@@ -41,7 +41,7 @@ test('M2 image-sharing action panel clears the fixed mobile tab dock',()=>{
 })
 
 test('M2 iPhone feedback: splash shared by LAN and Cloud, logout visible without changing authentication CORE',()=>{
- const shell=source('apps/web/src/main.tsx')
+ const shell=source('apps/web/src/AdminRuntime.tsx')
  const work=source('apps/web/src/CloudWorkspace.tsx')
  const chrome=source('apps/web/src/ShopChrome.tsx')
  const view=source('apps/web/src/MobileLuxeUI.tsx')

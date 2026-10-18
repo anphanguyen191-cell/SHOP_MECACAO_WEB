@@ -6,7 +6,7 @@ const dock=source('apps/web/src/MobileLuxeNav.tsx')
 const css=source('apps/web/src/mobileLuxeV2.css')
 const app=source('apps/web/src/App.tsx')
 const cloud=source('apps/web/src/CloudWorkspace.tsx')
-const entry=source('apps/web/src/main.tsx')
+const entry=source('apps/web/src/AdminRuntime.tsx')
 
 test('M2 dock reuses existing routes without replacing application business logic',()=>{
  assert.match(dock,/onNavigate\(i\.key\)/)

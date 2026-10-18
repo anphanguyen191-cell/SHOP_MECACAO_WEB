@@ -1,3 +1,9 @@
+# Customer Catalog V1 — 2026-10-18
+
+- Public customer route, mixed Size/photo cart, size guide, secure guest inquiries and owner inbox.
+- Additive Cloud contract and CORE draft bridge; Catalog OFF and all Products hidden by default.
+- Details and device acceptance limits: docs/catalog/DELIVERY_V1.md.
+
 ## V8 — Travel Luxe laptop frame correction · 18/10/2026
 
 - Khóa chiều cao khung laptop theo cửa sổ; chỉ workspace cuộn khi đổi giữa các tab dài/ngắn.
