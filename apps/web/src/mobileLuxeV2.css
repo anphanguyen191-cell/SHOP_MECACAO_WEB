@@ -69,6 +69,10 @@
   background:linear-gradient(140deg,#ab5f8b,#8f5aa2);color:white;border-color:transparent;
   box-shadow:0 4px 12px rgba(130,72,124,.22)
  }
+ .shell.mobileLuxeWorkspace.themeDark .mobileLuxeNav button.selected{
+  background-color:#704080;background-image:linear-gradient(140deg,#82466f,#704180);color:#fff
+ }
+ .shell.mobileLuxeWorkspace.themeDark .mobileLuxeNav button.selected small{color:#fff!important}
  .shell.mobileLuxeWorkspace .mobileLuxeNav .mobileLuxeNavIcon{
   display:flex;align-items:center;justify-content:center;font-size:19px;line-height:1.15;min-height:22px
  }
