@@ -1,4 +1,5 @@
 import {soldRetentionService} from './soldRetention.js'
+import {stockReturnService} from './stockReturns.js'
 import {businessReports,csvText} from './businessReports.js'
 import {bootstrapStocktake,stocktakeService} from './stocktake.js'
 import {financeService} from './orderFinance.js'
@@ -29,6 +30,12 @@ export function salesDraftRouter(db:DatabaseSync,root:string,port:number){
  function execute(res:any,action:()=>unknown,status=200){try{res.status(status).json(action())}catch(e){res.status(e instanceof SalesError?e.status:500).json({error:e instanceof Error?e.message:'Không xử lý được đơn nháp',...(e instanceof SalesError?e.details:{})})}}
  async function previewRequest(res:any,action:()=>Promise<unknown>,image=false){try{const result=await action();res.set('Cache-Control','no-store');if(image)res.type('jpeg').send(result);else res.json(result)}catch(e){res.status(e instanceof SalesError?e.status:500).json({error:e instanceof Error?e.message:'Không tạo được ảnh xem trước'})}}
  if(sales){
+ const returns=stockReturnService(db,root)
+ router.use((req,res,next)=>{if((req.path.includes('/returns')||req.path.startsWith('/returns'))&&res.locals.lanUser)return res.status(403).json({error:'Nhận lại hàng chỉ thực hiện tại laptop của chủ shop'});next()})
+ router.get('/returns/operations/:requestKey',(req,res)=>execute(res,()=>returns.status(req.params.requestKey)))
+ router.post('/returns/recover',(req,res)=>execute(res,()=>{if(req.body.confirmed!==true)throw new SalesError('Xác nhận kiểm tra phục hồi trước');return returns.recover()}))
+ router.get('/:id/returns',(req,res)=>execute(res,()=>returns.list(req.params.id)))
+ router.post('/:id/returns',(req,res)=>void previewRequest(res,()=>returns.receive(req.params.id,req.body,req.get('Idempotency-Key'))))
  router.get('/sold-retention',(req,res)=>execute(res,()=>retention!.list(req.query.offset)))
  router.get('/sold-retention/:imageId/verify',(req,res)=>void previewRequest(res,()=>retention!.verify(req.params.imageId)))
  bootstrapStocktake(db)

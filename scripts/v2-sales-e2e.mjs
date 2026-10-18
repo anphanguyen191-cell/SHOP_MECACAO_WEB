@@ -62,7 +62,7 @@ async function browserTest(base,id){
   for(let i=0;i<150&&!fs.existsSync(path.join(profile,'DevToolsActivePort'));i++)await sleep(100)
   const p=Number(fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0]),targets=await(await fetch('http://127.0.0.1:'+p+'/json/list')).json()
   ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true})})
-  ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}else if(m.method==='Page.javascriptDialogOpening'){const allowed=m.params.message==='Lưu khách mới không có số điện thoại?';if(allowed)noPhonePrompts++;else dialogErrors.push(m.params.message);void cmd('Page.handleJavaScriptDialog',{accept:allowed}).catch(e=>dialogErrors.push(e.message))}})
+  ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}else if(m.method==='Page.javascriptDialogOpening'){const allowed=m.params.message==='Lưu khách mới không có số điện thoại?'||m.params.message.startsWith('Nhận lại 1 bộ đã thực về shop?');if(m.params.message==='Lưu khách mới không có số điện thoại?')noPhonePrompts++;else if(!allowed)dialogErrors.push(m.params.message);void cmd('Page.handleJavaScriptDialog',{accept:allowed}).catch(e=>dialogErrors.push(e.message))}})
   await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Emulation.setDeviceMetricsOverride',{width:1366,height:768,deviceScaleFactor:1,mobile:false});await cmd('Page.navigate',{url:base})
   await until("Array.from(document.querySelectorAll('.sidebar button')).some(b=>b.textContent==='Bán hàng')")
   await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Bán hàng').click()")
@@ -184,6 +184,36 @@ async function browserTest(base,id){
   await run("document.querySelector('.restorePrimary').click()")
   await until("document.querySelector('.restoreResult')?.textContent.includes('READY')")
   assert(await run("document.querySelector('.restoreResult').textContent.includes('schema 130')&&document.querySelector('.restoreResult').textContent.includes('3 đơn và lịch sử')&&document.querySelector('.restoreResult').textContent.includes('RUN_WINDOWS_RESTORED_V2_SALES_TEST.bat')"));checks++
+  // Receive this SOLD unit back using the actual localhost API and React UI.
+  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Bán hàng').click()")
+  await until("!!document.querySelector('.salesListHead select')")
+  await run("(()=>{const s=document.querySelector('.salesListHead select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(s,'SOLD');s.dispatchEvent(new Event('change',{bubbles:true}))})()")
+  await until("Array.from(document.querySelectorAll('.salesOrderRow')).some(b=>b.textContent.includes("+JSON.stringify(id.slice(0,8).toUpperCase())+"))")
+  await run("Array.from(document.querySelectorAll('.salesOrderRow')).find(b=>b.textContent.includes("+JSON.stringify(id.slice(0,8).toUpperCase())+")).click()")
+  await until("!!document.querySelector('.stockReturnPanel')")
+  await run("document.querySelector('.stockReturnPanel').open=true")
+  await until("document.querySelectorAll('.stockReturnUnits input').length===1")
+  const stockBefore=(await api('/api/inventory/dashboard')).stock,financeBefore=await api('/api/sales/drafts/'+id+'/finance')
+  await run("document.querySelector('.stockReturnUnits input').click()")
+  await run("(()=>{const i=document.querySelector('.stockReturnPanel input:not([type=checkbox])');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'Khách trả hàng, đã nhận tại shop');i.dispatchEvent(new Event('input',{bubbles:true}))})()")
+  await run("document.querySelector('.stockReturnAgree input').click()")
+  await until("Array.from(document.querySelectorAll('.stockReturnPanel button')).some(b=>b.textContent==='Nhận lại 1 bộ vào kho'&&!b.disabled)")
+  await run("Array.from(document.querySelectorAll('.stockReturnPanel button')).find(b=>b.textContent==='Nhận lại 1 bộ vào kho').click()")
+  await until("document.querySelector('.stockReturnPanel').textContent.includes('Đã nhận lại → ảnh tồn #')")
+  assert.equal((await api('/api/inventory/dashboard')).stock,stockBefore+1);checks++
+  assert.deepEqual(await api('/api/sales/drafts/'+id+'/finance'),financeBefore);checks++
+  assert(await run("document.querySelector('.stockReturnUnits input').disabled"));checks++
+  assert.equal(await run("localStorage.getItem('mecacao-stock-return:'+ "+JSON.stringify(id)+")"),null);checks++
+  const returned=(await api('/api/sales/drafts/'+id+'/returns')).items[0],inventory=await api('/api/inventory/explorer'),newImage=inventory.flatMap(p=>p.variants.flatMap(v=>v.images)).find(i=>i.id===returned.newImageId)
+  assert(newImage);checks++
+  assert.deepEqual(dialogErrors,[]);checks++
+  for(const width of [1366,390]){
+   await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:768,deviceScaleFactor:1,mobile:width===390})
+   await run("document.querySelector('.stockReturnPanel').scrollIntoView({block:'center'})");await sleep(150)
+   assert(await run("document.documentElement.scrollWidth<=innerWidth+2"));checks++
+   const screenshot=await cmd('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(artifact,width+'-stock-return.png'),Buffer.from(screenshot.data,'base64'))
+  }
+  console.log('STOCK_RETURN_BROWSER PASS: actual SOLD unit -> receive -> new stock ID, disabled duplicate, unchanged finance, 1366/390px layout')
   console.log('V2_SALES_BROWSER PASS: preflight checkbox -> actual sandbox sale -> locked history JPEG -> reload SOLD filter; 1366/390px light/dark, schema130 restore READY UI; Stage3 deposit/aftercare/debt UI; Stage4 reports, counted discrepancy and immutable close UI')
  }finally{ws?.close();c.kill();await sleep(300);fs.rmSync(profile,{recursive:true,force:true})}
 }

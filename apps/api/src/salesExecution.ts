@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import {pendingStockReturn} from './stockReturnState.js'
 import path from 'node:path'
 import {knownUnitCost} from './priceBulk.js'
 import {createHash,randomUUID} from 'node:crypto'
@@ -66,6 +67,7 @@ export function salesExecutionService(db:DatabaseSync,sandboxRoot:string,confirm
  function release(){if(present(lock)){exactFile(lock);fs.unlinkSync(lock);syncDirectory(root)}}
  async function status(key:unknown){if(typeof key!=='string'||! /^[A-Za-z0-9_-]{16,100}$/.test(key))throw new SalesError('Mã bán không hợp lệ');const row=db.prepare('SELECT * FROM sales_operations WHERE request_key=?').get(key) as Op|undefined;if(!row)return {status:salesActivity.busy?'CONFIRMING':'NOT_FOUND',canRecover:present(lock),sold:false};try{const p=plan(row);if(row.status==='ROLLED_BACK')return {status:'ROLLED_BACK',sold:false,orderId:p.orderId,canRecover:false};const sold=proof(row,p);verifyFiles(p,sold);if(sold)for(const u of p.units){const b=exactFile(at(u.archive),u.archiveHash);await sharp(b).stats()};verifyFiles(p,sold);return {status:row.status,sold,operationId:row.id,orderId:p.orderId,quantity:p.units.length,total:p.total,originalsRetained:true,canRecover:row.status==='PREPARED',cleanup:'RETAINED_FOR_ACCEPTANCE'}}catch(e){return {status:'RECOVERY_REQUIRED',sold:false,operationId:row.id,canRecover:false,error:e instanceof Error?e.message:'Cần kiểm tra thủ công'}}}
  async function recover(checkpoint:(point:string)=>void=()=>{}){
+  if(pendingStockReturn(db,root))throw new SalesError('Phục hồi nhận lại hàng trước khi kiểm tra giao dịch bán',409)
   if(salesActivity.busy||salesActivity.readers)throw new SalesError('Đang có tác vụ khác; đợi rồi phục hồi',409)
   if(!present(lock)){if(db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get())throw Error('Thiếu khóa cho PREPARED; cần kiểm tra thủ công');return {status:'CLEAR'}}
   salesActivity.busy=true
@@ -77,12 +79,12 @@ export function salesExecutionService(db:DatabaseSync,sandboxRoot:string,confirm
    verifyFiles(p,sold);release();return {status:sold?'SOLD':'ROLLED_BACK',orderId:p.orderId,originalsRetained:true}
   }finally{salesActivity.busy=false}
  }
- return {status,recover,pending:()=>present(lock)||!!db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get(),
+ return {status,recover,pending:()=>present(lock)||!!db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get()||pendingStockReturn(db,root),
   async confirm(id:string,raw:any,key:unknown,checkpoint:(point:string)=>void=()=>{}){
    if(typeof key!=='string'||! /^[A-Za-z0-9_-]{16,100}$/.test(key)||!raw||!Number.isSafeInteger(raw.version)||raw.version<1||! /^[a-f0-9]{64}$/.test(raw.token)||raw.confirmed!==true||typeof raw.acknowledgeZeroPrice!=='boolean')throw new SalesError('Kiểm tra toàn đơn và xác nhận bán trong sandbox trước')
    const inputHash=digest(JSON.stringify({id,version:raw.version,token:raw.token,acknowledgeZeroPrice:raw.acknowledgeZeroPrice})),old=db.prepare('SELECT * FROM sales_operations WHERE request_key=?').get(key) as Op|undefined
    if(old){if(old.input_hash!==inputHash)throw new SalesError('Mã bán đã dùng với nội dung khác',409);return status(key)}
-   if(salesActivity.busy||salesActivity.readers||present(lock)||db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get())throw new SalesError('Có tác vụ kho hoặc giao dịch cần phục hồi; chưa bán',409)
+   if(salesActivity.busy||salesActivity.readers||present(lock)||pendingStockReturn(db,root)||db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get())throw new SalesError('Có tác vụ kho hoặc giao dịch cần phục hồi; chưa bán',409)
    salesActivity.busy=true
    const operationId=randomUUID();let started=false
    try{

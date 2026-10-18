@@ -51,6 +51,8 @@ jobs:
         run: npm run typecheck
       - name: Inventory value arithmetic and physical stock lifecycle
         run: npm run test:inventory-value
+      - name: Stock return crash recovery, resale and backup lifecycle
+        run: npm run test:stock-return
       - name: Mobile and existing Windows UI regression
         run: npm run test:ui
       - name: Windows desktop browser acceptance

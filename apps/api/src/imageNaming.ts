@@ -7,9 +7,9 @@ export function imagePrefix(product:string,size:string){return 'ShopMeCaCao_Tole
 /** Persistent per-product/size high watermark: allocated file numbers are never recycled. */
 const key=(prefix:string)=>'photo-seq:'+createHash('sha256').update(prefix.toLowerCase()).digest('hex')
 const caches=new WeakMap<Set<string>,Map<string,number>>()
-function historicalHighWater(prefix:string,dir:string,reserved:Set<string>){
+function historicalHighWater(prefix:string,dir:string,reserved:Set<string>,database=db){
  let highest=0
- const stored=db.prepare('SELECT value FROM app_metadata WHERE key=?').get(key(prefix)) as {value:string}|undefined
+ const stored=database.prepare('SELECT value FROM app_metadata WHERE key=?').get(key(prefix)) as {value:string}|undefined
  if(stored){highest=Number(stored.value);if(!Number.isSafeInteger(highest)||highest<0)throw Error('Bộ đếm tên ảnh bị lỗi; không được đặt lại từ 0001')}
  const inspect=(file:string)=>{
   const base=path.basename(file),extension=path.extname(base),start=base.slice(0,base.length-extension.length)
@@ -21,10 +21,10 @@ function historicalHighWater(prefix:string,dir:string,reserved:Set<string>){
  for(const file of fs.readdirSync(dir))inspect(file)
  return highest
 }
-export function nextNamedImage(dir:string,product:string,size:string,ext:string,reserved=new Set<string>()){
+export function nextNamedImage(dir:string,product:string,size:string,ext:string,reserved=new Set<string>(),database=db){
  const prefix=imagePrefix(product,size),cacheKey=prefix.toLowerCase()
  let cache=caches.get(reserved);if(!cache){cache=new Map();caches.set(reserved,cache)}
- let sequence=cache.get(cacheKey)??historicalHighWater(prefix,dir,reserved)
+ let sequence=cache.get(cacheKey)??historicalHighWater(prefix,dir,reserved,database)
  const occupied=new Set(fs.readdirSync(dir).map(x=>x.toLowerCase()))
  while(sequence<999999999){
   sequence++
@@ -35,7 +35,7 @@ export function nextNamedImage(dir:string,product:string,size:string,ext:string,
  throw Error('Không còn số thứ tự tên ảnh khả dụng')
 }
 /** Claim names BEFORE copying; a failed receipt may leave gaps, but cannot reuse a name. */
-export function reserveNamedImageSequences(files:string[]){
+export function reserveNamedImageSequences(files:string[],database=db){
  const highest=new Map<string,{prefix:string;number:number}>()
  for(const file of files){
   const base=path.basename(file),ext=path.extname(base),stem=base.slice(0,base.length-ext.length)
@@ -46,7 +46,7 @@ export function reserveNamedImageSequences(files:string[]){
   const old=highest.get(identity)
   if(!old||n>old.number)highest.set(identity,{prefix,number:n})
  }
- const insert=db.prepare("INSERT INTO app_metadata(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=datetime('now') WHERE CAST(app_metadata.value AS INTEGER)<CAST(excluded.value AS INTEGER)")
+ const insert=database.prepare("INSERT INTO app_metadata(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=datetime('now') WHERE CAST(app_metadata.value AS INTEGER)<CAST(excluded.value AS INTEGER)")
  for(const [identity,row] of highest)insert.run(identity,String(row.number))
  return highest.size
 }

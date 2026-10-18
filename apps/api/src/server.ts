@@ -11,6 +11,7 @@ import {inspectWarehouseOwner,adoptWarehouse} from './warehouseOwnership.js'
 import {taskManager} from './tasks.js'
 import {taskActivity} from './taskActivity.js'
 import {salesActivity,SALES_AREA} from './salesExecution.js'
+import {pendingStockReturn} from './stockReturnState.js'
 import {localRuntime,inside,legacyWarehouseActive} from './localRuntime.js'
 import {isInternalWarehousePath} from './warehouseAreas.js'
 import {restoreTestRouter} from './restoreRoutes.js'
@@ -52,7 +53,7 @@ if((managedHome||v8Home)&&process.send)process.on('message',message=>{
  if(m?.type==='managed:quiesce'){
   updateFence=true;const until=Date.now()+45000
   const check=()=>{
-   const unresolved=tasks.pendingReview()||(sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))||db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get()
+   const unresolved=tasks.pendingReview()||(sandboxRoot&&(pendingStockReturn(db,sandboxRoot)||fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json'))))||db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get()
    if(unresolved){updateFence=false;process.send?.({type:'managed:refused',error:'Có giao dịch/tác vụ cần phục hồi hoặc đối soát. Cập nhật đã dừng.'});return}
    if(!taskActivity.busy&&!salesActivity.busy&&updateWrites===0){process.send?.({type:'managed:quiesced'});return}
    if(Date.now()>until){updateFence=false;process.send?.({type:'managed:refused',error:'Tác vụ chưa kết thúc. Chờ hoàn tất rồi cập nhật.'});return}
@@ -134,6 +135,12 @@ app.use('/api',(req,res,next)=>{
 })
 // Coordinate all HTTP reads/writes while async sale preparation/staging runs.
 app.use('/api',(req,res,next)=>{
+ if(salesExecutionEnabled&&sandboxRoot&&req.path!=='/health'){
+  const returnRoute=/^\/sales\/drafts\/(?:returns\/(?:operations\/[^/]+|recover)|[^/]+\/returns)$/.test(req.path)
+  if(returnRoute)return next()
+  if(pendingStockReturn(db,sandboxRoot)&&req.method==='GET'&&/^\/sales\/drafts(?:\/[^/]+(?:\/sold-image\/\d+)?)?$/.test(req.path))return next()
+  if(pendingStockReturn(db,sandboxRoot))return res.status(409).json({error:'Nhận lại hàng cần kiểm tra phục hồi. Mở đơn SOLD tại laptop → Nhận lại hàng.',code:'STOCK_RETURN_RECOVERY_REQUIRED'})
+ }
  if(!salesExecutionEnabled||!sandboxRoot||req.path==='/health'||req.path==='/cloud/reconcile'||req.path.startsWith('/tasks')||req.path==='/sales/drafts/recover'||/^\/sales\/drafts\/operations\//.test(req.path)||/\/confirm$/.test(req.path))return next()
  if(salesActivity.busy||fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json'))||db.prepare("SELECT 1 FROM sales_operations WHERE status='PREPARED'").get())return res.status(409).json({error:'Giao dịch bán đang xử lý hoặc cần phục hồi. Vào Bán hàng kiểm tra trạng thái.',code:'SALE_RECOVERY_REQUIRED'})
  salesActivity.readers++;let done=false;const release=()=>{if(!done){done=true;salesActivity.readers--}};res.once('finish',release);res.once('close',release);next()
@@ -210,7 +217,7 @@ app.post('/api/store/import-batch-task',(req,res)=>{if(req.body.confirmed!==true
 
 app.get('/api/health', (_req, res) => res.json({
   lanClient:!!res.locals.lanUser,lanRole:res.locals.lanUser?.role,windowsAuth:!!v8Home,
-  ok: true, writeReady:!updateFence&&!updateProbe, app: 'SHOP_MECACAO_WEB', installationId:res.locals.lanUser?undefined:createHash('sha256').update(managedHome??v8Home??path.resolve(process.cwd())).digest('hex'), cloudAuthority:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(), freshDevelopment,customWarehouse,release: freshDevelopment?release:undefined,version: freshDevelopment?release.version:localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:res.locals.lanUser?undefined:(freshDevelopment?freshWarehouse:localRuntime?.warehouse),incoming:res.locals.lanUser?undefined:localRuntime?.incoming,databasePath:res.locals.lanUser?undefined:((managedHome||v8Home)?dbPath:localRuntime?.database),localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
+  ok: true, writeReady:!updateFence&&!updateProbe, app: 'SHOP_MECACAO_WEB', installationId:res.locals.lanUser?undefined:createHash('sha256').update(managedHome??v8Home??path.resolve(process.cwd())).digest('hex'), cloudAuthority:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(), freshDevelopment,customWarehouse,release: freshDevelopment?release:undefined,version: freshDevelopment?release.version:localRuntime?'2.0.0-local':salesExecutionEnabled?'2.0.0-sales-sandbox':salesDraftsEnabled?'2.0.0-draft-sandbox':'1.0.0-dev', schema: readSchemaVersion(db), database: path.basename(dbPath),sandbox:!!sandboxRoot&&(!localRuntime||localRuntime.review),localV2Business:!!localRuntime&&!localRuntime.review,localV2RestoreReview:!!localRuntime?.review,warehouse:res.locals.lanUser?undefined:(freshDevelopment?freshWarehouse:localRuntime?.warehouse),incoming:res.locals.lanUser?undefined:localRuntime?.incoming,databasePath:res.locals.lanUser?undefined:((managedHome||v8Home)?dbPath:localRuntime?.database),localV2Review:!!sandboxRoot&&salesExecutionEnabled&&process.env.SHOP_LOCAL_V2_REVIEW==='1',salesDrafts:salesDraftsEnabled,salesExecution:salesExecutionEnabled,stockReturnRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&pendingStockReturn(db,sandboxRoot)),saleRecoveryRequired:!!(salesExecutionEnabled&&sandboxRoot&&fs.existsSync(path.join(sandboxRoot,SALES_AREA+'-pending.json')))
 }))
 app.get('/api/local/warehouse/preflight',(req,res)=>{
  if(!v8Home||res.locals.lanUser)return res.status(403).json({error:'Chỉ chọn kho trên Windows V8'})
@@ -257,7 +264,8 @@ app.post('/api/local/warehouse',(req,res)=>{
 })
 if(salesExecutionEnabled&&sandboxRoot)app.use('/api/cloud',cloudRouter(db,sandboxRoot))
 app.use('/api/sales/drafts',(req,res,next)=>{
- if(!['GET','HEAD'].includes(req.method)&&req.path!=='/recover'&&db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())return res.status(409).json({error:'Kho đang dùng Cloud. Mở giao diện Cloud để tạo đơn, bán, cập nhật tiền và khách hàng.',code:'CLOUD_AUTHORITY_REQUIRED'})
+ const localStockReturn=req.path==='/returns/recover'||/^\/[^/]+\/returns$/.test(req.path)
+ if(!['GET','HEAD'].includes(req.method)&&req.path!=='/recover'&&!localStockReturn&&db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())return res.status(409).json({error:'Kho đang dùng Cloud. Mở giao diện Cloud để tạo đơn, bán, cập nhật tiền và khách hàng.',code:'CLOUD_AUTHORITY_REQUIRED'})
  next()
 })
 if(salesDraftsEnabled&&sandboxRoot)app.use('/api/sales/drafts',salesDraftRouter(db,sandboxRoot,PORT))

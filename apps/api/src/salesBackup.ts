@@ -1,4 +1,6 @@
 import {validateStocktakes} from './stocktake.js'
+import {validateStockReturns} from './stockReturnProof.js'
+import {pendingStockReturn} from './stockReturnState.js'
 import {validateFinance} from './orderFinance.js'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -15,6 +17,7 @@ function relative(root:string,p:string){const r=path.relative(root,path.resolve(
 function resolve(root:string,r:string){if(typeof r!=='string'||path.isAbsolute(r)||relative(root,path.resolve(root,r))!==r)throw Error('Đường dẫn bundle không hợp lệ');return path.resolve(root,r)}
 function copy(source:string,target:string,sha:string){fs.mkdirSync(path.dirname(target),{recursive:true});if(fs.realpathSync(path.dirname(target))!==path.dirname(target))throw Error('Copy đi qua liên kết');const b=exactFile(source,sha);writeDurable(target,b);exactFile(target,sha);exactFile(source,sha)}
 function validate(db:DatabaseSync,m:Manifest,file:(r:string)=>Buffer){
+ validateStockReturns(db,m.sourceRoot,file)
  assertDatabaseIntegrity(db);validateFinance(db);validateStocktakes(db);if(readSchemaVersion(db)!==130)throw Error('Backup sale không phải schema130')
  if((db.prepare("SELECT value FROM app_metadata WHERE key='warehouse_layout'").get()?.value==='DIRECT')!==(m.version===4))throw Error('Manifest không khớp kiểu kho DIRECT/sandbox')
  const records=db.prepare('SELECT id,file_path FROM product_images ORDER BY id').all(),seen=new Set<number>(),names=new Set<string>(),index=new Map(m.files.map(f=>[f.relative,f]))
@@ -30,7 +33,7 @@ function validate(db:DatabaseSync,m:Manifest,file:(r:string)=>Buffer){
  if(Number(db.prepare('SELECT COUNT(*) n FROM sales_units').get()!.n)!==m.records.filter(r=>r.sold).length||Number(db.prepare('SELECT COUNT(*) n FROM sales_ledger').get()!.n)!==m.records.filter(r=>r.sold).length)throw Error('Backup claims/ledger không đủ')
 }
 export function createSalesBackup(db:DatabaseSync,dbPath:string,rootInput:string,onProgress?:(p:any)=>void){
- const root=fs.realpathSync(rootInput);if(salesActivity.busy||fs.existsSync(path.join(root,SALES_AREA+'-pending.json')))throw Error('Giao dịch bán chưa rõ; dừng backup đầy đủ')
+ const root=fs.realpathSync(rootInput);if(salesActivity.busy||pendingStockReturn(db,root)||fs.existsSync(path.join(root,SALES_AREA+'-pending.json')))throw Error('Giao dịch bán/nhận lại chưa rõ; dừng backup đầy đủ')
  const service=salesExecutionService(db,root);if(service.pending())throw Error('Giao dịch cần phục hồi')
  const records=(db.prepare('SELECT id,file_path FROM product_images ORDER BY id').all()).map(r=>({id:Number(r.id),canonical:relative(root,String(r.file_path)),sold:!!db.prepare('SELECT 1 FROM sales_units WHERE image_id=?').get(r.id)})),sources:string[]=[]
  for(const r of records)if(!r.sold)sources.push(resolve(root,r.canonical));else if(fs.existsSync(resolve(root,r.canonical)))throw Error('Canonical đã bán xuất hiện lại; kiểm tra trước backup')
