@@ -35,7 +35,7 @@ Admin: https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1
 ## Cách chủ Shop mở Catalog
 
 1. Cập nhật bản Windows hoặc mở Admin Cloud mới; đăng nhập tài khoản owner.
-2. Vào **Catalog khách hàng → Banner & cấu hình**. Kiểm tra hero chữ; nếu dùng ảnh riêng thì nhập URL ảnh HTTPS đã duyệt. Nhập link Zalo/Messenger chính thức nếu có. Bảng Size chữ đã có đúng 12 dòng; ảnh nguyên bản tùy chọn.
+2. Vào **Catalog khách hàng → Banner & cấu hình**. Banner Mobile, ảnh bảng Size và dữ liệu tra 12 dòng đã cài sẵn, có xem trước ngay. Không cần nhập URL. Đổi ảnh riêng hoặc thêm link Zalo/Messenger chính thức trong phần tùy chọn nâng cao nếu muốn; hộp yêu cầu Admin hoạt động độc lập.
 3. Vào **Công khai sản phẩm**, bật những Product muốn khách xem. Product chưa bật vẫn ẩn.
 4. Bật **Mở website Catalog cho khách** rồi lưu/publish cấu hình. Mở link khách để nghiệm thu trên iPhone trước khi chia sẻ.
 5. Xử lý yêu cầu trong hộp; phân bổ ảnh, chuyển nháp CORE; kiểm tra thông tin giao hàng/liên hệ trong đơn trước khi bán.
@@ -44,7 +44,14 @@ Admin: https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1
 
 - Laptop offline: dữ liệu khách là Cloud gần nhất; thời gian kiểm tra nguồn cũ hơn 15 phút hoặc chưa có sẽ hiện cảnh báo. Gửi chỉ là yêu cầu tư vấn, không giữ hàng hoặc cam kết tồn vật lý.
 - Không đăng nhập khách, không thanh toán, không tự gửi tin Zalo/Messenger. Chỉ CORE xác nhận bán trừ tồn.
-- Chưa có banner ảnh mobile cuối cùng/ảnh bảng Size/link liên hệ được owner nhập; dùng hero chữ và bảng Size chữ. Không tự lấy thông tin liên hệ hoặc ngân hàng từ banner Admin.
+- Banner Mobile và ảnh bảng Size đóng gói sẵn cùng ứng dụng. Số hỗ trợ 0949 656 477 lấy từ banner Shop hiện có; không đưa thông tin ngân hàng ra Catalog. Chưa xác minh tài khoản Zalo/Messenger nên không tự tạo link hai kênh này. Chủ Shop cần kiểm tra hình ảnh trên iPhone trước khi mở công khai.
 - Ảnh đã tải xuống/screenshot trên thiết bị khách không thu hồi được khi Shop ẩn Product.
 - Thông tin liên hệ inquiry bị ẩn sau 90 ngày; dọn vật lý khi submit/lookup xử lý. Chứng từ CORE đã tạo theo chính sách lưu CORE riêng. Owner có nút xóa liên hệ inquiry sớm.
 - CI, GitHub Pages và release theo commit phải được xem ở Actions; không đồng nghĩa nghiệm thu iPhone/Windows thật. Chỉ chủ Shop xác nhận mới nghiệm thu Catalog STABLE.
+
+## Cập nhật cấu hình sẵn — 18/10/2026
+
+- Banner Mobile riêng và ảnh bảng Size SVG kèm ứng dụng; khi Cloud chưa có URL, tự dùng bộ mặc định. Giữ cấu hình riêng hợp lệ của chủ Shop.
+- Màn hình cấu hình có xem trước ảnh, bảng Size 12 dòng và nút lưu; các URL/JSON chuyển vào tùy chọn nâng cao.
+- Không tự mở Catalog hoặc bật Product. Không yêu cầu Zalo/Messenger để tiếp nhận vào hộp Admin.
+- Kiểm thử bổ sung: fallback từ cấu hình trống, giữ cấu hình riêng, lưu preset/version, URL mặc định thu gọn; Chromium tải đúng asset đóng gói và kiểm tra sáu kích thước.

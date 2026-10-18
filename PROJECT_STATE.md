@@ -270,3 +270,7 @@ Owner authorized clarification and implementation. Public route `?catalog=1`, mi
 Cloud migrations `customer_catalog_v1` and `catalog_stock_proof_timestamp` plus the public `customer-catalog` Edge Function are deployed. Publication uses independent metadata. Catalog remains OFF; all Products remain hidden until the owner explicitly publishes. Partial/missing source-check timestamps are reported as unknown, never as a fresh complete inventory check. Physical stock cannot be guaranteed while the Windows source is offline.
 
 Evidence and operating instructions: `docs/catalog/DELIVERY_V1.md`; technical decisions: `docs/catalog/TECHNICAL_CONTRACT_V1.md`. Local build/typecheck, core/cloud regression, isolated SQL/DOM, six-viewport Chromium guest flow and real CORE Cloud rollback smoke passed. Main CI/release/Pages must be checked for the final commit; real owner iPhone/Windows and banner/link acceptance remain pending. Do not infer Catalog STABLE from automated release naming.
+
+## 2026-10-18 — Catalog ready-to-use settings
+
+Bundled mobile banner and exact 12-row size-chart SVGs; client defaults fill empty image URLs without overwriting custom settings. Owner setup shows previews and hides technical URL/JSON fields in optional disclosures. Contact phone sourced from existing Shop banner; Zalo/Messenger remain optional pending verified official links. Catalog/Product publication remains owner-controlled.

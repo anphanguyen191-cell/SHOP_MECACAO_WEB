@@ -12,3 +12,14 @@ export const lineCount=(l:CartLine)=>l.quick_quantity+new Set(l.selected_image_i
 export function validateCartLine(l:CartLine,available:number){return Number.isSafeInteger(l.quick_quantity)&&l.quick_quantity>=0&&l.selected_image_ids.every(i=>Number.isSafeInteger(i)&&i>0)&&new Set(l.selected_image_ids).size===l.selected_image_ids.length&&lineCount(l)<=available}
 export const catalogMoney=(n:number|null)=>n===null?'Liên hệ Shop':new Intl.NumberFormat('vi-VN').format(n)+' ₫'
 export function readCart(raw:string|null):CartLine[]{try{const a=JSON.parse(raw||'[]');return Array.isArray(a)&&a.length<=100?a.filter(l=>l&&Number.isSafeInteger(l.product_id)&&Number.isSafeInteger(l.variant_id)&&typeof l.name==='string'&&typeof l.size==='string'&&Array.isArray(l.selected_image_ids)&&validateCartLine(l,100)&&(l.expected_price===null||Number.isSafeInteger(l.expected_price))):[]}catch{return []}}
+
+// Bundled brand assets work without asking the owner to host images elsewhere.
+export const CATALOG_ASSET_BASE='https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/brand/'
+export const CATALOG_BANNER_URL=CATALOG_ASSET_BASE+'catalog-mobile-banner.svg'
+export const CATALOG_SIZE_IMAGE_URL=CATALOG_ASSET_BASE+'catalog-size-guide.svg'
+export function catalogDefaults(raw:any){
+ const cfg=raw&&typeof raw==='object'?raw:{}
+ const guide=cfg.guide,labels=new Set(SIZE_GUIDE.map(r=>r[0] as string))
+ const valid=Array.isArray(guide)&&guide.length===12&&new Set(guide.map((r:any)=>r?.[0])).size===12&&guide.every((r:any)=>Array.isArray(r)&&r.length===5&&labels.has(r[0])&&r.slice(1).every((n:any)=>typeof n==='number'&&Number.isFinite(n))&&r[1]>0&&r[2]>=r[1]&&r[3]>0&&r[4]>=r[3])
+ return {...cfg,banner_url:cfg.banner_url||CATALOG_BANNER_URL,size_image_url:cfg.size_image_url||CATALOG_SIZE_IMAGE_URL,zalo_url:cfg.zalo_url||'',messenger_url:cfg.messenger_url||'',guide:valid?guide:SIZE_GUIDE}
+}

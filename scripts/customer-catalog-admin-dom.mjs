@@ -17,6 +17,14 @@ async function setup(role){const dom=new JSDOM('<div id="root"></div>',{url:'htt
 const {w,a,act,close}=await setup('owner');async function click(label){const button=[...w.document.querySelectorAll('button')].find(b=>b.textContent.trim()===label);assert(button,label);await act(()=>button.click())}
 const pick=w.document.querySelector('.cc-admin-list>button');assert(pick);await act(()=>pick.click());
 assert.equal(w.document.querySelectorAll('.cc-admin-photos input').length,2);assert(w.document.querySelectorAll('.cc-admin-photos input')[0].checked);assert(w.document.querySelectorAll('.cc-admin-photos input')[0].disabled);assert(w.document.querySelector('img').src.endsWith('content-one.jpg'),'Asset object path, not canonical file path');
-await act(()=>w.document.querySelectorAll('.cc-admin-photos input')[1].click());await click('Chuyển 2 bộ thành nháp CORE');assert.equal(a.commands[0].p_action,'draft');assert.deepEqual(Array.from(a.commands[0].p_payload.image_ids),[1,2]);assert.equal(a.opened,'11111111-1111-4111-8111-111111111111');assert(!a.commands.some(c=>c.p_action==='sale.confirm'));await close();
+await act(()=>w.document.querySelectorAll('.cc-admin-photos input')[1].click());await click('Chuyển 2 bộ thành nháp CORE');assert.equal(a.commands[0].p_action,'draft');assert.deepEqual(Array.from(a.commands[0].p_payload.image_ids),[1,2]);assert.equal(a.opened,'11111111-1111-4111-8111-111111111111');assert(!a.commands.some(c=>c.p_action==='sale.confirm'));
+await click('Banner & cấu hình');assert(w.document.body.textContent.includes('Catalog đã có sẵn hình ảnh & bảng Size'));
+assert.equal(w.document.querySelectorAll('.cc-admin-presets img').length,2);assert.equal(w.document.querySelectorAll('.cc-admin-setup tbody tr').length,12);
+assert([...w.document.querySelectorAll('.cc-admin-setup input[type=url]')].every(input=>input.closest('details')&&!input.closest('details').open),'URL fields optional and collapsed');
+assert(w.document.querySelector('.cc-admin-presets img').src.endsWith('catalog-mobile-banner.svg'));
+assert(!w.document.querySelector('.cc-admin-open input').checked,'Never open Catalog automatically');
+await act(()=>w.document.querySelector('.cc-admin-open input').click());await click('Lưu cấu hình Catalog');
+const saved=a.commands.find(c=>c.p_action==='configure');assert(saved);assert.equal(saved.p_payload.enabled,true);assert.equal(saved.p_payload.version,1);assert.equal(saved.p_payload.config.guide.length,12);assert(saved.p_payload.config.banner_url.endsWith('catalog-mobile-banner.svg'));assert(saved.p_payload.config.size_image_url.endsWith('catalog-size-guide.svg'));assert.equal(saved.p_payload.config.zalo_url,'');
+await close();
 const nonOwner=await setup('cashier');assert(nonOwner.w.document.body.textContent.includes('Chỉ tài khoản chủ Shop'));assert.equal(nonOwner.w.document.querySelectorAll('.cc-admin-product').length,0);await nonOwner.close();console.log('CATALOG_ADMIN_DOM PASS: owner inbox, exact-photo preservation, quick allocation, asset-path URLs, CORE bridge payload, no SOLD and non-owner refusal')
 }finally{fs.rmSync(temp,{recursive:true,force:true})}

@@ -1,3 +1,9 @@
+# Catalog — cài sẵn hình ảnh · 18/10/2026
+
+- Cài sẵn banner Mobile và ảnh bảng Size 12 dòng; xem trước ngay, không cần tự nhập URL.
+- URL ảnh, liên hệ và dữ liệu nâng cao thu gọn; giữ hộp yêu cầu Admin hoạt động độc lập.
+- Giữ trạng thái mở Catalog và từng Product theo lựa chọn của chủ Shop.
+
 # Customer Catalog V1 — 2026-10-18
 
 - Public customer route, mixed Size/photo cart, size guide, secure guest inquiries and owner inbox.
