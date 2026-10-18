@@ -1,0 +1,49 @@
+/* M2 Travel Luxe Mobile shell. Mobile-only: no desktop or CORE selectors. */
+@media(max-width:800px){
+ .shell .mobileLuxeNav{
+  background:color-mix(in srgb,var(--mc-surface,#fff) 94%,#f4d8e9);
+  border:1px solid var(--mc-border,#e9d7e3);
+  border-radius:23px;
+  box-shadow:0 10px 32px rgba(95,49,91,.16);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  z-index:90;
+ }
+ .shell .mobileLuxeNav button{
+  min-width:0;
+  min-height:48px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  padding:6px 1px;
+  border-radius:17px;
+  touch-action:manipulation;
+ }
+ .shell .mobileLuxeNav .mobileLuxeNavIcon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:19px;
+  line-height:1.2;
+  min-height:20px;
+ }
+ .shell .mobileLuxeNav small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  width:100%;
+  font-size:clamp(10px,2.65vw,12px);
+  font-weight:700;
+ }
+ .shell .mobileLuxeNav button:focus-visible{
+  outline:3px solid #a24c7b;
+  outline-offset:2px;
+ }
+ .shell .pageBreadcrumb,.shell main,.shell .layout{min-width:0}
+}
+@media(prefers-reduced-motion:reduce){
+ .shell .mobileLuxeNav button{transition:none!important;animation:none!important}
+}
