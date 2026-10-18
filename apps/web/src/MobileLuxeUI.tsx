@@ -10,6 +10,28 @@ export function useMobileLuxe(){
  return mobile
 }
 
+/** Visual welcome on each new Mobile application load. Does not alter Cloud/LAN auth or persist fake credentials. */
+export function MobileLuxeSplash(){
+ const mobile=useMobileLuxe()
+ const [visible,setVisible]=useState(true)
+ useEffect(()=>{
+  if(!mobile||!visible)return
+  const timer=window.setTimeout(()=>setVisible(false),1900)
+  return()=>window.clearTimeout(timer)
+ },[mobile,visible])
+ if(!mobile||!visible)return null
+ return createPortal(<div className="mobileLuxeSplash" role="status" aria-label="Đang mở Shop Mẹ CaCao">
+  <div className="mobileLuxeSplashBody">
+   <img src={import.meta.env.BASE_URL+'brand/logo.jpg'} alt="Logo Shop Mẹ CaCao"/>
+   <span>TRAVEL LUXE · SINCE 2023</span>
+   <h1>Mẹ CaCao</h1>
+   <p>Tole xinh cho bé yêu!</p>
+   <div className="mobileLuxeSplashDecor" aria-hidden="true"/>
+   <button type="button" onClick={()=>setVisible(false)}>Vào cửa hàng <span aria-hidden="true">›</span></button>
+  </div>
+ </div>,document.body)
+}
+
 /** Presentation-only sheet. Portaled to avoid clipping by scrolling workspaces. */
 export function MobileSheet({title,onClose,children,footer,full=false}:{title:string;onClose:()=>void;children:ReactNode;footer?:ReactNode;full?:boolean}){
  const root=useRef<HTMLElement>(null),close=useRef(onClose);close.current=onClose
