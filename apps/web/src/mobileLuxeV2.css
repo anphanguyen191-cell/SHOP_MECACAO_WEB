@@ -154,3 +154,21 @@
  .shell.mobileLuxeWorkspace .mobileLuxeSectionHeader{animation:mobileLuxeArrive .24s ease-out both}
 }
 @keyframes mobileLuxeArrive{from{opacity:.65;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+
+/* M2 fix: legacy .imageSendBar otherwise overlays the new fixed mobile tab dock. */
+@media(max-width:800px){
+ .shell.mobileLuxeWorkspace .imageSendBar{
+  left:max(10px,env(safe-area-inset-left,0px));
+  right:max(10px,env(safe-area-inset-right,0px));
+  width:auto!important;
+  bottom:calc(var(--mobile-nav-offset,90px) + 10px)!important;
+  transform:none!important;
+  max-height:min(48dvh,370px);
+  overflow-y:auto;
+  z-index:95;
+ }
+ .shell.mobileLuxeWorkspace .hasImageSelection{
+  padding-bottom:calc(var(--mobile-nav-offset,90px) + var(--selection-panel-height,240px) + 24px)!important;
+ }
+ .shell.mobileLuxeWorkspace :is(.imageSendBar,.floatingActions) button{min-height:44px}
+}
