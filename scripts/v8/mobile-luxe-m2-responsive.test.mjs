@@ -61,7 +61,7 @@ test('M2 iPhone feedback: readable catalog and native dates preserve desktop fie
  assert.match(catalog,/Mẫu hàng của shop/)
  assert.match(reports,/function MobileReportDate/)
  assert.match(reports,/type="date" required/)
- assert.match(reports,/day+'\/'+month+'\/'+year/)
+ assert.ok(reports.includes("day+'/'+month+'/'+year"))
  assert.match(reports,/<MobileReportDate label="Từ ngày"/)
  assert.match(reports,/<MobileReportDate label="Đến ngày"/)
  assert.match(style,/\.stage4Page form\.stage4Filters/)
