@@ -24,7 +24,7 @@ const photo=async(name:string,color:string)=>{const p=path.join(dir,name);await 
 async function settle(){await live.inspect();now+=1500;return live.inspect()}
 let checks=0;function eq(a:unknown,b:unknown){assert.deepEqual(a,b);checks++}
 try{
- const first=await photo('original.png','#112233');eq((await live.inspect()).ready,false);eq(count('product_images'),0);now+=1500;eq((await live.inspect()).ready,true);eq(count('product_images'),1);eq(count('inventory_transactions'),1)
+ const first=await photo('original.png','#112233');eq((await live.inspect()).ready,false);eq(count('product_images'),0);now+=1500;assert.equal((await live.inspect()).ready,true,JSON.stringify(live.snapshot()));eq(count('product_images'),1);eq(count('inventory_transactions'),1)
  const firstId=Number(db.prepare('SELECT id FROM product_images').get()!.id)
  const firstState=live.snapshot();assert(firstState.pendingSync);live.acknowledge(firstState.revision);eq(live.snapshot().pendingSync,false)
  for(let i=0;i<4;i++)await live.inspect();eq(count('inventory_transactions'),1);eq(changes,1)

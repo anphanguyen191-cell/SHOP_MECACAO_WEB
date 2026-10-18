@@ -41,19 +41,19 @@ export function createWarehouseLive(db:DatabaseSync,rootInput:string,blocked:()=
   const observedGeneration=generation
   try{
    const rootStat=await fs.promises.lstat(root)
-   if(!rootStat.isDirectory()||rootStat.isSymbolicLink()||await fs.promises.realpath(root)!==root||stamp(rootStat).split(':').slice(0,2).join(':')!==anchor)throw Error('Kho ảnh đã mất hoặc đổi ổ/thư mục; chưa rút tồn Cloud')
+   if(!rootStat.isDirectory()||rootStat.isSymbolicLink()||fs.realpathSync(root)!==root||stamp(rootStat).split(':').slice(0,2).join(':')!==anchor)throw Error('Kho ảnh đã mất hoặc đổi ổ/thư mục; chưa rút tồn Cloud')
    const photos:Photo[]=[],folders:string[]=[]
    for(const product of await fs.promises.readdir(root,{withFileTypes:true})){
     if(product.isSymbolicLink())throw Error('Folder Product có liên kết; cần kiểm tra đường dẫn kho')
     if(!product.isDirectory()||isInternalWarehousePath(path.join(root,product.name)))continue
-    const productDir=path.join(root,product.name);if(await fs.promises.realpath(productDir)!==productDir)throw Error('Folder Product không được là liên kết')
+    const productDir=path.join(root,product.name);if(fs.realpathSync(productDir)!==productDir)throw Error('Folder Product không được là liên kết')
     for(const size of await fs.promises.readdir(productDir,{withFileTypes:true})){
      if(size.isSymbolicLink())throw Error('Folder Size có liên kết; cần kiểm tra đường dẫn kho')
      if(!size.isDirectory())continue
-     const dir=path.join(productDir,size.name);if(await fs.promises.realpath(dir)!==dir)throw Error('Folder Size không được là liên kết')
+     const dir=path.join(productDir,size.name);if(fs.realpathSync(dir)!==dir)throw Error('Folder Size không được là liên kết')
      folders.push(dir)
      const entries=await fs.promises.readdir(dir,{withFileTypes:true})
-     const rows=await Promise.all(entries.filter(e=>e.isFile()&&extensions.has(path.extname(e.name).toLowerCase())).map(async e=>{const file=path.join(dir,e.name),s=await fs.promises.lstat(file);if(!s.isFile()||s.isSymbolicLink()||await fs.promises.realpath(file)!==file)throw Error('Ảnh không phải file vật lý trong kho');return {file,fingerprint:stamp(s),product:product.name,size:size.name}}))
+     const rows=await Promise.all(entries.filter(e=>e.isFile()&&extensions.has(path.extname(e.name).toLowerCase())).map(async e=>{const file=path.join(dir,e.name),s=await fs.promises.lstat(file);if(!s.isFile()||s.isSymbolicLink()||fs.realpathSync(file)!==file)throw Error('Ảnh không phải file vật lý trong kho');return {file,fingerprint:stamp(s),product:product.name,size:size.name}}))
      photos.push(...rows)
     }
    }
