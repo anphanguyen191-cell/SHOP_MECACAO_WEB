@@ -176,3 +176,10 @@
  }
  .shell.mobileLuxeWorkspace :is(.imageSendBar,.floatingActions) button{min-height:44px}
 }
+
+/* Keep long product names readable beside stock totals on narrow phones. */
+@media(max-width:420px){
+ .shell.mobileLuxeWorkspace .inventoryPage .sizesInsight .productStockBarLabel{flex-wrap:wrap;gap:4px 10px}
+ .shell.mobileLuxeWorkspace .inventoryPage .sizesInsight .productStockBarLabel b{flex:1 1 180px}
+ .shell.mobileLuxeWorkspace .inventoryPage .sizesInsight .productStockBarLabel strong{margin-left:auto}
+}
