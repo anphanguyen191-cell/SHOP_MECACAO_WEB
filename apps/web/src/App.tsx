@@ -1,3 +1,4 @@
+import MobileLuxeNav from './MobileLuxeNav'
 import ShopIcon from './ShopIcon'
 import {LuxeDesktopSidebar,LuxeDesktopTopbar,LuxeDashboardHero,LuxeWorkspaceIntro} from './TravelLuxeDesktop'
 import CloudSoldMaintenance from './CloudSoldMaintenance'
@@ -231,10 +232,6 @@ export default function App(){
   {!isDemo&&!health?.lanClient&&<div hidden={active!=='Kết nối Cloud'} className="luxeCloudLivePanel"><CloudSettings autoSync/></div>}
   </div>
   </main></div>
-  {!isDemo&&health?.ok&&<nav className="mobileQuickNav" aria-label="Thao tác chính trên điện thoại">
-    {['Tổng quan','Tồn kho',...(canSell?['Bán hàng']:canCount?['Kiểm kê']:[])].filter(n=>nav.includes(n)).map(n=><button key={n} type="button" className={active===n?'selected':''} aria-current={active===n?'page':undefined} onClick={()=>goTo(n)}>
-      <span aria-hidden="true">{({'Tổng quan':'⌂','Tồn kho':'▤','Bán hàng':'▧','Công nợ':'₫','Khách hàng':'♧','Kiểm kê':'✓','Ảnh iPhone':'▧'} as Record<string,string>)[n]}</span><small>{n}</small></button>)}
-    <button type="button" onClick={()=>setMenuOpen(true)} aria-label="Mở thêm chức năng"><span aria-hidden="true">☰</span><small>Thêm</small></button>
-  </nav>}
+  {!isDemo&&health?.ok&&<MobileLuxeNav items={nav.map(n=>({key:n,label:n}))} active={active} onNavigate={goTo} onMore={()=>setMenuOpen(true)}/>
  </div>
 }
