@@ -207,11 +207,13 @@ async function browserTest(base,id){
   const returned=(await api('/api/sales/drafts/'+id+'/returns')).items[0],inventory=await api('/api/inventory/explorer'),newImage=inventory.flatMap(p=>p.variants.flatMap(v=>v.images)).find(i=>i.id===returned.newImageId)
   assert(newImage);checks++
   assert.deepEqual(dialogErrors,[]);checks++
-  for(const width of [1366,390]){
+  for(const width of [1366,390])for(const dark of [false,true]){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:768,deviceScaleFactor:1,mobile:width===390})
+   await run("document.querySelector('.shell').classList.toggle('themeDark',"+dark+")")
    await run("document.querySelector('.stockReturnPanel').scrollIntoView({block:'center'})");await sleep(150)
    assert(await run("document.documentElement.scrollWidth<=innerWidth+2"));checks++
-   const screenshot=await cmd('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(artifact,width+'-stock-return.png'),Buffer.from(screenshot.data,'base64'))
+   assert(await run("(()=>{const p=document.querySelector('.stockReturnPanel'),color=c=>{const a=c.match(/[\\d.]+/g).slice(0,3).map(n=>{const v=Number(n)/255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4});return a[0]*.2126+a[1]*.7152+a[2]*.0722};const s=getComputedStyle(p),a=color(s.color),b=color(s.backgroundColor);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)>=4.5})()"));checks++
+   const screenshot=await cmd('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(artifact,width+'-'+(dark?'dark':'light')+'-stock-return.png'),Buffer.from(screenshot.data,'base64'))
   }
   console.log('STOCK_RETURN_BROWSER PASS: actual SOLD unit -> receive -> new stock ID, disabled duplicate, unchanged finance, 1366/390px layout')
   console.log('V2_SALES_BROWSER PASS: preflight checkbox -> actual sandbox sale -> locked history JPEG -> reload SOLD filter; 1366/390px light/dark, schema130 restore READY UI; Stage3 deposit/aftercare/debt UI; Stage4 reports, counted discrepancy and immutable close UI')
