@@ -10,7 +10,6 @@ import './inventorySharing.css'
 import './lightContrast.css'
 import './uiRefresh.css'
 import './displaySize.css'
-import './mobileLuxeV2.css'
 import './floatingActions.css'
 import './v8-design.css'
 import './v8-flow.css'
@@ -20,7 +19,8 @@ import './travelLuxeDesktopFinal.css'
 import './travelLuxeStartup.css'
 import './travelLuxeDemoAuth.css' // Approved demo splash/login over legacy startup styling
 import './travelLuxePolish.css' // Final Windows-only visual parity and independent workspace scrolling
-import './travelLuxeContrast.css' // Device-local Travel Luxe contrast levels and fixed workspace chrome
+import './travelLuxeContrast.css' // Device-local Travel Luxe contrast levels and fixed workspace chrome // Device-local Travel Luxe contrast levels and fixed workspace chrome
+import './mobileLuxeV2.css' // Mobile-only overrides loaded last; Windows remains unchanged
 
 const updateSW=registerSW({ immediate: true,onNeedRefresh(){window.dispatchEvent(new Event('mecacao-update-ready'))} })
 
