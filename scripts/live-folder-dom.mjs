@@ -68,6 +68,7 @@ try{
  assert.equal(w.document.querySelector('progress').value,3106);assert(!w.document.querySelector('.cloudSyncProgress').textContent.includes('Đồng bộ hoàn tất'),'100% images is not completion before final integrity verification')
  await act(()=>a.releaseIntegrity());await until(()=>a.ack===4)
  assert(w.document.querySelector('.cloudSyncProgress').textContent.includes('Đồng bộ hoàn tất'))
+ assert(w.document.body.textContent.includes('ảnh giữ nguyên / tạm thiếu: 3057'),'Existing summary must stay consistent with bulk progress counters')
  const uploadedBeforeRestart=a.uploads.length
  await act(()=>w.dispatchEvent(new w.Event('mecacao-cloud-sync-now')));await until(()=>a.acks.filter(r=>r===4).length===2)
  assert.equal(a.uploads.length,uploadedBeforeRestart,'Resumed ready snapshot never reuploads completed photos')

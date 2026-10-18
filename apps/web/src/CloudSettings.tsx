@@ -129,7 +129,7 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
   }
   const verifiedSource:any[]=[]
   const pendingPhotos=activePhotos.filter(image=>!ready.has(Number(image.id))),knownPhotos=activePhotos.filter(image=>ready.has(Number(image.id)))
-  const updateMeter=(current:string)=>{setStatus('Ảnh '+(uploaded+skipped)+' / '+total+' · '+current);setMeter(m=>({...m,phase:'images',processed:uploaded+skipped,uploaded,reused:skipped,missing:missingCount,current}))}
+  const updateMeter=(current:string)=>{setProgress({registered,uploaded,skipped});setStatus('Ảnh '+(uploaded+skipped)+' / '+total+' · '+current);setMeter(m=>({...m,phase:'images',processed:uploaded+skipped,uploaded,reused:skipped,missing:missingCount,current}))}
   const stopped=()=>{if(!paused.current)return false;setMeter(m=>({...m,phase:'paused',current:'Tiếp tục sẽ giữ các ảnh đã tải và xác minh thành công'}));setStatus('Đã tạm dừng. Bấm Tiếp tục để xử lý phần còn thiếu.');return true}
   async function processPhoto(image:any){
     const knownHash=ready.get(Number(image.id))
