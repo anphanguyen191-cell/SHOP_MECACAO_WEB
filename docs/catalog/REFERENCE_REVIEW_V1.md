@@ -18,7 +18,7 @@ Ngày 18/10/2026. Tham chiếu: ảnh 10 khung khách hàng chủ Shop gửi tro
 ## Điểm khác có chủ đích / chưa có trong V1
 
 - Banner và ảnh bảng Size là tài nguyên đã đóng gói từ thương hiệu/dữ liệu Shop; không dùng ảnh hàng minh họa thay cho hàng thật. Bố cục và hình trang trí không cam kết trùng từng pixel ảnh tham khảo.
-- Bé trai/Bé gái, lọc khoảng giá và yêu thích chưa nằm trong hợp đồng công khai hiện tại. Không gắn nhãn phân loại suy đoán hoặc làm nút bấm giả. Tìm kiếm, lọc Size/còn hàng và sắp giá đã hoạt động.
+- Bé trai/Bé gái và lọc khoảng giá chưa nằm trong hợp đồng công khai hiện tại. Không gắn nhãn phân loại suy đoán hoặc làm nút bấm giả. Tìm kiếm, yêu thích lưu trên thiết bị, lọc Size/còn hàng và sắp giá đã hoạt động.
 - Zalo/Messenger chỉ hiện khi có link chính thức đã cấu hình. Hộp yêu cầu Admin nhận trực tiếp, không phụ thuộc hai kênh này. Không tự xác nhận số điện thoại là tài khoản Zalo.
 - Tạo yêu cầu, giỏ, ảnh chọn và nháp không giữ hàng, không trừ tồn. CORE xác nhận bán mới trừ tồn.
 
@@ -29,3 +29,7 @@ Build/TypeScript; PostgreSQL WASM chạy migration thật; model; owner/non-owne
 Bài kiểm tra thông báo kho hiện có được sửa để chờ PATCH đánh dấu đã xem tới server trước khi so sánh, vì điều hướng có thể vẽ trước HTTP. Giữ nguyên kiểm tra trạng thái phải là seen; không thay nghiệp vụ thông báo.
 
 CI và phát hành theo commit cần kiểm tra tại GitHub Actions. Nghiệm thu iPhone thật do chủ Shop thực hiện.
+
+## Rà soát hoàn thiện — 19/10/2026
+
+Xem `COMPLETION_REVIEW_2026-10-19.md`: giữ phân trang khi tự cập nhật, tìm mẫu yêu thích ngoài trang đầu, thử lại gallery bị lỗi, giá cần liên hệ xếp sau giá xác định, phục hồi cả nội dung đã gửi và duyệt Catalog khi trình duyệt chặn lưu trữ.

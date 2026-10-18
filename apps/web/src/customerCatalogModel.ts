@@ -11,6 +11,13 @@ export function matchSizes(weight:number|null,height:number|null,rows:readonly (
 export const lineCount=(l:CartLine)=>l.quick_quantity+new Set(l.selected_image_ids).size
 export function validateCartLine(l:CartLine,available:number){return Number.isSafeInteger(l.quick_quantity)&&l.quick_quantity>=0&&l.selected_image_ids.every(i=>Number.isSafeInteger(i)&&i>0)&&new Set(l.selected_image_ids).size===l.selected_image_ids.length&&lineCount(l)<=available}
 export const catalogMoney=(n:number|null)=>n===null?'Liên hệ Shop':new Intl.NumberFormat('vi-VN').format(n)+' ₫'
+export function catalogStored(key:string){try{return localStorage.getItem(key)}catch{return null}}
+export function removeCatalogStored(key:string){try{localStorage.removeItem(key)}catch{}}
+export function catalogCartSummary(cart:CartLine[]){return cart.map(l=>`${l.name} · Size ${l.size}: ${lineCount(l)} bộ${l.selected_image_ids.length?' · ảnh #'+l.selected_image_ids.join(', #'):''}`).join('\n')}
+export function sortCatalogProducts(products:CatalogProduct[],sort:string){
+ const price=(p:CatalogProduct)=>{const values=p.sizes.map(v=>v.sale_price).filter((n):n is number=>n!==null);return values.length?Math.min(...values):null}
+ return [...products].sort((a,b)=>{const x=price(a),y=price(b);if(sort==='asc'||sort==='desc'){if(x===null)return y===null?0:1;if(y===null)return -1;return sort==='asc'?x-y:y-x}return Date.parse(b.updated_at)-Date.parse(a.updated_at)||b.public_product_id-a.public_product_id})
+}
 export function readCart(raw:string|null):CartLine[]{try{const a=JSON.parse(raw||'[]');return Array.isArray(a)&&a.length<=100?a.filter(l=>l&&Number.isSafeInteger(l.product_id)&&Number.isSafeInteger(l.variant_id)&&typeof l.name==='string'&&typeof l.size==='string'&&Array.isArray(l.selected_image_ids)&&validateCartLine(l,100)&&(l.expected_price===null||Number.isSafeInteger(l.expected_price))):[]}catch{return []}}
 
 // Bundled brand assets work without asking the owner to host images elsewhere.

@@ -1,3 +1,10 @@
+# Catalog — rà soát phục hồi và phân trang · 19/10/2026
+
+- Yêu thích tìm đủ các ID đã lưu ngoài trang đầu; tự cập nhật giữ số trang đang xem.
+- Thử lại đúng gallery lỗi; giá chưa xác định không chen lên trước khi sắp giá giảm.
+- Phục hồi mã cùng nội dung yêu cầu đã gửi, không phụ thuộc giỏ sau tải lại trang; duyệt được khi lưu trữ trình duyệt bị chặn.
+- Tình huống và kiểm thử: docs/catalog/COMPLETION_REVIEW_2026-10-19.md.
+
 # Catalog — hoàn thiện luồng khách theo mẫu 10 màn hình · 18/10/2026
 
 - Điều hướng 4 mục; tách trang sản phẩm, giỏ và bước nhập liên hệ; tồn từng Size rõ trên thẻ mẫu.

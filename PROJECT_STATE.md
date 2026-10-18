@@ -278,3 +278,7 @@ Bundled mobile banner and exact 12-row size-chart SVGs; client defaults fill emp
 ## 2026-10-18 — Customer reference flow completion
 
 Customer-only four-tab navigation, separate product list/contact step, compact mobile banner, exact size-result cards, fresh-stock cart quantity adjustment and receipt-to-new-cart reset. Admin inquiry search/status chips stay owner-only. Full ten-frame comparison and deliberate limits in docs/catalog/REFERENCE_REVIEW_V1.md. Public presets seeded only for empty URLs, preserving owner publication settings (observed open with one published Product).
+
+## 2026-10-19 — Customer Catalog completion review
+
+Preserve loaded public pages across automatic refresh; resolve saved favorites outside the initial page with four concurrent public-ID requests; retry the failed gallery without leaving Product/Size; preserve backend price ordering and keep unknown prices last in favorites. Persist submitted summary with the recovery token, independent of the current cart. Restricted browser storage permits browsing and prevents unsafe submission without a persisted recovery token. New real-component DOM scenarios run in test:catalog. No CORE/schema/RLS or publication changes. Details: docs/catalog/COMPLETION_REVIEW_2026-10-19.md.
