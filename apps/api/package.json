@@ -11,6 +11,7 @@
     "test:core": "node scripts/run-self-test.mjs",
     "test:schema": "node --import tsx src/schemaSelfTest.ts",
     "test:performance": "node scripts/run-self-test.mjs src/performanceSelfTest.ts",
+    "test:inventory-value": "node scripts/run-self-test.mjs ../../scripts/inventory-value-selftest.mts",
     "test:warehouse": "node scripts/run-self-test.mjs src/warehouseUpgradeSelfTest.ts",
     "test:share": "node scripts/run-self-test.mjs src/inventoryShareSelfTest.ts",
     "test:sales-drafts": "node --import tsx src/salesDraftsSelfTest.ts",

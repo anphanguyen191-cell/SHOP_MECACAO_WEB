@@ -100,6 +100,15 @@ try{
   fs.writeFileSync('artifacts/cloud-browser/reform-gallery-'+width+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
  }
  await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true})
+ await run("document.querySelector('.mobileInventoryInsights').click()");await until("!!document.querySelector('.mobileLuxeSheet [data-inventory-value=cost]')")
+ assert(await run("document.querySelector('[data-inventory-value=cost] strong').textContent==='10.000 đ'&&document.querySelector('[data-inventory-value=sale] strong').textContent==='50.000 đ'"),'Mobile inventory must show physical stock cost and projected sale value')
+ for(const width of [375,390,430,768]){
+  await cmd('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true});await delay(220)
+  assert(await run('document.documentElement.scrollWidth<=innerWidth+2'),'Inventory values must fit '+width)
+  fs.writeFileSync('artifacts/cloud-browser/inventory-values-'+width+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
+ }
+ await run("document.querySelector('[aria-label=\"Đóng Thống kê tồn kho\"]').click()");await until("!document.querySelector('.mobileLuxeSheet')")
+ await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true})
  await run("document.querySelector('.mobileOpenProduct').click()");await until("!!document.querySelector('.mobileLuxeSheet.isFull')")
  assert(await run("document.activeElement.getAttribute('aria-label')==='Đóng Chi tiết sản phẩm'"),'Product detail must receive focus')
  await delay(220)

@@ -4,18 +4,20 @@ import {useBooleanPreference} from './uiState'
 import InventorySharing,{InventoryImageViewer,type ChosenImage} from './InventorySharing'
 import MobileInventory from './MobileInventory'
 import {useMobileLuxe} from './MobileLuxeUI'
+import InventoryValueMetrics from './InventoryValueMetrics'
+import {inventoryValuation,type InventoryValuation} from '../../api/src/inventoryValue'
 
 type Img={id:number;file_name:string;file_path:string;exists:boolean}
 type Variant={variant_status?:string;variant_id:number;sku:string;size:string;cost_price:number;sale_price:number;ledger_stock:number;stock:number;pendingImages?:number;images:Img[]}
 export type InventoryProduct={product_id:number;product_code:string;product_name:string;category?:string|null;product_status:string;stock:number;variants:Variant[]}
-export type InventoryDashboard={stock:number;products:number;productsInStock:number;skus:number;sizes:number;outOfStock:number;mismatches:number;topProducts:Array<{product_id:number;product_name:string;stock:number}>;lowProducts:Array<{product_id:number;product_name:string;stock:number}>;sizeStock:Array<{size:string;stock:number}>}
+export type InventoryDashboard={valuation?:InventoryValuation;stock:number;products:number;productsInStock:number;skus:number;sizes:number;outOfStock:number;mismatches:number;topProducts:Array<{product_id:number;product_name:string;stock:number}>;lowProducts:Array<{product_id:number;product_name:string;stock:number}>;sizeStock:Array<{size:string;stock:number}>}
 type Suggestion={product_id:number;product_code:string;product_name:string;variant_id:number;sku:string;size:string;stock:number}
 const demoVariants=(productId:number,code:string,counts:Array<[string,number]>):Variant[]=>counts.map(([size,stock],i)=>({variant_id:productId*10+i+1,sku:code+'-'+size.replace(' ',''),size,cost_price:0,sale_price:0,ledger_stock:stock,stock,images:[]}))
 const DEMO_PRODUCTS:InventoryProduct[]=[
  {product_id:1,product_code:'LG0001',product_name:'Lửng gái T5',category:'Đồ tole bé gái',product_status:'active',stock:12,variants:demoVariants(1,'LG0001',[['Size 1',5],['Size 2',4],['Size 3',3]])},
  {product_id:2,product_code:'BG0001',product_name:'Bộ gái hoa',category:'Đồ tole bé gái',product_status:'active',stock:7,variants:demoVariants(2,'BG0001',[['Size 1',2],['Size 2',1],['Size 3',1],['Size 4',3]])}
 ]
-const DEMO_DASH:InventoryDashboard={stock:19,products:2,productsInStock:2,skus:7,sizes:4,outOfStock:0,mismatches:0,topProducts:[{product_id:1,product_name:'Lửng gái T5',stock:12},{product_id:2,product_name:'Bộ gái hoa',stock:7}],lowProducts:[{product_id:2,product_name:'Bộ gái hoa',stock:7},{product_id:1,product_name:'Lửng gái T5',stock:12}],sizeStock:[{size:'Size 1',stock:7},{size:'Size 2',stock:5},{size:'Size 3',stock:4},{size:'Size 4',stock:3}]}
+const DEMO_DASH:InventoryDashboard={valuation:inventoryValuation(DEMO_PRODUCTS.flatMap(p=>p.variants)),stock:19,products:2,productsInStock:2,skus:7,sizes:4,outOfStock:0,mismatches:0,topProducts:[{product_id:1,product_name:'Lửng gái T5',stock:12},{product_id:2,product_name:'Bộ gái hoa',stock:7}],lowProducts:[{product_id:2,product_name:'Bộ gái hoa',stock:7},{product_id:1,product_name:'Lửng gái T5',stock:12}],sizeStock:[{size:'Size 1',stock:7},{size:'Size 2',stock:5},{size:'Size 3',stock:4},{size:'Size 4',stock:3}]}
 
 export type InventorySource={products:InventoryProduct[];dashboard:InventoryDashboard;urls:Record<string,string>;refresh:()=>Promise<void>;share?:(images:ChosenImage[],onBusy:(busy:boolean)=>void)=>React.ReactNode}
 export default function InventoryView({isDemo=false,onDraft,draftLabel,source,priceTools,desktopMode=false}:{isDemo?:boolean;onDraft?:(ids:number[],key:string)=>Promise<void>;draftLabel?:string;source?:InventorySource;priceTools?:React.ReactNode;desktopMode?:boolean}){
@@ -145,6 +147,7 @@ export default function InventoryView({isDemo=false,onDraft,draftLabel,source,pr
    <article><span>SIZE / SKU</span><strong>{dashboard?.skus??'—'}</strong><small>{dashboard?.sizes??0} tên Size</small></article>
    <article><span>HẾT HÀNG</span><strong>{dashboard?.outOfStock??'—'}</strong><small>Size không còn ảnh hàng</small></article>
   </div>
+  <InventoryValueMetrics value={dashboard?.valuation}/>
   <div className="inventoryInsights">
    <article className="insightCard"><h3>Tồn nhiều nhất</h3>{dashboard?.topProducts?.map((x,i)=><button key={x.product_id} onClick={()=>{setSearch(x.product_name);setExpandedProducts(new Set([x.product_id]))}}><b>{i+1}. {x.product_name}</b><strong>{x.stock}</strong></button>)}</article>
    <article className="insightCard"><h3>Tồn thấp còn hàng</h3>{dashboard?.lowProducts?.map((x,i)=><button key={x.product_id} onClick={()=>{setSearch(x.product_name);setExpandedProducts(new Set([x.product_id]))}}><b>{i+1}. {x.product_name}</b><strong>{x.stock}</strong></button>)}</article>

@@ -1,5 +1,6 @@
 import { db } from './db.js'
 import { physicalImagesByVariant,unregisteredPhysicalByVariant } from './physicalInventory.js'
+import {inventoryValuation} from './inventoryValue.js'
 
 export type InventoryFilters={search?:string;category?:string;productCode?:string;size?:string;status?:'all'|'active'|'inactive';state?:'all'|'out'|'low'|'ok';threshold?:number}
 const normalizeInventorySearch=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLocaleLowerCase('vi').trim()
@@ -67,7 +68,10 @@ export function inventoryDashboard(products=inventoryExplorer({status:'active'})
  const sizes=[...sizeMap.entries()].map(([size,stock])=>({size,stock})).sort((a,b)=>b.stock-a.stock||a.size.localeCompare(b.size,'vi'))
  const mismatches=variants.filter(v=>v.ledger_stock!==v.stock).length
  const pendingImages=variants.reduce((n,v)=>n+v.pendingImages,0)
- return {stock:variants.reduce((n,v)=>n+v.stock,0),products:products.length,productsInStock:positive.length,skus:variants.length,sizes:sizes.length,outOfStock:variants.filter(v=>v.stock===0).length,topProducts:byStockDesc,lowProducts:byStockAsc,sizeStock:sizes,mismatches,pendingImages,source:'PHYSICAL_IMAGES'}
+ const priceStates=db.prepare("SELECT 1 FROM sqlite_master WHERE name='variant_price_state'").get()?db.prepare('SELECT variant_id,cost_set,sale_set FROM variant_price_state').all():[]
+ const flags=new Map(priceStates.map(v=>[Number(v.variant_id),v]))
+ const valuation=inventoryValuation(variants.map(v=>({...v,cost_price_set:flags.get(v.variant_id)?.cost_set===1,sale_price_set:flags.get(v.variant_id)?.sale_set===1})))
+ return {stock:variants.reduce((n,v)=>n+v.stock,0),products:products.length,productsInStock:positive.length,skus:variants.length,sizes:sizes.length,outOfStock:variants.filter(v=>v.stock===0).length,topProducts:byStockDesc,lowProducts:byStockAsc,sizeStock:sizes,mismatches,pendingImages,source:'PHYSICAL_IMAGES',valuation}
 }
 
 export function inventorySuggestions(search=''){

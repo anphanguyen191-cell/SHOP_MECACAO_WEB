@@ -22,6 +22,12 @@ on:
       - 'scripts/v2-drafts-e2e.mjs'
       - 'scripts/v2-sales-e2e.mjs'
       - 'scripts/stage6-browser-e2e.mjs'
+      - 'apps/api/src/inventoryValue.ts'
+      - 'apps/api/src/inventoryQuery.ts'
+      - 'apps/web/src/InventoryValueMetrics.tsx'
+      - 'apps/web/src/inventoryValue.css'
+      - 'apps/web/src/cloudInventory.ts'
+      - 'scripts/inventory-value-selftest.mts'
       - '.github/workflows/mobile-m2-verify.yml'
   workflow_dispatch:
 permissions:
@@ -43,6 +49,8 @@ jobs:
         run: npm run build
       - name: TypeScript typecheck
         run: npm run typecheck
+      - name: Inventory value arithmetic and physical stock lifecycle
+        run: npm run test:inventory-value
       - name: Mobile and existing Windows UI regression
         run: npm run test:ui
       - name: Windows desktop browser acceptance

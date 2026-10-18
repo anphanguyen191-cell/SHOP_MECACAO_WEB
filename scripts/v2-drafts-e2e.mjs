@@ -133,6 +133,8 @@ async function browserTest(base,id){
   await until("Array.from(document.querySelectorAll('.sidebar button')).some(b=>b.textContent==='Bán hàng')")
   await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tồn kho').click()")
   await until("!!document.querySelector('.treeProductHead')")
+  await until("document.querySelector('[data-inventory-value=cost] strong')?.textContent==='10.000 đ'")
+  assert(await run("document.querySelector('[data-inventory-value=sale] strong').textContent==='50.000 đ'"),'LOCAL dashboard shows physical inventory valuation');checks++
   // Navigate into the gallery using the actual explorer controls.
   await run("document.querySelector('.treeProductHead').click()")
   await until("!!document.querySelector('.treeVariantHead')")
