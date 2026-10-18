@@ -64,7 +64,7 @@ try{
    const shell=document.querySelector('.mobileLuxeWorkspace')
    return {viewport:innerWidth,scroll:document.documentElement.scrollWidth,navButtons:nav.querySelectorAll('button').length,
     navBottom:box.bottom,screenHeight:innerHeight,navDisplay:getComputedStyle(nav).display,
-    header:!!shell.querySelector('.mobileLuxeSectionHeader'),
+    header:!!shell.querySelector('[data-mobile-luxe-version="M2-V2.0"]'),
     style:getComputedStyle(shell).getPropertyValue('--mobile-luxe-rose').trim()}
   })()`)
   assert(state.header,'Mobile heading missing at '+width+'px')
