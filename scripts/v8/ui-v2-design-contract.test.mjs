@@ -77,11 +77,11 @@ test('Laptop chrome stays pinned, shop identity sits under the logo, and contras
 })
 test('Laptop glass preference changes real surfaces and has a visible on/off treatment',()=>{
  const polish=source('apps/web/src/travelLuxePolish.css')
- assert.match(app,/glassEnabled\\?' luxeGlassOn':' luxeNoGlass'/)
- assert.match(polish,/\\.shell\\.luxeWindows\\.luxeGlassOn:not\\(\\.themeDark\\)\\{[^}]*radial-gradient/)
- assert.match(polish,/\\.shell\\.luxeWindows\\.luxeGlassOn:not\\(\\.themeDark\\)[\\s\\S]*?\\.displayPreferences\\)\\{[^}]*backdrop-filter:blur\\(18px\\) saturate\\(150%\\)!important/)
- assert.match(polish,/\\.shell\\.luxeWindows\\.luxeGlassOn\\.themeDark[\\s\\S]*?\\.displayPreferences\\)\\{[^}]*backdrop-filter:blur\\(18px\\) saturate\\(145%\\)!important/)
- assert.match(polish,/\\.shell\\.luxeWindows\\.luxeNoGlass :is\\([^}]*backdrop-filter:none!important/)
+ assert.match(app,/glassEnabled\?' luxeGlassOn':' luxeNoGlass'/)
+ assert.match(polish,/\.shell\.luxeWindows\.luxeGlassOn:not\(\.themeDark\)\{[^}]*radial-gradient/)
+ assert.match(polish,/\.shell\.luxeWindows\.luxeGlassOn:not\(\.themeDark\)[\s\S]*?\.displayPreferences\)\{[^}]*backdrop-filter:blur\(18px\) saturate\(150%\)!important/)
+ assert.match(polish,/\.shell\.luxeWindows\.luxeGlassOn\.themeDark[\s\S]*?\.displayPreferences\)\{[^}]*backdrop-filter:blur\(18px\) saturate\(145%\)!important/)
+ assert.match(polish,/\.shell\.luxeWindows\.luxeNoGlass :is\([^}]*backdrop-filter:none!important/)
 })
 test('Mobile floating panel measures nav clearance synchronously and honors safe area',()=>{
  assert.match(app,/useLayoutEffect\(\(\)=>\{const dock=.*mobileQuickNav/)
