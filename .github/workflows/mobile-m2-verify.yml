@@ -18,6 +18,8 @@ on:
       - 'scripts/v8/mobile-m2-browser.mjs'
       - 'scripts/mobile-reform-dom.mjs'
       - 'scripts/cloud-browser-e2e.mjs'
+      - 'scripts/v2-drafts-e2e.mjs'
+      - 'scripts/v2-sales-e2e.mjs'
       - '.github/workflows/mobile-m2-verify.yml'
   workflow_dispatch:
 permissions:
@@ -45,6 +47,10 @@ jobs:
         run: node scripts/main-browser-smoke.mjs
       - name: Cloud mobile browser acceptance (isolated transport)
         run: node scripts/cloud-browser-e2e.mjs
+      - name: LOCAL draft mobile steps and real HTTP browser acceptance (disposable sandbox)
+        run: node scripts/v2-drafts-e2e.mjs
+      - name: LOCAL sales browser acceptance (disposable sandbox)
+        run: node scripts/v2-sales-e2e.mjs
       - name: Mobile viewport Chromium screenshots (375, 390, 430, 768)
         run: node scripts/v8/mobile-m2-browser.mjs
       - name: Upload available UI evidence
@@ -56,5 +62,7 @@ jobs:
             artifacts/main-release/
             artifacts/mobile-m2/
             artifacts/cloud-browser/
+            artifacts/v2-drafts/
+            artifacts/v2-sales/
           if-no-files-found: ignore
           retention-days: 7

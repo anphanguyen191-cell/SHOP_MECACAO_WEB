@@ -197,14 +197,18 @@ async function browserTest(base,id){
   }
 
   await cmd('Emulation.setDeviceMetricsOverride',{width:1366,height:768,deviceScaleFactor:1,mobile:false})
+  await until("!document.querySelector('.mobileOrderSteps')")
   assert(await run("getComputedStyle(document.querySelector('.salesHeading .salesActionPrimary')).backgroundColor==='rgb(163, 63, 107)'"),'Desktop primary action keeps its accepted styling');checks++
   await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true})
+  await until("document.querySelectorAll('.mobileOrderSteps button').length===4")
   assert(await run("(()=>{const b=Array.from(document.querySelectorAll('.salesActionPrimary,.mobilePrimary')).find(e=>e.getClientRects().length);const s=getComputedStyle(b);return s.backgroundImage.includes('linear-gradient')&&s.color==='rgb(255, 255, 255)'})()"),'Mobile primary action uses the new legible Travel Luxe treatment');checks++
   await run("document.querySelectorAll('.mobileOrderSteps button')[2].click()")
+  await until("document.querySelector('.mobileLocalOrders').dataset.mobileStep==='2'&&document.querySelector('.salesMoney input').getClientRects().length>0")
   assert(await run("document.querySelector('.salesEditorHead').textContent.includes('Phiên bản 1')"));checks++
   await run("(()=>{const i=document.querySelector('.salesMoney input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'1000');i.dispatchEvent(new Event('input',{bubbles:true}))})()")
   await until("Array.from(document.querySelectorAll('.salesButtons button')).some(b=>b.textContent==='Lưu thay đổi'&&!b.disabled)")
   await run("document.querySelectorAll('.mobileOrderSteps button')[3].click()")
+  await until("document.querySelector('.mobileLocalOrders').dataset.mobileStep==='3'&&document.querySelector('.mobileLocalSave').getClientRects().length>0")
   await run("Array.from(document.querySelectorAll('.salesButtons button')).find(b=>b.textContent==='Lưu thay đổi').click()")
   await until("document.querySelector('.salesEditorHead').textContent.includes('Phiên bản 2')")
   assert(await run("document.querySelector('.salesTotals').textContent.includes('49.000')"));checks++
