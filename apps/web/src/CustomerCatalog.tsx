@@ -99,6 +99,7 @@ export default function CustomerCatalog() {
     [checkout, setCheckout] = useState(false),
     [page, setPage] = useState("home"),
     [showGuide, setShowGuide] = useState(false),
+    [showPolicy, setShowPolicy] = useState(false),
     [notice, setNotice] = useState(""),
     [name, setName] = useState(""),
     [contact, setContact] = useState(""),
@@ -967,6 +968,7 @@ export default function CustomerCatalog() {
                               </p>
                             </div>
                           </div>
+                          <PolicyHighlights compact onOpen={() => setShowPolicy(true)} />
                           <form
                             onSubmit={(e) => {
                               e.preventDefault();
@@ -1052,6 +1054,7 @@ export default function CustomerCatalog() {
                           </section>
                         </>
                       )}
+                      {!checkout && <PolicyHighlights compact onOpen={() => setShowPolicy(true)} />}
                       <Contact cfg={cfg} onCopy={copy} />
                       <pre className="cc-copy-text">{summary()}</pre>
                     </section>
@@ -1363,6 +1366,7 @@ export default function CustomerCatalog() {
                     Khám phá mẫu mới <span aria-hidden="true">→</span>
                   </button>
                 </section>
+                <PolicyHighlights onOpen={() => setShowPolicy(true)} />
               </>
             )}
             {page === "home" && (
@@ -1623,6 +1627,7 @@ export default function CustomerCatalog() {
       )}
       {enabled &&
         !showGuide &&
+        !showPolicy &&
         !zoom &&
         !stockProduct &&
         !footerVisible &&
@@ -1633,6 +1638,7 @@ export default function CustomerCatalog() {
             data-raised={total > 0 && !checkout && !receipt ? "true" : "false"}
             href={"tel:" + CATALOG_PHONE}
             aria-label={"Gọi Shop Mẹ CaCao " + CATALOG_PHONE_LABEL}
+            title={"Gọi Shop · " + CATALOG_PHONE_LABEL}
           >
             <svg
               viewBox="0 0 24 24"
@@ -1645,7 +1651,7 @@ export default function CustomerCatalog() {
             >
               <path d="m8 3 3 5-3 3a15 15 0 0 0 5 5l3-3 5 3c-1 5-4 6-8 4C6 17 2 11 3 6c.5-2 2-3 5-3Z" />
             </svg>
-            <span>{CATALOG_PHONE_LABEL}</span>
+            <span>Gọi Shop</span>
           </a>
         )}
       <nav className="cc-bottom-nav" aria-label="Điều hướng Catalog khách">
@@ -1676,6 +1682,32 @@ export default function CustomerCatalog() {
           <span>Giỏ lựa {total > 0 ? "· " + total : ""}</span>
         </button>
       </nav>
+      {showPolicy && (
+        <Modal title="Chính sách bán hàng" onClose={() => setShowPolicy(false)}>
+          <div className="cc-policy-details">
+            <p className="cc-policy-intro">Mom đọc trước khi đặt nhé!</p>
+            <section>
+              <h3><span>01</span> Ưu đãi đơn hàng</h3>
+              <p><strong>Đơn 5 bộ:</strong> miễn phí vận chuyển.</p>
+              <p><strong>Đơn 10 bộ:</strong> tặng 1 bộ, <strong>không áp dụng freeship.</strong></p>
+            </section>
+            <section>
+              <h3><span>02</span> Đổi Size</h3>
+              <p>Mom chịu phí vận chuyển <strong>2 chiều (30–35k/đơn tùy đơn nặng nhẹ)</strong> giúp Shop nhé!</p>
+            </section>
+            <section>
+              <h3><span>03</span> Từ chối nhận hàng</h3>
+              <p>Nếu kiểm tra hàng và <strong>từ chối nhận</strong>, Mom thanh toán <strong>30k phí ship</strong> giúp Shop.</p>
+            </section>
+            <section>
+              <h3><span>04</span> Đơn hàng lần sau</h3>
+              <p>Nếu đã từ chối nhận hàng, <strong>dù đã trả phí ship</strong>, các đơn sau vui lòng <strong>chuyển khoản trước</strong> để Shop gửi đơn 0 đồng nhé các Mom!</p>
+            </section>
+            <p className="cc-policy-thanks">Shop còn non trẻ, vốn yếu, mong các Mom thông cảm và ủng hộ. Cảm ơn các Mom!</p>
+            <button type="button" className="cc-primary cc-policy-close" onClick={() => setShowPolicy(false)}>Mình đã xem</button>
+          </div>
+        </Modal>
+      )}
       {stockProduct && (
         <Modal
           title={"Tồn từng Size · " + stockProduct.name}
@@ -1723,6 +1755,18 @@ export default function CustomerCatalog() {
       )}
     </div>
   );
+}
+function PolicyHighlights({compact = false, onOpen}: {compact?: boolean; onOpen: () => void}) {
+  return <section className={"cc-policy-card" + (compact ? " cc-policy-compact" : "")} aria-label="Ưu đãi và chính sách bán hàng">
+    <h2><CatalogIcon kind="shield" />{compact ? "Ưu đãi của Shop" : "Ưu đãi & Chính sách"}</h2>
+    <div className="cc-policy-offers">
+      <div><CatalogIcon kind="truck" /><p><strong>Đơn 5 bộ</strong><span>Freeship</span></p></div>
+      <div><CatalogIcon kind="gift" /><p><strong>Đơn 10 bộ</strong><span>Tặng 1 bộ</span><small>Không áp dụng freeship</small></p></div>
+    </div>
+    <button type="button" className="cc-policy-open" onClick={onOpen}>
+      <CatalogIcon kind="note" /><span>{compact ? "Xem chính sách đổi Size & nhận hàng" : "Đổi Size, nhận hàng: xem điều kiện"}</span><span aria-hidden="true">→</span>
+    </button>
+  </section>;
 }
 function ProductCard({
   product: p,
@@ -2115,6 +2159,9 @@ function SizeGuide({
 
 function CatalogIcon({ kind }: { kind: string }) {
   const paths: Record<string, string> = {
+    shield: "M12 3 3 7v5c0 5 9 9 9 9s9-4 9-9V7ZM8 12l3 3 5-6",
+    truck: "M2 5h12v12H2ZM14 9h4l4 4v4h-8M5 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0M16 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0",
+    gift: "M3 8h18v5H3ZM5 13v8h14v-8M12 8v13M12 8C4 8 5 1 9 3c2 1 3 5 3 5Zm0 0c8 0 7-7 3-5-2 1-3 5-3 5Z",
     heart:
       "M20.5 4.7a5 5 0 0 0-7.1 0L12 6.1l-1.4-1.4a5 5 0 0 0-7.1 7.1L12 21l8.5-9.2a5 5 0 0 0 0-7.1Z",
     note: "M6 3h12v18H6ZM9 7h6M9 11h6M9 15h4",

@@ -1,5 +1,11 @@
 # UI Travel Luxe laptop — owner acceptance and release baseline (17/10/2026)
 
+## 2026-10-19 — Approved sales policy placement and compact call action
+
+Implemented the approved policy card immediately below the customer homepage banner, with both offer conditions visible and a single-tap full policy dialog. Cart and contact step repeat the policy reminder. The dialog preserves the owner's five conditions in four readable groups, closes with Escape/close/Mình đã xem, and does not add mandatory consent, automatic discount/gift/shipping calculations or submission mutations. The phone remains a direct click-to-call action with compact “Gọi Shop” label, full accessible number/title and a 44px touch target. It stays hidden during detail/cart/Size/photo/stock/policy dialogs and while footer contacts are visible; animation is disabled. Existing contact numbers and default links are preserved.
+
+Validation: build/typecheck and Catalog model/SQL/Admin/guest DOM passed. Chromium acceptance checks six viewport sizes, every policy clause, opening/closing without clearing the cart, no mandatory input, phone suppression and touch target, plus existing stock/submission/recovery flows. No CORE, pricing, database, stock or order rules changed.
+
 ## 2026-10-19 — Shop contacts follow-up
 
 Owner reported the QR-derived Zalo URL opened the Zalo corporate page from the iPhone browser. Default contact now uses https://zalo.me/0949656477; the exact previous bundled QR URL migrates on read, preserving other custom contacts. Added a copy-number fallback without automatic app-launch redirects. Added the supplied main Shop Facebook link alongside the existing sales profile, and the exact current/previous address supplied by the owner. Shared customer contact rows cover footer, consultation and receipt; Admin shows the same defaults. Model/SQL/Admin/guest DOM checks pass; browser acceptance verifies contact destinations, address and copy fallback. Actual Zalo app handoff remains device-dependent and must not be described as confirmed from desktop browser tests.

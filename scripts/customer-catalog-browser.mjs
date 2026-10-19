@@ -339,6 +339,8 @@ try {
     await run("!!document.querySelector('.cc-product .cc-favorite')"),
     "Clickable wishlist on product card",
   );
+  assert(await run('document.querySelector(".cc-banner").nextElementSibling.classList.contains("cc-policy-card")'), "Policy follows homepage banner");
+  assert.equal(await run('document.querySelector(".cc-call-float span").textContent'), "Gọi Shop");
   for (const width of [360, 375, 390, 430, 768, 1024]) {
     await cmd("Emulation.setDeviceMetricsOverride", {
       width,
@@ -359,6 +361,18 @@ try {
       path.join(out, "home-" + width + ".png"),
       Buffer.from(shot.data, "base64"),
     );
+    assert(await run('document.querySelector(".cc-call-float").getBoundingClientRect().height>=44'), "Phone touch target " + width);
+    await run('document.querySelector(".cc-policy-open").click()');
+    await until('!!document.querySelector(".cc-policy-details")');
+    assert.equal(await run('document.querySelectorAll(".cc-policy-details section").length'), 4);
+    for (const text of ["Đơn 5 bộ:", "Đơn 10 bộ:", "không áp dụng freeship.", "2 chiều (30–35k/đơn tùy đơn nặng nhẹ)", "30k phí ship", "dù đã trả phí ship", "chuyển khoản trước"]) {
+      assert(await run(`document.querySelector(".cc-policy-details").textContent.includes(${JSON.stringify(text)})`), "Policy condition: " + text);
+    }
+    assert(await run('!document.querySelector(".cc-call-float")'), "Phone hidden during policy reading");
+    assert.equal(await run('document.querySelectorAll(".cc-policy-details input").length'), 0, "Reading policy does not add a required consent input");
+    await screenshot("policy-" + width);
+    await click("Mình đã xem");
+    await until('!document.querySelector(".cc-policy-details")');
   }
   await cmd("Emulation.setDeviceMetricsOverride", {
     width: 390,
@@ -495,6 +509,14 @@ try {
     ),
   );
   await click("Xem giỏ");
+  assert(await run('!document.querySelector(".cc-call-float")'), "Phone hidden in cart");
+  const policyCartBefore = await run('localStorage.getItem("mecacao-customer-cart-v1")');
+  assert(policyCartBefore && JSON.parse(policyCartBefore).length > 0, "Existing cart before policy reading");
+  await run('document.querySelector(".cc-cart-summary .cc-policy-open").click()');
+  await until('!!document.querySelector(".cc-policy-details")');
+  await cmd("Input.dispatchKeyEvent", {type:"keyDown",key:"Escape",code:"Escape",windowsVirtualKeyCode:27});
+  await until('!document.querySelector(".cc-policy-details")');
+  assert.equal(await run('localStorage.getItem("mecacao-customer-cart-v1")'),policyCartBefore,"Reading policy preserves cart");
   await run(
     `document.querySelector('[aria-label="Giảm số lượng Size 8"]').click()`,
   );
