@@ -1,6 +1,10 @@
 import {
   CATALOG_FACEBOOK_URL,
   CATALOG_FACEBOOK_LABEL,
+  CATALOG_FACEBOOK_PAGE_URL,
+  CATALOG_ADDRESS,
+  CATALOG_ADDRESS_PREVIOUS,
+  CATALOG_ZALO_URL,
   CATALOG_PHONE,
   CATALOG_PHONE_LABEL,
 } from "./customerCatalogContacts";
@@ -1812,14 +1816,29 @@ function ProductCard({
   );
 }
 function ShopContactRows({ cfg }: { cfg: Config }) {
+  const [copyStatus, setCopyStatus] = useState("");
+  async function copyZaloNumber() {
+    try {
+      await navigator.clipboard.writeText(CATALOG_PHONE);
+      setCopyStatus("Đã sao chép số Zalo của Shop");
+    } catch {
+      setCopyStatus("Số Zalo của Shop: " + CATALOG_PHONE_LABEL);
+    }
+  }
   return (
     <div className="cc-footer-contacts">
+      <a href={CATALOG_FACEBOOK_PAGE_URL} target="_blank" rel="noopener noreferrer">
+        <span className="cc-social cc-social-facebook"><CatalogIcon kind="facebook" /></span>
+        <span>Facebook</span>
+        <small>Trang chính Shop Mẹ CaCao</small>
+        <span className="cc-contact-arrow" aria-hidden="true">›</span>
+      </a>
       <a href={CATALOG_FACEBOOK_URL} target="_blank" rel="noopener noreferrer">
         <span className="cc-social cc-social-facebook">
           <CatalogIcon kind="facebook" />
         </span>
         <span>Facebook</span>
-        <small>{CATALOG_FACEBOOK_LABEL}</small>
+        <small>Facebook bán hàng · {CATALOG_FACEBOOK_LABEL}</small>
         <span className="cc-contact-arrow" aria-hidden="true">
           ›
         </span>
@@ -1852,6 +1871,16 @@ function ShopContactRows({ cfg }: { cfg: Config }) {
           ›
         </span>
       </a>
+      <address className="cc-shop-address">
+        <strong>Địa chỉ Shop</strong>
+        <span>{CATALOG_ADDRESS}</span>
+        <small>({CATALOG_ADDRESS_PREVIOUS})</small>
+      </address>
+      {cfg.zalo_url === CATALOG_ZALO_URL && <div className="cc-zalo-fallback">
+        <span>Chưa mở được Zalo? Tìm Shop bằng số {CATALOG_PHONE_LABEL}.</span>
+        <button type="button" onClick={copyZaloNumber}>Sao chép số Zalo</button>
+        <span role="status">{copyStatus}</span>
+      </div>}
     </div>
   );
 }

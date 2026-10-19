@@ -138,7 +138,7 @@ try {
   assert(
     saved.p_payload.config.size_image_url.endsWith("catalog-shop-size.jpg"),
   );
-  assert.equal(saved.p_payload.config.zalo_url, "https://zaloapp.com/qr/p/yi83f20pdg09");
+  assert.equal(saved.p_payload.config.zalo_url, "https://zalo.me/0949656477");
   assert.equal(saved.p_payload.config.messenger_url, "https://m.me/thi.nguyen.321179");
   await close();
   const nonOwner = await setup("cashier");

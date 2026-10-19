@@ -376,13 +376,13 @@ try {
   );
   assert.equal(
     await run(
-      'document.querySelector(".cc-footer-contacts a").getAttribute("href")',
+      'document.querySelectorAll(".cc-footer-contacts a")[1].getAttribute("href")',
     ),
     "https://www.facebook.com/thi.nguyen.321179",
   );
   assert(
     await run(
-      "!!document.querySelector('a[href=\"https://zaloapp.com/qr/p/yi83f20pdg09\"]')",
+      "!!document.querySelector('a[href=\"https://zalo.me/0949656477\"]')",
     ),
   );
   assert(
@@ -390,6 +390,11 @@ try {
       "!!document.querySelector('a[href=\"https://m.me/thi.nguyen.321179\"]')",
     ),
   );
+  assert.equal(await run('document.querySelector(".cc-footer-contacts a").getAttribute("href")'), "https://www.facebook.com/share/1EvPk243af/?mibextid=wwXIfr");
+  assert(await run('document.querySelector(".cc-shop-address").textContent.includes("Phường Bạc Liêu, tỉnh Cà Mau")'));
+  assert(await run('document.querySelector(".cc-shop-address").textContent.includes("Phường 3, thành phố Bạc Liêu, tỉnh Bạc Liêu cũ")'));
+  await run('document.querySelector(".cc-zalo-fallback button").click()');
+  await until('document.querySelector(".cc-zalo-fallback [role=status]").textContent.length>0');
   await click("Sản phẩm");
   await until('!document.querySelector(".cc-banner")');
   assert(await run('document.body.innerText.includes("Danh sách sản phẩm")'));

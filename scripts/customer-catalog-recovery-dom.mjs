@@ -114,7 +114,7 @@ try {
   );
   assert(
     w.document
-      .querySelector(".cc-footer-contacts a")
+      .querySelectorAll(".cc-footer-contacts a")[1]
       .href.includes("/thi.nguyen.321179"),
     "Owner-supplied Facebook link is available without optional contact configuration",
   );

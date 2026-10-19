@@ -135,6 +135,11 @@
 .cc-app[data-ui] .cc-footer-contacts a{display:grid;grid-template-columns:28px 80px minmax(0,1fr) 12px;align-items:center;gap:8px;min-height:43px;border:0;border-radius:11px;background:#ffffffc9;color:#4d3e4a;padding:6px 9px;font-size:12px;font-weight:500;text-align:left}
 .cc-footer-contacts small{color:#2369b1;font-size:11px;overflow-wrap:anywhere;line-height:1.35}
 .cc-contact-arrow{color:#a58b98;font-size:19px;text-align:right}
+.cc-shop-address{display:grid;gap:3px;padding:12px 9px;font-style:normal;font-size:12px;line-height:1.5;color:#6a5361;grid-column:1/-1}
+.cc-shop-address strong{font-size:11px;color:#a54870}.cc-shop-address small{color:#927c88;font-size:11px}
+.cc-zalo-fallback{grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:0 9px;font-size:10px;line-height:1.5;color:#927c88}
+.cc-app[data-ui] .cc-zalo-fallback button{padding:6px 9px;min-height:36px;font-size:10px;background:#fff;color:#2269bd;border:1px solid #e6dfe5;border-radius:8px}
+.cc-zalo-fallback [role=status]:empty{display:none}
 .cc-social{width:26px;height:26px;border-radius:50%;display:grid;place-items:center}
 .cc-social svg{width:19px;height:19px;fill:none}
 .cc-social-facebook{background:#2269bd;color:#fff}.cc-social-zalo{background:#1683ef;color:#fff;font:italic 8px Arial,sans-serif;font-weight:750}.cc-social-messenger{background:#eaf0ff;color:#4666d2}.cc-social-phone{background:#e7f4ed;color:#168362}

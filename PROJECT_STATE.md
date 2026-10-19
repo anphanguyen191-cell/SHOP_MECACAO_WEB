@@ -1,5 +1,9 @@
 # UI Travel Luxe laptop — owner acceptance and release baseline (17/10/2026)
 
+## 2026-10-19 — Shop contacts follow-up
+
+Owner reported the QR-derived Zalo URL opened the Zalo corporate page from the iPhone browser. Default contact now uses https://zalo.me/0949656477; the exact previous bundled QR URL migrates on read, preserving other custom contacts. Added a copy-number fallback without automatic app-launch redirects. Added the supplied main Shop Facebook link alongside the existing sales profile, and the exact current/previous address supplied by the owner. Shared customer contact rows cover footer, consultation and receipt; Admin shows the same defaults. Model/SQL/Admin/guest DOM checks pass; browser acceptance verifies contact destinations, address and copy fallback. Actual Zalo app handoff remains device-dependent and must not be described as confirmed from desktop browser tests.
+
 ## 2026-10-19 — Approved customer boutique redesign
 
 Implemented the approved customer mockup with a branded mobile hero, compact search and filters, larger product photos, quiet navigation, compact contact footer and direct gallery selection. Product name/price precede naturally ordered Size availability. Listing cards preview three Sizes and open all stock counts in a sheet; choosing a row opens that variant. Exact-photo and Shop-picked quantities retain existing stock and recovery contracts. The original Shop size poster remains a single view. Public and Admin defaults use the owner's decoded Zalo QR https://zaloapp.com/qr/p/yi83f20pdg09 and Messenger https://m.me/thi.nguyen.321179, preserving custom saved URLs; Facebook uses the supplied profile and phone remains 0949656477. No CORE, database, publication or stock changes.

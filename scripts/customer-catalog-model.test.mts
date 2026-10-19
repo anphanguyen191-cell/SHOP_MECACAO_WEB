@@ -102,6 +102,8 @@ test("Empty Cloud settings are ready without image URLs; custom settings survive
   assert.equal(ready.size_image_url, CATALOG_SIZE_IMAGE_URL);
   assert.deepEqual(ready.guide, SIZE_GUIDE);
   assert.equal(ready.zalo_url, CATALOG_ZALO_URL);
+  assert.equal(CATALOG_ZALO_URL, "https://zalo.me/0949656477");
+  assert.equal(catalogDefaults({zalo_url:"https://zaloapp.com/qr/p/yi83f20pdg09"}).zalo_url, CATALOG_ZALO_URL);
   assert.equal(ready.messenger_url, CATALOG_MESSENGER_URL);
   const custom = {
     banner_url: "https://shop.example/banner.jpg",
