@@ -9,16 +9,17 @@ import {soldProofImage} from './soldProofImage.js'
 import {cloudImageForSync,createCloudImageDigestCache} from './cloudImages.js'
 import {isInternalWarehousePath} from './warehouseAreas.js'
 import {reconcileCloudSale} from './cloudReconcile.js'
+import {uploadLocalBusiness,assertBusinessUploaded,verifyImportedLocalSale,pullCloudBusiness} from './cloudBusiness.js'
 const cloudUrl='https://eyckwoewpomssjjggslr.supabase.co'
 const publishable='sb_publishable_iyEI25gFfU4pXxmdFJ823Q_YYG-ViGJ'
-export function cloudRouter(db:DatabaseSync,root:string,live?:WarehouseLive){
+export function cloudRouter(db:DatabaseSync,root:string,live?:WarehouseLive,businessChanges?:()=>unknown){
  const router=Router()
  const digestCache=createCloudImageDigestCache(db)
  router.use((req,res,next)=>{
   if(!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress||'')||res.locals.lanUser)return res.status(403).json({error:'Kết nối Cloud của kho chỉ thiết lập trên Windows chủ shop.'})
   res.set('Cache-Control','no-store'); next()
  })
- router.get('/state',(_req,res)=>res.json({imageDigestBatch:true,instance:db.prepare("SELECT value FROM app_metadata WHERE key='cloud-instance'").get()?.value,enabled:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(),live:live?.snapshot(),reconciled:db.prepare("SELECT substr(key,12) id FROM app_metadata WHERE key LIKE 'cloud-sold:%'").all().map(r=>r.id)}))
+ router.get('/state',(_req,res)=>res.json({imageDigestBatch:true,businessHistorySync:true,business:businessChanges?.(),syncEnabled:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-instance'").get(),instance:db.prepare("SELECT value FROM app_metadata WHERE key='cloud-instance'").get()?.value,enabled:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(),live:live?.snapshot(),reconciled:db.prepare("SELECT substr(key,12) id FROM app_metadata WHERE key LIKE 'cloud-sold:%' UNION SELECT substr(key,18) id FROM app_metadata WHERE key LIKE 'cloud-local-sold:%'").all().map(r=>r.id)}))
  router.post('/live/ack',async(req,res)=>{
   try{
    if(!live)throw Error('Kho chưa bật theo dõi folder')
@@ -35,12 +36,28 @@ export function cloudRouter(db:DatabaseSync,root:string,live?:WarehouseLive){
   req.on('close',()=>{clearInterval(heartbeat);unsubscribe()})
  })
  async function rpc(token:string,name:string,args:unknown){const response=await fetch(cloudUrl+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:publishable,Authorization:token,'Content-Type':'application/json'},body:JSON.stringify(args),signal:AbortSignal.timeout(20000)});const result=await response.json();if(!response.ok)throw Error(result.message||'Không xác minh được Cloud.');return result}
+ let businessInFlight=false
+ router.post('/business/pull',async(req,res)=>{
+  if(businessInFlight)return res.status(409).json({error:'Đang đối soát hồ sơ nghiệp vụ.'})
+  businessInFlight=true
+  try{const token=req.get('authorization')||'';res.json(await pullCloudBusiness(db,root,(name,args)=>rpc(token,name,args)))}catch(e){res.status(409).json({error:e instanceof Error?e.message:'Chưa nhận được hồ sơ Cloud'})}finally{businessInFlight=false}
+ })
+ router.post('/business',async(req,res)=>{
+  if(businessInFlight)return res.status(409).json({error:'Đang đồng bộ hồ sơ nghiệp vụ. Chờ lượt hiện tại hoàn tất.'})
+  businessInFlight=true
+  try{
+   const token=req.get('authorization')||'',health=await rpc(token,'mc_v7_health',{}),instance=db.prepare("SELECT value FROM app_metadata WHERE key='cloud-instance'").get()?.value
+   if(health.role!=='owner'||!instance||health.instance!==instance)throw Error('Cloud chưa khớp kho laptop hoặc chưa có quyền chủ shop.')
+   if(health.status==='CLOUD_TEST_READY'&&db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())return res.json({active:true})
+   res.json(await uploadLocalBusiness(db,root,(name,args)=>rpc(token,name,args)))
+  }catch(e){res.status(409).json({error:e instanceof Error?e.message:'Chưa đồng bộ được hồ sơ'})}finally{businessInFlight=false}
+ })
  router.post('/activate',async(req,res)=>{
   try{
    const token=req.get('authorization')||'';if(!token.startsWith('Bearer '))throw Error('Thiếu phiên Cloud.')
    const health=await rpc(token,'mc_v7_health',{}),instance=db.prepare("SELECT value FROM app_metadata WHERE key='cloud-instance'").get()?.value
    if(health.role!=='owner'||health.instance!==instance||!instance)throw Error('Cloud chưa khớp kho Windows hoặc chưa có quyền chủ shop.')
-   if(db.prepare("SELECT 1 FROM sales_confirmations c WHERE NOT EXISTS(SELECT 1 FROM app_metadata m WHERE m.key='cloud-sold:'||c.order_id)").get())throw Error('Kho có giao dịch SOLD độc lập trước Cloud. Hãy dùng kho phát triển mới để kết nối.')
+   if(!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())assertBusinessUploaded(db,root)
    // Fence first: if the network result is uncertain, Windows remains protected.
    db.prepare("INSERT INTO app_metadata(key,value) VALUES('cloud-authority','enabled') ON CONFLICT(key) DO UPDATE SET value='enabled'").run()
    const result=await rpc(token,'mc_v7_activate',{p_instance:instance});res.json(result)
@@ -70,7 +87,7 @@ export function cloudRouter(db:DatabaseSync,root:string,live?:WarehouseLive){
   try{
    const token=req.get('authorization')||'';if(!token.startsWith('Bearer '))throw Error('Thiếu phiên đăng nhập Cloud.')
    const ids=req.body.orders;if(!Array.isArray(ids)||ids.length>100||ids.some(id=>typeof id!=='string'||id.length>100))throw Error('Danh sách đơn không hợp lệ.')
-   const results=[];for(const id of ids){const proof=await rpc(token,'mc_v7_sold_proof',{p_id:id}),result=await reconcileCloudSale(db,root,proof);const operation='operationId' in result?result.operationId:undefined;if(!operation)throw Error('Chưa xác minh giao dịch Windows.');await rpc(token,'mc_v7_archive_ack',{p_id:id,p_instance:proof.instance,p_cloud_operation:proof.confirmation.operation_id,p_local_operation:operation});results.push(result)}
+   const results=[];for(const id of ids){const proof=await rpc(token,'mc_v7_sold_proof',{p_id:id}),result=verifyImportedLocalSale(db,root,proof)??await reconcileCloudSale(db,root,proof);const operation='operationId' in result?result.operationId:undefined;if(!operation)throw Error('Chưa xác minh giao dịch Windows.');await rpc(token,'mc_v7_archive_ack',{p_id:id,p_instance:proof.instance,p_cloud_operation:proof.confirmation.operation_id,p_local_operation:operation});results.push(result)}
    res.json({results})
   }catch(e){res.status(409).json({error:e instanceof Error?e.message:'Chưa đối soát được SOLD Cloud.'})}
  })

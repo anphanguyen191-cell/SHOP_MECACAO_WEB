@@ -44,7 +44,8 @@ async function reconcile(db:DatabaseSync,root:string,proof:any){
   const insert=db.prepare('INSERT INTO sales_order_images(order_id,image_id,product_id,variant_id,product_name,product_code,size,sku,unit_price,unit_cost,position) VALUES(?,?,?,?,?,?,?,?,?,?,?)')
   items.forEach((i:any,index:number)=>insert.run(o.id,i.image_id,i.product_id,i.variant_id,i.product_name,i.product_code,i.size,i.sku,i.unit_price,i.unit_cost??null,index))
   const contact=proof.contact||{}
-  db.prepare('INSERT INTO order_contacts(order_id,recipient_name,phone,address,shipping_fee) VALUES(?,?,?,?,?) ON CONFLICT(order_id) DO UPDATE SET recipient_name=excluded.recipient_name,phone=excluded.phone,address=excluded.address,shipping_fee=excluded.shipping_fee').run(o.id,contact.recipient_name||'',contact.phone||'',contact.address||'',contact.shipping_fee||0)
+  const customer=typeof contact.customer_id==='string'&&db.prepare('SELECT 1 FROM shop_customers WHERE id=?').get(contact.customer_id)?contact.customer_id:null
+  db.prepare('INSERT INTO order_contacts(order_id,customer_id,recipient_name,phone,address,shipping_fee) VALUES(?,?,?,?,?,?) ON CONFLICT(order_id) DO UPDATE SET customer_id=excluded.customer_id,recipient_name=excluded.recipient_name,phone=excluded.phone,address=excluded.address,shipping_fee=excluded.shipping_fee').run(o.id,customer,contact.recipient_name||'',contact.phone||'',contact.address||'',contact.shipping_fee||0)
   db.exec('COMMIT')
  }catch(e){db.exec('ROLLBACK');throw e}
  const check=await salesPreflightService(db,root,true).check(o.id,o.version)

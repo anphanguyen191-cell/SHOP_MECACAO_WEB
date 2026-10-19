@@ -1,8 +1,8 @@
 import {useEffect,useState} from 'react'
-export type SyncPhase='idle'|'reading'|'catalog'|'images'|'verify'|'cleanup'|'done'|'paused'|'error'
+export type SyncPhase='idle'|'reading'|'catalog'|'business'|'images'|'verify'|'cleanup'|'done'|'paused'|'error'
 export type SyncMeter={phase:SyncPhase;total:number;processed:number;uploaded:number;reused:number;missing:number;started:number;current:string}
 export const emptySyncMeter:SyncMeter={phase:'idle',total:0,processed:0,uploaded:0,reused:0,missing:0,started:0,current:''}
-const labels:Record<SyncPhase,string>={idle:'Chưa đồng bộ',reading:'Đang đọc tồn laptop và Cloud',catalog:'Đang đối chiếu sản phẩm / Size',images:'Đang xử lý ảnh',verify:'Đang xác minh tồn và file Cloud',cleanup:'Đang dọn file dư đã đối soát',done:'Đồng bộ hoàn tất',paused:'Đã tạm dừng — có thể tiếp tục',error:'Chưa hoàn tất — cần tiếp tục'}
+const labels:Record<SyncPhase,string>={idle:'Chưa đồng bộ',reading:'Đang đọc tồn laptop và Cloud',catalog:'Đang đối chiếu sản phẩm / Size',business:'Đang đồng bộ khách hàng, đơn bán và sổ tiền',images:'Đang xử lý ảnh',verify:'Đang xác minh tồn và file Cloud',cleanup:'Đang dọn file dư đã đối soát',done:'Đồng bộ hoàn tất',paused:'Đã tạm dừng — có thể tiếp tục',error:'Chưa hoàn tất — cần tiếp tục'}
 export default function CloudSyncProgress({state}:{state:SyncMeter}){
  const [now,setNow]=useState(Date.now())
  const active=!['idle','done','error','paused'].includes(state.phase)

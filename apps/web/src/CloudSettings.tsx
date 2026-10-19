@@ -127,6 +127,9 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
    missingCount+=batch.sourceState.filter((x:any)=>!x.present).length
    if(batch.done)break;offset++
   }
+  setMeter(m=>({...m,phase:'business',current:'Đang đồng bộ khách hàng, đơn bán, SOLD và sổ tiền'}))
+  const business=await apiJson('/api/cloud/business',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:'{}'})
+  if(business.counts)setStatus('Đã đối soát '+business.counts.shop_customers+' khách · '+business.counts.sales_orders+' đơn · '+business.counts.sales_units+' bộ SOLD · '+business.counts.finance_entries+' chứng từ tiền')
   const verifiedSource:any[]=[]
   const pendingPhotos=activePhotos.filter(image=>!ready.has(Number(image.id))),knownPhotos=activePhotos.filter(image=>ready.has(Number(image.id)))
   const updateMeter=(current:string)=>{setProgress({registered,uploaded,skipped});setStatus('Ảnh '+(uploaded+skipped)+' / '+total+' · '+current);setMeter(m=>({...m,phase:'images',processed:uploaded+skipped,uploaded,reused:skipped,missing:missingCount,current}))}
@@ -239,7 +242,7 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
   setMeter(m=>({...m,phase:'cleanup',current:'Đang dọn các file dư đã được đối soát'}))
   try{
    const freed=await cleanupLegacyObjects()
-   setStatus('Đã đồng bộ V8 '+localImageCount+' ảnh tồn · đã rút '+missingCount+' ảnh nguồn thiếu · giữ/tái dùng '+skipped+' · tải mới '+uploaded+' · dọn '+freed.count+' file dư ('+Math.round(freed.bytes/1024/1024)+' MiB). Mở Cloud trên Windows/iPhone để nghiệm thu.')
+   setStatus('Đã đồng bộ V8 '+localImageCount+' ảnh tồn'+(business.counts?' · '+business.counts.shop_customers+' khách · '+business.counts.sales_orders+' đơn · '+business.counts.sales_units+' bộ SOLD · '+business.counts.finance_entries+' chứng từ tiền':'')+' · đã rút '+missingCount+' ảnh nguồn thiếu · giữ/tái dùng '+skipped+' · tải mới '+uploaded+' · dọn '+freed.count+' file dư ('+Math.round(freed.bytes/1024/1024)+' MiB). Mở Cloud trên Windows/iPhone để nghiệm thu.')
   }catch(e){
    setStatus('Kho V8 đã đồng bộ nhưng chưa dọn hết ảnh cũ: '+(e as Error).message+'. Các file chưa dọn vẫn được giữ nguyên.')
   }

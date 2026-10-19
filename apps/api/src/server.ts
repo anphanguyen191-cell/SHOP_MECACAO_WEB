@@ -270,7 +270,7 @@ app.post('/api/local/warehouse',(req,res)=>{
   res.once('finish',()=>setTimeout(()=>process.exit(75),250))
  }catch(e){res.status(409).json({error:e instanceof Error?e.message:String(e)})}
 })
-if(salesExecutionEnabled&&sandboxRoot)app.use('/api/cloud',cloudRouter(db,sandboxRoot,liveWarehouse))
+if(salesExecutionEnabled&&sandboxRoot)app.use('/api/cloud',cloudRouter(db,sandboxRoot,liveWarehouse,changeFeed.businessView))
 app.use('/api/sales/drafts',(req,res,next)=>{
  const localStockReturn=req.path==='/returns/recover'||/^\/[^/]+\/returns$/.test(req.path)
  if(!['GET','HEAD'].includes(req.method)&&req.path!=='/recover'&&!localStockReturn&&db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())return res.status(409).json({error:'Kho đang dùng Cloud. Mở giao diện Cloud để tạo đơn, bán, cập nhật tiền và khách hàng.',code:'CLOUD_AUTHORITY_REQUIRED'})
