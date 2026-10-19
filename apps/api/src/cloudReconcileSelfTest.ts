@@ -22,6 +22,9 @@ try{
  // Cloud already SOLD while laptop was off; a later price/status edit must not
  // rewrite the historical cost or prevent retaining the original evidence.
  db.exec("UPDATE product_variants SET cost_price=20000,status='inactive';UPDATE products SET status='inactive'")
+ db.exec("INSERT INTO sales_orders(id,request_key,request_hash,discount,note) VALUES('fake-cloud-order','local-original-request','local-original-hash',1000,'FAKE')")
+ await assert.rejects(()=>reconcileCloudSale(db,root,proof),/đơn độc lập/)
+ db.exec("INSERT INTO app_metadata(key,value) VALUES('cloud-shared-order:fake-cloud-order','local-original-hash')")
  const first=await reconcileCloudSale(db,root,proof);assert.equal(first.sold,true)
  const second=await reconcileCloudSale(db,root,proof);assert.equal(second.operationId,first.operationId)
  assert.equal(fs.existsSync(file),false);assert.equal(db.prepare('SELECT count(*) n FROM sales_units').get()?.n,1)

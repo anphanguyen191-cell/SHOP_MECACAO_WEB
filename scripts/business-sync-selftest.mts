@@ -14,6 +14,7 @@ import {bootstrapFinance,financeService,validateFinance} from '../apps/api/src/o
 import {readLocalBusiness,uploadLocalBusiness,assertBusinessUploaded,verifyImportedLocalSale,pullCloudBusiness} from '../apps/api/src/cloudBusiness.js'
 import {createLiveFolderSync} from '../apps/web/src/liveFolderSync.js'
 import {cloudInventory} from '../apps/web/src/cloudInventory.js'
+import {optimizeCloudImage} from '../apps/api/src/cloudImages.js'
 import {bootstrapStocktake,stocktakeService} from '../apps/api/src/stocktake.js'
 
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cacao-business-')),db=new DatabaseSync(path.join(root,'shop.db')),pg=new PGlite()
@@ -25,7 +26,7 @@ const call=async(name:string,args:any)=>{
  if(name==='mc_v7_sold_proof')return proof(args.p_id)
  return (await one(`SELECT public.${name}($1,$2,$3) data`,[args.p_instance,args.p_request,JSON.stringify(args.p_payload)])).data
 }
-const proof=async(id:string)=>({instance,order:await one('SELECT * FROM sales_orders WHERE id=$1',[id]),confirmation:await one('SELECT * FROM sales_confirmations WHERE order_id=$1',[id]),items:(await pg.query('SELECT * FROM sales_order_images WHERE order_id=$1 ORDER BY position',[id])).rows,assets:[]})
+const proof=async(id:string)=>({instance,order:await one('SELECT * FROM sales_orders WHERE id=$1',[id]),confirmation:await one('SELECT * FROM sales_confirmations WHERE order_id=$1',[id]),items:(await pg.query('SELECT * FROM sales_order_images WHERE order_id=$1 ORDER BY position',[id])).rows,assets:(await pg.query('SELECT a.* FROM cloud_image_assets a JOIN sales_units u ON u.image_id=a.image_id WHERE u.order_id=$1',[id])).rows})
 try{
  bootstrapSalesDrafts(db);bootstrapSalesExecution(db,root);bootstrapCustomers(db);bootstrapFinance(db)
  db.exec("INSERT INTO products(id,product_code,name) VALUES(1,'P1','Bộ tole');INSERT INTO product_variants(id,product_id,sku,size,cost_price,sale_price) VALUES(1,1,'P1-S','S',12000,50000);INSERT INTO inventory_transactions(variant_id,transaction_type,quantity) VALUES(1,'OPENING',3106)")
@@ -92,6 +93,15 @@ try{
  await pullCloudBusiness(db,root,call);validateFinance(db)
  assert.equal(financeService(db).summary(draft.id).due,59000)
  await pullCloudBusiness(db,root,call);assert.equal(Number(db.prepare('SELECT count(*) n FROM finance_entries').get()!.n),2)
+ await pg.exec("INSERT INTO sales_orders(id,request_key,request_hash,discount,note) VALUES('new-mobile-draft','new-mobile-request','new-mobile-hash',0,'Tạo từ mobile');INSERT INTO sales_order_images(order_id,image_id,product_id,variant_id,product_name,product_code,size,sku,unit_price,unit_cost,position) VALUES('new-mobile-draft',5,1,1,'Bộ tole','P1','S','P1-S',50000,12000,0)")
+ await pullCloudBusiness(db,root,call)
+ assert.equal(db.prepare("SELECT request_key FROM sales_orders WHERE id='new-mobile-draft'").get()!.request_key,'cloud-import-new-mobile-draft')
+ const photo5=await optimizeCloudImage(path.join(root,'photo-5.png'))
+ await pg.query('UPDATE cloud_image_assets SET sha256=$1 WHERE image_id=5',[photo5.sha256])
+ await pg.exec("INSERT INTO sales_operations(id,request_key,input_hash,payload,payload_hash,status) VALUES('new-mobile-op','new-mobile-sale','hash','{}','hash','SOLD');INSERT INTO sales_confirmations(order_id,operation_id,version,subtotal,discount,total,note) VALUES('new-mobile-draft','new-mobile-op',1,50000,0,50000,'Tạo từ mobile');INSERT INTO sales_units(image_id,order_id,variant_id,snapshot,source_hash,archive_path,archive_hash) SELECT 5,'new-mobile-draft',1,'{}',sha256,object_path,sha256 FROM cloud_image_assets WHERE image_id=5;INSERT INTO sales_ledger(image_id,order_id,variant_id,transaction_type,quantity,unit_cost) VALUES(5,'new-mobile-draft',1,'SALE',1,12000)")
+ await pullCloudBusiness(db,root,call)
+ assert.equal(Number(db.prepare('SELECT count(*) n FROM sales_units').get()!.n),5,'A mirrored mobile draft can later become SOLD on the same laptop')
+ assert.equal(fs.existsSync(path.join(root,'photo-5.png')),false)
  // Business changes trigger sync before activation, without waiting for folder changes.
  let revision=0,syncs=0,online=true,time=0,fail=false
  const runner=createLiveFolderSync({clock:()=>time,online:()=>online,busy:()=>false,read:async()=>({enabled:false,syncEnabled:true,business:{epoch:'first',revision},live:{ready:true,pendingSync:false}}),onState:()=>{},onError:()=>{},sync:async()=>{syncs++;if(fail){fail=false;return false}return true}})

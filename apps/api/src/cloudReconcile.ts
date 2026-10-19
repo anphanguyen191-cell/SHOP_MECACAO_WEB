@@ -37,8 +37,9 @@ async function reconcile(db:DatabaseSync,root:string,proof:any){
  if(!Number.isSafeInteger(subtotal)||subtotal!==c.subtotal||o.discount!==c.discount||subtotal-o.discount!==c.total)throw Error('Tổng SOLD Cloud không khớp.')
  db.exec('BEGIN IMMEDIATE')
  try{
-  const old=db.prepare('SELECT request_key FROM sales_orders WHERE id=?').get(o.id)
-  if(old&&old.request_key!=='cloud-import-'+o.id)throw Error('Định danh đơn trùng với đơn độc lập tại Windows.')
+  const old=db.prepare('SELECT request_key,request_hash FROM sales_orders WHERE id=?').get(o.id)
+  const shared=db.prepare('SELECT value FROM app_metadata WHERE key=?').get('cloud-shared-order:'+o.id)
+  if(old&&old.request_key!=='cloud-import-'+o.id&&shared?.value!==old.request_hash)throw Error('Định danh đơn trùng với đơn độc lập tại Windows.')
   db.prepare('INSERT INTO sales_orders(id,request_key,request_hash,discount,note,version) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET discount=excluded.discount,note=excluded.note,version=excluded.version').run(o.id,'cloud-import-'+o.id,hash,o.discount,o.note,o.version)
   db.prepare('DELETE FROM sales_order_images WHERE order_id=?').run(o.id)
   const insert=db.prepare('INSERT INTO sales_order_images(order_id,image_id,product_id,variant_id,product_name,product_code,size,sku,unit_price,unit_cost,position) VALUES(?,?,?,?,?,?,?,?,?,?,?)')

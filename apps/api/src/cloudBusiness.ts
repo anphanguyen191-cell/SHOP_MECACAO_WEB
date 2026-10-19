@@ -73,6 +73,7 @@ export async function uploadLocalBusiness(db:DatabaseSync,root:string,rpc:(name:
  if(readLocalBusiness(db,root).sourceHash!==snapshot.sourceHash)throw Error('Nghiệp vụ laptop vừa thay đổi. Đang chờ đồng bộ lại trước khi kích hoạt.')
  db.prepare("INSERT INTO app_metadata(key,value) VALUES('cloud-business-upload',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(JSON.stringify({sourceHash:snapshot.sourceHash,counts:snapshot.counts,at:new Date().toISOString()}))
  for(const c of snapshot.rows.sales_confirmations)db.prepare('INSERT INTO app_metadata(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('cloud-local-sold:'+c.order_id,c.operation_id)
+ for(const order of snapshot.rows.sales_orders)db.prepare('INSERT INTO app_metadata(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('cloud-shared-order:'+order.id,order.request_hash)
  return {counts:snapshot.counts,sourceHash:snapshot.sourceHash}
 }
 
@@ -127,7 +128,7 @@ export async function pullCloudBusiness(db:DatabaseSync,root:string,rpc:(name:st
  if((await rpc('mc_v7_health',{})).sequence!==before.sequence)throw Error('Cloud vừa thay đổi; sẽ đọc lại sổ nghiệp vụ.')
  db.exec('BEGIN IMMEDIATE')
  try{
-  for(const row of data.sales_orders)if(!db.prepare('SELECT 1 FROM sales_confirmations WHERE order_id=?').get(row.id))writeRow('sales_orders',row)
+  for(const row of data.sales_orders)if(!db.prepare('SELECT 1 FROM sales_confirmations WHERE order_id=?').get(row.id))writeRow('sales_orders',{...row,request_key:'cloud-import-'+row.id})
   for(const order of data.sales_orders){
    if(db.prepare('SELECT 1 FROM sales_confirmations WHERE order_id=?').get(order.id))continue
    db.prepare('DELETE FROM sales_order_images WHERE order_id=?').run(order.id)
