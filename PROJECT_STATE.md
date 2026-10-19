@@ -1,5 +1,11 @@
 # UI Travel Luxe laptop — owner acceptance and release baseline (17/10/2026)
 
+## 2026-10-19 — Approved customer boutique redesign
+
+Implemented the approved customer mockup with a branded mobile hero, compact search and filters, larger product photos, quiet navigation, compact contact footer and direct gallery selection. Product name/price precede naturally ordered Size availability. Listing cards preview three Sizes and open all stock counts in a sheet; choosing a row opens that variant. Exact-photo and Shop-picked quantities retain existing stock and recovery contracts. The original Shop size poster remains a single view. Public and Admin defaults use the owner's decoded Zalo QR https://zaloapp.com/qr/p/yi83f20pdg09 and Messenger https://m.me/thi.nguyen.321179, preserving custom saved URLs; Facebook uses the supplied profile and phone remains 0949656477. No CORE, database, publication or stock changes.
+
+Validation: typecheck/build, Catalog model/SQL/Admin/guest DOM, owner UI regressions and Chromium acceptance across six viewports. Browser checks include all 12 ordered Sizes, variant opening, contact destinations, mixed selection and separation of phone/cart/navigation/quantity controls.
+
 ## Trạng thái mới nhất
 
 - Chủ shop đã yêu cầu khắc phục đồng bộ 5 nhóm: lỗi chồng lấn mobile, style sáng không đồng nhất, trải nghiệm từng tab, trạng thái phát hành, và ghi nhận nghiệm thu laptop; đồng thời tuyên bố nghiệm thu toàn bộ nền tảng sau khi hoàn thiện và cho phép cập nhật chính thức một lượt.

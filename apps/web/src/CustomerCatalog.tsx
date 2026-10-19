@@ -1,106 +1,2138 @@
-import {CATALOG_FACEBOOK_URL,CATALOG_PHONE,CATALOG_PHONE_LABEL} from './customerCatalogContacts'
-import {useCallback,useEffect,useRef,useState} from 'react'
-import {catalogGet,catalogImage,catalogPost,newCatalogToken} from './customerCatalogClient'
-import {SIZE_GUIDE,catalogSizeLabel,catalogDefaults,matchSizes,lineCount,readCart,validateCartLine,catalogMoney,catalogStored,removeCatalogStored,catalogCartSummary,sortCatalogProducts,type CartLine,type CatalogProduct,type CatalogPhoto} from './customerCatalogModel'
-import './customerCatalog.css'
-import './customerCatalogLuxe.css'
-type Config={banner_url:string;zalo_url:string;messenger_url:string;size_image_url:string;guide:typeof SIZE_GUIDE}
-const emptyConfig:Config={banner_url:'',zalo_url:'',messenger_url:'',size_image_url:'',guide:SIZE_GUIDE}
-const CART='mecacao-customer-cart-v1',PENDING='mecacao-customer-submit-v1',FAVORITES='mecacao-customer-favorites-v1'
-function Photo({id,name,onOpen}:{id:number|null;name:string;onOpen?:()=>void}){const [failed,setFailed]=useState(false);useEffect(()=>setFailed(false),[id]);return id&&!failed?<img loading="lazy" decoding="async" src={catalogImage(id)} alt={name} onError={()=>setFailed(true)} onClick={onOpen}/>:<span className="cc-photo-fallback">Ảnh chưa sẵn sàng</span>}
-export default function CustomerCatalog(){
- const [cfg,setCfg]=useState<Config>(emptyConfig),[enabled,setEnabled]=useState<boolean|null>(null),[products,setProducts]=useState<CatalogProduct[]>([]),[offset,setOffset]=useState(0),[more,setMore]=useState(false),[query,setQuery]=useState(''),[search,setSearch]=useState(''),[sizeFilter,setSizeFilter]=useState(''),[inStock,setInStock]=useState(true),[sort,setSort]=useState('new'),[loading,setLoading]=useState(false),[error,setError]=useState(''),[online,setOnline]=useState(navigator.onLine)
- const [detail,setDetail]=useState<CatalogProduct|null>(null),[variantId,setVariantId]=useState(0),[photos,setPhotos]=useState<CatalogPhoto[]>([]),[photoOffset,setPhotoOffset]=useState(0),[photoMore,setPhotoMore]=useState(false),[photoBusy,setPhotoBusy]=useState(false),[hero,setHero]=useState<number|null>(null),[zoom,setZoom]=useState<number|null>(null)
- const [cart,setCart]=useState<CartLine[]>(()=>readCart(catalogStored(CART))),[showCart,setShowCart]=useState(false),[checkout,setCheckout]=useState(false),[page,setPage]=useState('home'),[showGuide,setShowGuide]=useState(false),[notice,setNotice]=useState(''),[name,setName]=useState(''),[contact,setContact]=useState(''),[note,setNote]=useState(''),[website,setWebsite]=useState(''),[consent,setConsent]=useState(false),[busy,setBusy]=useState(false),[receipt,setReceipt]=useState(''),[pending,setPending]=useState(()=>!!catalogStored(PENDING))
- const [reviewed,setReviewed]=useState(false),requestSeq=useRef(0),openSeq=useRef(0),photoSeq=useRef(0),galleryTouch=useRef<number|null>(null),searchRef=useRef<HTMLInputElement>(null)
- const [guideTab,setGuideTab]=useState<'quick'|'table'>('quick'),[favoriteOnly,setFavoriteOnly]=useState(false),[favorites,setFavorites]=useState<number[]>(()=>{try{const a=JSON.parse(catalogStored(FAVORITES)||'[]');return Array.isArray(a)?[...new Set(a.filter((n:unknown):n is number=>Number.isSafeInteger(n)&&Number(n)>0))].slice(0,1000):[]}catch{return []}}),[receiptSummary,setReceiptSummary]=useState('')
- const [showFilters,setShowFilters]=useState(false),[photoReload,setPhotoReload]=useState(0),pagesLoaded=useRef(1),favoriteKey=favoriteOnly?favorites.join(','):''
- useEffect(()=>{try{localStorage.setItem(CART,JSON.stringify(cart))}catch{}setReviewed(false)},[cart])
- useEffect(()=>{try{localStorage.setItem(FAVORITES,JSON.stringify(favorites))}catch{}},[favorites])
- function openGuide(tab:'quick'|'table'='quick'){setGuideTab(tab);setShowGuide(true)}
- function toggleFavorite(id:number){setFavorites(old=>old.includes(id)?old.filter(x=>x!==id):[...old,id].slice(0,1000))}
- function focusSearch(){browse('products');requestAnimationFrame(()=>{searchRef.current?.scrollIntoView({block:'center',behavior:'smooth'});searchRef.current?.focus()})}
- const load=useCallback(async()=>{
-  const seq=++requestSeq.current;setLoading(true);setError('')
-  try{
-   const settings=await catalogGet('config');if(seq!==requestSeq.current)return;setEnabled(settings.enabled);setCfg(catalogDefaults(settings.config));if(!settings.enabled){setProducts([]);setMore(false);return}
-   const params={query:search,size:sizeFilter,sort,in_stock:String(inStock)},rows:CatalogProduct[]=[];let next=0,hasMore=false
-   if(favoriteOnly){
-    const ids=favoriteKey?favoriteKey.split(',').map(Number):[];let cursor=0
-    // Saved IDs may be outside the first public page. Four workers keep requests bounded.
-    await Promise.all(Array.from({length:Math.min(4,ids.length)},async()=>{while(cursor<ids.length){if(seq!==requestSeq.current)return;const id=ids[cursor++],data=await catalogGet('products',{...params,product_id:id});if(seq!==requestSeq.current)return;rows.push(...data.products)}}))
-   }else{
-    for(let page=0;page<pagesLoaded.current;page++){
-     const data=await catalogGet('products',{...params,offset:next});if(seq!==requestSeq.current)return;rows.push(...data.products);next=data.next_offset;hasMore=data.products.length===20;if(!hasMore)break
-    }
-   }
-   if(seq!==requestSeq.current)return;setProducts([...new Map(rows.map(p=>[p.public_product_id,p])).values()]);setOffset(next);setMore(hasMore)
-  }catch(e){if(seq===requestSeq.current)setError((e as Error).message)}finally{if(seq===requestSeq.current)setLoading(false)}
- },[search,sizeFilter,sort,inStock,favoriteOnly,favoriteKey])
- useEffect(()=>{pagesLoaded.current=1},[search,sizeFilter,sort,inStock,favoriteOnly,favoriteKey])
- useEffect(()=>{void load();const refresh=()=>{setOnline(navigator.onLine);if(navigator.onLine&&document.visibilityState==='visible')void load()};window.addEventListener('online',refresh);window.addEventListener('offline',refresh);document.addEventListener('visibilitychange',refresh);const timer=setInterval(refresh,30000);return()=>{requestSeq.current++;clearInterval(timer);window.removeEventListener('online',refresh);window.removeEventListener('offline',refresh);document.removeEventListener('visibilitychange',refresh)}},[load])
- async function moreProducts(){const seq=requestSeq.current;setLoading(true);try{const data=await catalogGet('products',{offset,query:search,size:sizeFilter,sort,in_stock:String(inStock)});if(seq!==requestSeq.current)return;setProducts(old=>[...old,...data.products.filter((p:CatalogProduct)=>!old.some(x=>x.public_product_id===p.public_product_id))]);pagesLoaded.current=Math.max(pagesLoaded.current,Math.ceil(data.next_offset/20));setOffset(data.next_offset);setMore(data.products.length===20)}catch(e){if(seq===requestSeq.current)setError((e as Error).message)}finally{if(seq===requestSeq.current)setLoading(false)}}
- async function openProduct(p:CatalogProduct){const seq=++openSeq.current;setReceipt('');setCheckout(false);setError('');setDetail(p);setHero(p.cover_image_id);setVariantId(p.sizes.find(v=>v.available_count>0)?.variant_id||p.sizes[0]?.variant_id||0);setShowCart(false);try{const data=await catalogGet('products',{product_id:p.public_product_id});if(seq!==openSeq.current)return;if(!data.products[0])throw Error('Mẫu này hiện không còn công khai.');setDetail(current=>current?.public_product_id===p.public_product_id?data.products[0]:current)}catch(e){if(seq===openSeq.current){setError((e as Error).message);setDetail(null)}}}
- useEffect(()=>{const seq=++photoSeq.current;setPhotos([]);setPhotoOffset(0);setPhotoMore(false);setPhotoBusy(false);if(!detail||!variantId)return;setPhotoBusy(true);void catalogGet('photos',{product_id:detail.public_product_id,variant_id:variantId}).then(data=>{if(seq===photoSeq.current){setPhotos(data.photos);setPhotoOffset(data.next_offset);setPhotoMore(data.photos.length===40);setHero(data.photos[0]?.id||null)}}).catch(e=>{if(seq===photoSeq.current)setError(e.message)}).finally(()=>{if(seq===photoSeq.current)setPhotoBusy(false)});return()=>{photoSeq.current++}},[detail?.public_product_id,variantId,photoReload])
- async function morePhotos(){if(!detail)return;const seq=photoSeq.current;setPhotoBusy(true);try{const d=await catalogGet('photos',{product_id:detail.public_product_id,variant_id:variantId,offset:photoOffset});if(seq!==photoSeq.current)return;setPhotos(old=>[...old,...d.photos.filter((p:CatalogPhoto)=>!old.some(x=>x.id===p.id))]);setPhotoOffset(d.next_offset);setPhotoMore(d.photos.length===40)}catch(e){if(seq===photoSeq.current)setError((e as Error).message)}finally{if(seq===photoSeq.current)setPhotoBusy(false)}}
- function retry(){setError('');if(detail)setPhotoReload(n=>n+1);else void load()}
- const variant=detail?.sizes.find(v=>v.variant_id===variantId),line=cart.find(l=>l.variant_id===variantId),total=cart.reduce((n,l)=>n+lineCount(l),0)
- function changeLine(quick:number,ids:number[]){if(!detail||!variant||pending||busy)return;const next:CartLine={product_id:detail.public_product_id,variant_id:variantId,name:detail.name,size:variant.size_label,quick_quantity:quick,selected_image_ids:ids,expected_price:variant.sale_price};if(!validateCartLine(next,variant.available_count)){setNotice('Tổng số bộ chọn nhanh và ảnh thật vượt tồn của Size này.');return}if(total-(line?lineCount(line):0)+lineCount(next)>100){setNotice('Mỗi yêu cầu tối đa 100 bộ.');return}setNotice('');setCart(old=>[...old.filter(l=>l.variant_id!==variantId),...(lineCount(next)?[next]:[])])}
- function browse(next='home'){openSeq.current++;setDetail(null);setShowCart(false);setCheckout(false);setReceipt('');setPage(next);setNotice('');setError('');window.scrollTo(0,0)}
- function openCart(){openSeq.current++;setDetail(null);setShowCart(true);setCheckout(false);window.scrollTo(0,0)}
- async function adjustCart(l:CartLine,delta:number){
-  if(busy||pending||!online)return;setBusy(true);setNotice('');try{
-   const d=await catalogGet('products',{product_id:l.product_id}),p:CatalogProduct|undefined=d.products[0],v=p?.sizes.find(v=>v.variant_id===l.variant_id)
-   const next={...l,quick_quantity:l.quick_quantity+delta};if(!v||!validateCartLine(next,v.available_count))throw Error('Số lượng vượt tồn hiện tại. Chọn lại ảnh hoặc giảm số bộ.');if(total+delta>100)throw Error('Mỗi yêu cầu tối đa 100 bộ.')
-   setCart(old=>old.flatMap(x=>x.variant_id===l.variant_id?(lineCount(next)?[{...next,expected_price:v.sale_price}]:[]):[x]))
-  }catch(e){setNotice((e as Error).message)}finally{setBusy(false)}
- }
- async function reviewCart(){setBusy(true);setNotice('');try{const updated:CartLine[]=[];let changed=false;for(const l of cart){const data=await catalogGet('products',{product_id:l.product_id}),p:CatalogProduct|undefined=data.products[0],v=p?.sizes.find(v=>v.variant_id===l.variant_id);if(!p||!v||!validateCartLine(l,v.available_count))throw Error(l.name+' · Size '+catalogSizeLabel(l.size)+': tồn đã thay đổi. Mở lại mẫu để chọn lại.');let offset=0;const valid=new Set<number>();while(l.selected_image_ids.some(id=>!valid.has(id))){const page=await catalogGet('photos',{product_id:l.product_id,variant_id:l.variant_id,offset});page.photos.forEach((x:CatalogPhoto)=>valid.add(x.id));if(page.photos.length<40)break;offset=page.next_offset}if(l.selected_image_ids.some(id=>!valid.has(id)))throw Error(l.name+' · Size '+catalogSizeLabel(l.size)+': ảnh đã đổi trạng thái. Bỏ dòng này và chọn lại.');if(l.expected_price!==v.sale_price)changed=true;updated.push({...l,expected_price:v.sale_price,name:p.name})}if(changed){setCart(updated);setNotice('Giá đã cập nhật trong giỏ. Kiểm tra lại và bấm kiểm tra lần nữa để xác nhận.')}else{setReviewed(true);setNotice('Đã kiểm tra tồn và giá Cloud. Chưa giữ hàng; Shop sẽ xác nhận lại.');return true}return false}catch(e){setReviewed(false);setNotice((e as Error).message);return false}finally{setBusy(false)}}
- async function submit(){
-  if(busy||!reviewed||!consent||!name.trim()||!contact.trim()||!cart.length||pending)return;setBusy(true)
-  try{
-   const token=newCatalogToken(),payload={name:name.trim(),contact:contact.trim(),note,website,consent,items:cart.map(l=>({product_id:l.product_id,variant_id:l.variant_id,quick_quantity:l.quick_quantity,selected_image_ids:l.selected_image_ids,expected_price:l.expected_price}))}
-   try{localStorage.setItem(PENDING,JSON.stringify({token,payload,summary:catalogCartSummary(cart)}))}catch{throw Error('Chưa gửi: trình duyệt không lưu được mã phục hồi. Cho phép dữ liệu trang web rồi thử lại.')}
-   setPending(true);const result=await catalogPost('submit',token,payload);finish(result.reference)
-  }catch(e){const code=(e as {code?:string}).code;if(code&&code!=='CATALOG_SERVER'){removeCatalogStored(PENDING);setPending(false);setReviewed(false)}setNotice((e as Error).message+' Nếu chưa rõ kết quả, bấm Kiểm tra lần gửi trước.')}finally{setBusy(false)}
- }
- function finish(reference:string,savedSummary=catalogCartSummary(cart)){
-  if(typeof reference!=='string'||!reference)throw Error('Chưa nhận được mã yêu cầu. Kiểm tra lần gửi trước để xác minh.')
-  setReceiptSummary(savedSummary);setReceipt(reference);removeCatalogStored(PENDING);setPending(false);setCart([]);setName('');setContact('');setNote('');setConsent(false);setNotice('')
- }
- async function recover(){setBusy(true);try{const raw=catalogStored(PENDING);if(!raw){setPending(false);return}const p=JSON.parse(raw);const d=await catalogPost('receipt',p.token);const saved=typeof p.summary==='string'?p.summary:catalogCartSummary(cart);if(d.status==='NOT_FOUND'){const again=await catalogPost('submit',p.token,p.payload);finish(again.reference,saved)}else finish(d.reference,saved)}catch(e){const code=(e as {code?:string}).code;if(code&&code!=='CATALOG_SERVER'){removeCatalogStored(PENDING);setPending(false)}setNotice((e as Error).message)}finally{setBusy(false)}}
- function summary(){return receipt?'Shop Mẹ CaCao · Yêu cầu '+receipt+(receiptSummary?'\n'+receiptSummary:''):catalogCartSummary(cart)}
- async function copy(){try{await navigator.clipboard.writeText(summary());setNotice('Đã sao chép. Bạn có thể dán vào cuộc trò chuyện với Shop.')}catch{setNotice('Chưa sao chép được. Vui lòng chọn và sao chép danh sách bên dưới.')}}
- const filtered=products.filter(p=>(!favoriteOnly||favorites.includes(p.public_product_id))&&(!sizeFilter||p.sizes.some(v=>v.size_label===sizeFilter&&(!inStock||v.available_count>0)))&&(!inStock||p.sizes.some(v=>v.available_count>0)))
- const visible=favoriteOnly?sortCatalogProducts(filtered,sort):filtered
- const subtotal=cart.reduce((n,l)=>n+(l.expected_price??0)*lineCount(l),0),unknown=cart.some(l=>l.expected_price===null)
- return <div className="cc-app" data-ui="customer-catalog-luxe-v1"><header className="cc-header"><button className="cc-brand" onClick={()=>browse()}><img src={import.meta.env.BASE_URL+'brand/catalog-shop-logo.jpg'} alt="Logo Shop Mẹ CaCao"/><span>Shop Mẹ CaCao<small>TOLE XINH · SINCE 2023</small></span></button><div className="cc-header-actions"><button className="cc-icon-button" aria-label="Tìm sản phẩm" title="Tìm sản phẩm" onClick={focusSearch}><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.9"><circle cx="10.7" cy="10.7" r="6.7"/><path d="m16 16 5 5" strokeLinecap="round"/></svg></button><button className="cc-icon-button cc-cart-trigger" aria-label={'Mở giỏ hàng · '+total+' bộ'} title="Giỏ lựa hàng" onClick={openCart}><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M3 4h2l3 12h11l3-9H6" strokeLinejoin="round" strokeLinecap="round"/><circle cx="10" cy="20" r="1.2"/><circle cx="18" cy="20" r="1.2"/></svg>{total>0&&<span className="cc-cart-count">{total>99?'99+':total}</span>}</button></div></header>
- <main className="cc-main">{!online&&<p className="cc-alert">Mất mạng. Kết nối lại để kiểm tra hàng và gửi yêu cầu.</p>}{error&&<p className="cc-alert" role="alert">{error} <button onClick={retry}>Thử lại</button></p>}{notice&&<p className="cc-message" role="status">{notice}</p>}
- {enabled===false?<section className="cc-empty"><h1>Shop đang chuẩn bị mẫu xinh</h1><p>Danh mục sẽ mở khi Shop sẵn sàng. Hẹn bạn quay lại nhé!</p></section>:enabled===null?<section className="cc-empty" role="status">Đang mở Shop…</section>:showCart?<>{!receipt&&<div className="cc-title"><h1>{checkout?'Thông tin liên hệ':'Giỏ lựa hàng'}</h1><button onClick={()=>checkout?setCheckout(false):browse('products')}>{checkout?'‹ Giỏ hàng':'Tiếp tục xem hàng'}</button></div>}{receipt?<section className="cc-card cc-success"><CelebrationIllustration/><div className="cc-success-mark" aria-hidden="true">✓</div><h2>Shop đã nhận danh sách của mình!</h2><p className="cc-success-caption">Cảm ơn bạn đã lựa hàng tại Shop Mẹ CaCao!</p><p className="cc-reference">Mã yêu cầu <strong>{receipt}</strong></p><p>Danh sách chưa giữ hàng. Shop sẽ liên hệ để xác nhận.</p><Contact cfg={cfg} onCopy={copy}/><pre className="cc-copy-text">{summary()}</pre><button className="cc-primary" onClick={()=>browse('products')}>Tiếp tục xem hàng</button></section>:<>{pending&&<section className="cc-alert"><p>Còn lần gửi chưa xác định kết quả. Kiểm tra trước khi sửa hoặc gửi danh sách mới.</p><button disabled={busy||!online} onClick={()=>void recover()}>Kiểm tra lần gửi trước</button></section>}{!cart.length?<p className="cc-empty">Giỏ đang trống. Chọn mẫu xinh cho bé nhé!</p>:<><div className="cc-cart-lines" hidden={checkout}>{cart.map(l=><article className="cc-card" key={l.variant_id}><div className="cc-cart-product"><div className="cc-cart-thumb"><Photo id={l.selected_image_ids[0]||products.find(p=>p.public_product_id===l.product_id)?.cover_image_id||null} name={l.name}/></div><div><h2>{l.name}</h2><p>Size {catalogSizeLabel(l.size)} · {lineCount(l)} bộ · {catalogMoney(l.expected_price)}/bộ</p><p>Shop chọn: {l.quick_quantity} · Ảnh bạn chọn: {l.selected_image_ids.length}</p></div></div><div className="cc-cart-quantity"><span>Số bộ để Shop chọn thêm</span><div className="cc-stepper"><button aria-label={'Giảm số lượng Size '+catalogSizeLabel(l.size)} disabled={pending||busy||!l.quick_quantity} onClick={()=>void adjustCart(l,-1)}>−</button><output>{l.quick_quantity}</output><button aria-label={'Tăng số lượng Size '+catalogSizeLabel(l.size)} disabled={pending||busy||!online||total>=100} onClick={()=>void adjustCart(l,1)}>+</button></div></div><div className="cc-mini-photos">{l.selected_image_ids.map(id=><div key={id}><Photo id={id} name={'Ảnh #'+id}/><button disabled={pending||busy} onClick={()=>setCart(old=>old.map(x=>x.variant_id===l.variant_id?{...x,selected_image_ids:x.selected_image_ids.filter(i=>i!==id)}:x).filter(x=>lineCount(x)>0))}>Bỏ #{id}</button></div>)}</div><button disabled={pending||busy} onClick={()=>setCart(old=>old.filter(x=>x.variant_id!==l.variant_id))}>Bỏ dòng</button> <button disabled={pending||busy} onClick={()=>{const p=products.find(p=>p.public_product_id===l.product_id);if(p)void openProduct(p);else void catalogGet('products',{product_id:l.product_id}).then(d=>{if(d.products[0])void openProduct(d.products[0]);else setNotice('Mẫu không còn công khai. Bỏ dòng và chọn mẫu khác.')}).catch(e=>setNotice(e.message))}}>Sửa lựa chọn</button></article>)}</div><section className="cc-card cc-cart-summary">{!checkout&&<><h2>Tạm tính: {unknown?'Có giá cần Shop tư vấn':catalogMoney(subtotal)}</h2><p>Phí ship: Shop báo sau. Giá và hàng được Shop xác nhận khi xử lý.</p><button disabled={busy||pending||!online} onClick={()=>void reviewCart()}>Kiểm tra lại tồn và giá</button></>}{checkout&&<><div className="cc-checkout-heading"><span aria-hidden="true">♡</span><div><h2>Gửi Shop tư vấn</h2><p>Shop sẽ xác nhận mẫu, Size và hàng còn trước khi chốt.</p></div></div><form onSubmit={e=>{e.preventDefault();void submit()}}><label>Tên của bạn<input required maxLength={100} autoComplete="name" value={name} disabled={pending} onChange={e=>setName(e.target.value)}/></label><label>Số điện thoại / cách liên hệ<input required minLength={5} maxLength={150} autoComplete="tel" value={contact} disabled={pending} onChange={e=>setContact(e.target.value)}/></label><label>Ghi chú<textarea maxLength={500} value={note} disabled={pending} onChange={e=>setNote(e.target.value)}/></label><label className="cc-honey" aria-hidden="true">Website<input tabIndex={-1} autoComplete="off" value={website} onChange={e=>setWebsite(e.target.value)}/></label><label className="cc-check"><input type="checkbox" checked={consent} disabled={pending} onChange={e=>setConsent(e.target.checked)}/>Tôi đồng ý để Shop liên hệ; danh sách chưa giữ hàng. Thông tin liên hệ của yêu cầu được ẩn sau 90 ngày và dọn khi hệ thống xử lý.</label><button className="cc-primary" disabled={busy||pending||!reviewed||!online||!consent}>Gửi danh sách cho Shop</button></form><section className="cc-request-review"><h3>Danh sách gửi Shop · {total} bộ</h3>{cart.map(l=><p key={l.variant_id}>{l.name} · Size {catalogSizeLabel(l.size)} · {lineCount(l)} bộ · {l.selected_image_ids.length?l.selected_image_ids.length+' ảnh thật':'Shop chọn'}</p>)}</section></>}<Contact cfg={cfg} onCopy={copy}/><pre className="cc-copy-text">{summary()}</pre></section></>}</>}</>:detail?<><button className="cc-back" onClick={()=>browse('products')}>‹ Về danh mục</button>
-<section className="cc-detail">
- <div className="cc-detail-top"><div className="cc-detail-heading"><div><span className="cc-eyebrow">TOLE XINH CHO BÉ YÊU</span><h1>{detail.name}</h1></div><button className="cc-favorite cc-detail-favorite" aria-label={'Yêu thích '+detail.name} aria-pressed={favorites.includes(detail.public_product_id)} onClick={()=>toggleFavorite(detail.public_product_id)}>{favorites.includes(detail.public_product_id)?'♥':'♡'}</button></div><div className="cc-detail-meta"><strong className="cc-detail-price">{catalogMoney(variant?.sale_price??null)}</strong><span className="cc-product-code">{detail.public_code}</span></div><h2 className="cc-size-heading">Chọn Size <small>Hiển thị số bộ còn hàng</small></h2><div className="cc-sizes">{detail.sizes.map(v=><button aria-pressed={variantId===v.variant_id} className={variantId===v.variant_id?'cc-selected':''} disabled={!v.available_count} key={v.variant_id} onClick={()=>setVariantId(v.variant_id)}>{catalogSizeLabel(v.size_label)}<small>{v.available_count?'Còn '+v.available_count:'Hết hàng'}</small></button>)}</div>
- </div>
- <div className="cc-gallery">
-  <div className="cc-gallery-stage" onTouchStart={e=>{galleryTouch.current=e.touches[0]?.clientX??null}} onTouchEnd={e=>{const start=galleryTouch.current;galleryTouch.current=null;if(start===null||!photos.length)return;const delta=(e.changedTouches[0]?.clientX??start)-start;if(Math.abs(delta)<40)return;const current=photos.findIndex(p=>p.id===hero);setHero(photos[(current+(delta<0?1:-1)+photos.length)%photos.length].id)}}>
-   <button className="cc-hero-photo" onClick={()=>setZoom(hero)} disabled={!hero}><Photo id={hero} name={detail.name}/></button>
-   <span className="cc-gallery-count">{photos.length?photos.findIndex(p=>p.id===hero)+1:0}/{photos.length}{photoMore?'+':''}</span>
-   {hero&&photos.some(p=>p.id===hero)&&variant&&<label className={'cc-gallery-pick'+(line?.selected_image_ids.includes(hero)?' is-picked':'')}><input type="checkbox" aria-label={'Chọn bộ ảnh #'+hero} checked={line?.selected_image_ids.includes(hero)||false} disabled={pending||busy||(!line?.selected_image_ids.includes(hero)&&((line?lineCount(line):0)>=variant.available_count||total>=100))} onChange={e=>changeLine(line?.quick_quantity||0,e.target.checked?[...(line?.selected_image_ids||[]),hero]:(line?.selected_image_ids||[]).filter(id=>id!==hero))}/><span>{line?.selected_image_ids.includes(hero)?'Đã chọn bộ này':'Chọn bộ này'}</span><small>#{hero}</small></label>}
-  </div>
-  <div className="cc-thumbnails" aria-label="Ảnh của Size đang xem">{photos.map(p=><button key={p.id} className={hero===p.id?'cc-selected':''} aria-label={'Xem ảnh #'+p.id} aria-pressed={hero===p.id} onClick={()=>setHero(p.id)}><Photo id={p.id} name={'Ảnh #'+p.id}/>{line?.selected_image_ids.includes(p.id)&&<span className="cc-photo-tick">✓</span>}</button>)}</div>
-  <p className="cc-gallery-help">Vuốt xem từng bộ · Chạm ảnh để phóng to<br/><strong>Đã chọn {line?.selected_image_ids.length||0} ảnh thật của Size {catalogSizeLabel(variant?.size_label||'')}</strong></p>
-  {photoBusy&&<p role="status">Đang tải ảnh…</p>}{photoMore&&<button disabled={photoBusy} onClick={()=>void morePhotos()}>Xem thêm ảnh</button>}
- </div>
- <div className="cc-detail-info">{variant&&<section className="cc-card cc-quick-select"><div><h3>Để Shop chọn thêm</h3><p>Size {catalogSizeLabel(variant.size_label)} · Còn {variant.available_count} bộ</p></div><div className="cc-stepper"><button aria-label="Giảm số bộ Shop chọn" disabled={pending||busy||!line?.quick_quantity} onClick={()=>changeLine((line?.quick_quantity||0)-1,line?.selected_image_ids||[])}>−</button><output>{line?.quick_quantity||0}</output><button aria-label="Tăng số bộ Shop chọn" disabled={pending||busy||!variant.available_count||total>=100||(line?lineCount(line):0)>=variant.available_count} onClick={()=>changeLine((line?.quick_quantity||0)+1,line?.selected_image_ids||[])}>+</button></div><p className="cc-quick-note">Số lượng này cộng với những ảnh bạn đã chọn ở trên.</p></section>}
- <div className="cc-detail-guide"><span className="cc-detail-guide-icon"><BabyAvatar/></span><div><strong>Bé mặc Size nào vừa?</strong><p>Tra cứu theo cân nặng và chiều cao.</p><div><button onClick={()=>openGuide('table')}>Xem bảng Size</button><button onClick={()=>openGuide('quick')}>Tìm Size nhanh</button></div></div></div>
- <p className="cc-stock-note">Kho cập nhật: {detail.stock_as_of?new Date(detail.stock_as_of).toLocaleString('vi-VN'):'chưa xác định'} · Shop kiểm tra lại hàng khi xác nhận.</p></div>
-</section></>:<>{page==='home'&&<><section className="cc-banner">{cfg.banner_url?<img src={cfg.banner_url} alt="Banner Shop Mẹ CaCao · Tole xinh cho bé yêu"/>:<><span className="cc-eyebrow">MẸ CACAO · SINCE 2023</span><h1>Tole xinh<br/>cho bé yêu!</h1><p>Mềm mại mỗi ngày · Mẹ chọn, bé yêu</p><span className="cc-banner-flower" aria-hidden="true">✿</span></>}</section><p className="cc-home-note">♡ Mẫu xinh mỗi ngày · Chọn hàng dễ dàng ngay trên điện thoại</p></>}<section className="cc-guide-promo"><span className="cc-guide-illustration" aria-hidden="true"><BabyAvatar/></span><div className="cc-guide-content"><h2>Bé mặc Size nào?</h2><p>Tra cứu theo cân nặng và chiều cao</p><button className="cc-primary" onClick={()=>openGuide('quick')}>Tìm Size cho bé</button><button className="cc-guide-link" onClick={()=>openGuide('table')}>Xem bảng Size đầy đủ</button></div><span className="cc-guide-sparkle" aria-hidden="true">♡</span></section><form className="cc-search" onSubmit={e=>{e.preventDefault();setSearch(query)}}><span className="cc-search-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5" strokeLinecap="round"/></svg></span><input ref={searchRef} type="search" aria-label="Tìm mẫu" placeholder="Tìm mẫu, tên sản phẩm, Size…" value={query} onChange={e=>setQuery(e.target.value)}/><button>Tìm</button></form><div className="cc-filter-pills" role="group" aria-label="Khám phá danh mục"><button aria-pressed={!favoriteOnly} onClick={()=>setFavoriteOnly(false)}>Tất cả</button><button aria-pressed={favoriteOnly} onClick={()=>setFavoriteOnly(true)}>♡ Yêu thích</button><button aria-expanded={showFilters} onClick={()=>setShowFilters(!showFilters)}><CatalogIcon kind="size"/> {sizeFilter?'Size '+catalogSizeLabel(sizeFilter):'Size / Bộ lọc'}{!inStock?'':' · Còn hàng'}</button><div className="cc-sort-options" role="group" aria-label="Sắp xếp">{[['new','Mới nhất'],['asc','Giá thấp → cao'],['desc','Giá cao → thấp']].map(([value,label])=><button key={value} aria-pressed={sort===value} onClick={()=>setSort(value)}>{label}</button>)}</div></div>{showFilters&&<div className="cc-filters"><label>Size<select value={sizeFilter} onChange={e=>setSizeFilter(e.target.value)}><option value="">Tất cả Size</option>{[...new Set([...SIZE_GUIDE.map(r=>r[0] as string),...products.flatMap(p=>p.sizes.map(v=>catalogSizeLabel(v.size_label)))])].map(label=>{const raw=products.flatMap(p=>p.sizes).find(v=>catalogSizeLabel(v.size_label)===label)?.size_label||(catalogSizeLabel(sizeFilter)===label?sizeFilter:label);return <option key={label} value={raw}>{label}</option>})}</select></label><label className="cc-check"><input type="checkbox" checked={inStock} onChange={e=>setInStock(e.target.checked)}/>Chỉ hiện mẫu còn hàng</label><button onClick={()=>{setSizeFilter('');setInStock(true)}}>Đặt lại</button></div>}<div className="cc-section-heading"><h2 className="cc-section-title">{page==='home'?'Mẫu mới của Shop':'Danh sách sản phẩm'}</h2>{page==='home'&&<button onClick={()=>browse('products')}>Xem tất cả ›</button>}</div><div className="cc-products">{visible.map(p=>{const prices=p.sizes.map(v=>v.sale_price).filter((n):n is number=>n!==null);return <article className="cc-card cc-product" key={p.public_product_id}><div className="cc-product-visual"><button className="cc-product-photo" onClick={()=>void openProduct(p)}><Photo id={p.cover_image_id} name={p.name}/></button><button className="cc-favorite" type="button" aria-label={favorites.includes(p.public_product_id)?'Bỏ yêu thích '+p.name:'Yêu thích '+p.name} aria-pressed={favorites.includes(p.public_product_id)} onClick={()=>toggleFavorite(p.public_product_id)}>{favorites.includes(p.public_product_id)?'♥':'♡'}</button></div><div><h3>{p.name}</h3><strong>{prices.length?(Math.min(...prices)===Math.max(...prices)?catalogMoney(prices[0]):catalogMoney(Math.min(...prices))+' – '+catalogMoney(Math.max(...prices))):'Liên hệ Shop'}</strong>{prices.length>0&&prices.length<p.sizes.length&&<small className="cc-muted"> · Một số Size liên hệ Shop</small>}<div className="cc-product-sizes" aria-label="Tồn từng Size">{p.sizes.map(v=><span key={v.variant_id} className={!v.available_count?'is-empty':''}><strong>{catalogSizeLabel(v.size_label)}</strong><b>{v.available_count}</b></span>)}</div><button onClick={()=>void openProduct(p)}>Xem mẫu</button></div></article>})}</div>{loading&&<p className="cc-empty" role="status">Đang tải mẫu xinh…</p>}{!loading&&!visible.length&&<p className="cc-empty">{favoriteOnly?'Bạn chưa lưu mẫu yêu thích nào trong danh sách này.':'Chưa có mẫu phù hợp. Bạn thử Size khác nhé!'}</p>}{more&&<button disabled={loading} onClick={()=>void moreProducts()}>Xem thêm mẫu</button>}</>}
- </main><footer className="cc-footer"><strong>Shop Mẹ CaCao</strong><span>Tole xinh cho bé yêu! · Since 2023</span><p>Danh sách lựa hàng chưa giữ hàng. Shop xác nhận giá và hàng trước khi bán.</p><div className="cc-footer-contacts"><a href={CATALOG_FACEBOOK_URL} target="_blank" rel="noopener noreferrer">Facebook bán hàng của Shop</a><a href={'tel:'+CATALOG_PHONE}>Gọi Shop · {CATALOG_PHONE_LABEL}</a></div></footer>{enabled&&!showCart&&total>0&&<aside className="cc-cart-dock"><strong>Đã chọn {total} bộ</strong><button className="cc-primary" onClick={openCart}>Xem giỏ</button></aside>}{enabled&&showCart&&!checkout&&!receipt&&total>0&&<aside className="cc-cart-dock"><strong>{unknown?'Shop tư vấn giá':catalogMoney(subtotal)}</strong><button className="cc-primary" disabled={busy||pending||!online} onClick={()=>void reviewCart().then(ok=>{if(ok){setCheckout(true);setNotice('');window.scrollTo(0,0)}})}>Tiếp tục gửi yêu cầu</button></aside>}{enabled&&!showGuide&&!zoom&&<a className="cc-call-float" data-raised={total>0&&!checkout&&!receipt?'true':'false'} href={'tel:'+CATALOG_PHONE} aria-label={'Gọi Shop Mẹ CaCao '+CATALOG_PHONE_LABEL}><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m8 3 3 5-3 3a15 15 0 0 0 5 5l3-3 5 3c-1 5-4 6-8 4C6 17 2 11 3 6c.5-2 2-3 5-3Z"/></svg><span>{CATALOG_PHONE_LABEL}</span></a>}<nav className="cc-bottom-nav" aria-label="Điều hướng Catalog khách"><button aria-current={!detail&&!showCart&&page==='home'?'page':undefined} onClick={()=>browse()}><CatalogIcon kind="home"/><span>Trang chủ</span></button><button aria-current={detail||!showCart&&page==='products'?'page':undefined} onClick={()=>browse('products')}><CatalogIcon kind="products"/><span>Sản phẩm</span></button><button onClick={()=>openGuide('quick')}><CatalogIcon kind="size"/><span>Bảng Size</span></button><button aria-current={showCart?'page':undefined} onClick={openCart}><CatalogIcon kind="cart"/><span>Giỏ lựa {total>0?'· '+total:''}</span></button></nav>{showGuide&&<SizeGuide cfg={cfg} initialTab={guideTab} onClose={()=>setShowGuide(false)}/>}{zoom&&<Modal title="Ảnh thật của Shop" onClose={()=>setZoom(null)}><img className="cc-zoom" src={catalogImage(zoom)} alt={'Ảnh thật #'+zoom}/></Modal>}</div>
+import {
+  CATALOG_FACEBOOK_URL,
+  CATALOG_FACEBOOK_LABEL,
+  CATALOG_PHONE,
+  CATALOG_PHONE_LABEL,
+} from "./customerCatalogContacts";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  catalogGet,
+  catalogImage,
+  catalogPost,
+  newCatalogToken,
+} from "./customerCatalogClient";
+import {
+  SIZE_GUIDE,
+  catalogSizeLabel,
+  catalogOrderedSizes,
+  catalogDefaults,
+  matchSizes,
+  lineCount,
+  readCart,
+  validateCartLine,
+  catalogMoney,
+  catalogStored,
+  removeCatalogStored,
+  catalogCartSummary,
+  sortCatalogProducts,
+  type CartLine,
+  type CatalogProduct,
+  type CatalogPhoto,
+} from "./customerCatalogModel";
+import "./customerCatalog.css";
+import "./customerCatalogBoutique.css";
+type Config = {
+  banner_url: string;
+  zalo_url: string;
+  messenger_url: string;
+  size_image_url: string;
+  guide: typeof SIZE_GUIDE;
+};
+const emptyConfig: Config = catalogDefaults({});
+const CART = "mecacao-customer-cart-v1",
+  PENDING = "mecacao-customer-submit-v1",
+  FAVORITES = "mecacao-customer-favorites-v1";
+function Photo({
+  id,
+  name,
+  onOpen,
+}: {
+  id: number | null;
+  name: string;
+  onOpen?: () => void;
+}) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [id]);
+  return id && !failed ? (
+    <img
+      loading="lazy"
+      decoding="async"
+      src={catalogImage(id)}
+      alt={name}
+      onError={() => setFailed(true)}
+      onClick={onOpen}
+    />
+  ) : (
+    <span className="cc-photo-fallback">Ảnh chưa sẵn sàng</span>
+  );
 }
-function Contact({cfg,onCopy}:{cfg:Config;onCopy:()=>void}){return <div className="cc-contact"><a className="cc-facebook-link" href={CATALOG_FACEBOOK_URL} target="_blank" rel="noopener noreferrer">Facebook của Shop</a><a href={'tel:'+CATALOG_PHONE}>Gọi {CATALOG_PHONE_LABEL}</a><button onClick={onCopy}>Sao chép danh sách / mã</button>{cfg.zalo_url&&<a href={cfg.zalo_url} target="_blank" rel="noopener noreferrer">Liên hệ Zalo</a>}{cfg.messenger_url&&<a href={cfg.messenger_url} target="_blank" rel="noopener noreferrer">Messenger</a>}</div>}
-function Modal({title,onClose,children}:{title:string;onClose:()=>void;children:React.ReactNode}){const ref=useRef<HTMLDivElement>(null);useEffect(()=>{const previous=document.activeElement as HTMLElement,overflow=document.body.style.overflow;document.body.style.overflow='hidden';ref.current?.querySelector<HTMLElement>('button')?.focus();const key=(e:KeyboardEvent)=>{if(e.key==='Escape')onClose();if(e.key==='Tab'){const items=ref.current?.querySelectorAll<HTMLElement>('button,input,a,select,textarea,[tabindex="0"]');if(!items?.length)return;const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){last.focus();e.preventDefault()}else if(!e.shiftKey&&document.activeElement===last){first.focus();e.preventDefault()}}};document.addEventListener('keydown',key);return()=>{document.body.style.overflow=overflow;document.removeEventListener('keydown',key);previous?.focus()}},[]);return <div className="cc-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose()}}><div ref={ref} className="cc-modal" role="dialog" aria-modal="true" aria-label={title}><header><h2>{title}</h2><button aria-label="Đóng" onClick={onClose}>Đóng ✕</button></header><div className="cc-modal-content">{children}</div></div></div>}
-function SizeGuide({cfg,initialTab,onClose}:{cfg:Config;initialTab:'quick'|'table';onClose:()=>void}){const [tab,setTab]=useState<'quick'|'table'>(initialTab),[weight,setWeight]=useState(''),[height,setHeight]=useState(''),[asked,setAsked]=useState(false),[imageFailed,setImageFailed]=useState(false);const matches=matchSizes(weight?Number(weight.replace(',','.')):null,height?Number(height.replace(',','.')):null,cfg.guide),entered=asked&&!!(weight||height);return <Modal title="Bảng Size đồ tole bé" onClose={onClose}><p>Shop Mẹ CaCao · Bảng Size Shop cung cấp đã trừ hao giặt rút; khách vui lòng cân nhắc khi tăng Size. Độ vừa còn tùy mẫu và dáng bé.</p><div className="cc-tabs"><button className={tab==='quick'?'cc-selected':''} onClick={()=>setTab('quick')}>Tra Size nhanh</button><button className={tab==='table'?'cc-selected':''} onClick={()=>setTab('table')}>Bảng Size của Shop</button></div>{tab==='quick'?<><label>Cân nặng (kg)<input inputMode="decimal" value={weight} onChange={e=>{setWeight(e.target.value);setAsked(false)}} placeholder="Ví dụ: 16"/></label><label>Chiều cao (cm)<input inputMode="decimal" value={height} onChange={e=>{setHeight(e.target.value);setAsked(false)}} placeholder="Ví dụ: 98"/></label><button className="cc-primary" disabled={!weight&&!height} onClick={()=>setAsked(true)}>Gợi ý Size</button><div className="cc-message" role="status">{!entered?'Nhập ít nhất một số đo.':matches.length?'Bé có thể tham khảo Size '+matches.join(', ')+'. Độ vừa còn tùy mẫu và dáng bé.':'Số đo chưa khớp một Size trong bảng. Nhờ Shop tư vấn thêm nhé!'}</div>{entered&&matches.length>0&&<div className="cc-size-results">{cfg.guide.filter(r=>matches.includes(r[0])).map(r=><article key={r[0]}><strong>Size {r[0]}</strong><span>{r[1]}–{r[2]} kg</span><span>{r[3]}–{r[4]} cm</span></article>)}</div>}<p>Số đo chỉ xử lý trên thiết bị, không gửi về Shop.</p></>:<>{cfg.size_image_url&&!imageFailed&&<a href={cfg.size_image_url} target="_blank" rel="noopener noreferrer"><img className="cc-size-image" onError={()=>setImageFailed(true)} src={cfg.size_image_url} alt="Bảng Size của Shop — chạm mở ảnh để zoom"/></a>}{(!cfg.size_image_url||imageFailed)&&<table><thead><tr><th>Size</th><th>Cân nặng (kg)</th><th>Chiều cao (cm)</th></tr></thead><tbody>{cfg.guide.map(r=><tr key={r[0]}><td>{r[0]}</td><td>{r[1]}–{r[2]}</td><td>{r[3]===r[4]?r[3]:r[3]+'–'+r[4]}</td></tr>)}</tbody></table>}</>}<Contact cfg={cfg} onCopy={()=>{void navigator.clipboard.writeText('Mình cần Shop tư vấn Size cho bé.').catch(()=>{})}}/><button className="cc-primary" onClick={onClose}>Quay lại chọn hàng</button></Modal>}
+export default function CustomerCatalog() {
+  const [cfg, setCfg] = useState<Config>(emptyConfig),
+    [enabled, setEnabled] = useState<boolean | null>(null),
+    [products, setProducts] = useState<CatalogProduct[]>([]),
+    [offset, setOffset] = useState(0),
+    [more, setMore] = useState(false),
+    [query, setQuery] = useState(""),
+    [search, setSearch] = useState(""),
+    [sizeFilter, setSizeFilter] = useState(""),
+    [inStock, setInStock] = useState(true),
+    [sort, setSort] = useState("new"),
+    [loading, setLoading] = useState(false),
+    [error, setError] = useState(""),
+    [online, setOnline] = useState(navigator.onLine);
+  const [detail, setDetail] = useState<CatalogProduct | null>(null),
+    [variantId, setVariantId] = useState(0),
+    [photos, setPhotos] = useState<CatalogPhoto[]>([]),
+    [photoOffset, setPhotoOffset] = useState(0),
+    [photoMore, setPhotoMore] = useState(false),
+    [photoBusy, setPhotoBusy] = useState(false),
+    [hero, setHero] = useState<number | null>(null),
+    [zoom, setZoom] = useState<number | null>(null);
+  const [cart, setCart] = useState<CartLine[]>(() =>
+      readCart(catalogStored(CART)),
+    ),
+    [showCart, setShowCart] = useState(false),
+    [checkout, setCheckout] = useState(false),
+    [page, setPage] = useState("home"),
+    [showGuide, setShowGuide] = useState(false),
+    [notice, setNotice] = useState(""),
+    [name, setName] = useState(""),
+    [contact, setContact] = useState(""),
+    [note, setNote] = useState(""),
+    [website, setWebsite] = useState(""),
+    [consent, setConsent] = useState(false),
+    [busy, setBusy] = useState(false),
+    [receipt, setReceipt] = useState(""),
+    [pending, setPending] = useState(() => !!catalogStored(PENDING));
+  const [reviewed, setReviewed] = useState(false),
+    requestSeq = useRef(0),
+    openSeq = useRef(0),
+    photoSeq = useRef(0),
+    galleryTouch = useRef<number | null>(null),
+    searchRef = useRef<HTMLInputElement>(null);
+  const [guideTab, setGuideTab] = useState<"quick" | "table">("quick"),
+    [favoriteOnly, setFavoriteOnly] = useState(false),
+    [favorites, setFavorites] = useState<number[]>(() => {
+      try {
+        const a = JSON.parse(catalogStored(FAVORITES) || "[]");
+        return Array.isArray(a)
+          ? [
+              ...new Set(
+                a.filter(
+                  (n: unknown): n is number =>
+                    Number.isSafeInteger(n) && Number(n) > 0,
+                ),
+              ),
+            ].slice(0, 1000)
+          : [];
+      } catch {
+        return [];
+      }
+    }),
+    [receiptSummary, setReceiptSummary] = useState("");
+  const [showFilters, setShowFilters] = useState(false),
+    [discoveryNew, setDiscoveryNew] = useState(false),
+    [stockProduct, setStockProduct] = useState<CatalogProduct | null>(null),
+    [photoReload, setPhotoReload] = useState(0),
+    pagesLoaded = useRef(1),
+    favoriteKey = favoriteOnly ? favorites.join(",") : "";
+  const footerRef = useRef<HTMLElement>(null),
+    [footerVisible, setFooterVisible] = useState(false);
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined" || !footerRef.current)
+      return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setFooterVisible(entry.isIntersecting),
+      { rootMargin: "0px 0px -90px 0px" },
+    );
+    observer.observe(footerRef.current);
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(CART, JSON.stringify(cart));
+    } catch {}
+    setReviewed(false);
+  }, [cart]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(FAVORITES, JSON.stringify(favorites));
+    } catch {}
+  }, [favorites]);
+  function openGuide(tab: "quick" | "table" = "quick") {
+    setGuideTab(tab);
+    setShowGuide(true);
+  }
+  function toggleFavorite(id: number) {
+    setFavorites((old) =>
+      old.includes(id)
+        ? old.filter((x) => x !== id)
+        : [...old, id].slice(0, 1000),
+    );
+  }
+  function focusSearch() {
+    browse("products");
+    requestAnimationFrame(() => {
+      searchRef.current?.scrollIntoView({
+        block: "center",
+        behavior: "smooth",
+      });
+      searchRef.current?.focus();
+    });
+  }
+  const load = useCallback(async () => {
+    const seq = ++requestSeq.current;
+    setLoading(true);
+    setError("");
+    try {
+      const settings = await catalogGet("config");
+      if (seq !== requestSeq.current) return;
+      setEnabled(settings.enabled);
+      setCfg(catalogDefaults(settings.config));
+      if (!settings.enabled) {
+        setProducts([]);
+        setMore(false);
+        return;
+      }
+      const params = {
+          query: search,
+          size: sizeFilter,
+          sort,
+          in_stock: String(inStock),
+        },
+        rows: CatalogProduct[] = [];
+      let next = 0,
+        hasMore = false;
+      if (favoriteOnly) {
+        const ids = favoriteKey ? favoriteKey.split(",").map(Number) : [];
+        let cursor = 0;
+        // Saved IDs may be outside the first public page. Four workers keep requests bounded.
+        await Promise.all(
+          Array.from({ length: Math.min(4, ids.length) }, async () => {
+            while (cursor < ids.length) {
+              if (seq !== requestSeq.current) return;
+              const id = ids[cursor++],
+                data = await catalogGet("products", {
+                  ...params,
+                  product_id: id,
+                });
+              if (seq !== requestSeq.current) return;
+              rows.push(...data.products);
+            }
+          }),
+        );
+      } else {
+        for (let page = 0; page < pagesLoaded.current; page++) {
+          const data = await catalogGet("products", {
+            ...params,
+            offset: next,
+          });
+          if (seq !== requestSeq.current) return;
+          rows.push(...data.products);
+          next = data.next_offset;
+          hasMore = data.products.length === 20;
+          if (!hasMore) break;
+        }
+      }
+      if (seq !== requestSeq.current) return;
+      setProducts([
+        ...new Map(rows.map((p) => [p.public_product_id, p])).values(),
+      ]);
+      setOffset(next);
+      setMore(hasMore);
+    } catch (e) {
+      if (seq === requestSeq.current) setError((e as Error).message);
+    } finally {
+      if (seq === requestSeq.current) setLoading(false);
+    }
+  }, [search, sizeFilter, sort, inStock, favoriteOnly, favoriteKey]);
+  useEffect(() => {
+    pagesLoaded.current = 1;
+  }, [search, sizeFilter, sort, inStock, favoriteOnly, favoriteKey]);
+  useEffect(() => {
+    void load();
+    const refresh = () => {
+      setOnline(navigator.onLine);
+      if (navigator.onLine && document.visibilityState === "visible")
+        void load();
+    };
+    window.addEventListener("online", refresh);
+    window.addEventListener("offline", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    const timer = setInterval(refresh, 30000);
+    return () => {
+      requestSeq.current++;
+      clearInterval(timer);
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("offline", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [load]);
+  async function moreProducts() {
+    const seq = requestSeq.current;
+    setLoading(true);
+    try {
+      const data = await catalogGet("products", {
+        offset,
+        query: search,
+        size: sizeFilter,
+        sort,
+        in_stock: String(inStock),
+      });
+      if (seq !== requestSeq.current) return;
+      setProducts((old) => [
+        ...old,
+        ...data.products.filter(
+          (p: CatalogProduct) =>
+            !old.some((x) => x.public_product_id === p.public_product_id),
+        ),
+      ]);
+      pagesLoaded.current = Math.max(
+        pagesLoaded.current,
+        Math.ceil(data.next_offset / 20),
+      );
+      setOffset(data.next_offset);
+      setMore(data.products.length === 20);
+    } catch (e) {
+      if (seq === requestSeq.current) setError((e as Error).message);
+    } finally {
+      if (seq === requestSeq.current) setLoading(false);
+    }
+  }
+  async function openProduct(p: CatalogProduct, selectedVariant?: number) {
+    const seq = ++openSeq.current;
+    window.scrollTo(0,0);
+    setReceipt("");
+    setCheckout(false);
+    setError("");
+    setDetail(p);
+    setStockProduct(null);
+    setHero(p.cover_image_id);
+    setVariantId(
+      p.sizes.find(
+        (v) => v.variant_id === selectedVariant && v.available_count > 0,
+      )?.variant_id ||
+        catalogOrderedSizes(p.sizes).find((v) => v.available_count > 0)
+          ?.variant_id ||
+        p.sizes[0]?.variant_id ||
+        0,
+    );
+    setShowCart(false);
+    try {
+      const data = await catalogGet("products", {
+        product_id: p.public_product_id,
+      });
+      if (seq !== openSeq.current) return;
+      if (!data.products[0]) throw Error("Mẫu này hiện không còn công khai.");
+      setDetail((current) =>
+        current?.public_product_id === p.public_product_id
+          ? data.products[0]
+          : current,
+      );
+    } catch (e) {
+      if (seq === openSeq.current) {
+        setError((e as Error).message);
+        setDetail(null);
+      }
+    }
+  }
+  useEffect(() => {
+    const seq = ++photoSeq.current;
+    setPhotos([]);
+    setPhotoOffset(0);
+    setPhotoMore(false);
+    setPhotoBusy(false);
+    if (!detail || !variantId) return;
+    setPhotoBusy(true);
+    void catalogGet("photos", {
+      product_id: detail.public_product_id,
+      variant_id: variantId,
+    })
+      .then((data) => {
+        if (seq === photoSeq.current) {
+          setPhotos(data.photos);
+          setPhotoOffset(data.next_offset);
+          setPhotoMore(data.photos.length === 40);
+          setHero(data.photos[0]?.id || null);
+        }
+      })
+      .catch((e) => {
+        if (seq === photoSeq.current) setError(e.message);
+      })
+      .finally(() => {
+        if (seq === photoSeq.current) setPhotoBusy(false);
+      });
+    return () => {
+      photoSeq.current++;
+    };
+  }, [detail?.public_product_id, variantId, photoReload]);
+  async function morePhotos() {
+    if (!detail) return;
+    const seq = photoSeq.current;
+    setPhotoBusy(true);
+    try {
+      const d = await catalogGet("photos", {
+        product_id: detail.public_product_id,
+        variant_id: variantId,
+        offset: photoOffset,
+      });
+      if (seq !== photoSeq.current) return;
+      setPhotos((old) => [
+        ...old,
+        ...d.photos.filter(
+          (p: CatalogPhoto) => !old.some((x) => x.id === p.id),
+        ),
+      ]);
+      setPhotoOffset(d.next_offset);
+      setPhotoMore(d.photos.length === 40);
+    } catch (e) {
+      if (seq === photoSeq.current) setError((e as Error).message);
+    } finally {
+      if (seq === photoSeq.current) setPhotoBusy(false);
+    }
+  }
+  function retry() {
+    setError("");
+    if (detail) setPhotoReload((n) => n + 1);
+    else void load();
+  }
+  const variant = detail?.sizes.find((v) => v.variant_id === variantId),
+    line = cart.find((l) => l.variant_id === variantId),
+    total = cart.reduce((n, l) => n + lineCount(l), 0);
+  function changeLine(quick: number, ids: number[]) {
+    if (!detail || !variant || pending || busy) return;
+    const next: CartLine = {
+      product_id: detail.public_product_id,
+      variant_id: variantId,
+      name: detail.name,
+      size: variant.size_label,
+      quick_quantity: quick,
+      selected_image_ids: ids,
+      expected_price: variant.sale_price,
+    };
+    if (!validateCartLine(next, variant.available_count)) {
+      setNotice("Tổng số bộ chọn nhanh và ảnh thật vượt tồn của Size này.");
+      return;
+    }
+    if (total - (line ? lineCount(line) : 0) + lineCount(next) > 100) {
+      setNotice("Mỗi yêu cầu tối đa 100 bộ.");
+      return;
+    }
+    setNotice("");
+    setCart((old) => [
+      ...old.filter((l) => l.variant_id !== variantId),
+      ...(lineCount(next) ? [next] : []),
+    ]);
+  }
+  function browse(next = "home") {
+    openSeq.current++;
+    setDetail(null);
+    setShowCart(false);
+    setCheckout(false);
+    setReceipt("");
+    setPage(next);
+    setNotice("");
+    setError("");
+    window.scrollTo(0, 0);
+  }
+  function openCart() {
+    openSeq.current++;
+    setDetail(null);
+    setShowCart(true);
+    setCheckout(false);
+    window.scrollTo(0, 0);
+  }
+  async function adjustCart(l: CartLine, delta: number) {
+    if (busy || pending || !online) return;
+    setBusy(true);
+    setNotice("");
+    try {
+      const d = await catalogGet("products", { product_id: l.product_id }),
+        p: CatalogProduct | undefined = d.products[0],
+        v = p?.sizes.find((v) => v.variant_id === l.variant_id);
+      const next = { ...l, quick_quantity: l.quick_quantity + delta };
+      if (!v || !validateCartLine(next, v.available_count))
+        throw Error(
+          "Số lượng vượt tồn hiện tại. Chọn lại ảnh hoặc giảm số bộ.",
+        );
+      if (total + delta > 100) throw Error("Mỗi yêu cầu tối đa 100 bộ.");
+      setCart((old) =>
+        old.flatMap((x) =>
+          x.variant_id === l.variant_id
+            ? lineCount(next)
+              ? [{ ...next, expected_price: v.sale_price }]
+              : []
+            : [x],
+        ),
+      );
+    } catch (e) {
+      setNotice((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function reviewCart() {
+    setBusy(true);
+    setNotice("");
+    try {
+      const updated: CartLine[] = [];
+      let changed = false;
+      for (const l of cart) {
+        const data = await catalogGet("products", { product_id: l.product_id }),
+          p: CatalogProduct | undefined = data.products[0],
+          v = p?.sizes.find((v) => v.variant_id === l.variant_id);
+        if (!p || !v || !validateCartLine(l, v.available_count))
+          throw Error(
+            l.name +
+              " · Size " +
+              catalogSizeLabel(l.size) +
+              ": tồn đã thay đổi. Mở lại mẫu để chọn lại.",
+          );
+        let offset = 0;
+        const valid = new Set<number>();
+        while (l.selected_image_ids.some((id) => !valid.has(id))) {
+          const page = await catalogGet("photos", {
+            product_id: l.product_id,
+            variant_id: l.variant_id,
+            offset,
+          });
+          page.photos.forEach((x: CatalogPhoto) => valid.add(x.id));
+          if (page.photos.length < 40) break;
+          offset = page.next_offset;
+        }
+        if (l.selected_image_ids.some((id) => !valid.has(id)))
+          throw Error(
+            l.name +
+              " · Size " +
+              catalogSizeLabel(l.size) +
+              ": ảnh đã đổi trạng thái. Bỏ dòng này và chọn lại.",
+          );
+        if (l.expected_price !== v.sale_price) changed = true;
+        updated.push({ ...l, expected_price: v.sale_price, name: p.name });
+      }
+      if (changed) {
+        setCart(updated);
+        setNotice(
+          "Giá đã cập nhật trong giỏ. Kiểm tra lại và bấm kiểm tra lần nữa để xác nhận.",
+        );
+      } else {
+        setReviewed(true);
+        setNotice(
+          "Đã kiểm tra tồn và giá Cloud. Chưa giữ hàng; Shop sẽ xác nhận lại.",
+        );
+        return true;
+      }
+      return false;
+    } catch (e) {
+      setReviewed(false);
+      setNotice((e as Error).message);
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function submit() {
+    if (
+      busy ||
+      !reviewed ||
+      !consent ||
+      !name.trim() ||
+      !contact.trim() ||
+      !cart.length ||
+      pending
+    )
+      return;
+    setBusy(true);
+    try {
+      const token = newCatalogToken(),
+        payload = {
+          name: name.trim(),
+          contact: contact.trim(),
+          note,
+          website,
+          consent,
+          items: cart.map((l) => ({
+            product_id: l.product_id,
+            variant_id: l.variant_id,
+            quick_quantity: l.quick_quantity,
+            selected_image_ids: l.selected_image_ids,
+            expected_price: l.expected_price,
+          })),
+        };
+      try {
+        localStorage.setItem(
+          PENDING,
+          JSON.stringify({ token, payload, summary: catalogCartSummary(cart) }),
+        );
+      } catch {
+        throw Error(
+          "Chưa gửi: trình duyệt không lưu được mã phục hồi. Cho phép dữ liệu trang web rồi thử lại.",
+        );
+      }
+      setPending(true);
+      const result = await catalogPost("submit", token, payload);
+      finish(result.reference);
+    } catch (e) {
+      const code = (e as { code?: string }).code;
+      if (code && code !== "CATALOG_SERVER") {
+        removeCatalogStored(PENDING);
+        setPending(false);
+        setReviewed(false);
+      }
+      setNotice(
+        (e as Error).message +
+          " Nếu chưa rõ kết quả, bấm Kiểm tra lần gửi trước.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  function finish(reference: string, savedSummary = catalogCartSummary(cart)) {
+    if (typeof reference !== "string" || !reference)
+      throw Error(
+        "Chưa nhận được mã yêu cầu. Kiểm tra lần gửi trước để xác minh.",
+      );
+    setReceiptSummary(savedSummary);
+    setReceipt(reference);
+    removeCatalogStored(PENDING);
+    setPending(false);
+    setCart([]);
+    setName("");
+    setContact("");
+    setNote("");
+    setConsent(false);
+    setNotice("");
+  }
+  async function recover() {
+    setBusy(true);
+    try {
+      const raw = catalogStored(PENDING);
+      if (!raw) {
+        setPending(false);
+        return;
+      }
+      const p = JSON.parse(raw);
+      const d = await catalogPost("receipt", p.token);
+      const saved =
+        typeof p.summary === "string" ? p.summary : catalogCartSummary(cart);
+      if (d.status === "NOT_FOUND") {
+        const again = await catalogPost("submit", p.token, p.payload);
+        finish(again.reference, saved);
+      } else finish(d.reference, saved);
+    } catch (e) {
+      const code = (e as { code?: string }).code;
+      if (code && code !== "CATALOG_SERVER") {
+        removeCatalogStored(PENDING);
+        setPending(false);
+      }
+      setNotice((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  function summary() {
+    return receipt
+      ? "Shop Mẹ CaCao · Yêu cầu " +
+          receipt +
+          (receiptSummary ? "\n" + receiptSummary : "")
+      : catalogCartSummary(cart);
+  }
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(summary());
+      setNotice("Đã sao chép. Bạn có thể dán vào cuộc trò chuyện với Shop.");
+    } catch {
+      setNotice(
+        "Chưa sao chép được. Vui lòng chọn và sao chép danh sách bên dưới.",
+      );
+    }
+  }
+  const filtered = products.filter(
+    (p) =>
+      (!favoriteOnly || favorites.includes(p.public_product_id)) &&
+      (!sizeFilter ||
+        p.sizes.some(
+          (v) =>
+            v.size_label === sizeFilter && (!inStock || v.available_count > 0),
+        )) &&
+      (!inStock || p.sizes.some((v) => v.available_count > 0)),
+  );
+  const visible = favoriteOnly ? sortCatalogProducts(filtered, sort) : filtered;
+  const subtotal = cart.reduce(
+      (n, l) => n + (l.expected_price ?? 0) * lineCount(l),
+      0,
+    ),
+    unknown = cart.some((l) => l.expected_price === null);
+  return (
+    <div className="cc-app" data-ui="customer-catalog-luxe-v1">
+      <header className="cc-header">
+        <button className="cc-brand" onClick={() => browse()}>
+          <img
+            src={import.meta.env.BASE_URL + "brand/catalog-shop-logo.jpg"}
+            alt="Logo Shop Mẹ CaCao"
+          />
+          <span>
+            Shop Mẹ CaCao<small>TOLE XINH · SINCE 2023</small>
+          </span>
+        </button>
+        <div className="cc-header-actions">
+          <button
+            className="cc-icon-button"
+            aria-label="Tìm sản phẩm"
+            title="Tìm sản phẩm"
+            onClick={focusSearch}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.9"
+            >
+              <circle cx="10.7" cy="10.7" r="6.7" />
+              <path d="m16 16 5 5" strokeLinecap="round" />
+            </svg>
+          </button>
+          <button
+            className="cc-icon-button cc-cart-trigger"
+            aria-label={"Mở giỏ hàng · " + total + " bộ"}
+            title="Giỏ lựa hàng"
+            onClick={openCart}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.9"
+            >
+              <path
+                d="M3 4h2l3 12h11l3-9H6"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+              <circle cx="10" cy="20" r="1.2" />
+              <circle cx="18" cy="20" r="1.2" />
+            </svg>
+            {total > 0 && (
+              <span className="cc-cart-count">
+                {total > 99 ? "99+" : total}
+              </span>
+            )}
+          </button>
+        </div>
+      </header>
+      <main className="cc-main">
+        {!online && (
+          <p className="cc-alert">
+            Mất mạng. Kết nối lại để kiểm tra hàng và gửi yêu cầu.
+          </p>
+        )}
+        {error && (
+          <p className="cc-alert" role="alert">
+            {error} <button onClick={retry}>Thử lại</button>
+          </p>
+        )}
+        {notice && (
+          <p className="cc-message" role="status">
+            {notice}
+          </p>
+        )}
+        {enabled === false ? (
+          <section className="cc-empty">
+            <h1>Shop đang chuẩn bị mẫu xinh</h1>
+            <p>Danh mục sẽ mở khi Shop sẵn sàng. Hẹn bạn quay lại nhé!</p>
+          </section>
+        ) : enabled === null ? (
+          <section className="cc-empty" role="status">
+            Đang mở Shop…
+          </section>
+        ) : showCart ? (
+          <>
+            {!receipt && (
+              <div className="cc-title">
+                <h1>{checkout ? "Thông tin liên hệ" : "Giỏ lựa hàng"}</h1>
+                <button
+                  onClick={() =>
+                    checkout ? setCheckout(false) : browse("products")
+                  }
+                >
+                  {checkout ? "‹ Giỏ hàng" : "Tiếp tục xem hàng"}
+                </button>
+              </div>
+            )}
+            {receipt ? (
+              <section className="cc-card cc-success">
+                <CelebrationIllustration />
+                <div className="cc-success-mark" aria-hidden="true">
+                  ✓
+                </div>
+                <h2>Shop đã nhận danh sách của mình!</h2>
+                <p className="cc-success-caption">
+                  Cảm ơn bạn đã lựa hàng tại Shop Mẹ CaCao!
+                </p>
+                <p className="cc-reference">
+                  Mã yêu cầu <strong>{receipt}</strong>
+                </p>
+                <p>Danh sách chưa giữ hàng. Shop sẽ liên hệ để xác nhận.</p>
+                <Contact cfg={cfg} onCopy={copy} />
+                <pre className="cc-copy-text">{summary()}</pre>
+                <button
+                  className="cc-primary"
+                  onClick={() => browse("products")}
+                >
+                  Tiếp tục xem hàng
+                </button>
+              </section>
+            ) : (
+              <>
+                {pending && (
+                  <section className="cc-alert">
+                    <p>
+                      Còn lần gửi chưa xác định kết quả. Kiểm tra trước khi sửa
+                      hoặc gửi danh sách mới.
+                    </p>
+                    <button
+                      disabled={busy || !online}
+                      onClick={() => void recover()}
+                    >
+                      Kiểm tra lần gửi trước
+                    </button>
+                  </section>
+                )}
+                {!cart.length ? (
+                  <p className="cc-empty">
+                    Giỏ đang trống. Chọn mẫu xinh cho bé nhé!
+                  </p>
+                ) : (
+                  <>
+                    <div className="cc-cart-lines" hidden={checkout}>
+                      {cart.map((l) => (
+                        <article className="cc-card" key={l.variant_id}>
+                          <div className="cc-cart-product">
+                            <div className="cc-cart-thumb">
+                              <Photo
+                                id={
+                                  l.selected_image_ids[0] ||
+                                  products.find(
+                                    (p) => p.public_product_id === l.product_id,
+                                  )?.cover_image_id ||
+                                  null
+                                }
+                                name={l.name}
+                              />
+                            </div>
+                            <div>
+                              <h2>{l.name}</h2>
+                              <p>
+                                Size {catalogSizeLabel(l.size)} · {lineCount(l)}{" "}
+                                bộ · {catalogMoney(l.expected_price)}/bộ
+                              </p>
+                              <p>
+                                Shop chọn: {l.quick_quantity} · Ảnh bạn chọn:{" "}
+                                {l.selected_image_ids.length}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="cc-cart-quantity">
+                            <span>Số bộ để Shop chọn thêm</span>
+                            <div className="cc-stepper">
+                              <button
+                                aria-label={
+                                  "Giảm số lượng Size " +
+                                  catalogSizeLabel(l.size)
+                                }
+                                disabled={pending || busy || !l.quick_quantity}
+                                onClick={() => void adjustCart(l, -1)}
+                              >
+                                −
+                              </button>
+                              <output>{l.quick_quantity}</output>
+                              <button
+                                aria-label={
+                                  "Tăng số lượng Size " +
+                                  catalogSizeLabel(l.size)
+                                }
+                                disabled={
+                                  pending || busy || !online || total >= 100
+                                }
+                                onClick={() => void adjustCart(l, 1)}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                          <div className="cc-mini-photos">
+                            {l.selected_image_ids.map((id) => (
+                              <div key={id}>
+                                <Photo id={id} name={"Ảnh #" + id} />
+                                <button
+                                  disabled={pending || busy}
+                                  onClick={() =>
+                                    setCart((old) =>
+                                      old
+                                        .map((x) =>
+                                          x.variant_id === l.variant_id
+                                            ? {
+                                                ...x,
+                                                selected_image_ids:
+                                                  x.selected_image_ids.filter(
+                                                    (i) => i !== id,
+                                                  ),
+                                              }
+                                            : x,
+                                        )
+                                        .filter((x) => lineCount(x) > 0),
+                                    )
+                                  }
+                                >
+                                  Bỏ #{id}
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            disabled={pending || busy}
+                            onClick={() =>
+                              setCart((old) =>
+                                old.filter(
+                                  (x) => x.variant_id !== l.variant_id,
+                                ),
+                              )
+                            }
+                          >
+                            Bỏ dòng
+                          </button>{" "}
+                          <button
+                            disabled={pending || busy}
+                            onClick={() => {
+                              const p = products.find(
+                                (p) => p.public_product_id === l.product_id,
+                              );
+                              if (p) void openProduct(p);
+                              else
+                                void catalogGet("products", {
+                                  product_id: l.product_id,
+                                })
+                                  .then((d) => {
+                                    if (d.products[0])
+                                      void openProduct(d.products[0]);
+                                    else
+                                      setNotice(
+                                        "Mẫu không còn công khai. Bỏ dòng và chọn mẫu khác.",
+                                      );
+                                  })
+                                  .catch((e) => setNotice(e.message));
+                            }}
+                          >
+                            Sửa lựa chọn
+                          </button>
+                        </article>
+                      ))}
+                    </div>
+                    <section className="cc-card cc-cart-summary">
+                      {!checkout && (
+                        <>
+                          <h2>
+                            Tạm tính:{" "}
+                            {unknown
+                              ? "Có giá cần Shop tư vấn"
+                              : catalogMoney(subtotal)}
+                          </h2>
+                          <p>
+                            Phí ship: Shop báo sau. Giá và hàng được Shop xác
+                            nhận khi xử lý.
+                          </p>
+                          <button
+                            disabled={busy || pending || !online}
+                            onClick={() => void reviewCart()}
+                          >
+                            Kiểm tra lại tồn và giá
+                          </button>
+                        </>
+                      )}
+                      {checkout && (
+                        <>
+                          <div className="cc-checkout-heading">
+                            <span aria-hidden="true">♡</span>
+                            <div>
+                              <h2>Gửi Shop tư vấn</h2>
+                              <p>
+                                Shop sẽ xác nhận mẫu, Size và hàng còn trước khi
+                                chốt.
+                              </p>
+                            </div>
+                          </div>
+                          <form
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              void submit();
+                            }}
+                          >
+                            <label>
+                              Tên của bạn
+                              <input
+                                required
+                                maxLength={100}
+                                autoComplete="name"
+                                value={name}
+                                disabled={pending}
+                                onChange={(e) => setName(e.target.value)}
+                              />
+                            </label>
+                            <label>
+                              Số điện thoại / cách liên hệ
+                              <input
+                                required
+                                minLength={5}
+                                maxLength={150}
+                                autoComplete="tel"
+                                value={contact}
+                                disabled={pending}
+                                onChange={(e) => setContact(e.target.value)}
+                              />
+                            </label>
+                            <label>
+                              Ghi chú
+                              <textarea
+                                maxLength={500}
+                                value={note}
+                                disabled={pending}
+                                onChange={(e) => setNote(e.target.value)}
+                              />
+                            </label>
+                            <label className="cc-honey" aria-hidden="true">
+                              Website
+                              <input
+                                tabIndex={-1}
+                                autoComplete="off"
+                                value={website}
+                                onChange={(e) => setWebsite(e.target.value)}
+                              />
+                            </label>
+                            <label className="cc-check">
+                              <input
+                                type="checkbox"
+                                checked={consent}
+                                disabled={pending}
+                                onChange={(e) => setConsent(e.target.checked)}
+                              />
+                              Tôi đồng ý để Shop liên hệ; danh sách chưa giữ
+                              hàng. Thông tin liên hệ của yêu cầu được ẩn sau 90
+                              ngày và dọn khi hệ thống xử lý.
+                            </label>
+                            <button
+                              className="cc-primary"
+                              disabled={
+                                busy ||
+                                pending ||
+                                !reviewed ||
+                                !online ||
+                                !consent
+                              }
+                            >
+                              Gửi danh sách cho Shop
+                            </button>
+                          </form>
+                          <section className="cc-request-review">
+                            <h3>Danh sách gửi Shop · {total} bộ</h3>
+                            {cart.map((l) => (
+                              <p key={l.variant_id}>
+                                {l.name} · Size {catalogSizeLabel(l.size)} ·{" "}
+                                {lineCount(l)} bộ ·{" "}
+                                {l.selected_image_ids.length
+                                  ? l.selected_image_ids.length + " ảnh thật"
+                                  : "Shop chọn"}
+                              </p>
+                            ))}
+                          </section>
+                        </>
+                      )}
+                      <Contact cfg={cfg} onCopy={copy} />
+                      <pre className="cc-copy-text">{summary()}</pre>
+                    </section>
+                  </>
+                )}
+              </>
+            )}
+          </>
+        ) : detail ? (
+          <>
+            <button className="cc-back" onClick={() => browse("products")}>
+              ‹ Về danh mục
+            </button>
+            <section className="cc-detail">
+              <div className="cc-detail-top">
+                <div className="cc-detail-heading">
+                  <div>
+                    <span className="cc-eyebrow">TOLE XINH CHO BÉ YÊU</span>
+                    <h1>{detail.name}</h1>
+                  </div>
+                  <button
+                    className="cc-favorite cc-detail-favorite"
+                    aria-label={"Yêu thích " + detail.name}
+                    aria-pressed={favorites.includes(detail.public_product_id)}
+                    onClick={() => toggleFavorite(detail.public_product_id)}
+                  >
+                    {favorites.includes(detail.public_product_id) ? "♥" : "♡"}
+                  </button>
+                </div>
+                <div className="cc-detail-meta">
+                  <strong className="cc-detail-price">
+                    {catalogMoney(variant?.sale_price ?? null)}
+                  </strong>
+                  <span className="cc-product-code">{detail.public_code}</span>
+                </div>
+                <div className="cc-size-heading">
+                  <h2>Chọn Size</h2>
+                  <button onClick={() => openGuide("table")}>
+                    Xem bảng Size <span aria-hidden="true">↗</span>
+                  </button>
+                </div>
+                <div className="cc-sizes">
+                  {catalogOrderedSizes(detail.sizes).map((v) => (
+                    <button
+                      aria-pressed={variantId === v.variant_id}
+                      className={
+                        variantId === v.variant_id ? "cc-selected" : ""
+                      }
+                      disabled={!v.available_count}
+                      key={v.variant_id}
+                      onClick={() => setVariantId(v.variant_id)}
+                    >
+                      {catalogSizeLabel(v.size_label)}
+                      <small>
+                        {v.available_count
+                          ? "Còn " + v.available_count
+                          : "Hết hàng"}
+                      </small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="cc-gallery">
+                <div
+                  className="cc-gallery-stage"
+                  onTouchStart={(e) => {
+                    galleryTouch.current = e.touches[0]?.clientX ?? null;
+                  }}
+                  onTouchEnd={(e) => {
+                    const start = galleryTouch.current;
+                    galleryTouch.current = null;
+                    if (start === null || !photos.length) return;
+                    const delta =
+                      (e.changedTouches[0]?.clientX ?? start) - start;
+                    if (Math.abs(delta) < 40) return;
+                    const current = photos.findIndex((p) => p.id === hero);
+                    setHero(
+                      photos[
+                        (current + (delta < 0 ? 1 : -1) + photos.length) %
+                          photos.length
+                      ].id,
+                    );
+                  }}
+                >
+                  <button
+                    className="cc-hero-photo"
+                    onClick={() => setZoom(hero)}
+                    disabled={!hero}
+                  >
+                    <Photo id={hero} name={detail.name} />
+                  </button>
+                  <span className="cc-gallery-count">
+                    {photos.length
+                      ? photos.findIndex((p) => p.id === hero) + 1
+                      : 0}
+                    /{photos.length}
+                    {photoMore ? "+" : ""}
+                  </span>
+                  {photos.length > 1 && (
+                    <>
+                      <button
+                        className="cc-gallery-arrow cc-gallery-prev"
+                        aria-label="Ảnh trước"
+                        onClick={() => {
+                          const n = photos.findIndex((p) => p.id === hero);
+                          setHero(
+                            photos[(n - 1 + photos.length) % photos.length].id,
+                          );
+                        }}
+                      >
+                        ‹
+                      </button>
+                      <button
+                        className="cc-gallery-arrow cc-gallery-next"
+                        aria-label="Ảnh tiếp theo"
+                        onClick={() => {
+                          const n = photos.findIndex((p) => p.id === hero);
+                          setHero(photos[(n + 1) % photos.length].id);
+                        }}
+                      >
+                        ›
+                      </button>
+                    </>
+                  )}
+                  {hero && photos.some((p) => p.id === hero) && variant && (
+                    <label
+                      className={
+                        "cc-gallery-pick" +
+                        (line?.selected_image_ids.includes(hero)
+                          ? " is-picked"
+                          : "")
+                      }
+                    >
+                      <input
+                        type="checkbox"
+                        aria-label={"Chọn bộ ảnh #" + hero}
+                        checked={
+                          line?.selected_image_ids.includes(hero) || false
+                        }
+                        disabled={
+                          pending ||
+                          busy ||
+                          (!line?.selected_image_ids.includes(hero) &&
+                            ((line ? lineCount(line) : 0) >=
+                              variant.available_count ||
+                              total >= 100))
+                        }
+                        onChange={(e) =>
+                          changeLine(
+                            line?.quick_quantity || 0,
+                            e.target.checked
+                              ? [...(line?.selected_image_ids || []), hero]
+                              : (line?.selected_image_ids || []).filter(
+                                  (id) => id !== hero,
+                                ),
+                          )
+                        }
+                      />
+                      <span>
+                        {line?.selected_image_ids.includes(hero)
+                          ? "Đã chọn bộ này"
+                          : "Chọn bộ này"}
+                      </span>
+                      <small>#{hero}</small>
+                    </label>
+                  )}
+                </div>
+                <div
+                  className="cc-thumbnails"
+                  aria-label="Ảnh của Size đang xem"
+                >
+                  {photos.map((p) => (
+                    <button
+                      key={p.id}
+                      className={hero === p.id ? "cc-selected" : ""}
+                      aria-label={"Xem ảnh #" + p.id}
+                      aria-pressed={hero === p.id}
+                      onClick={() => setHero(p.id)}
+                    >
+                      <Photo id={p.id} name={"Ảnh #" + p.id} />
+                      {line?.selected_image_ids.includes(p.id) && (
+                        <span className="cc-photo-tick">✓</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <p className="cc-gallery-help">
+                  Vuốt xem từng bộ · Chạm ảnh để phóng to
+                  <br />
+                  <strong>
+                    Đã chọn {line?.selected_image_ids.length || 0} ảnh thật của
+                    Size {catalogSizeLabel(variant?.size_label || "")}
+                  </strong>
+                </p>
+                {photoBusy && <p role="status">Đang tải ảnh…</p>}
+                {photoMore && (
+                  <button
+                    disabled={photoBusy}
+                    onClick={() => void morePhotos()}
+                  >
+                    Xem thêm ảnh
+                  </button>
+                )}
+              </div>
+              <div className="cc-detail-info">
+                {variant && (
+                  <section className="cc-card cc-quick-select">
+                    <div>
+                      <h3>Để Shop chọn thêm</h3>
+                      <p>
+                        Size {catalogSizeLabel(variant.size_label)} · Còn{" "}
+                        {variant.available_count} bộ
+                      </p>
+                    </div>
+                    <div className="cc-stepper">
+                      <button
+                        aria-label="Giảm số bộ Shop chọn"
+                        disabled={pending || busy || !line?.quick_quantity}
+                        onClick={() =>
+                          changeLine(
+                            (line?.quick_quantity || 0) - 1,
+                            line?.selected_image_ids || [],
+                          )
+                        }
+                      >
+                        −
+                      </button>
+                      <output>{line?.quick_quantity || 0}</output>
+                      <button
+                        aria-label="Tăng số bộ Shop chọn"
+                        disabled={
+                          pending ||
+                          busy ||
+                          !variant.available_count ||
+                          total >= 100 ||
+                          (line ? lineCount(line) : 0) >=
+                            variant.available_count
+                        }
+                        onClick={() =>
+                          changeLine(
+                            (line?.quick_quantity || 0) + 1,
+                            line?.selected_image_ids || [],
+                          )
+                        }
+                      >
+                        +
+                      </button>
+                    </div>
+                    <p className="cc-quick-note">
+                      Số lượng này cộng với những ảnh bạn đã chọn ở trên.
+                    </p>
+                  </section>
+                )}
+                <div className="cc-detail-guide">
+                  <span className="cc-detail-guide-icon">
+                    <BabyAvatar />
+                  </span>
+                  <div>
+                    <strong>Bé mặc Size nào vừa?</strong>
+                    <p>Tra cứu theo cân nặng và chiều cao.</p>
+                    <div>
+                      <button onClick={() => openGuide("table")}>
+                        Xem bảng Size
+                      </button>
+                      <button onClick={() => openGuide("quick")}>
+                        Tìm Size nhanh
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <p className="cc-stock-note">
+                  Kho cập nhật:{" "}
+                  {detail.stock_as_of
+                    ? new Date(detail.stock_as_of).toLocaleString("vi-VN")
+                    : "chưa xác định"}{" "}
+                  · Shop kiểm tra lại hàng khi xác nhận.
+                </p>
+              </div>
+            </section>
+          </>
+        ) : (
+          <>
+            {page === "home" && (
+              <>
+                <section className="cc-banner">
+                  {cfg.banner_url ? (
+                    <img
+                      src={cfg.banner_url}
+                      alt="Banner Shop Mẹ CaCao · Tole xinh cho bé yêu"
+                    />
+                  ) : (
+                    <>
+                      <span className="cc-eyebrow">MẸ CACAO · SINCE 2023</span>
+                      <h1>
+                        Tole xinh
+                        <br />
+                        cho bé yêu!
+                      </h1>
+                      <p>Mềm mại mỗi ngày · Mẹ chọn, bé yêu</p>
+                      <span className="cc-banner-flower" aria-hidden="true">
+                        ✿
+                      </span>
+                    </>
+                  )}
+                  <button
+                    className="cc-banner-cta"
+                    onClick={() => browse("products")}
+                  >
+                    Khám phá mẫu mới <span aria-hidden="true">→</span>
+                  </button>
+                </section>
+              </>
+            )}
+            {page === "home" && (
+              <section className="cc-guide-promo">
+                <span className="cc-guide-illustration" aria-hidden="true">
+                  <CatalogIcon kind="size" />
+                </span>
+                <div className="cc-guide-content">
+                  <h2>Bé mặc Size nào?</h2>
+                  <p>Xem hướng dẫn chọn size theo cân nặng</p>
+                </div>
+                <button
+                  className="cc-guide-link"
+                  onClick={() => openGuide("quick")}
+                >
+                  Tra Size <span aria-hidden="true">→</span>
+                </button>
+              </section>
+            )}
+            {page === "products" && (
+              <div className="cc-catalog-title">
+                <span className="cc-eyebrow">BỘ SƯU TẬP CỦA SHOP</span>
+                <h1>Mẫu xinh cho bé</h1>
+              </div>
+            )}
+            <form
+              className="cc-search"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSearch(query);
+              }}
+            >
+              <span className="cc-search-symbol" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                >
+                  <circle cx="10" cy="10" r="6.5" />
+                  <path d="m15 15 5 5" strokeLinecap="round" />
+                </svg>
+              </span>
+              <input
+                ref={searchRef}
+                type="search"
+                aria-label="Tìm mẫu"
+                placeholder="Tìm mẫu, tên sản phẩm, Size…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              <button aria-label="Tìm mẫu trong danh mục">
+                <span aria-hidden="true">→</span>
+              </button>
+            </form>
+            <div
+              className="cc-filter-pills"
+              role="group"
+              aria-label="Khám phá danh mục"
+            >
+              <button
+                aria-pressed={!favoriteOnly && !discoveryNew}
+                onClick={() => {
+                  setFavoriteOnly(false);
+                  setDiscoveryNew(false);
+                  setSizeFilter("");
+                  setInStock(true);
+                }}
+              >
+                Tất cả
+              </button>
+              <button
+                aria-pressed={!favoriteOnly && discoveryNew && sort === "new"}
+                onClick={() => {
+                  setFavoriteOnly(false);
+                  setDiscoveryNew(true);
+                  setSort("new");
+                }}
+              >
+                Mẫu mới
+              </button>
+              <button
+                aria-pressed={favoriteOnly}
+                onClick={() => {
+                  setFavoriteOnly(true);
+                  setDiscoveryNew(false);
+                }}
+              >
+                <CatalogIcon kind="heart" /> Yêu thích
+              </button>
+              <button
+                aria-expanded={showFilters}
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <CatalogIcon kind="size" />{" "}
+                {sizeFilter ? "Size " + catalogSizeLabel(sizeFilter) : "Size"}
+              </button>
+              <div
+                className="cc-sort-options"
+                role="group"
+                aria-label="Sắp xếp"
+              >
+                {[
+                  ["new", "Mới nhất"],
+                  ["asc", "Giá thấp → cao"],
+                  ["desc", "Giá cao → thấp"],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    aria-pressed={sort === value}
+                    onClick={() => setSort(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {showFilters && (
+              <div className="cc-filters">
+                <label>
+                  Size
+                  <select
+                    value={sizeFilter}
+                    onChange={(e) => setSizeFilter(e.target.value)}
+                  >
+                    <option value="">Tất cả Size</option>
+                    {[
+                      ...new Set([
+                        ...SIZE_GUIDE.map((r) => r[0] as string),
+                        ...products.flatMap((p) =>
+                          p.sizes.map((v) => catalogSizeLabel(v.size_label)),
+                        ),
+                      ]),
+                    ].map((label) => {
+                      const raw =
+                        products
+                          .flatMap((p) => p.sizes)
+                          .find((v) => catalogSizeLabel(v.size_label) === label)
+                          ?.size_label ||
+                        (catalogSizeLabel(sizeFilter) === label
+                          ? sizeFilter
+                          : label);
+                      return (
+                        <option key={label} value={raw}>
+                          {label}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </label>
+                <label className="cc-check">
+                  <input
+                    type="checkbox"
+                    checked={inStock}
+                    onChange={(e) => setInStock(e.target.checked)}
+                  />
+                  Chỉ hiện mẫu còn hàng
+                </label>
+                <button
+                  onClick={() => {
+                    setSizeFilter("");
+                    setInStock(true);
+                  }}
+                >
+                  Đặt lại
+                </button>
+              </div>
+            )}
+            <div className="cc-section-heading">
+              <h2 className="cc-section-title">
+                {favoriteOnly
+                  ? "Mẫu yêu thích"
+                  : page === "home"
+                    ? "Mẫu mới về"
+                    : "Danh sách sản phẩm"}
+              </h2>
+              {page === "home" && (
+                <button onClick={() => browse("products")}>Xem tất cả ›</button>
+              )}
+            </div>
+            <div className="cc-products">
+              {visible.map((p) => (
+                <ProductCard
+                  key={p.public_product_id}
+                  product={p}
+                  compact={page === "home"}
+                  favorite={favorites.includes(p.public_product_id)}
+                  onFavorite={() => toggleFavorite(p.public_product_id)}
+                  onOpen={() => void openProduct(p)}
+                  onStock={() => setStockProduct(p)}
+                />
+              ))}
+            </div>
+            {loading && (
+              <p className="cc-empty" role="status">
+                Đang tải mẫu xinh…
+              </p>
+            )}
+            {!loading && !visible.length && (
+              <p className="cc-empty">
+                {favoriteOnly
+                  ? "Bạn chưa lưu mẫu yêu thích nào trong danh sách này."
+                  : "Chưa có mẫu phù hợp. Bạn thử Size khác nhé!"}
+              </p>
+            )}
+            {more && (
+              <button disabled={loading} onClick={() => void moreProducts()}>
+                Xem thêm mẫu
+              </button>
+            )}
+          </>
+        )}
+      </main>
+      <footer ref={footerRef} className="cc-footer">
+        <div className="cc-footer-brand">
+          <BabyAvatar />
+          <div>
+            <strong>Shop Mẹ CaCao</strong>
+            <span>Tole xinh cho bé yêu! · Since 2023</span>
+          </div>
+        </div>
+        <h2>Shop luôn sẵn sàng tư vấn</h2>
+        <ShopContactRows cfg={cfg} />
+        <p className="cc-footer-note">
+          <CatalogIcon kind="note" /> Danh sách chưa giữ hàng. Shop xác nhận
+          trước khi bán.
+        </p>
+      </footer>
+      {enabled && !showCart && total > 0 && (
+        <aside className="cc-cart-dock">
+          <strong>Đã chọn {total} bộ</strong>
+          <button className="cc-primary" onClick={openCart}>
+            Xem giỏ
+          </button>
+        </aside>
+      )}
+      {enabled && showCart && !checkout && !receipt && total > 0 && (
+        <aside className="cc-cart-dock">
+          <strong>
+            {unknown ? "Shop tư vấn giá" : catalogMoney(subtotal)}
+          </strong>
+          <button
+            className="cc-primary"
+            disabled={busy || pending || !online}
+            onClick={() =>
+              void reviewCart().then((ok) => {
+                if (ok) {
+                  setCheckout(true);
+                  setNotice("");
+                  window.scrollTo(0, 0);
+                }
+              })
+            }
+          >
+            Tiếp tục gửi yêu cầu
+          </button>
+        </aside>
+      )}
+      {enabled &&
+        !showGuide &&
+        !zoom &&
+        !stockProduct &&
+        !footerVisible &&
+        !detail &&
+        !showCart && (
+          <a
+            className="cc-call-float"
+            data-raised={total > 0 && !checkout && !receipt ? "true" : "false"}
+            href={"tel:" + CATALOG_PHONE}
+            aria-label={"Gọi Shop Mẹ CaCao " + CATALOG_PHONE_LABEL}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m8 3 3 5-3 3a15 15 0 0 0 5 5l3-3 5 3c-1 5-4 6-8 4C6 17 2 11 3 6c.5-2 2-3 5-3Z" />
+            </svg>
+            <span>{CATALOG_PHONE_LABEL}</span>
+          </a>
+        )}
+      <nav className="cc-bottom-nav" aria-label="Điều hướng Catalog khách">
+        <button
+          aria-current={
+            !detail && !showCart && page === "home" ? "page" : undefined
+          }
+          onClick={() => browse()}
+        >
+          <CatalogIcon kind="home" />
+          <span>Trang chủ</span>
+        </button>
+        <button
+          aria-current={
+            detail || (!showCart && page === "products") ? "page" : undefined
+          }
+          onClick={() => browse("products")}
+        >
+          <CatalogIcon kind="products" />
+          <span>Sản phẩm</span>
+        </button>
+        <button onClick={() => openGuide("quick")}>
+          <CatalogIcon kind="size" />
+          <span>Bảng Size</span>
+        </button>
+        <button aria-current={showCart ? "page" : undefined} onClick={openCart}>
+          <CatalogIcon kind="cart" />
+          <span>Giỏ lựa {total > 0 ? "· " + total : ""}</span>
+        </button>
+      </nav>
+      {stockProduct && (
+        <Modal
+          title={"Tồn từng Size · " + stockProduct.name}
+          onClose={() => setStockProduct(null)}
+        >
+          <div className="cc-stock-sheet">
+            {catalogOrderedSizes(stockProduct.sizes).map((v) => (
+              <button
+                key={v.variant_id}
+                disabled={!v.available_count}
+                onClick={() => void openProduct(stockProduct, v.variant_id)}
+              >
+                <strong>Size {catalogSizeLabel(v.size_label)}</strong>
+                <span>
+                  {v.available_count
+                    ? "Còn " + v.available_count + " bộ"
+                    : "Hết hàng"}
+                </span>
+                <small>{catalogMoney(v.sale_price)}</small>
+                <span aria-hidden="true">→</span>
+              </button>
+            ))}
+          </div>
+          <p className="cc-sheet-note">
+            Chọn Size để xem ảnh thật và lựa từng bộ. Shop kiểm tra lại tồn khi
+            xác nhận.
+          </p>
+        </Modal>
+      )}
+      {showGuide && (
+        <SizeGuide
+          cfg={cfg}
+          initialTab={guideTab}
+          onClose={() => setShowGuide(false)}
+        />
+      )}
+      {zoom && (
+        <Modal title="Ảnh thật của Shop" onClose={() => setZoom(null)}>
+          <img
+            className="cc-zoom"
+            src={catalogImage(zoom)}
+            alt={"Ảnh thật #" + zoom}
+          />
+        </Modal>
+      )}
+    </div>
+  );
+}
+function ProductCard({
+  product: p,
+  compact,
+  favorite,
+  onFavorite,
+  onOpen,
+  onStock,
+}: {
+  product: CatalogProduct;
+  compact: boolean;
+  favorite: boolean;
+  onFavorite: () => void;
+  onOpen: () => void;
+  onStock: () => void;
+}) {
+  const prices = p.sizes
+      .map((v) => v.sale_price)
+      .filter((n): n is number => n !== null),
+    sizes = catalogOrderedSizes(p.sizes),
+    available = sizes.some((v) => v.available_count > 0);
+  return (
+    <article className="cc-card cc-product">
+      <div className="cc-product-visual">
+        <button
+          className="cc-product-photo"
+          aria-label={"Xem mẫu " + p.name}
+          onClick={onOpen}
+        >
+          <Photo id={p.cover_image_id} name={p.name} />
+        </button>
+        <button
+          className="cc-favorite"
+          type="button"
+          aria-label={(favorite ? "Bỏ yêu thích " : "Yêu thích ") + p.name}
+          aria-pressed={favorite}
+          onClick={onFavorite}
+        >
+          <CatalogIcon kind="heart" />
+        </button>
+      </div>
+      <div className="cc-product-content">
+        <h3>{p.name}</h3>
+        <strong className="cc-product-price">
+          {prices.length ? (
+            <>
+              {Math.min(...prices) !== Math.max(...prices) && (
+                <small>Từ </small>
+              )}
+              {catalogMoney(Math.min(...prices))}
+            </>
+          ) : (
+            "Liên hệ Shop"
+          )}
+        </strong>
+        {prices.length > 0 && prices.length < sizes.length && (
+          <small className="cc-price-note">Một số Size liên hệ Shop</small>
+        )}
+        {compact ? (
+          <button className="cc-stock-summary" onClick={onStock}>
+            {sizes.length} Size · {available ? "Còn hàng" : "Hết hàng"}
+          </button>
+        ) : (
+          <>
+            <div className="cc-product-sizes" aria-label="Tồn từng Size">
+              {sizes.slice(0, 3).map((v) => (
+                <span
+                  key={v.variant_id}
+                  className={!v.available_count ? "is-empty" : ""}
+                >
+                  <strong>{catalogSizeLabel(v.size_label)}</strong> ·{" "}
+                  {v.available_count ? "còn " + v.available_count : "hết hàng"}
+                </span>
+              ))}
+              {sizes.length > 3 && (
+                <button className="cc-more-sizes" onClick={onStock}>
+                  +{sizes.length - 3} Size
+                </button>
+              )}
+            </div>
+            <button className="cc-stock-link" onClick={onStock}>
+              Xem tồn từng Size
+            </button>
+          </>
+        )}
+        <button className="cc-product-open" onClick={onOpen}>
+          Xem mẫu
+        </button>
+      </div>
+    </article>
+  );
+}
+function ShopContactRows({ cfg }: { cfg: Config }) {
+  return (
+    <div className="cc-footer-contacts">
+      <a href={CATALOG_FACEBOOK_URL} target="_blank" rel="noopener noreferrer">
+        <span className="cc-social cc-social-facebook">
+          <CatalogIcon kind="facebook" />
+        </span>
+        <span>Facebook</span>
+        <small>{CATALOG_FACEBOOK_LABEL}</small>
+        <span className="cc-contact-arrow" aria-hidden="true">
+          ›
+        </span>
+      </a>
+      <a href={cfg.zalo_url} target="_blank" rel="noopener noreferrer">
+        <span className="cc-social cc-social-zalo">Zalo</span>
+        <span>Zalo</span>
+        <small>Nhắn Shop tư vấn</small>
+        <span className="cc-contact-arrow" aria-hidden="true">
+          ›
+        </span>
+      </a>
+      <a href={cfg.messenger_url} target="_blank" rel="noopener noreferrer">
+        <span className="cc-social cc-social-messenger">
+          <CatalogIcon kind="messenger" />
+        </span>
+        <span>Messenger</span>
+        <small>Trò chuyện với Shop</small>
+        <span className="cc-contact-arrow" aria-hidden="true">
+          ›
+        </span>
+      </a>
+      <a href={"tel:" + CATALOG_PHONE}>
+        <span className="cc-social cc-social-phone">
+          <CatalogIcon kind="phone" />
+        </span>
+        <span>Gọi Shop</span>
+        <small>{CATALOG_PHONE_LABEL}</small>
+        <span className="cc-contact-arrow" aria-hidden="true">
+          ›
+        </span>
+      </a>
+    </div>
+  );
+}
+function Contact({ cfg, onCopy }: { cfg: Config; onCopy: () => void }) {
+  return (
+    <div className="cc-contact">
+      <ShopContactRows cfg={cfg} />
+      <button onClick={onCopy}>Sao chép danh sách / mã</button>
+    </div>
+  );
+}
+function Modal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement,
+      overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    ref.current?.querySelector<HTMLElement>("button")?.focus();
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "Tab") {
+        const items = ref.current?.querySelectorAll<HTMLElement>(
+          'button,input,a,select,textarea,[tabindex="0"]',
+        );
+        if (!items?.length) return;
+        const first = items[0],
+          last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          first.focus();
+          e.preventDefault();
+        }
+      }
+    };
+    document.addEventListener("keydown", key);
+    return () => {
+      document.body.style.overflow = overflow;
+      document.removeEventListener("keydown", key);
+      previous?.focus();
+    };
+  }, []);
+  return (
+    <div
+      className="cc-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={ref}
+        className="cc-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
+        <header>
+          <h2>{title}</h2>
+          <button aria-label="Đóng" onClick={onClose}>
+            Đóng ✕
+          </button>
+        </header>
+        <div className="cc-modal-content">{children}</div>
+      </div>
+    </div>
+  );
+}
+function SizeGuide({
+  cfg,
+  initialTab,
+  onClose,
+}: {
+  cfg: Config;
+  initialTab: "quick" | "table";
+  onClose: () => void;
+}) {
+  const [tab, setTab] = useState<"quick" | "table">(initialTab),
+    [weight, setWeight] = useState(""),
+    [height, setHeight] = useState(""),
+    [asked, setAsked] = useState(false),
+    [imageFailed, setImageFailed] = useState(false);
+  const matches = matchSizes(
+      weight ? Number(weight.replace(",", ".")) : null,
+      height ? Number(height.replace(",", ".")) : null,
+      cfg.guide,
+    ),
+    entered = asked && !!(weight || height);
+  return (
+    <Modal title="Bảng Size đồ tole bé" onClose={onClose}>
+      <p>
+        Shop Mẹ CaCao · Bảng Size Shop cung cấp đã trừ hao giặt rút; khách vui
+        lòng cân nhắc khi tăng Size. Độ vừa còn tùy mẫu và dáng bé.
+      </p>
+      <div className="cc-tabs">
+        <button
+          className={tab === "quick" ? "cc-selected" : ""}
+          onClick={() => setTab("quick")}
+        >
+          Tra Size nhanh
+        </button>
+        <button
+          className={tab === "table" ? "cc-selected" : ""}
+          onClick={() => setTab("table")}
+        >
+          Bảng Size của Shop
+        </button>
+      </div>
+      {tab === "quick" ? (
+        <>
+          <label>
+            Cân nặng (kg)
+            <input
+              inputMode="decimal"
+              value={weight}
+              onChange={(e) => {
+                setWeight(e.target.value);
+                setAsked(false);
+              }}
+              placeholder="Ví dụ: 16"
+            />
+          </label>
+          <label>
+            Chiều cao (cm)
+            <input
+              inputMode="decimal"
+              value={height}
+              onChange={(e) => {
+                setHeight(e.target.value);
+                setAsked(false);
+              }}
+              placeholder="Ví dụ: 98"
+            />
+          </label>
+          <button
+            className="cc-primary"
+            disabled={!weight && !height}
+            onClick={() => setAsked(true)}
+          >
+            Gợi ý Size
+          </button>
+          <div className="cc-message" role="status">
+            {!entered
+              ? "Nhập ít nhất một số đo."
+              : matches.length
+                ? "Bé có thể tham khảo Size " +
+                  matches.join(", ") +
+                  ". Độ vừa còn tùy mẫu và dáng bé."
+                : "Số đo chưa khớp một Size trong bảng. Nhờ Shop tư vấn thêm nhé!"}
+          </div>
+          {entered && matches.length > 0 && (
+            <div className="cc-size-results">
+              {cfg.guide
+                .filter((r) => matches.includes(r[0]))
+                .map((r) => (
+                  <article key={r[0]}>
+                    <strong>Size {r[0]}</strong>
+                    <span>
+                      {r[1]}–{r[2]} kg
+                    </span>
+                    <span>
+                      {r[3]}–{r[4]} cm
+                    </span>
+                  </article>
+                ))}
+            </div>
+          )}
+          <p>Số đo chỉ xử lý trên thiết bị, không gửi về Shop.</p>
+        </>
+      ) : (
+        <>
+          {cfg.size_image_url && !imageFailed && (
+            <a
+              href={cfg.size_image_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img
+                className="cc-size-image"
+                onError={() => setImageFailed(true)}
+                src={cfg.size_image_url}
+                alt="Bảng Size của Shop — chạm mở ảnh để zoom"
+              />
+            </a>
+          )}
+          {(!cfg.size_image_url || imageFailed) && (
+            <table>
+              <thead>
+                <tr>
+                  <th>Size</th>
+                  <th>Cân nặng (kg)</th>
+                  <th>Chiều cao (cm)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cfg.guide.map((r) => (
+                  <tr key={r[0]}>
+                    <td>{r[0]}</td>
+                    <td>
+                      {r[1]}–{r[2]}
+                    </td>
+                    <td>{r[3] === r[4] ? r[3] : r[3] + "–" + r[4]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </>
+      )}
+      <Contact
+        cfg={cfg}
+        onCopy={() => {
+          void navigator.clipboard
+            .writeText("Mình cần Shop tư vấn Size cho bé.")
+            .catch(() => {});
+        }}
+      />
+      <button className="cc-primary" onClick={onClose}>
+        Quay lại chọn hàng
+      </button>
+    </Modal>
+  );
+}
 
-function CatalogIcon({kind}:{kind:string}){const paths:Record<string,string>={home:'M3 10.5 12 3l9 7.5M5 9v10a2 2 0 0 0 2 2h3v-7h4v7h3a2 2 0 0 0 2-2V9',products:'m8 3-5 3 2 5 3-1v10a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V10l3 1 2-5-5-3c-.5 4-7.5 4-8 0Z',size:'M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM6 7h5M6 11h3M6 15h5M6 19h3',cart:'M3 3h2l2.5 11a2 2 0 0 0 2 1.5h8a2 2 0 0 0 1.9-1.5L21 7H6M9 19a1 1 0 1 0 0 2 1 1 0 0 0 0-2M18 19a1 1 0 1 0 0 2 1 1 0 0 0 0-2'};return <svg className={'cc-nav-icon cc-nav-'+kind} aria-hidden="true" viewBox="0 0 24 24" width="23" height="23" fill="currentColor" fillOpacity=".15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={paths[kind]}/></svg>}
+function CatalogIcon({ kind }: { kind: string }) {
+  const paths: Record<string, string> = {
+    heart:
+      "M20.5 4.7a5 5 0 0 0-7.1 0L12 6.1l-1.4-1.4a5 5 0 0 0-7.1 7.1L12 21l8.5-9.2a5 5 0 0 0 0-7.1Z",
+    note: "M6 3h12v18H6ZM9 7h6M9 11h6M9 15h4",
+    phone:
+      "m8 3 3 5-3 3a15 15 0 0 0 5 5l3-3 5 3c-1 5-4 6-8 4C6 17 2 11 3 6c.5-2 2-3 5-3Z",
+    facebook:
+      "M14 21v-8h3l.5-4H14V7c0-1 .5-2 2-2h2V2h-3c-4 0-5 2-5 5v2H7v4h3v8",
+    messenger:
+      "M21 11a9 9 0 0 1-13 8l-4 2v-5a9 9 0 1 1 17-5ZM6 13l5-5 3 3 4-2-5 6-3-3Z",
+    home: "M3 10.5 12 3l9 7.5M5 9v10a2 2 0 0 0 2 2h3v-7h4v7h3a2 2 0 0 0 2-2V9",
+    products:
+      "m8 3-5 3 2 5 3-1v10a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V10l3 1 2-5-5-3c-.5 4-7.5 4-8 0Z",
+    size: "M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM6 7h5M6 11h3M6 15h5M6 19h3",
+    cart: "M3 3h2l2.5 11a2 2 0 0 0 2 1.5h8a2 2 0 0 0 1.9-1.5L21 7H6M9 19a1 1 0 1 0 0 2 1 1 0 0 0 0-2M18 19a1 1 0 1 0 0 2 1 1 0 0 0 0-2",
+  };
+  return (
+    <svg
+      className={"cc-nav-icon cc-nav-" + kind}
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="23"
+      height="23"
+      fill="currentColor"
+      fillOpacity=".15"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d={paths[kind]} />
+    </svg>
+  );
+}
 
-function BabyAvatar(){return <img className="cc-brand-baby" src={import.meta.env.BASE_URL+'brand/catalog-shop-logo.jpg'} alt="Em bé Shop Mẹ CaCao"/>}
-function CelebrationIllustration(){return <div className="cc-celebrate-art"><BabyAvatar/></div>}
+function BabyAvatar() {
+  return (
+    <img
+      className="cc-brand-baby"
+      src={import.meta.env.BASE_URL + "brand/catalog-shop-logo.jpg"}
+      alt="Em bé Shop Mẹ CaCao"
+    />
+  );
+}
+function CelebrationIllustration() {
+  return (
+    <div className="cc-celebrate-art">
+      <BabyAvatar />
+    </div>
+  );
+}
