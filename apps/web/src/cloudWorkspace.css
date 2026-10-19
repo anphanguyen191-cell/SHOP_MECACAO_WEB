@@ -14,10 +14,18 @@
 .cloudWorkspace .financeMetrics{margin:16px 0}
 .cloudWorkspace .salesButtons{flex-wrap:wrap;align-items:center}
 .cloudWorkspace .salesButtons a{overflow-wrap:anywhere}
+.cloudWorkspace .cloudSyncProgress{margin-block:12px;padding:16px;border-color:var(--mc-border);background:var(--mc-surface);color:var(--mc-ink)}
+.cloudWorkspace .cloudSyncProgressHeading{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.cloudWorkspace .cloudSyncProgressHeading>span{color:var(--mc-subtle);font-size:13px;font-weight:700}
+.cloudWorkspace .cloudSyncProgress>progress{display:block;width:100%;height:12px;margin:12px 0;accent-color:#a83870}
+.cloudWorkspace .cloudSyncProgressStats{display:flex;gap:8px 16px;flex-wrap:wrap;color:var(--mc-subtle);font-size:13px}
+.cloudWorkspace .cloudSyncProgressStats b{color:var(--mc-ink);font-variant-numeric:tabular-nums}
+.cloudWorkspace .cloudSyncProgress>p{margin:0;overflow-wrap:anywhere;color:var(--mc-ink);font-size:13px;line-height:1.5}
+.cloudWorkspace.themeDark .cloudSyncProgress>progress{accent-color:#f3b4d2}
 
 .cloudWorkspace :is(.cloudSettings,.catalogPanel,.phoneInbox,.stocktakePanel,.soldRetentionPage) button{border-radius:var(--mc-radius-sm);border:1px solid var(--mc-border);background:var(--mc-soft);color:var(--mc-ink);padding:10px 14px;min-height:var(--ui-control);font:inherit;font-weight:700}
 .cloudWorkspace :is(.cloudSettings,.catalogPanel,.phoneInbox,.stocktakePanel,.soldRetentionPage) button.primary{background:var(--mc-accent-strong);color:white}
 .cloudWorkspace :is(.catalogPanel,.phoneInbox,.stocktakePanel) input:not([type=checkbox]){width:100%;min-width:0}
 .cloudWorkspace .catalogPanel .product{margin-bottom:14px}
 
-@media(max-width:600px){.cloudWorkspace input,.cloudWorkspace select,.cloudWorkspace textarea{font-size:16px}.cloudWorkspace .salesButtons{flex-wrap:wrap}.cloudWorkspace textarea{width:100%;min-height:84px;resize:vertical}.cloudWorkspace .cloudShareButtons>*{min-width:0;max-width:100%;overflow-wrap:break-word}.cloudWorkspace .cloudShareButtons button{min-height:44px}}
+@media(max-width:600px){.cloudWorkspace input,.cloudWorkspace select,.cloudWorkspace textarea{font-size:16px}.cloudWorkspace .salesButtons{flex-wrap:wrap}.cloudWorkspace textarea{width:100%;min-height:84px;resize:vertical}.cloudWorkspace .cloudShareButtons>*{min-width:0;max-width:100%;overflow-wrap:break-word}.cloudWorkspace .cloudShareButtons button{min-height:44px}.cloudWorkspace .cloudSyncProgress{padding:13px}.cloudWorkspace .cloudSyncProgressStats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cloudWorkspace .cloudSyncProgressStats>span:first-child{grid-column:1/-1}}
