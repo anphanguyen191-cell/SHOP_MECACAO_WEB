@@ -9,6 +9,18 @@ let replayTail:Promise<unknown>=Promise.resolve()
 export function reconcileCloudSale(db:DatabaseSync,root:string,proof:any){
  const result=replayTail.then(()=>reconcile(db,root,proof));replayTail=result.catch(()=>{});return result
 }
+export function assertLocalDraftMatchesCloud(db:DatabaseSync,order:any,items:any[],contact:any){
+ const local=db.prepare('SELECT * FROM sales_orders WHERE id=?').get(order.id) as any
+ if(!local)return
+ if(local.status!=='DRAFT'||Number(local.version)!==Number(order.version)||Number(local.discount)!==Number(order.discount)||local.note!==order.note)throw Error('Đơn SOLD Cloud khác phiên bản laptop; dữ liệu core được giữ nguyên để đối soát.')
+ const localItems=db.prepare('SELECT image_id,product_id,variant_id,product_name,product_code,size,sku,unit_price,unit_cost,position FROM sales_order_images WHERE order_id=? ORDER BY position').all(order.id) as any[]
+ const cloudItems=[...items].sort((a,b)=>Number(a.position)-Number(b.position))
+ const fields=['image_id','product_id','variant_id','product_name','product_code','size','sku','unit_price','unit_cost','position']
+ if(localItems.length!==cloudItems.length||localItems.some((row,i)=>fields.some(k=>(row[k]??null)!==(cloudItems[i]?.[k]??null))))throw Error('Hàng/giá của đơn SOLD Cloud khác laptop; dữ liệu core được giữ nguyên để đối soát.')
+ const localContact=db.prepare('SELECT customer_id,recipient_name,phone,address,shipping_fee FROM order_contacts WHERE order_id=?').get(order.id) as any
+ const remote:Record<string,unknown>|null=contact?{customer_id:contact.customer_id??null,recipient_name:contact.recipient_name??'',phone:contact.phone??'',address:contact.address??'',shipping_fee:Number(contact.shipping_fee??0)}:null
+ if(Boolean(localContact)!==Boolean(remote)||localContact&&remote&&Object.keys(remote).some(k=>(localContact[k]??null)!==(remote[k]??null)))throw Error('Người nhận của đơn SOLD Cloud khác laptop; dữ liệu core được giữ nguyên để đối soát.')
+}
 async function reconcile(db:DatabaseSync,root:string,proof:any){
  const instance=db.prepare("SELECT value FROM app_metadata WHERE key='cloud-instance'").get()?.value
  if(!instance||proof?.instance!==instance)throw Error('Cloud thuộc kho khác; không đối soát vào kho hiện tại.')
@@ -22,6 +34,7 @@ async function reconcile(db:DatabaseSync,root:string,proof:any){
  if(previous){if(previous.value!==hash)throw Error('Bằng chứng SOLD Cloud thay đổi.');const status=await execution.status(key);if(!status.sold)throw Error('Lưu trữ SOLD Windows cần phục hồi.');return status}
  const existing=await execution.status(key)
  if(existing.sold){db.prepare('INSERT INTO app_metadata(key,value) VALUES(?,?)').run(marker,hash);return existing}
+ assertLocalDraftMatchesCloud(db,o,items,proof.contact)
  if(execution.pending())throw Error('Giao dịch Windows cần phục hồi trước khi đối soát Cloud.')
  if(db.prepare('SELECT 1 FROM sales_confirmations WHERE order_id=?').get(o.id))throw Error('Đơn đã SOLD tại Windows với giao dịch khác. Cần đối soát thủ công.')
  const ids=new Set<number>()

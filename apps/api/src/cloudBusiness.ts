@@ -112,15 +112,17 @@ export async function pullCloudBusiness(db:DatabaseSync,root:string,rpc:(name:st
  if((await rpc('mc_v7_health',{})).sequence!==before.sequence)throw Error('Cloud vừa thay đổi; sẽ đọc lại hồ sơ cùng một mốc.')
  if(salesActivity.busy||salesActivity.readers||pendingStockReturn(db,root))throw Error('Chờ giao dịch laptop hoàn tất trước khi nhận hồ sơ Cloud.')
  // Customers are dependencies of contacts. Their data is a Cloud-authority mirror.
- const writeRow=(table:string,row:any)=>{
+ const insertRow=(table:string,row:any)=>{
   const keys=businessColumns[table].split(','),pk=table==='sales_order_images'?['order_id','image_id']:['order_contacts','order_finance'].includes(table)?['order_id']:['id']
   if(keys.some(k=>row[k]===undefined))throw Error('Cloud thiếu trường '+table)
   const where=pk.map(k=>k+'=?').join(' AND '),values=pk.map(k=>row[k]),old=db.prepare('SELECT * FROM '+table+' WHERE '+where).get(...values)
-  if(!old)db.prepare(`INSERT INTO ${table}(${keys}) VALUES(${keys.map(()=>'?')})`).run(...keys.map(k=>row[k]))
-  else{const changed=keys.filter(k=>!pk.includes(k)&&old[k]!==row[k]);if(changed.length)db.prepare(`UPDATE ${table} SET ${changed.map(k=>k+'=?')} WHERE ${where}`).run(...changed.map(k=>row[k]),...values)}
+  if(old)return false
+  db.prepare(`INSERT INTO ${table}(${keys}) VALUES(${keys.map(()=>'?')})`).run(...keys.map(k=>row[k]))
+  return true
  }
+ const localWins={shop_customers:0,sales_orders:0,order_contacts:0,order_finance:0,aftercare_cases:0}
  db.exec('BEGIN IMMEDIATE')
- try{for(const row of data.shop_customers)writeRow('shop_customers',row);db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}
+ try{for(const row of data.shop_customers)if(!insertRow('shop_customers',row))localWins.shop_customers++;db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}
  for(const confirmation of data.sales_confirmations){
   if(db.prepare('SELECT 1 FROM sales_confirmations WHERE order_id=?').get(confirmation.order_id))continue
   await reconcileCloudSale(db,root,await rpc('mc_v7_sold_proof',{p_id:confirmation.order_id}))
@@ -128,16 +130,36 @@ export async function pullCloudBusiness(db:DatabaseSync,root:string,rpc:(name:st
  if((await rpc('mc_v7_health',{})).sequence!==before.sequence)throw Error('Cloud vừa thay đổi; sẽ đọc lại sổ nghiệp vụ.')
  db.exec('BEGIN IMMEDIATE')
  try{
-  for(const row of data.sales_orders)if(!db.prepare('SELECT 1 FROM sales_confirmations WHERE order_id=?').get(row.id))writeRow('sales_orders',{...row,request_key:'cloud-import-'+row.id})
-  for(const order of data.sales_orders){
-   if(db.prepare('SELECT 1 FROM sales_confirmations WHERE order_id=?').get(order.id))continue
-   db.prepare('DELETE FROM sales_order_images WHERE order_id=?').run(order.id)
-   for(const item of data.sales_order_images.filter(i=>i.order_id===order.id))writeRow('sales_order_images',item)
-   for(const contact of data.order_contacts.filter(i=>i.order_id===order.id))writeRow('order_contacts',contact)
+  const newOrders=new Set<string>()
+  for(const row of data.sales_orders){
+   if(db.prepare('SELECT 1 FROM sales_confirmations WHERE order_id=?').get(row.id))continue
+   if(insertRow('sales_orders',{...row,request_key:'cloud-import-'+row.id}))newOrders.add(row.id)
+   else localWins.sales_orders++
   }
-  for(const table of ['order_finance','finance_entries','aftercare_cases'])for(const row of data[table])writeRow(table,table==='aftercare_cases'?{...row,input_hash:businessDigest({id:row.order_id,kind:row.kind,note:row.note})}:row)
-  db.prepare("INSERT INTO app_metadata(key,value) VALUES('cloud-business-pull',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(JSON.stringify({sequence:before.sequence,at:new Date().toISOString()}))
+  for(const order of data.sales_orders){
+   if(!newOrders.has(order.id))continue
+   for(const item of data.sales_order_images.filter(i=>i.order_id===order.id))insertRow('sales_order_images',item)
+   for(const contact of data.order_contacts.filter(i=>i.order_id===order.id))insertRow('order_contacts',contact)
+  }
+  for(const row of data.order_finance){
+   if(insertRow('order_finance',row))continue
+   localWins.order_finance++
+  }
+  for(const row of data.finance_entries){
+   if(insertRow('finance_entries',row))continue
+   const keys=businessColumns.finance_entries.split(','),old=db.prepare('SELECT * FROM finance_entries WHERE id=?').get(row.id)
+   if(!old||keys.some(k=>old[k]!==row[k]))throw Error('Chứng từ tiền Cloud xung đột với hồ sơ laptop; giữ nguyên dữ liệu local.')
+  }
+  // Append-only Cloud receipts/refunds may advance only the local revision;
+  // laptop delivery/method/tracking values remain authoritative.
+  for(const orderId of new Set(data.finance_entries.map(r=>String(r.order_id)))){
+   const max=Number(db.prepare('SELECT COALESCE(MAX(sequence),0) n FROM finance_entries WHERE order_id=?').get(orderId)?.n||0)
+   const old=db.prepare('SELECT version FROM order_finance WHERE order_id=?').get(orderId)
+   if(old&&Number(old.version)<max)db.prepare('UPDATE order_finance SET version=? WHERE order_id=?').run(max,orderId)
+  }
+  for(const row of data.aftercare_cases)if(!insertRow('aftercare_cases',{...row,input_hash:businessDigest({id:row.order_id,kind:row.kind,note:row.note})}))localWins.aftercare_cases++
+  db.prepare("INSERT INTO app_metadata(key,value) VALUES('cloud-business-pull',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(JSON.stringify({sequence:before.sequence,at:new Date().toISOString(),localWins}))
   db.exec('COMMIT')
  }catch(e){db.exec('ROLLBACK');throw e}
- return {sequence:before.sequence,customers:data.shop_customers.length,orders:data.sales_orders.length,finance:data.finance_entries.length}
+ return {sequence:before.sequence,customers:data.shop_customers.length,orders:data.sales_orders.length,finance:data.finance_entries.length,localWins}
 }
