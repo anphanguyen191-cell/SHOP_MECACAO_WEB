@@ -3,10 +3,15 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import {DatabaseSync} from 'node:sqlite'
+import express from 'express'
+import {once} from 'node:events'
 import sharp from 'sharp'
 import {PGlite} from '@electric-sql/pglite'
 import {bootstrapSalesDrafts} from '../apps/api/src/salesSchema.js'
-import {bootstrapSalesExecution,salesExecutionService} from '../apps/api/src/salesExecution.js'
+import {bootstrapSalesExecution,salesExecutionService,salesActivity,SALES_AREA} from '../apps/api/src/salesExecution.js'
+import {salesRequestGuard} from '../apps/api/src/salesRequestGuard.js'
+import {cloudRouter} from '../apps/api/src/cloudRoutes.js'
+import {STOCK_RETURN_LOCK} from '../apps/api/src/stockReturnState.js'
 import {salesDraftService} from '../apps/api/src/salesDrafts.js'
 import {salesPreflightService} from '../apps/api/src/salesPreflight.js'
 import {bootstrapCustomers,customerService} from '../apps/api/src/customers.js'
@@ -27,6 +32,28 @@ const call=async(name:string,args:any)=>{
  return (await one(`SELECT public.${name}($1,$2,$3) data`,[args.p_instance,args.p_request,JSON.stringify(args.p_payload)])).data
 }
 const proof=async(id:string)=>({instance,order:await one('SELECT * FROM sales_orders WHERE id=$1',[id]),confirmation:await one('SELECT * FROM sales_confirmations WHERE order_id=$1',[id]),items:(await pg.query('SELECT * FROM sales_order_images WHERE order_id=$1 ORDER BY position',[id])).rows,assets:(await pg.query('SELECT a.* FROM cloud_image_assets a JOIN sales_units u ON u.image_id=a.image_id WHERE u.order_id=$1',[id])).rows})
+// Real localhost HTTP, production middleware and production Cloud router. Only
+// the remote transport is replaced with the isolated PostgreSQL fixture.
+const realFetch=globalThis.fetch
+let remoteCalls=0,holdRead:(()=>void)|undefined
+globalThis.fetch=async(input,init)=>{
+ const url=String(input)
+ if(url.startsWith('http://127.0.0.1:'))return realFetch(input,init)
+ assert(url.startsWith('https://eyckwoewpomssjjggslr.supabase.co/rest/v1/rpc/'),'No live Cloud access in tests')
+ remoteCalls++
+ try{
+  const name=url.split('/').pop()!,args=JSON.parse(String(init?.body||'{}'))
+  const result=name==='mc_v7_activate'?{active:true}:await call(name,args)
+  return Response.json(result)
+ }catch(e){return Response.json({message:(e as Error).message},{status:409})}
+}
+const app=express();app.use(express.json());app.use('/api',salesRequestGuard(db,root,true))
+app.get('/api/held-reader',(_req,res)=>{res.flushHeaders();holdRead=()=>res.end('done')})
+app.use('/api/cloud',cloudRouter(db,root))
+const server=app.listen(0,'127.0.0.1');await once(server,'listening')
+const baseUrl='http://127.0.0.1:'+(server.address() as any).port
+const post=async(route:string)=>{const r=await fetch(baseUrl+'/api/cloud/'+route,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer isolated-test'},body:'{}'});return {status:r.status,body:await r.json()}}
+const httpSuccess=async(route:string)=>{const r=await post(route);assert.equal(r.status,200,JSON.stringify(r));assert.equal(salesActivity.readers,0,'HTTP reader lease released');return r.body}
 try{
  bootstrapSalesDrafts(db);bootstrapSalesExecution(db,root);bootstrapCustomers(db);bootstrapFinance(db)
  db.exec("INSERT INTO products(id,product_code,name) VALUES(1,'P1','Bộ tole');INSERT INTO product_variants(id,product_id,sku,size,cost_price,sale_price) VALUES(1,1,'P1-S','S',12000,50000);INSERT INTO inventory_transactions(variant_id,transaction_type,quantity) VALUES(1,'OPENING',3106)")
@@ -43,6 +70,32 @@ try{
  const snapshot=readLocalBusiness(db,root),serialized=JSON.stringify(snapshot.rows)
  assert.equal(serialized.includes(root),false,'Machine paths are not sent to Cloud')
  assert.equal(snapshot.counts.sales_units,4);assert.equal(snapshot.counts.shop_customers,1)
+ // Reproduce the old middleware's self-reader failure without modifying data.
+ salesActivity.readers=1
+ assert.throws(()=>readLocalBusiness(db,root),/Chờ giao dịch/)
+ salesActivity.readers=0
+ for(const route of ['business','business/pull','activate']){
+  const before=remoteCalls
+  salesActivity.busy=true
+  assert.equal((await post(route)).body.code,'SALE_RECOVERY_REQUIRED')
+  salesActivity.busy=false
+  db.exec('BEGIN')
+  try{
+   db.exec("INSERT INTO sales_operations(id,request_key,input_hash,payload,payload_hash,status) SELECT 'pending-http-test','pending-http-request-001',input_hash,payload,payload_hash,'PREPARED' FROM sales_operations LIMIT 1")
+   assert.equal((await post(route)).body.code,'SALE_RECOVERY_REQUIRED','Unfinished database operation remains fenced')
+  }finally{db.exec('ROLLBACK')}
+  for(const [file,code] of [[SALES_AREA+'-pending.json','SALE_RECOVERY_REQUIRED'],[STOCK_RETURN_LOCK,'STOCK_RETURN_RECOVERY_REQUIRED']]){
+   fs.writeFileSync(path.join(root,file),'{}')
+   try{assert.equal((await post(route)).body.code,code)}finally{fs.unlinkSync(path.join(root,file))}
+  }
+  assert.equal(remoteCalls,before,'Recovery/busy rejection happens before Cloud I/O')
+ }
+ const held=await fetch(baseUrl+'/api/held-reader')
+ assert.equal(salesActivity.readers,1)
+ const blockedSale=salesExecutionService(db,root).confirm('not-an-order',{version:1,token:'a'.repeat(64),confirmed:true,acknowledgeZeroPrice:false},'blocked-http-sale-001')
+ await assert.rejects(blockedSale,/tác vụ|giao dịch/)
+ holdRead!();await held.text()
+ assert.equal(salesActivity.readers,0)
  assert.throws(()=>assertBusinessUploaded(db,root),/chưa đồng bộ/)
  await pg.exec(`CREATE ROLE anon;CREATE ROLE authenticated;CREATE ROLE service_role;CREATE SCHEMA auth;CREATE SCHEMA storage;CREATE TABLE auth.users(id uuid PRIMARY KEY);INSERT INTO auth.users VALUES('${owner}');CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;CREATE TABLE storage.objects(bucket_id text,name text,metadata jsonb);`)
  const base=fs.readFileSync('supabase/migrations/20261011052324_reset_shop_mecacao_web_v7.sql','utf8').replace(/^ALTER PUBLICATION .*;$/m,'')
@@ -65,14 +118,20 @@ try{
  assert.equal((await one("SELECT has_table_privilege('authenticated','public.sales_confirmations','INSERT') allowed")).allowed,false)
  const available=async()=>Number((await one('SELECT count(*) n FROM cloud_image_assets a WHERE ready AND source_present AND NOT EXISTS(SELECT 1 FROM sales_units u WHERE u.image_id=a.image_id)')).n)
  assert.equal(await available(),3106)
+ const competing=await fetch(baseUrl+'/api/held-reader')
+ const blockedUpload=await post('business')
+ assert.equal(blockedUpload.status,409)
+ assert.match(blockedUpload.body.error,/Chờ giao dịch/,'Another real reader is still protected')
+ holdRead!();await competing.text()
+ assert.equal(salesActivity.readers,0)
  await assert.rejects(()=>pg.query("SELECT public.mc_v7_command('fixture-before-activation','customer.save','{}')"),/NOT_READY/)
  let lost=true
  await pg.exec('GRANT USAGE ON SCHEMA auth TO authenticated;SET ROLE authenticated')
  await assert.rejects(()=>uploadLocalBusiness(db,root,async(n,a)=>{const result=await call(n,a);if(lost){lost=false;throw Error('Lost response after commit')}return result}),/Lost response/)
  await pg.exec('RESET ROLE')
  assert.equal(await available(),3102,'All four LOCAL SOLD disappear atomically from Cloud stock')
- const result=await uploadLocalBusiness(db,root,call);assert.equal(result.counts.sales_units,4);assertBusinessUploaded(db,root)
- await uploadLocalBusiness(db,root,call)
+ const result=await httpSuccess('business');assert.equal(result.counts.sales_units,4);assertBusinessUploaded(db,root)
+ await httpSuccess('business')
  assert.equal(Number((await one('SELECT count(*) n FROM finance_entries')).n),1,'Retry never duplicates receipt')
  assert.equal(Number((await one('SELECT count(*) n FROM sales_ledger')).n),4)
  assert.equal(Number((await one('SELECT sum(total) n FROM sales_confirmations')).n),199000)
@@ -91,26 +150,27 @@ try{
  await pg.exec("UPDATE cloud_members SET role='viewer'")
  await assert.rejects(()=>call('mc_v8_business_import',{p_instance:instance,p_request:'business-viewer-fixture-001',p_payload:snapshot.rows}),/ROLE_DENIED/)
  await pg.exec("UPDATE cloud_members SET role='owner';UPDATE app_metadata SET value='CLOUD_TEST_READY' WHERE key='cloud_status'")
- db.prepare("INSERT INTO app_metadata(key,value) VALUES('cloud-authority','enabled')").run()
+ await httpSuccess('activate')
+ assert.equal(db.prepare("SELECT value FROM app_metadata WHERE key='cloud-authority'").get()!.value,'enabled')
  await pg.query("UPDATE shop_customers SET name='Tên sửa từ mobile',version=version+1 WHERE id=$1",[customer.id])
- await pullCloudBusiness(db,root,call)
+ await httpSuccess('business/pull')
  assert.equal(customerService(db).get(String(customer.id)).name,'Tên sửa từ mobile')
  assert.equal(financeService(db).summary(draft.id).due,109000,'Same receipt/shipping/discount and debt after Cloud mirror')
- await pullCloudBusiness(db,root,call);assert.equal(Number(db.prepare('SELECT count(*) n FROM finance_entries').get()!.n),1)
+ await httpSuccess('business/pull');assert.equal(Number(db.prepare('SELECT count(*) n FROM finance_entries').get()!.n),1)
  const payment={id:draft.id,kind:'RECEIPT',amount:50000,method:'TRANSFER',note:'Thu từ mobile',version:1,orderVersion:1},payload=JSON.stringify(payment)
  await pg.query("INSERT INTO finance_entries(id,order_id,request_key,input_hash,payload,sequence,kind,amount,method,note) VALUES('mobile-receipt',$1,'mobile-receipt-fixture-001',encode(sha256(convert_to($2,'UTF8')),'hex'),$2,2,'RECEIPT',50000,'TRANSFER','Thu từ mobile')",[draft.id,payload])
  await pg.query("INSERT INTO aftercare_cases(id,order_id,request_key,input_hash,kind,note,status) VALUES('mobile-case',$1,'mobile-case-fixture-001','cloud-command-hash','SUPPORT','Yêu cầu mobile','OPEN')",[draft.id])
  await pg.query('UPDATE order_finance SET version=3 WHERE order_id=$1',[draft.id])
- await pullCloudBusiness(db,root,call);validateFinance(db)
+ await httpSuccess('business/pull');validateFinance(db)
  assert.equal(financeService(db).summary(draft.id).due,59000)
- await pullCloudBusiness(db,root,call);assert.equal(Number(db.prepare('SELECT count(*) n FROM finance_entries').get()!.n),2)
+ await httpSuccess('business/pull');assert.equal(Number(db.prepare('SELECT count(*) n FROM finance_entries').get()!.n),2)
  await pg.exec("INSERT INTO sales_orders(id,request_key,request_hash,discount,note) VALUES('new-mobile-draft','new-mobile-request','new-mobile-hash',0,'Tạo từ mobile');INSERT INTO sales_order_images(order_id,image_id,product_id,variant_id,product_name,product_code,size,sku,unit_price,unit_cost,position) VALUES('new-mobile-draft',5,1,1,'Bộ tole','P1','S','P1-S',50000,12000,0)")
- await pullCloudBusiness(db,root,call)
+ await httpSuccess('business/pull')
  assert.equal(db.prepare("SELECT request_key FROM sales_orders WHERE id='new-mobile-draft'").get()!.request_key,'cloud-import-new-mobile-draft')
  const photo5=await optimizeCloudImage(path.join(root,'photo-5.png'))
  await pg.query('UPDATE cloud_image_assets SET sha256=$1 WHERE image_id=5',[photo5.sha256])
  await pg.exec("INSERT INTO sales_operations(id,request_key,input_hash,payload,payload_hash,status) VALUES('new-mobile-op','new-mobile-sale','hash','{}','hash','SOLD');INSERT INTO sales_confirmations(order_id,operation_id,version,subtotal,discount,total,note) VALUES('new-mobile-draft','new-mobile-op',1,50000,0,50000,'Tạo từ mobile');INSERT INTO sales_units(image_id,order_id,variant_id,snapshot,source_hash,archive_path,archive_hash) SELECT 5,'new-mobile-draft',1,'{}',sha256,object_path,sha256 FROM cloud_image_assets WHERE image_id=5;INSERT INTO sales_ledger(image_id,order_id,variant_id,transaction_type,quantity,unit_cost) VALUES(5,'new-mobile-draft',1,'SALE',1,12000)")
- await pullCloudBusiness(db,root,call)
+ await httpSuccess('business/pull')
  assert.equal(Number(db.prepare('SELECT count(*) n FROM sales_units').get()!.n),5,'A mirrored mobile draft can later become SOLD on the same laptop')
  assert.equal(fs.existsSync(path.join(root,'photo-5.png')),false)
  // Business changes trigger sync before activation, without waiting for folder changes.
@@ -118,5 +178,5 @@ try{
  const runner=createLiveFolderSync({clock:()=>time,online:()=>online,busy:()=>false,read:async()=>({enabled:false,syncEnabled:true,business:{epoch:'first',revision},live:{ready:true,pendingSync:false}}),onState:()=>{},onError:()=>{},sync:async()=>{syncs++;if(fail){fail=false;return false}return true}})
  await runner.tick();assert.equal(syncs,1);await runner.tick();assert.equal(syncs,1)
  revision++;await runner.tick();assert.equal(syncs,2);online=false;revision++;await runner.tick();assert.equal(syncs,2);online=true;fail=true;await runner.tick();assert.equal(syncs,3);time+=1000;await runner.tick();assert.equal(syncs,4);runner.close()
- console.log('BUSINESS_SYNC PASS: real LOCAL SOLD/archive to PostgreSQL, 3106 -> 3102 mobile stock, customers/orders/receipts/debt, atomic rejection, lost-response/restart retry, immutable evidence, role/instance guards, mobile customer back to LOCAL, pre-activation change signal and offline retry')
-}finally{db.close();await pg.close();fs.rmSync(root,{recursive:true,force:true})}
+ console.log('BUSINESS_SYNC PASS: production HTTP guard/router upload + activate + pull + SOLD replay, real busy/recovery fences, reader release; real LOCAL SOLD/archive to PostgreSQL, 3106 -> 3102 mobile stock, customers/orders/receipts/debt, atomic rejection, lost-response/restart retry, immutable evidence, role/instance guards, mobile customer back to LOCAL, pre-activation change signal and offline retry')
+}finally{holdRead?.();server.closeAllConnections();await new Promise<void>(r=>server.close(()=>r()));globalThis.fetch=realFetch;salesActivity.busy=false;salesActivity.readers=0;db.close();await pg.close();fs.rmSync(root,{recursive:true,force:true})}

@@ -21,6 +21,12 @@ Cloud có 3.106 ảnh sẵn sàng nhưng không có khách, đơn, SOLD và sổ
 
 ## Kiểm chứng
 
+### Sửa lỗi tự khóa HTTP ngày 19/10/2026
+
+Middleware toàn cục trước đây tính chính POST gửi hồ sơ là một reader, khiến `readLocalBusiness` từ chối ngay khi không có giao dịch khác. Cùng lỗi ảnh hưởng `/business/pull` và `/activate`. Ba coordinator này không giữ reader lease của chính mình nữa; kiểm tra giao dịch đang chạy, file phục hồi bán/nhận lại và bản ghi PREPARED vẫn thực hiện trước khi gọi Cloud. Các coordinator vẫn kiểm tra hoạt động thực, snapshot/hash sau I/O và dùng khóa bán/lưu trữ khi replay SOLD. Không tắt khóa an toàn, không xóa marker phục hồi hoặc dữ liệu.
+
+Regression chạy HTTP localhost qua đúng `salesRequestGuard` và `cloudRouter` dùng trong server, chỉ thay transport Cloud bằng PostgreSQL cô lập. Kiểm tra upload → activate → pull, cập nhật khách/tiền, draft mobile thành SOLD và archive thật, retry không trùng; đồng thời kiểm tra busy, PREPARED và file phục hồi vẫn chặn cả ba route, reader khác vẫn chặn và lease được trả khi kết thúc HTTP. Bộ test này chạy trong `test:cloud` trên Linux/Windows trước phát hành. Test fixture không chứng minh laptop thật đã đồng bộ.
+
 `scripts/business-sync-selftest.mts` chạy nghiệp vụ LOCAL thật (ảnh gốc, preflight, SOLD, thu tiền, kiểm kê) sang PostgreSQL WASM với schema/trigger thật, rồi áp dụng migration mới. Kiểm tra 3.106 → 3.102 trên phép chiếu tồn dùng thật của mobile; bảo toàn doanh thu, công nợ, mất phản hồi, gửi lại, sai kho/quyền, chứng từ thiếu/sai, nhận sửa khách/thu tiền/hậu mãi từ mobile về LOCAL.
 
 Các bộ test folder, nhận lại hàng, Cloud image/replay, UI và typecheck tiếp tục được chạy. CI Windows Node 22/24 và gói EXE kiểm tra riêng trước phát hành.
