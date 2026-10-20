@@ -1,4 +1,5 @@
 import {cloudRouter} from './cloudRoutes.js'
+import {cloudAuthorityWriteBlocked} from './localWriteAuthority.js'
 import {repairShopDesktopShortcut} from './desktopShortcut.js'
 import {createWarehouseLive,type WarehouseLive} from './warehouseLive.js'
 import {priceBulkService} from './priceBulk.js'
@@ -89,6 +90,8 @@ app.use(express.json({ limit: '2mb' }))
 const lanControl=freshDevelopment?createLanControl(app,path.join(freshRoot,'lan'),PORT,lan):null
 installLanGuard(app,()=>lanControl?lanControl.current():lan)
 const windowsAuth=v8Home?createWindowsAuth(freshRoot):null
+// Authenticated Windows CORE owns its writes even when Cloud has been activated.
+const cloudWriteBlocked=(res:any)=>cloudAuthorityWriteBlocked(!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(),!!windowsAuth,!!res.locals.lanUser)
 app.use(changeFeed.middleware)
 app.use('/api',(req,res,next)=>{
  if(localRuntime||freshDevelopment){
@@ -263,7 +266,7 @@ app.post('/api/local/warehouse',(req,res)=>{
 if(salesExecutionEnabled&&sandboxRoot)app.use('/api/cloud',cloudRouter(db,sandboxRoot,liveWarehouse,changeFeed.businessView))
 app.use('/api/sales/drafts',(req,res,next)=>{
  const localStockReturn=req.path==='/returns/recover'||/^\/[^/]+\/returns$/.test(req.path)
- if(!['GET','HEAD'].includes(req.method)&&req.path!=='/recover'&&!localStockReturn&&db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())return res.status(409).json({error:'Kho đang dùng Cloud. Mở giao diện Cloud để tạo đơn, bán, cập nhật tiền và khách hàng.',code:'CLOUD_AUTHORITY_REQUIRED'})
+ if(!['GET','HEAD'].includes(req.method)&&req.path!=='/recover'&&!localStockReturn&&cloudWriteBlocked(res))return res.status(409).json({error:'Kho đang dùng Cloud. Mở giao diện Cloud để tạo đơn, bán, cập nhật tiền và khách hàng.',code:'CLOUD_AUTHORITY_REQUIRED'})
  next()
 })
 if(salesDraftsEnabled&&sandboxRoot)app.use('/api/sales/drafts',salesDraftRouter(db,sandboxRoot,PORT))
@@ -348,7 +351,7 @@ app.get('/api/inventory/prices',(_req,res)=>{try{res.set('Cache-Control','no-sto
 app.get('/api/inventory/prices/history/:id',(req,res)=>{try{res.set('Cache-Control','no-store').json(prices.history(req.params.id))}catch(e){res.status((e as any).status||400).json({error:(e as Error).message})}})
 for(const action of ['preview','commit'] as const)app.post('/api/inventory/prices/'+action,(req,res)=>{
  if(res.locals.lanUser&& !['owner','inventory'].includes(res.locals.lanUser.role))return res.status(403).json({error:'Cần quyền quản lý kho'})
- if(db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())return res.status(409).json({error:'Kho đang dùng Cloud. Xuất và bổ sung giá trên giao diện Cloud.'})
+ if(cloudWriteBlocked(res))return res.status(409).json({error:'Cloud mode requires owner Windows for pricing.',code:'CLOUD_AUTHORITY_REQUIRED'})
  try{res.json(action==='preview'?prices.preview(req.body):prices.commit(req.body,req.get('Idempotency-Key')))}catch(e){res.status((e as any).status||400).json({error:(e as Error).message})}
 })
 app.get('/api/inventory/dashboard', (_req,res)=>{try{res.json(inventoryDashboard())}catch(e){res.status(500).json({error:e instanceof Error?e.message:'Không thể tổng hợp tồn kho'})}})
@@ -356,7 +359,7 @@ app.get('/api/inventory/explorer', (req,res)=>{try{res.json(inventoryExplorer({s
 app.get('/api/inventory/suggestions', (req,res)=>{try{res.json(inventorySuggestions(String(req.query.search??'')))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể gợi ý sản phẩm'})}})
 app.get('/api/inventory/history', (req,res) => res.json(inventoryHistory(Number(req.query.limit??200))))
 app.patch('/api/products/:id/status', (req,res) => {
- if(db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())return res.status(409).json({error:'Đổi trạng thái Product tại Danh mục Cloud.'})
+ if(cloudWriteBlocked(res))return res.status(409).json({error:'Cloud mode requires owner Windows for product changes.',code:'CLOUD_AUTHORITY_REQUIRED'})
   try { res.json(setProductStatus(Number(req.params.id), req.body.status)) }
   catch(e){ res.status(400).json({ error:e instanceof Error?e.message:'Không thể đổi trạng thái sản phẩm' }) }
 })
@@ -367,7 +370,7 @@ app.get('/api/products/:id', (req, res) => {
   if (!data) return res.status(404).json({ error: 'Không tìm thấy sản phẩm' })
   res.json(data)
 })
-app.patch('/api/variants/:id/pricing', (req,res)=>{if(db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get())return res.status(409).json({error:'Sửa giá tại Danh mục / Giá Cloud để dùng chung trên Windows và mobile.'});try{res.json(updateVariantPricing(Number(req.params.id),Number(req.body.costPrice),Number(req.body.salePrice)))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể cập nhật giá'})}})
+app.patch('/api/variants/:id/pricing', (req,res)=>{if(cloudWriteBlocked(res))return res.status(409).json({error:'Cloud mode requires owner Windows for pricing.',code:'CLOUD_AUTHORITY_REQUIRED'});try{res.json(updateVariantPricing(Number(req.params.id),Number(req.body.costPrice),Number(req.body.salePrice)))}catch(e){res.status(400).json({error:e instanceof Error?e.message:'Không thể cập nhật giá'})}})
 app.post('/api/products', (req, res) => {
   try { res.status(201).json(createProduct(req.body)) }
   catch (e) { res.status(400).json({ error: e instanceof Error ? e.message : 'Không thể tạo sản phẩm' }) }
