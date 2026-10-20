@@ -9,6 +9,7 @@ import {once} from 'node:events'
 import type {Server} from 'node:http'
 import {PGlite} from '@electric-sql/pglite'
 import {bootstrapSalesDrafts} from '../apps/api/src/salesSchema.js'
+import {salesDraftService} from '../apps/api/src/salesDrafts.js'
 import {bootstrapSalesExecution,salesExecutionService} from '../apps/api/src/salesExecution.js'
 import {bootstrapCustomers} from '../apps/api/src/customers.js'
 import {bootstrapFinance} from '../apps/api/src/orderFinance.js'
@@ -39,6 +40,8 @@ const rpc=async(name:string,args:any={})=>{
 const request=async(id:string,key:string,version=1)=>rpc('mc_v8_local_sales',{p_action:'request',p_key:key,p_payload:{id,version,confirmed:true,acknowledgeZeroPrice:false}})
 const command=async(action:string,id:string)=>one('SELECT public.mc_v7_command($1,$2,$3) data',['legacy-request-key-001',action,JSON.stringify({id,version:1})])
 try{
+ const legacy=new DatabaseSync(':memory:')
+ try{bootstrapSalesDrafts(legacy);salesDraftService(legacy,root);legacy.exec("INSERT INTO sales_orders(id,request_key,request_hash,discount) VALUES('legacy-draft','legacy-history-request','h',0)");const history=salesHistory(legacy);assert.equal(history.total,1);assert.equal(history.rows[0].status,'DRAFT');assert.equal(history.summary.soldOrders,0);assert.equal(legacy.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_confirmations'").get(),undefined,'history must not upgrade an experimental draft warehouse')}finally{legacy.close()}
  bootstrapSalesDrafts(db);bootstrapSalesExecution(db,root);bootstrapCustomers(db);bootstrapFinance(db);bootstrapStocktake(db);bootstrapPriceBulk(db)
  db.exec(`INSERT INTO products(id,product_code,name) VALUES(1,'P1','Bộ tole');INSERT INTO product_variants(id,product_id,sku,size,cost_price,sale_price) VALUES(1,1,'P1-S','S',10000,45000);INSERT INTO inventory_transactions(variant_id,transaction_type,quantity) VALUES(1,'OPENING',4)`)
  db.prepare('INSERT INTO app_metadata(key,value) VALUES(?,?)').run('cloud-instance',instance)
