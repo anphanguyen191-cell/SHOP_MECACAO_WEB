@@ -205,7 +205,10 @@ foreach($file in $s.links){
   if($_.Exception.Message -match 'Duplicate source receipt was accepted'){throw}
  }
  if((Get-ChildItem $size8 -File -Filter '*.jpg').Count -ne 2){throw 'Failed duplicate receipt created an unexpected file'}
- Write-Host 'V8_DESKTOP_SMOKE_PASS: D-drive store handoff, 3 goods receipt types, duplicate rollback, stable originals and SQLite.'
+ # Regression: real authenticated Windows EXE must still create a local order with Cloud active.
+ & node scripts/v8/windows-cloud-active-sale-smoke.mjs $database
+ if($LASTEXITCODE -ne 0){throw 'Authenticated Windows EXE sale was blocked after Cloud activation'}
+ Write-Host 'V8_DESKTOP_SMOKE_PASS: warehouse import, three receipt paths, Cloud-active authenticated sale draft/cancel, SQLite integrity.'
 }catch{
  $log=Join-Path $installDir 'logs/desktop.log'
  if(Test-Path $log){Get-Content $log -Tail 60 | ForEach-Object {Write-Host $_}}
