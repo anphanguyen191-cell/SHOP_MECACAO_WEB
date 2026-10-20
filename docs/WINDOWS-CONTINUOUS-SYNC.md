@@ -65,9 +65,9 @@ Do not alter the laptop count or insert fake Cloud stock to make totals match.
   Windows-mode lifecycle fixture passed.
 - Supabase migration `20261020070109_windows_continuous_business_sync` is applied.
   RPC permissions and unchanged live order/SOLD/stock counts were verified.
-- `continuous_mutable_history` is tested locally but NOT applied: the migration
-  connection returned `Invalid or expired requestState`; a read-back confirmed
-  that the lifecycle extension is absent. Restore the configured Supabase write
-  connection and apply this migration before publishing the Windows update.
-- Published main at this checkpoint remains `c01de41` / v8.0.334. This prepared
-  change must not be represented as already installed on the shop laptop.
+- The write connection recovered after the owner renewed authorization.
+  `20261020074627_continuous_mutable_history` is now applied too; read-back confirms
+  lifecycle support and the unchanged owner-only / anonymous-denied RPC boundary.
+- The Windows release still requires CI and installation through the existing
+  updater. Neither schema deployment nor CI proves the laptop's current photos
+  have already uploaded; verify exact IDs after its sync finishes.
