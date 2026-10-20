@@ -50,6 +50,8 @@ jobs:
       - run: npm run test:gate
       - name: Mobile floating actions and safe-area browser gate
         run: node scripts/mobile-browser-smoke.mjs
+      - name: Cloud historical SOLD list and detail browser gate
+        run: node scripts/cloud-browser-e2e.mjs
       - run: npm run test:cloud
       - run: npm run test:windows-update
       - shell: pwsh

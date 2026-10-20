@@ -24,7 +24,8 @@ const root=path.resolve('apps/web/dist'),server=http.createServer((req,res)=>{
  const name=new URL(req.url,'http://fake').pathname,file=path.resolve(root,'.'+(name==='/'?'/index.html':name));if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return}try{res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.jpg')?'image/jpeg':file.endsWith('.svg')?'image/svg+xml':'text/html');res.end(fs.readFileSync(file))}catch{res.writeHead(404);res.end()}
 })
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url='http://127.0.0.1:'+server.address().port+'/?cloud=1'
-const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/chromium'].find(fs.existsSync);assert(chrome,'Chromium required')
+const windowsChrome=process.platform==='win32'?[path.join(process.env.PROGRAMFILES||'C:\\Program Files','Google/Chrome/Application/chrome.exe'),path.join(process.env['PROGRAMFILES(X86)']||'C:\\Program Files (x86)','Google/Chrome/Application/chrome.exe')]:[]
+const chrome=process.env.CHROME_BIN||[...windowsChrome,'/usr/bin/google-chrome','/usr/bin/chromium'].find(fs.existsSync);assert(chrome,'Chromium required')
 const browser=spawn(chrome,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-proxy-server','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{stdio:['ignore','ignore','pipe']})
 let browserLog='';browser.stderr.on('data',b=>browserLog+=b)
 let ws,next=0;const pending=new Map(),failures=[],trace=[],interceptionErrors=[],cancelledRequests=new Set(),activeInterceptions=new Set(),inflightNetwork=new Map()
@@ -292,6 +293,33 @@ try{
  await click('Đăng xuất');await until("!!document.querySelector('input[autocomplete=current-password]')");
  await run("document.querySelector('input[type=email]').focus();document.querySelector('input[type=email]').select()");await cmd('Input.insertText',{text:user.email});await run("document.querySelector('input[autocomplete=current-password]').focus()");await cmd('Input.insertText',{text:'fake-new-cloud-password'});await click('Đăng nhập');await until("!!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đăng xuất')");
  await cmd('Page.reload');await until("!!Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Đăng xuất')");
+ // Reported shop shape: seven confirmed rows retain raw DRAFT headers, plus
+ // one cancelled draft. Exercise real layout/hit targets, not DOM clicks alone.
+ state.autoEnabled=false
+ state.orders=Array.from({length:8},(_,i)=>({id:'hist000'+i+'-fixture',status:i===7?'CANCELLED_DRAFT':'DRAFT',version:2,discount:0,note:'Historical fixture'}))
+ state.items=state.orders.map((o,i)=>({order_id:o.id,image_id:100+i,product_id:1,variant_id:1,product_name:'Historical product '+i,product_code:'FAKE1',size:'S1',sku:'FAKE1-S1',unit_price:50000,unit_cost:10000,position:0}))
+ state.confirmations=state.orders.slice(0,7).map(o=>({order_id:o.id,version:2,created_at:'2026-10-18 06:25:29'}));state.sequence++
+ await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true})
+ await cmd('Page.reload');await until("!!document.querySelector('.mobileLuxeNav')&&!document.querySelector('.mobileLuxeSplash')")
+ await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Bán hàng').click()")
+ await until("document.querySelectorAll('.salesOrderRow').length===8")
+ for(const width of [375,390,430,768]){
+  await cmd('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true})
+  await run("(()=>{const s=document.querySelector('[aria-label=\"Lọc đơn\"]');s.value='SOLD';s.dispatchEvent(new Event('change',{bubbles:true}))})()")
+  await until("document.querySelectorAll('.salesOrderRow').length===7")
+  assert(await run("(()=>{const l=document.querySelector('.salesList');return getComputedStyle(l).maxHeight==='none'&&l.scrollHeight<=l.clientHeight+2&&document.documentElement.scrollWidth<=innerWidth+2})()"),'All seven orders must participate in page scroll at '+width)
+  for(let i=0;i<7;i++){
+   const box=await run(`(()=>{const b=document.querySelectorAll('.salesOrderRow')[${i}];b.scrollIntoView({block:'center'});const r=b.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()`)
+   await cmd('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...box});await cmd('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...box})
+   await until("!!document.querySelector('.mobileOrdersPage.mobileDetailOpen')")
+   assert(await run(`document.querySelector('.salesEditor').getBoundingClientRect().height>100&&document.querySelector('.cloudOrder h3').textContent==='Đơn HIST000${i}'&&scrollY<5`),'SOLD detail must open visibly at top for history-'+i+' / '+width)
+   await run("document.querySelector('.mobileDetailBack').click()")
+   await until("!document.querySelector('.mobileOrdersPage.mobileDetailOpen')")
+  }
+  await run("(()=>{const s=document.querySelector('[aria-label=\"Lọc đơn\"]');s.value='all';s.dispatchEvent(new Event('change',{bubbles:true}))})()")
+  await until("document.querySelectorAll('.salesOrderRow').length===8")
+ }
+ console.log('PASS historical SOLD mobile: 7 sold / 1 cancelled, un-clipped page scroll, physical click opens all 7 details/back at 375/390/430/768px')
  await Promise.all([...activeInterceptions]);await delay(100)
  failures.push(...interceptionErrors.filter(({error,networkId})=>!cancelledInterception(error,networkId)).map(({error})=>error))
  console.log('Confirmed cancelled stale interceptions:',interceptionErrors.length-failures.length)

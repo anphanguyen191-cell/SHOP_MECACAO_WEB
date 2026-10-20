@@ -180,10 +180,27 @@ try{
  await httpSuccess('business/pull')
  assert.equal(Number(db.prepare('SELECT count(*) n FROM sales_units').get()!.n),5,'A mirrored mobile draft can later become SOLD on the same laptop')
  assert.equal(fs.existsSync(path.join(root,'photo-6.png')),false)
+ // Historical Cloud SOLD replay has independent LOCAL request/archive evidence.
+ // v335 tried to UPDATE its immutable Cloud header on the next Windows upload.
+ await pg.exec(fs.readFileSync('supabase/migrations/20261020070109_windows_continuous_business_sync.sql','utf8'))
+ await pg.exec(fs.readFileSync('supabase/migrations/20261020074627_continuous_mutable_history.sql','utf8'))
+ const historical=readLocalBusiness(db,root)
+ await assert.rejects(()=>call('mc_v8_business_sync',{p_instance:instance,p_request:'reproduce-v335-cloud-replay-001',p_payload:historical.rows}),/Sold order is immutable/)
+ const originalCloudOrder=await one("SELECT to_jsonb(o) row FROM sales_orders o WHERE id='new-mobile-draft'")
+ const originalCloudProof=await proof('new-mobile-draft')
+ db.prepare("INSERT INTO app_metadata(key,value) VALUES('cloud-business-pending',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(JSON.stringify({sourceHash:historical.sourceHash,request:'reproduce-v335-cloud-replay-001'}))
+ await uploadLocalBusiness(db,root,call,true)
+ const afterCloudProof=await proof('new-mobile-draft')
+ for(const field of ['order','confirmation','items'])assert.deepEqual(afterCloudProof[field],originalCloudProof[field],'Cloud-origin SOLD '+field+' stays byte-for-byte unchanged')
+ assert.equal((await one('SELECT source_present FROM cloud_image_assets WHERE image_id=6')).source_present,false,'Archived SOLD never re-enters available stock')
+ assert.deepEqual(await one("SELECT to_jsonb(o) row FROM sales_orders o WHERE id='new-mobile-draft'"),originalCloudOrder)
+ await uploadLocalBusiness(db,root,call,true)
+ assert.equal(Number((await one('SELECT count(*) n FROM sales_ledger')).n),5,'No duplicated SOLD on retry')
+ await assert.rejects(()=>uploadLocalBusiness(db,root,async(n,a)=>n==='mc_v7_sold_proof'?{...(await call(n,a)),confirmation:{...originalCloudProof.confirmation,total:1}}:call(n,a),true),/thay đổi|khác laptop/)
  // Business changes trigger sync before activation, without waiting for folder changes.
  let revision=0,syncs=0,online=true,time=0,fail=false
  const runner=createLiveFolderSync({clock:()=>time,online:()=>online,busy:()=>false,read:async()=>({enabled:false,syncEnabled:true,business:{epoch:'first',revision},live:{ready:true,pendingSync:false}}),onState:()=>{},onError:()=>{},sync:async()=>{syncs++;if(fail){fail=false;return false}return true}})
  await runner.tick();assert.equal(syncs,1);await runner.tick();assert.equal(syncs,1)
  revision++;await runner.tick();assert.equal(syncs,2);online=false;revision++;await runner.tick();assert.equal(syncs,2);online=true;fail=true;await runner.tick();assert.equal(syncs,3);time+=1000;await runner.tick();assert.equal(syncs,4);runner.close()
- console.log('BUSINESS_SYNC PASS: production HTTP guard/router upload + activate + pull + SOLD replay, real busy/recovery fences, reader release; real LOCAL SOLD/archive to PostgreSQL, 3106 -> 3102 mobile stock, laptop-existing customer/order/contact/finance/aftercare preserved against Cloud conflicts, Cloud-only records appended, atomic rejection, lost-response/restart retry, immutable evidence, role/instance guards, pre-activation change signal and offline retry')
+ console.log('BUSINESS_SYNC PASS: production HTTP guard/router upload + activate + pull + SOLD replay, exact v335 immutable-header regression reproduced and fixed, old pending request upgrade, Cloud-origin proof preserved and normalized aftercare round-trip, real busy/recovery fences, reader release; LOCAL SOLD/archive to PostgreSQL, 3106 -> 3102 mobile stock, local conflict preservation, atomic rejection, lost-response/restart retry, immutable evidence, role/instance guards and offline retry')
 }finally{holdRead?.();server.closeAllConnections();await new Promise<void>(r=>server.close(()=>r()));globalThis.fetch=realFetch;salesActivity.busy=false;salesActivity.readers=0;db.close();await pg.close();fs.rmSync(root,{recursive:true,force:true})}

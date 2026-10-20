@@ -9,6 +9,7 @@ export default function CloudOrders({orders,items,contacts,confirmations,custome
  const [dirty,setDirty]=useState(false),[page,setPage]=useState(0),[filter,setFilter]=useState('all'),[query,setQuery]=useState('')
  useEffect(()=>setPage(0),[filter,query])
  useEffect(()=>{if(current)setDetailOpen(true)},[current])
+ useEffect(()=>{if(mobile&&detailOpen)window.scrollTo(0,0)},[mobile,detailOpen,current])
  const byOrder=useMemo(()=>{const map=new Map<string,any[]>();for(const item of items){if(!map.has(item.order_id))map.set(item.order_id,[]);map.get(item.order_id)!.push(item)}return map},[items]),contactMap=useMemo(()=>new Map(contacts.map(c=>[c.order_id,c])),[contacts])
  const selected=orders.find(o=>o.id===current)||orders[0]
  const total=(o:any)=>(byOrder.get(o.id)||[]).reduce((n,i)=>n+Number(i.unit_price),0)-Number(o.discount)+(contactMap.get(o.id)?.shipping_fee||0)

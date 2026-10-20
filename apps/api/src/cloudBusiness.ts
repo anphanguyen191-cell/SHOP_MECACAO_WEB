@@ -4,7 +4,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import {salesActivity,SALES_AREA,exactFile} from './salesExecution.js'
 import {pendingStockReturn} from './stockReturnState.js'
-import {reconcileCloudSale} from './cloudReconcile.js'
+import {assertLocalDraftMatchesCloud,reconcileCloudSale} from './cloudReconcile.js'
 import {validateFinance} from './orderFinance.js'
 import {validateStocktakes} from './stocktake.js'
 
@@ -65,12 +65,51 @@ export function readLocalBusiness(db:DatabaseSync,root:string){
 
 export async function uploadLocalBusiness(db:DatabaseSync,root:string,rpc:(name:string,args:any)=>Promise<any>,continuous=false){
  const snapshot=readLocalBusiness(db,root)
+ // Cloud-origin SOLD was replayed into LOCAL with a separate archive operation,
+ // request key and timestamps. It is not a new Windows sale to upload over the
+ // immutable original. Verify its original proof and local business meaning,
+ // then omit only that replay's immutable rows (payments still synchronize).
+ const cloudOrders=new Set<string>(),localOperations=new Set<string>()
+ for(const c of snapshot.rows.sales_confirmations){
+  if(!db.prepare('SELECT 1 FROM app_metadata WHERE key=?').get('cloud-sold:'+c.order_id))continue
+  const proof=await rpc('mc_v7_sold_proof',{p_id:c.order_id})
+  await reconcileCloudSale(db,root,proof)
+  // Legacy replay materializes an empty recipient even when Cloud has no row.
+  assertLocalDraftMatchesCloud(db,proof.order,proof.items,proof.contact||{customer_id:null,recipient_name:'',phone:'',address:'',shipping_fee:0})
+  if(['version','subtotal','discount','total','note'].some(k=>c[k]!==proof.confirmation?.[k]))throw Error('Chứng từ SOLD Cloud khác laptop; dừng đồng bộ để đối soát.')
+  cloudOrders.add(c.order_id);localOperations.add(c.operation_id)
+ }
+ if(cloudOrders.size){
+  snapshot.rows.sales_orders=snapshot.rows.sales_orders.filter(o=>!cloudOrders.has(o.id))
+  for(const table of ['sales_order_images','order_contacts','sales_confirmations','sales_units','sales_ledger'])snapshot.rows[table]=snapshot.rows[table].filter(r=>!cloudOrders.has(r.order_id))
+  snapshot.rows.sales_operations=snapshot.rows.sales_operations.filter(o=>!localOperations.has(o.id))
+  snapshot.counts=Object.fromEntries(Object.entries(snapshot.rows).map(([t,r])=>[t,r.length]))
+ }
+ // Older Cloud pull normalized aftercare request hashes for LOCAL validation.
+ // Restore only the transport hash after proving all identity fields match;
+ // lifecycle changes still go through the existing PostgreSQL guards.
+ if(snapshot.rows.aftercare_cases.length&&db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-business-pull'").get()){
+  const cloudCases=new Map<string,any>();let offset=0
+  for(;;){
+   const page=await rpc('mc_v7_rows',{p_table:'aftercare_cases',p_after:String(offset),p_limit:500})
+   if(!Array.isArray(page?.rows)||page.rows.length>500||page.nextOffset!==offset+page.rows.length||page.nextOffset>50000)throw Error('Trang hồ sơ Cloud không hợp lệ.')
+   for(const row of page.rows)cloudCases.set(row.id,row)
+   if(page.rows.length<500)break;offset=page.nextOffset
+  }
+  for(const row of snapshot.rows.aftercare_cases){
+   const original=cloudCases.get(row.id)
+   if(!original||original.input_hash===row.input_hash)continue
+   if(row.input_hash!==businessDigest({id:row.order_id,kind:row.kind,note:row.note})||['id','order_id','request_key','kind','note','created_at'].some(k=>row[k]!==original[k]))throw Error('Hồ sơ hậu mãi Cloud khác laptop; dừng đồng bộ để đối soát.')
+   row.input_hash=original.input_hash
+  }
+ }
  let request='business:'+snapshot.instance+':'+snapshot.sourceHash
  if(continuous){
+  const payloadHash=businessDigest(snapshot.rows)
   const saved=db.prepare("SELECT value FROM app_metadata WHERE key='cloud-business-pending'").get()
   const pending=saved?JSON.parse(String(saved.value)):null
-  request=pending?.sourceHash===snapshot.sourceHash?pending.request:'business-sync:'+snapshot.instance+':'+randomUUID()
-  db.prepare("INSERT INTO app_metadata(key,value) VALUES('cloud-business-pending',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(JSON.stringify({sourceHash:snapshot.sourceHash,request}))
+  request=pending?.sourceHash===snapshot.sourceHash&&pending?.payloadHash===payloadHash?pending.request:'business-sync:'+snapshot.instance+':'+randomUUID()
+  db.prepare("INSERT INTO app_metadata(key,value) VALUES('cloud-business-pending',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(JSON.stringify({sourceHash:snapshot.sourceHash,payloadHash,request}))
  }
  const result=await rpc(continuous?'mc_v8_business_sync':'mc_v8_business_import',{p_instance:snapshot.instance,p_request:request,p_payload:snapshot.rows})
  if(result?.instance!==snapshot.instance||JSON.stringify(result.counts)!==JSON.stringify(snapshot.counts)){
