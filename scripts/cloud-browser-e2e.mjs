@@ -85,9 +85,18 @@ async function intercept(p){trace.push({url:p.request.url,method:p.request.metho
  await cmd('Fetch.fulfillRequest',{requestId:p.requestId,responseCode:status,responseHeaders:[{name:'Content-Type',value:mime},{name:'Access-Control-Allow-Origin',value:'*'},{name:'Access-Control-Allow-Headers',value:'*'}],body:(binary||Buffer.from(JSON.stringify(response))).toString('base64')})
 }
 try{
- for(let n=0;n<450&&!fs.existsSync(path.join(profile,'DevToolsActivePort'));n++){if(browser.exitCode!==null)throw Error('Chromium exited '+browser.exitCode+' '+browserLog);await delay(100)}
- assert(fs.existsSync(path.join(profile,'DevToolsActivePort')),'Chromium startup timed out: '+browserLog)
- const port=Number(fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0]),targets=await fetch('http://127.0.0.1:'+port+'/json/list').then(r=>r.json());ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl)
+ let port
+ for(let n=0;n<450;n++){
+  if(browser.exitCode!==null||browser.signalCode)throw Error('Chromium exited '+(browser.exitCode??browser.signalCode)+' '+browserLog)
+  try{
+   const candidate=Number(fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0])
+   if(Number.isInteger(candidate)&&candidate>0&&candidate<=65535){port=candidate;break}
+  }catch(error){if(!['ENOENT','EBUSY'].includes(error.code))throw error}
+  // Windows may expose the file while Chrome still holds its startup lock.
+  await delay(100)
+ }
+ assert(port,'Chromium startup timed out: '+browserLog)
+ const targets=await fetch('http://127.0.0.1:'+port+'/json/list').then(r=>r.json());ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl)
  await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true})})
  ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}else if(m.method==='Fetch.requestPaused'){const task=intercept(m.params).catch(error=>interceptionErrors.push({error,networkId:m.params.networkId,url:m.params.request.url}));activeInterceptions.add(task);void task.finally(()=>activeInterceptions.delete(task))}else if(m.method==='Network.requestWillBeSent'&&m.params.request.url.startsWith('https://eyckwoewpomssjjggslr.supabase.co/'))inflightNetwork.set(m.params.requestId,m.params.request.url);else if(m.method==='Network.loadingFinished'||m.method==='Network.loadingFailed'){inflightNetwork.delete(m.params.requestId);if(m.params.canceled)cancelledRequests.add(m.params.requestId);}else if(m.method==='Page.javascriptDialogOpening')void cmd('Page.handleJavaScriptDialog',{accept:true})})
  await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Network.enable');await cmd('Network.setBypassServiceWorker',{bypass:true});await cmd('Network.setBlockedURLs',{urls:['wss://eyckwoewpomssjjggslr.supabase.co/*']});await cmd('Fetch.enable',{patterns:[{urlPattern:'https://eyckwoewpomssjjggslr.supabase.co/*'}]})
@@ -324,4 +333,4 @@ try{
  failures.push(...interceptionErrors.filter(({error,networkId})=>!cancelledInterception(error,networkId)).map(({error})=>error))
  console.log('Confirmed cancelled stale interceptions:',interceptionErrors.length-failures.length)
  assert.deepEqual(failures,[]);console.log('PASS Cloud browser fake transport: recovery email/callback, visible password setup, recovery storage restoration, password re-login and reload, mobile layout/density/theme, lost-response durable retry, single draft, real banner PNG without stock mutation, SOLD removal, automatic verified cleanup away from Settings, corrupt archive refusal, lost Storage response retry and offline guard')
-}catch(error){console.error('Cloud browser failure:',error);console.error('Transport failures:',failures);console.error('Interception errors:',interceptionErrors.map(e=>({message:e.error.message,url:e.url})));console.error('Transport trace:',trace);try{console.error(await run('document.body.innerText'));const shot=await cmd('Page.captureScreenshot',{format:'png'});fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/failure.png',Buffer.from(shot.data,'base64'))}catch{}throw error}finally{if(ws?.readyState===1)try{await cmd('Browser.close')}catch{}ws?.close();if(browser.exitCode===null){browser.kill();await new Promise(r=>browser.once('exit',r))}await new Promise(r=>server.close(r));try{fs.rmSync(temp,{recursive:true,force:true,maxRetries:10,retryDelay:100})}catch(error){console.warn('Browser temporary cleanup:',error.code)}}
+}catch(error){console.error('Cloud browser failure:',error);console.error('Transport failures:',failures);console.error('Interception errors:',interceptionErrors.map(e=>({message:e.error.message,url:e.url})));console.error('Transport trace:',trace);try{console.error(await run('document.body.innerText'));const shot=await cmd('Page.captureScreenshot',{format:'png'});fs.mkdirSync('artifacts/cloud-browser',{recursive:true});fs.writeFileSync('artifacts/cloud-browser/failure.png',Buffer.from(shot.data,'base64'))}catch{}throw error}finally{if(ws?.readyState===1)try{await cmd('Browser.close')}catch{}ws?.close();if(browser.exitCode===null&&!browser.signalCode){browser.kill();await Promise.race([new Promise(r=>browser.once('exit',r)),delay(3000)])}await new Promise(r=>server.close(r));try{fs.rmSync(temp,{recursive:true,force:true,maxRetries:10,retryDelay:100})}catch(error){console.warn('Browser temporary cleanup:',error.code)}}
