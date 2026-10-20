@@ -98,6 +98,18 @@ test('V8 Cloud keeps exact Vietnamese product names and IDs from Windows',()=>{
 })
 
 const {assessCloudSyncPreview}=await import('../../apps/web/src/cloudSyncAudit.ts')
+test('3149 laptop vs 3084 Cloud is explained by exact missing IDs, not a count adjustment',()=>{
+ const p={id:1,product_code:'P1',name:'Bộ tole'},v={id:1,product_id:1,sku:'P1-S',size:'S'}
+ const images=Array.from({length:3149},(_,i)=>({id:i+1,product_id:1,variant_id:1}))
+ const pages=[{instance:'warehouse-A',products:[p],variants:[v],images,sourceState:images.map(i=>({id:i.id,present:true}))}]
+ const remote={products:[p],variants:[v],images:images.slice(0,3096),assets:images.slice(0,3096).map(i=>({image_id:i.id,ready:true,source_present:i.id<=3084})),sold:[] as {image_id:number}[]}
+ const report=assessCloudSyncPreview(pages,remote,'warehouse-A')
+ assert.equal(report.local.stock,3149);assert.equal(report.cloud.ready,3084)
+ assert.deepEqual(report.differences.unavailable,Array.from({length:12},(_,i)=>3085+i))
+ assert.deepEqual(report.differences.unregistered,Array.from({length:53},(_,i)=>3097+i))
+ const conflict=assessCloudSyncPreview(pages,{...remote,sold:[{image_id:1}]},'warehouse-A')
+ assert.equal(conflict.cloud.ready,3083);assert.deepEqual(conflict.differences.soldConflict,[1]);assert.equal(conflict.safe,false)
+})
 const checkSource=(products:any[],variants:any[],images:any[],present=true)=>[{instance:'warehouse-A',products,variants,images,sourceState:images.map(i=>({id:i.id,present})),done:true}]
 test('read-only Cloud preview counts exact Vietnamese Product/Size/stock before first sync',()=>{
  const p=[{id:3,name:'Đồ bộ tole Bé Gái',product_code:'BG03'}],v=[{id:9,product_id:3,size:'8',sku:'BG03-S8'}],i=[{id:10,product_id:3,variant_id:9}]

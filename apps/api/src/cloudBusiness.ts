@@ -1,5 +1,5 @@
 import type {DatabaseSync} from 'node:sqlite'
-import {createHash} from 'node:crypto'
+import {createHash,randomUUID} from 'node:crypto'
 import path from 'node:path'
 import fs from 'node:fs'
 import {salesActivity,SALES_AREA,exactFile} from './salesExecution.js'
@@ -63,15 +63,23 @@ export function readLocalBusiness(db:DatabaseSync,root:string){
  }catch(e){if(db.isTransaction)db.exec('ROLLBACK');throw e}
 }
 
-export async function uploadLocalBusiness(db:DatabaseSync,root:string,rpc:(name:string,args:any)=>Promise<any>){
+export async function uploadLocalBusiness(db:DatabaseSync,root:string,rpc:(name:string,args:any)=>Promise<any>,continuous=false){
  const snapshot=readLocalBusiness(db,root)
- const result=await rpc('mc_v8_business_import',{p_instance:snapshot.instance,p_request:'business:'+snapshot.instance+':'+snapshot.sourceHash,p_payload:snapshot.rows})
+ let request='business:'+snapshot.instance+':'+snapshot.sourceHash
+ if(continuous){
+  const saved=db.prepare("SELECT value FROM app_metadata WHERE key='cloud-business-pending'").get()
+  const pending=saved?JSON.parse(String(saved.value)):null
+  request=pending?.sourceHash===snapshot.sourceHash?pending.request:'business-sync:'+snapshot.instance+':'+randomUUID()
+  db.prepare("INSERT INTO app_metadata(key,value) VALUES('cloud-business-pending',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(JSON.stringify({sourceHash:snapshot.sourceHash,request}))
+ }
+ const result=await rpc(continuous?'mc_v8_business_sync':'mc_v8_business_import',{p_instance:snapshot.instance,p_request:request,p_payload:snapshot.rows})
  if(result?.instance!==snapshot.instance||JSON.stringify(result.counts)!==JSON.stringify(snapshot.counts)){
   // JSON objects from PostgreSQL have a different key order.
   if(result?.instance!==snapshot.instance||Object.entries(snapshot.counts).some(([t,n])=>result?.counts?.[t]!==n))throw Error('Cloud chưa xác nhận đủ khách hàng, đơn và sổ tiền. Chưa kích hoạt.')
  }
  if(readLocalBusiness(db,root).sourceHash!==snapshot.sourceHash)throw Error('Nghiệp vụ laptop vừa thay đổi. Đang chờ đồng bộ lại trước khi kích hoạt.')
  db.prepare("INSERT INTO app_metadata(key,value) VALUES('cloud-business-upload',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(JSON.stringify({sourceHash:snapshot.sourceHash,counts:snapshot.counts,at:new Date().toISOString()}))
+ if(continuous)db.prepare("DELETE FROM app_metadata WHERE key='cloud-business-pending'").run()
  for(const c of snapshot.rows.sales_confirmations)db.prepare('INSERT INTO app_metadata(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('cloud-local-sold:'+c.order_id,c.operation_id)
  for(const order of snapshot.rows.sales_orders)db.prepare('INSERT INTO app_metadata(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('cloud-shared-order:'+order.id,order.request_hash)
  return {counts:snapshot.counts,sourceHash:snapshot.sourceHash}

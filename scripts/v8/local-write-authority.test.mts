@@ -18,8 +18,9 @@ test('All local sales, prices, and product gates apply authenticated decision',(
 })
 test('Cloud may not replace local V8 orders, statuses, or prices',()=>{
  const source=readFileSync('apps/api/src/cloudRoutes.ts','utf8')
- assert.match(source,/if\(v8Home\)return res.status\(409\).json\(\{code:'WINDOWS_LOCAL_AUTHORITY'/)
+ assert.match(source,/if\(localAuthority\)return res.status\(409\).json\(\{code:'WINDOWS_LOCAL_AUTHORITY'/)
  assert.match(source,/if\(v8Home\)return res.json\(\{updated:0,authority:'WINDOWS_LOCAL'\}\)/)
  assert.match(source,/v8Home\?null:await reconcileCloudSale/)
- assert.match(source,/if\(v8Home\)assertBusinessUploaded\(db,root\)/)
+ assert.match(source,/if\(localAuthority\|\|!db.prepare/)
+ assert.match(source,/if\(localAuthority\)return res.json\(await uploadLocalBusiness\(db,root,\(name,args\)=>rpc\(token,name,args\),true\)\)/)
 })

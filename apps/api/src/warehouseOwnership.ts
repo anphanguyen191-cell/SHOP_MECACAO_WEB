@@ -23,7 +23,7 @@ export function verifiedV8Writer(database:unknown,lock:any){
  try{
   process.kill(lock.pid,0)
   const command=process.platform==='win32'
-   ?execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',`(Get-CimInstance Win32_Process -Filter "ProcessId = ${lock.pid}").CommandLine`],{encoding:'utf8',windowsHide:true,timeout:5000})
+   ?execFileSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',`(Get-CimInstance Win32_Process -Filter "ProcessId = ${lock.pid}").CommandLine`],{encoding:'utf8',windowsHide:true,timeout:20000})
    :fs.readFileSync(`/proc/${lock.pid}/cmdline`,'utf8').replace(/\0/g,' ')
   const normalized=command.replace(/\\/g,'/').toLowerCase()
   const prefix=path.join(home,'releases').replace(/\\/g,'/').toLowerCase()+'/'

@@ -112,7 +112,7 @@ export async function runImageSyncQueue<T>(items:T[],worker:(item:T)=>Promise<vo
 }
 
 /** Read-only Windows-to-Cloud preview; never changes database or Storage. */
-export function assessCloudSyncPreview(pages:any[],remote:{products:SyncProduct[];variants:SyncVariant[];images:SyncPhoto[];assets:SyncAsset[]},cloudInstance:string|null){
+export function assessCloudSyncPreview(pages:any[],remote:{products:SyncProduct[];variants:SyncVariant[];images:SyncPhoto[];assets:SyncAsset[];sold?:SyncSold[]},cloudInstance:string|null){
  if(!pages.length||typeof pages[0]?.instance!=='string'||!pages[0].instance)throw Error('Chưa xác định được kho Windows để đối chiếu.')
  const ps:any[]=[],vs:any[]=[],is:any[]=[],ss:any[]=[]
  for(const page of pages){
@@ -141,6 +141,8 @@ export function assessCloudSyncPreview(pages:any[],remote:{products:SyncProduct[
   if(other&&(Number(other.product_id)!==Number(v.product_id)||other.sku!==v.sku||other.size!==v.size))
     conflicts.push('Size #'+number+': Product/SKU/Size Cloud không khớp Windows.')
  }
+ const sold=new Set((remote.sold||[]).map(row=>id(row.image_id,'SOLD Cloud')))
+ const differences={unregistered:[] as number[],notReady:[] as number[],unavailable:[] as number[],soldConflict:[] as number[],extra:[] as number[]}
  let stock=0,missing=0,newUploads=0
  for(const [number,p] of li){
   const v=lv.get(id(p.variant_id,'Size của ảnh'))
@@ -150,10 +152,18 @@ export function assessCloudSyncPreview(pages:any[],remote:{products:SyncProduct[
   const other=ri.get(number)
   if(other&&(Number(other.product_id)!==Number(p.product_id)||Number(other.variant_id)!==Number(p.variant_id)))
     conflicts.push('Ảnh #'+number+': Product/Size Cloud không khớp Windows.')
-  if(source.present){stock++;const asset=ra.get(number);if(!asset?.ready||asset.source_present===false)newUploads++}else missing++
+  if(source.present){
+   stock++;const asset=ra.get(number)
+   if(sold.has(number))differences.soldConflict.push(number)
+   else if(!other)differences.unregistered.push(number)
+   else if(!asset?.ready)differences.notReady.push(number)
+   else if(asset.source_present===false)differences.unavailable.push(number)
+   if(!asset?.ready||asset.source_present===false)newUploads++
+  }else missing++
  }
  if(ls.size!==li.size)throw Error('Nguồn Windows trả ID ảnh dư.')
  const needsHandoff=!!cloudInstance&&cloudInstance!==pages[0].instance
- return {local:{products:lp.size,sizes:lv.size,stock,missing},cloud:{products:rp.size,sizes:rv.size,images:ri.size,ready:[...ra.values()].filter(a=>a.ready&&a.source_present!==false).length},
-  newUploads,needsHandoff,conflictCount:conflicts.length,conflicts:conflicts.slice(0,10),safe:!needsHandoff&&!conflicts.length&&stock>0}
+ for(const [number,asset] of ra)if(asset.ready&&asset.source_present!==false&&!sold.has(number)&&(!li.has(number)||!ls.get(number)?.present))differences.extra.push(number)
+ return {local:{products:lp.size,sizes:lv.size,stock,missing},cloud:{products:rp.size,sizes:rv.size,images:ri.size,ready:[...ra.values()].filter(a=>a.ready&&a.source_present!==false&&!sold.has(id(a.image_id,'ảnh Cloud'))).length},
+  differences,newUploads,needsHandoff,conflictCount:conflicts.length,conflicts:conflicts.slice(0,10),safe:!needsHandoff&&!conflicts.length&&!differences.soldConflict.length&&stock>0}
 }

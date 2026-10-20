@@ -34,11 +34,17 @@ jobs:
       - name: Fresh-install and upgrade safety
         run: |
           npm run test:v8-layout
+          if($LASTEXITCODE -ne 0){throw 'V8 layout tests failed'}
           node --test scripts/v8/warehouse-cloud-ui.test.mjs scripts/v8/warehouse-ownership.test.mjs scripts/v8/release-fetch.test.mjs scripts/v8/data-snapshot.test.mjs scripts/v8/cloud-handoff.test.mjs
+          if($LASTEXITCODE -ne 0){throw 'Warehouse and upgrade safety tests failed'}
           node --import tsx --test scripts/v8/cloud-sync-audit.test.mts
+          if($LASTEXITCODE -ne 0){throw 'Cloud sync audit tests failed'}
           node --test scripts/v8/image-naming-history.test.mjs
+          if($LASTEXITCODE -ne 0){throw 'Image history tests failed'}
           node --check scripts/v8/node-runner.mjs
+          if($LASTEXITCODE -ne 0){throw 'Node runner syntax failed'}
           node --check scripts/v8/release-fetch.mjs
+          if($LASTEXITCODE -ne 0){throw 'Release fetch syntax failed'}
       - run: npm run build
       - run: npm run typecheck
       - run: npm run test:gate
