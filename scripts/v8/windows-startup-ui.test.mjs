@@ -91,5 +91,5 @@ test('Local Windows Cloud view exposes a reliable return path to CORE and update
  const main=read('apps/web/src/AdminRuntime.tsx')
  assert.match(main,/windowsLocalHost&&remote&&<button/)
  assert.match(main,/Quay về CORE laptop để cập nhật/)
- assert.match(main,/localUrl\.searchParams\.delete\('cloud'\);setRemote\(false\)/)
+ assert.match(main,/localUrl\.searchParams\.delete\('cloud'\);history\.replaceState\(null,''\,localUrl\);setRemote\(false\)/)
 })
