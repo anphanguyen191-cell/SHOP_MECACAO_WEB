@@ -215,7 +215,7 @@ try{
  await run("window.dispatchEvent(new Event('mecacao-cloud-sold-check'))")
  for(let attempt=0;attempt<150&&!state.deletedAt;attempt++)await delay(100)
  assert(state.deletedAt,'SOLD cleanup must finalize after a lost Storage response; UI status may be transient')
- assert(state.deletedAt);assert.equal(state.orders[0].status,'SOLD');assert.equal(state.confirmations.length,1,'History must remain')
+ assert(state.deletedAt);assert.equal(state.orders[0].status,'DRAFT');assert.equal(state.confirmations.length,1,'Immutable SOLD confirmation must remain');assert.equal(state.confirmations[0].order_id,state.orders[0].id)
  const deletes=trace.filter(t=>t.method==='DELETE').length;
  await run("window.dispatchEvent(new Event('mecacao-cloud-sold-check'))");await delay(500);
  assert.equal(trace.filter(t=>t.method==='DELETE').length,deletes,'Completed cleanup must not repeat deletion')

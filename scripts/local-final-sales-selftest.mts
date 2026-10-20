@@ -21,6 +21,7 @@ import {salesHistory} from '../apps/api/src/salesHistory.js'
 import {financeService} from '../apps/api/src/orderFinance.js'
 import {cloudRouter} from '../apps/api/src/cloudRoutes.js'
 import {salesRequestGuard} from '../apps/api/src/salesRequestGuard.js'
+import {createLanChangeFeed} from '../apps/api/src/lanChangeFeed.js'
 
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cacao-local-final-')),db=new DatabaseSync(path.join(root,'shop.db')),pg=new PGlite()
 const instance='11111111-1111-4111-8111-111111111111',owner='22222222-2222-4222-8222-222222222222'
@@ -57,9 +58,10 @@ try{
  for(const file of ['20261019031717_v8_business_history_sync.sql','20261020070109_windows_continuous_business_sync.sql','20261020074627_continuous_mutable_history.sql'])await pg.exec(fs.readFileSync('supabase/migrations/'+file,'utf8'))
  await pg.exec(fs.readFileSync('supabase/migrations/20261011070333_v7_command_variable_scope.sql','utf8'))
  await pg.exec(fs.readFileSync('supabase/migrations/20261020135932_local_final_workflow.sql','utf8'))
+ await pg.exec(fs.readFileSync('supabase/migrations/20261020141658_local_final_receipt_advance.sql','utf8'))
  await pg.exec(`UPDATE app_metadata SET value='CLOUD_TEST_READY' WHERE key='cloud_status';INSERT INTO app_metadata(key,value) VALUES('cloud_business_source','${instance}');GRANT USAGE ON SCHEMA auth TO authenticated;SET ROLE authenticated`)
  await rpc('mc_v8_local_sales',{p_action:'enable',p_payload:{instance}})
- const app=express();app.use(express.json());app.use('/api',salesRequestGuard(db,root,true));app.use('/api/cloud',cloudRouter(db,root,undefined,undefined,true));server=app.listen(0,'127.0.0.1');await once(server,'listening');const base='http://127.0.0.1:'+(server.address() as any).port
+ const changes=createLanChangeFeed(),app=express();app.use(express.json());app.use(changes.middleware);app.use('/api',salesRequestGuard(db,root,true));app.use('/api/cloud',cloudRouter(db,root,undefined,undefined,true));server=app.listen(0,'127.0.0.1');await once(server,'listening');const base='http://127.0.0.1:'+(server.address() as any).port
  globalThis.fetch=async(input,init)=>{const url=String(input);if(url.startsWith(base))return realFetch(input,init);assert(url.startsWith('https://eyckwoewpomssjjggslr.supabase.co/rest/v1/rpc/'),'No live transport');try{return Response.json(await rpc(url.split('/').pop()!,JSON.parse(String(init?.body||'{}'))))}catch(e){return Response.json({message:(e as Error).message},{status:409})}}
  const post=async(route:string,body:any={})=>{const response=await fetch(base+'/api/cloud'+route,{method:'POST',headers:{Authorization:'Bearer isolated-owner','Content-Type':'application/json'},body:JSON.stringify(body)});return {status:response.status,data:await response.json()}}
  async function draft(id:string,image:number){await pg.exec('RESET ROLE');await pg.query("INSERT INTO sales_orders(id,request_key,request_hash,discount,note) VALUES($1,$2,'cloud-hash',0,'Mobile')",[id,'cloud-draft-'+id]);await pg.query("INSERT INTO sales_order_images(order_id,image_id,product_id,variant_id,product_name,product_code,size,sku,unit_price,unit_cost,position) VALUES($1,$2,1,1,'Bộ tole','P1','S','P1-S',45000,10000,0)",[id,image]);await pg.exec('SET ROLE authenticated')}
@@ -79,7 +81,7 @@ try{
  assert.equal((await rpc('mc_v8_local_sales',{p_action:'list'}))[0].state,'PENDING')
  const resumed=await post('/local-sales');assert.equal(resumed.status,200);assert.equal(resumed.data.state,'CONFIRMED','production HTTP guard must not count the coordinator as its own reader')
  assert.equal(Number(db.prepare('SELECT count(*) n FROM sales_units').get()!.n),1,'retry never sells twice')
- assert.equal((await processLocalCloudSale(db,root,rpc)).pending,false)
+ const revision=changes.view().revision;assert(revision>0,'a completed LOCAL request signals the other screens');assert.equal((await post('/local-sales')).data.pending,false);assert.equal(changes.view().revision,revision,'empty polling must not reload inventory and interrupt forms every five seconds')
  assert.equal(Number((await one('SELECT count(*) n FROM sales_confirmations')).n),1)
  const ack=await post('/sync-status',{phase:'COMPLETE'});assert.equal(ack.status,200,JSON.stringify(ack));assert.equal(ack.data.stock,3)
  const successfulAt=ack.data.at
@@ -117,9 +119,11 @@ try{
  assert.equal((await processLocalCloudSale(db,root,rpc)).state,'CONFIRMED')
  assert.equal(Number(db.prepare('SELECT count(*) n FROM finance_entries').get()!.n),1,'deposit is not duplicated after retry')
  await rpc('mc_v8_local_sales',{p_action:'request',p_key:'mobile-draft-after-deposit',p_payload:{action:'draft.save',id:'mobile-order-4',version:1,items:[{imageId:4,unitPrice:45000}],discount:0,note:'Đã sửa sau cọc',contact:{customerId:customer,recipientName:'Khách trùng tên',phone:'',address:'',shippingFee:0}}})
+ loseUpload=true;await assert.rejects(()=>processLocalCloudSale(db,root,rpc),/Lost upload reply/)
+ salesDraftService(db,root).update('mobile-order-4',{version:2,items:[{imageId:4,unitPrice:45000}],discount:0,note:'LOCAL sửa tiếp sau khi mất phản hồi',contact:{customerId:customer,recipientName:'Khách trùng tên',phone:'',address:'',shippingFee:0}})
  assert.equal((await processLocalCloudSale(db,root,rpc)).state,'CONFIRMED')
- assert.equal(db.prepare("SELECT note FROM sales_orders WHERE id='mobile-order-4'").get()!.note,'Đã sửa sau cọc')
- await request('mobile-order-4','mobile-sale-with-deposit-01',2)
+ assert.equal(db.prepare("SELECT note FROM sales_orders WHERE id='mobile-order-4'").get()!.note,'LOCAL sửa tiếp sau khi mất phản hồi','retry acknowledges the applied request without undoing a later LOCAL edit')
+ await request('mobile-order-4','mobile-sale-with-deposit-01',3)
  assert.equal((await processLocalCloudSale(db,root,rpc)).state,'CONFIRMED')
  assert.equal(financeService(db).summary('mobile-order-4').due,35000)
  await financial('finance.entry','mobile-refund-request-001',{version:1,kind:'REFUND',amount:5000,method:'CASH',note:'Hoàn một phần'})

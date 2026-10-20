@@ -10,7 +10,7 @@ export function createLanChangeFeed(){
   if(!/^\/api\/local\/lan(?:\/|\?|$)/.test(req.originalUrl)&&req.originalUrl.startsWith('/api/')&&!['GET','HEAD','OPTIONS'].includes(req.method)&&
      !/^\/api\/lan\/(?:login|logout|changes|status|session)(?:\/|\?|$)/.test(req.originalUrl)){
    res.once('finish',()=>{
-    if(res.statusCode>=200&&res.statusCode<300){revision++;changedAt=new Date().toISOString();if(/^\/api\/(sales|customers|finance|aftercare|stocktake)(\/|\?|$)/.test(req.originalUrl)){businessRevision++;businessChangedAt=changedAt}}
+    if(res.statusCode>=200&&res.statusCode<300&&res.locals?.skipChangeFeed!==true){revision++;changedAt=new Date().toISOString();if(/^\/api\/(sales|customers|finance|aftercare|stocktake)(\/|\?|$)/.test(req.originalUrl)){businessRevision++;businessChangedAt=changedAt}}
    })
   }
   next()

@@ -68,7 +68,7 @@ export function cloudRouter(db:DatabaseSync,root:string,live?:WarehouseLive,busi
   if(live&&!live.snapshot().ready)return res.status(409).json({error:'Kho đang kiểm tra thay đổi ảnh; yêu cầu mobile tiếp tục chờ.'})
   if(businessInFlight)return res.status(409).json({error:'Đang đồng bộ hồ sơ. Yêu cầu mobile sẽ được kiểm tra lại.'})
   businessInFlight=true
-  try{const token=req.get('authorization')||'';res.json(await processLocalCloudSale(db,root,(name,args)=>rpc(token,name,args)))}catch(e){res.status(409).json({error:e instanceof Error?e.message:'Chưa xử lý được yêu cầu mobile.'})}finally{businessInFlight=false}
+  try{const token=req.get('authorization')||'',result=await processLocalCloudSale(db,root,(name,args)=>rpc(token,name,args));if(!result.pending)res.locals.skipChangeFeed=true;res.json(result)}catch(e){res.status(409).json({error:e instanceof Error?e.message:'Chưa xử lý được yêu cầu mobile.'})}finally{businessInFlight=false}
  })
  router.post('/business/pull',async(req,res)=>{
   if(localAuthority)return res.status(409).json({code:'WINDOWS_LOCAL_AUTHORITY',error:'Không nhập nghiệp vụ Cloud ghi ngược vào CORE laptop.'})
