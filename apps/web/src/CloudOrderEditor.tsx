@@ -2,22 +2,32 @@ import {useEffect,useLayoutEffect,useState} from 'react'
 import {useCloudDraftConflictChoice} from './CloudDraftConflictChoice'
 import {validMoneyInput} from './moneyInput'
 import {useUnsavedChanges} from './useUnsavedChanges'
-import {cloudCommand} from './cloudClient'
+import {cloudCommand,CloudQueuedRequest} from './cloudClient'
 import {useMobileLuxe} from './MobileLuxeUI'
-export default function CloudOrderEditor({order,items,contact,customers=[],urls={},onChanged,onDirty}:{order:any;items:any[];contact:any;customers?:any[];urls?:Record<string,string>;onDirty?:(dirty:boolean)=>void;onChanged:()=>Promise<void>}){
+export default function CloudOrderEditor({order,items,contact,customers=[],urls={},onChanged,onDirty,rejected}:{order:any;items:any[];contact:any;customers?:any[];urls?:Record<string,string>;onDirty?:(dirty:boolean)=>void;onChanged:()=>Promise<void>;rejected?:{key:string;payload:any;error:string}}){
  const mobile=useMobileLuxe(),[step,setStep]=useState(0)
  useLayoutEffect(()=>{if(mobile)document.querySelector('.mobileOrderWizard')?.scrollIntoView({block:'start'})},[step,mobile])
+ const [awaiting,setAwaiting]=useState(false)
  const [dirty,setDirty]=useState(false),[baseVersion,setBaseVersion]=useState(order.version)
  useUnsavedChanges(dirty,()=>setError('Lưu thay đổi của đơn hoặc đọc lại trước khi chuyển chức năng.'))
  useEffect(()=>{onDirty?.(dirty);return()=>onDirty?.(false)},[dirty,onDirty])
  const [rows,setRows]=useState(items.map(i=>({...i}))),[discount,setDiscount]=useState(String(order.discount)),[note,setNote]=useState(order.note||''),[details,setDetails]=useState({...contact}),[busy,setBusy]=useState(false),[error,setError]=useState('')
+ useEffect(()=>{
+  if(!rejected)return
+  const p=rejected.payload,c=p.contact||{}
+  if(Array.isArray(p.items)){const restored=p.items.map((i:any)=>{const old=items.find(r=>r.image_id===i.imageId);return old?{...old,unit_price:i.unitPrice}:null});if(restored.every(Boolean))setRows(restored)}
+  setDetails({customer_id:c.customerId,recipient_name:c.recipientName||'',phone:c.phone||'',address:c.address||'',shipping_fee:c.shippingFee||0});setDiscount(String(p.discount??0));setNote(p.note||'');setBaseVersion(order.version);setDirty(true);setError('Chưa ghi nhận: '+rejected.error+'. Nội dung yêu cầu được giữ để kiểm tra.')
+ },[rejected?.key])
+ useEffect(()=>{
+  if(awaiting&&!dirty&&order.version>baseVersion){setRows(items.map(i=>({...i})));setDetails({...contact});setDiscount(String(order.discount));setNote(order.note||'');setBaseVersion(order.version);setAwaiting(false);setError('Laptop đã lưu bản mới; Cloud đã nhận kết quả.')}
+ },[awaiting,dirty,order.version,baseVersion,items,contact])
  // Bind the customer created by our acknowledged save without replacing edits.
  useEffect(()=>{if(!dirty&&order.version===baseVersion&&contact?.customer_id&&!details.customer_id&&['recipient_name','phone','address'].every(k=>(contact[k]||'')===(details[k]||'')))setDetails((old:any)=>({...old,customer_id:contact.customer_id}))},[dirty,baseVersion,order.version,contact?.customer_id,contact?.recipient_name,contact?.phone,contact?.address])
  const [saveCustomer,setSaveCustomer]=useState(true),[allowDuplicate,setAllowDuplicate]=useState(false)
  const key=(s:string)=>{let k=s.replace(/\D/g,'');return k.startsWith('84')?'0'+k.slice(2):k};const matches=details.phone?customers.filter(c=>key(c.phone)===key(details.phone)):[]
  const valid=rows.length>0&&rows.every(i=>validMoneyInput(i.unit_price))&&validMoneyInput(discount)&&validMoneyInput(details.shipping_fee??0)&&Number(discount)<=rows.reduce((n,i)=>n+Number(i.unit_price),0)
  const conflict=useCloudDraftConflictChoice(urls)
- async function save(){if(busy||!valid)return;setBusy(true);try{if(saveCustomer&&!details.customer_id&&details.recipient_name?.trim()&&!details.phone?.trim()&&!window.confirm('Lưu khách mới không có số điện thoại?'))return;if(allowDuplicate&&!details.customer_id&&matches.length&&!window.confirm('Tạo khách riêng dù số điện thoại đã có trong danh sách?'))return;const result=await conflict.submit(rows.map(i=>Number(i.image_id)),order.id,acknowledgeDraftConflict=>cloudCommand('draft.save',{id:order.id,version:baseVersion,acknowledgeDraftConflict,items:rows.map(i=>({imageId:i.image_id,unitPrice:Number(i.unit_price)})),discount:Number(discount),note,contact:{saveCustomer,confirmNoPhone:true,allowDuplicateCustomer:allowDuplicate,customerId:details.customer_id||null,recipientName:details.recipient_name||'',phone:details.phone||'',address:details.address||'',shippingFee:Number(details.shipping_fee||0)}}));setBaseVersion(result.version);setDirty(false);await onChanged();setError('Đã lưu bản mới.')}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
+ async function save(){if(busy||!valid)return;setBusy(true);try{if(saveCustomer&&!details.customer_id&&details.recipient_name?.trim()&&!details.phone?.trim()&&!window.confirm('Lưu khách mới không có số điện thoại?'))return;if(allowDuplicate&&!details.customer_id&&matches.length&&!window.confirm('Tạo khách riêng dù số điện thoại đã có trong danh sách?'))return;const result=await conflict.submit(rows.map(i=>Number(i.image_id)),order.id,acknowledgeDraftConflict=>cloudCommand('draft.save',{id:order.id,version:baseVersion,acknowledgeDraftConflict,items:rows.map(i=>({imageId:i.image_id,unitPrice:Number(i.unit_price)})),discount:Number(discount),note,contact:{saveCustomer,confirmNoPhone:true,allowDuplicateCustomer:allowDuplicate,customerId:details.customer_id||null,recipientName:details.recipient_name||'',phone:details.phone||'',address:details.address||'',shippingFee:Number(details.shipping_fee||0)}}));setBaseVersion(result.version);setDirty(false);await onChanged();setError('Đã lưu bản mới.')}catch(e){if(e instanceof CloudQueuedRequest){setAwaiting(true);setDirty(false);await onChanged()}setError((e as Error).message)}finally{setBusy(false)}}
  const subtotal=rows.reduce((n,i)=>n+Number(i.unit_price||0),0),money=(n:number)=>n.toLocaleString('vi-VN')+' ₫'
  return <section className="contactCard mobileOrderWizard" data-mobile-step={step}>
   {conflict.dialog}<h3>Thông tin chốt đơn</h3>

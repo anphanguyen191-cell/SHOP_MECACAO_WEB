@@ -29,7 +29,7 @@ function validate(raw:any):Input{
 }
 
 /** Drafts have no filesystem writes, inventory transactions, image claims or reservations. */
-export function salesDraftService(db:DatabaseSync,sandboxRoot:string,confirmedCloudReplay=false){
+export function salesDraftService(db:DatabaseSync,sandboxRoot:string,confirmedCloudReplay=false,hooks?:{beforeWrite?:()=>void;onWrite?:()=>void}){
  bootstrapCustomers(db);bootstrapFinance(db)
  const root=fs.realpathSync(sandboxRoot),sales=!!db.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_confirmations'").get()
  const sold=(id:number)=>sales&&!!db.prepare('SELECT 1 FROM sales_units WHERE image_id=?').get(id)
@@ -48,7 +48,7 @@ export function salesDraftService(db:DatabaseSync,sandboxRoot:string,confirmedCl
   }catch{return 'Không đọc được ảnh vật lý; hãy kiểm tra kho'}
   return null
  }
- function transaction<T>(action:()=>T){db.exec('BEGIN IMMEDIATE');try{const r=action();db.exec('COMMIT');return r}catch(e){db.exec('ROLLBACK');throw e}}
+ function transaction<T>(action:()=>T){db.exec('BEGIN IMMEDIATE');try{hooks?.beforeWrite?.();const r=action();hooks?.onWrite?.();db.exec('COMMIT');return r}catch(e){db.exec('ROLLBACK');throw e}}
  function order(id:string){const row=db.prepare('SELECT * FROM sales_orders WHERE id=?').get(id) as Order|undefined;if(!row)throw new SalesError('Không tìm thấy đơn',404);if(sales&&db.prepare('SELECT 1 FROM sales_confirmations WHERE order_id=?').get(id))row.status='SOLD';return row}
  function conflicts(ids:number[],exclude=''){
   if(!ids.length)return {conflicts:[],conflictToken:''}

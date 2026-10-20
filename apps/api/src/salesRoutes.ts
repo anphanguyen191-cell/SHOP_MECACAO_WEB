@@ -4,6 +4,7 @@ import {businessReports,csvText} from './businessReports.js'
 import {bootstrapStocktake,stocktakeService} from './stocktake.js'
 import {financeService} from './orderFinance.js'
 import {customerService} from './customers.js'
+import {salesHistory} from './salesHistory.js'
 import {orderSlipService} from './orderSlip.js'
 import {salesExecutionService} from './salesExecution.js'
 import {readSchemaVersion} from './schema.js'
@@ -58,6 +59,8 @@ export function salesDraftRouter(db:DatabaseSync,root:string,port:number){
  router.put('/:id/aftercare/:caseId',(req,res)=>execute(res,()=>finance.resolveCase(req.params.id,req.params.caseId,req.body)))
  const customers=customerService(db),slips=orderSlipService(db,root)
  router.get('/customers',(req,res)=>execute(res,()=>customers.list(String(req.query.q??''))))
+ router.get('/history',(req,res)=>execute(res,()=>salesHistory(db,req.query)))
+ router.get('/customers/:customerId/history',(req,res)=>execute(res,()=>{customers.get(req.params.customerId);return salesHistory(db,{...req.query,customerId:req.params.customerId})}))
  router.post('/customers',(req,res)=>execute(res,()=>customers.save(req.body),201))
  router.put('/customers/:customerId',(req,res)=>execute(res,()=>customers.save(req.body,req.params.customerId)))
  router.get('/:id/slip',(req,res)=>execute(res,()=>slips.summary(req.params.id,Number(req.query.version))))

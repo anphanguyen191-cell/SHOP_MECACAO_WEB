@@ -11,15 +11,18 @@ import {cloudImageForSync,createCloudImageDigestCache} from './cloudImages.js'
 import {isInternalWarehousePath} from './warehouseAreas.js'
 import {reconcileCloudSale} from './cloudReconcile.js'
 import {uploadLocalBusiness,assertBusinessUploaded,verifyImportedLocalSale,pullCloudBusiness} from './cloudBusiness.js'
+import {processLocalCloudSale} from './localCloudSales.js'
 const cloudUrl='https://eyckwoewpomssjjggslr.supabase.co'
 const publishable='sb_publishable_iyEI25gFfU4pXxmdFJ823Q_YYG-ViGJ'
 export function cloudRouter(db:DatabaseSync,root:string,live?:WarehouseLive,businessChanges?:()=>unknown,localAuthority=!!v8Home){
  const router=Router()
  const digestCache=createCloudImageDigestCache(db)
+ const metadata=(key:string)=>{try{return JSON.parse(String(db.prepare('SELECT value FROM app_metadata WHERE key=?').get(key)?.value||'null'))}catch{return null}}
  router.use((req,res,next)=>{
   if(!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress||'')||res.locals.lanUser)return res.status(403).json({error:'Kết nối Cloud của kho chỉ thiết lập trên Windows chủ shop.'})
   res.set('Cache-Control','no-store'); next()
  })
+ router.get('/sync-status',(_req,res)=>res.json({lastSuccess:metadata('cloud-sync-success'),lastAttempt:metadata('cloud-sync-attempt'),business:metadata('cloud-business-upload')}))
  router.get('/state',(_req,res)=>res.json({imageDigestBatch:true,localAuthority,businessHistorySync:true,business:businessChanges?.(),syncEnabled:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-instance'").get(),instance:db.prepare("SELECT value FROM app_metadata WHERE key='cloud-instance'").get()?.value,enabled:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(),live:live?.snapshot(),reconciled:db.prepare("SELECT substr(key,12) id FROM app_metadata WHERE key LIKE 'cloud-sold:%' UNION SELECT substr(key,18) id FROM app_metadata WHERE key LIKE 'cloud-local-sold:%'").all().map(r=>r.id)}))
  router.post('/live/ack',async(req,res)=>{
   try{
@@ -38,6 +41,35 @@ export function cloudRouter(db:DatabaseSync,root:string,live?:WarehouseLive,busi
  })
  async function rpc(token:string,name:string,args:unknown){const response=await fetch(cloudUrl+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:publishable,Authorization:token,'Content-Type':'application/json'},body:JSON.stringify(args),signal:AbortSignal.timeout(20000)});const result=await response.json();if(!response.ok)throw Error(result.message||'Không xác minh được Cloud.');return result}
  let businessInFlight=false
+ router.post('/sync-status',async(req,res)=>{
+  try{
+   const token=req.get('authorization')||'',health=await rpc(token,'mc_v7_health',{}),instance=db.prepare("SELECT value FROM app_metadata WHERE key='cloud-instance'").get()?.value
+   if(health.role!=='owner'||!instance||health.instance!==instance)throw Error('Chưa xác minh cùng kho và chủ shop.')
+   if(!['COMPLETE','ERROR'].includes(req.body.phase))throw Error('Trạng thái không hợp lệ.')
+   const record:any={at:new Date().toISOString(),phase:req.body.phase}
+   if(req.body.phase==='COMPLETE'){
+    const source=live?.snapshot()
+    if(source&&(!source.ready||source.revision!==req.body.revision||source.pendingSync))throw Error('Kho còn thay đổi chưa được xác nhận đồng bộ.')
+    assertBusinessUploaded(db,root)
+    const report=await rpc(token,'mc_v8_stock_integrity',{p_instance:instance})
+    const count=db.prepare('SELECT i.file_path FROM product_images i WHERE NOT EXISTS(SELECT 1 FROM sales_units u WHERE u.image_id=i.id)').all().filter(i=>{if(live)return live.present(String(i.file_path));try{return fs.statSync(String(i.file_path)).isFile()}catch{return false}}).length
+    if(report.ready!==count||report.missingOrInvalidFiles||report.sharedActivePaths||report.invalidHashes)throw Error('Tồn/Storage Cloud chưa khớp ảnh laptop; chưa ghi nhận đồng bộ hoàn tất.')
+    // Recheck after I/O: a source/business edit during the remote audit must not
+    // turn an older successful upload into a current completion timestamp.
+    if(live&&(!live.snapshot().ready||live.snapshot().revision!==req.body.revision||live.snapshot().pendingSync))throw Error('Kho vừa đổi trong lúc đối soát.')
+    assertBusinessUploaded(db,root);record.stock=count
+    db.prepare("INSERT INTO app_metadata(key,value) VALUES('cloud-sync-success',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(JSON.stringify(record))
+   }else record.error=String(req.body.error||'Chưa đồng bộ hoàn tất.').slice(0,500)
+   db.prepare("INSERT INTO app_metadata(key,value) VALUES('cloud-sync-attempt',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(JSON.stringify(record));res.json(record)
+  }catch(e){res.status(409).json({error:e instanceof Error?e.message:'Chưa xác nhận đồng bộ.'})}
+ })
+ router.post('/local-sales',async(req,res)=>{
+  if(!localAuthority)return res.status(409).json({error:'Chỉ laptop LOCAL xác nhận yêu cầu mobile.'})
+  if(live&&!live.snapshot().ready)return res.status(409).json({error:'Kho đang kiểm tra thay đổi ảnh; yêu cầu mobile tiếp tục chờ.'})
+  if(businessInFlight)return res.status(409).json({error:'Đang đồng bộ hồ sơ. Yêu cầu mobile sẽ được kiểm tra lại.'})
+  businessInFlight=true
+  try{const token=req.get('authorization')||'';res.json(await processLocalCloudSale(db,root,(name,args)=>rpc(token,name,args)))}catch(e){res.status(409).json({error:e instanceof Error?e.message:'Chưa xử lý được yêu cầu mobile.'})}finally{businessInFlight=false}
+ })
  router.post('/business/pull',async(req,res)=>{
   if(localAuthority)return res.status(409).json({code:'WINDOWS_LOCAL_AUTHORITY',error:'Không nhập nghiệp vụ Cloud ghi ngược vào CORE laptop.'})
   if(businessInFlight)return res.status(409).json({error:'Đang đối soát hồ sơ nghiệp vụ.'})

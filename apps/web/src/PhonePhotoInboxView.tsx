@@ -1,4 +1,5 @@
 import {useEffect,useRef,useState} from 'react'
+import CloudPhotoIntake from './CloudPhotoIntake'
 import {apiJson} from './uiState'
 import './phonePhotoInbox.css'
 
@@ -94,7 +95,7 @@ export default function PhonePhotoInboxView({mobile,onChanged,onBeginReceipt}:{m
   finally{setReviewing(null)}
  }
  const pending=data?.rows.filter(r=>r.status==='PENDING_REVIEW').length??0
- return <section className="phoneInbox" aria-label="Ảnh chờ từ iPhone">
+ return <section className="phoneInbox" aria-label="Ảnh chờ từ iPhone">{!mobile&&<CloudPhotoIntake onReceived={()=>setReload(n=>n+1)}/>}<div id="local-phone-review"/>
   <header className="phoneInboxHeader"><div><p className="eyebrow">CHECKPOINT 6C · MOBILE LAN</p><h2>Ảnh từ iPhone</h2><p>Ảnh gửi nằm trong khu chờ riêng, <b>không được tính là một bộ tồn</b> cho đến khi hoàn tất phiếu Nhập hàng trên Windows.</p></div>
    <button type="button" onClick={()=>setReload(n=>n+1)}>Làm mới</button></header>
   <div className="phoneInboxSummary"><div><strong>{pending}</strong><span>Ảnh chờ xem xét</span></div><div><strong>{data?.rows.filter(r=>r.status==='REVIEWED_NOT_REGISTERED').length??0}</strong><span>Đã duyệt bản sao</span></div><div><strong>0</strong><span>Tồn tự động cộng</span></div></div>

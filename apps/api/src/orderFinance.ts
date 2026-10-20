@@ -16,7 +16,7 @@ export function bootstrapFinance(db:DatabaseSync){
 const safe=(n:bigint)=>{if(n<0n||n>BigInt(Number.MAX_SAFE_INTEGER))throw new SalesError('Tổng tiền vượt giới hạn an toàn');return Number(n)}
 const text=(v:unknown,max=500)=>{if(typeof v!=='string'||v.length>max)throw new SalesError('Nội dung không hợp lệ hoặc quá dài');return v.trim()}
 const methods=['COD','TRANSFER','CASH'],deliveries=['NEW','SHIPPED','DELIVERED','FAILED']
-export function financeService(db:DatabaseSync){
+export function financeService(db:DatabaseSync,onWrite?:()=>void){
  const hasSales=!!db.prepare("SELECT 1 FROM sqlite_master WHERE name='sales_confirmations'").get()
  function order(id:string){const o=db.prepare('SELECT * FROM sales_orders WHERE id=?').get(id) as {discount:number;version:number;status:string}|undefined;if(!o)throw new SalesError('Không tìm thấy đơn',404);return {...o,status:hasSales&&db.prepare('SELECT 1 FROM sales_confirmations WHERE order_id=?').get(id)?'SOLD':String(o.status)}}
  function summary(id:string){
@@ -31,7 +31,7 @@ export function financeService(db:DatabaseSync){
   const due=Math.max(0,adjustedTotal-netCollected),refundDue=Math.max(0,netCollected-adjustedTotal)
   return {orderId:id,orderVersion:Number(o.version),orderStatus:o.status,version:Number(cfg?.version??0),method:String(cfg?.method??'COD'),delivery:String(cfg?.delivery??'NEW'),tracking:String(cfg?.tracking??''),originalTotal:original,adjustedTotal,receipts,refunds,credit,netCollected,due,refundDue,paymentStatus:refundDue?'REFUND_DUE':due?netCollected?'PARTIAL':'UNPAID':'PAID',entries,cases:db.prepare('SELECT * FROM aftercare_cases WHERE order_id=? ORDER BY created_at DESC,id').all(id)}
  }
- function tx<T>(fn:()=>T){db.exec('BEGIN IMMEDIATE');try{const r=fn();db.exec('COMMIT');return r}catch(e){db.exec('ROLLBACK');throw e}}
+ function tx<T>(fn:()=>T){db.exec('BEGIN IMMEDIATE');try{const r=fn();onWrite?.();db.exec('COMMIT');return r}catch(e){db.exec('ROLLBACK');throw e}}
  function expected(s:ReturnType<typeof summary>,raw:any){if(raw.version!==s.version||raw.orderVersion!==s.orderVersion)throw new SalesError('Đơn hoặc sổ thanh toán đã thay đổi. Mở lại trước khi ghi.',409)}
  function bump(s:ReturnType<typeof summary>,method=s.method,delivery=s.delivery,tracking=s.tracking){db.prepare('INSERT INTO order_finance(order_id,version,method,delivery,tracking) VALUES(?,?,?,?,?) ON CONFLICT(order_id) DO UPDATE SET version=excluded.version,method=excluded.method,delivery=excluded.delivery,tracking=excluded.tracking').run(s.orderId,s.version+1,method,delivery,tracking)}
  function requestKey(key:unknown){if(typeof key!=='string'||! /^[A-Za-z0-9_-]{16,100}$/.test(key))throw new SalesError('Thiếu mã yêu cầu hợp lệ');return key}

@@ -21,7 +21,7 @@ export function salesRequestGuard(db:DatabaseSync,root:string|null,enabled:boole
   // re-check after network I/O, and use the normal sale/archive locks on replay.
   // Counting their own HTTP request as a reader deadlocks upload AND activation
   // AND pull (including sale replay). Keep the recovery/busy checks above.
-  if(req.method==='POST'&&['/cloud/business','/cloud/business/pull','/cloud/activate'].includes(req.path))return next()
+  if(req.method==='POST'&&['/cloud/business','/cloud/business/pull','/cloud/activate','/cloud/local-sales','/cloud/sync-status'].includes(req.path))return next()
   salesActivity.readers++
   let done=false
   const release=()=>{if(!done){done=true;salesActivity.readers--}}

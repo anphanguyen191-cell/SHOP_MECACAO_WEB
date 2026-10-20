@@ -70,11 +70,11 @@ test('A10 Sales four steps preserve preflight, identity, payment, PNG and status
  assert.match(app,/Idempotency-Key/)
  assert.match(core,/preflight/)
 })
-test('A06 Customer master detail tabs navigate to CORE without fake customer-filtered debt data',()=>{
+test('A06 Customer master detail tabs use explicit customer history and retain edit protection',()=>{
  assert.match(customers,/luxeCustomerTabs/)
- assert.match(customers,/onNavigate\('Bán hàng'\)/)
- assert.match(customers,/onNavigate\('Công nợ'\)/)
- assert.match(customers,/Chức năng lọc đơn theo khách chưa có trong CORE/)
+ assert.match(customers,/CustomerHistory/)
+ assert.match(customers,/id=\{edit.id\}/)
+ assert.doesNotMatch(customers,/Chức năng lọc đơn theo khách chưa có trong CORE/)
  assert.match(customers,/useUnsavedChanges\(dirty/)
 })
 test('A07 Reports and stocktake visualize only server-provided results',()=>{
