@@ -43,7 +43,7 @@ export async function processLocalCloudSale(db:DatabaseSync,root:string,rpc:(nam
   if(!committed){
    if(before.status!=='NOT_FOUND')throw Error('Yêu cầu bán cần kiểm tra phục hồi tại laptop.')
    const o=s.order,items=s.items
-   if(!o||typeof o.id!=='string'||!/^[-A-Za-z0-9_]{1,100}$/.test(o.id)||o.status!=='DRAFT'||!Number.isSafeInteger(o.version)||o.version<1||!Number.isSafeInteger(o.discount)||o.discount<0||typeof o.note!=='string'||o.note.length>500||!Array.isArray(items)||!items.length||items.length>100||!Array.isArray(s.assets))throw Error('Snapshot yêu cầu không hợp lệ; cần đối soát Cloud.')
+   if(!o||typeof o.id!=='string'||!/^[-A-Za-z0-9_]{1,100}$/.test(o.id)||o.status!=='DRAFT'||!Number.isSafeInteger(o.version)||o.version<1||!Number.isSafeInteger(o.discount)||o.discount<0||typeof o.note!=='string'||o.note.length>1000||!Array.isArray(items)||!items.length||items.length>100||!Array.isArray(s.assets))throw Error('Snapshot yêu cầu không hợp lệ; cần đối soát Cloud.')
    const localConfirmation=db.prepare('SELECT * FROM sales_confirmations WHERE order_id=?').get(o.id)
    if(!financial&&localConfirmation)conflict('Đơn đã bán tại laptop bằng giao dịch khác. Giữ nguyên chứng từ để đối soát.')
    if(financial&&Boolean(localConfirmation)!==Boolean(s.confirmation)||financial&&localConfirmation&&localConfirmation.operation_id!==s.confirmation.operation_id)conflict('Chứng từ bán của đơn khác laptop. Giữ nguyên lịch sử để đối soát.')

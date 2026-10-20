@@ -280,8 +280,13 @@ async function intercept(p) {
   }
 }
 try {
-  for (let n = 0; n < 200 && !log.includes("DevTools listening on"); n++)
+  // Hosted Chrome can need more than ten seconds to start on a busy runner.
+  // Still fail immediately on an exited process and keep every browser assertion.
+  for (let n = 0; n < 900 && !log.includes("DevTools listening on"); n++) {
+    assert(browser.exitCode === null && !browser.signalCode,
+      'Chrome exited before browser acceptance: ' + (browser.exitCode ?? browser.signalCode) + '\n' + log);
     await delay(50);
+  }
   const endpoint = log.match(/DevTools listening on (ws:\/\/[^\s]+)/)?.[1];
   assert(endpoint, log);
   const base = new URL(endpoint);

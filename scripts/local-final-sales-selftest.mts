@@ -95,11 +95,12 @@ try{
  assert.equal(raced.state,'REJECTED');assert.match(raced.error!,/Ảnh đã thay đổi/)
  assert.equal(Number(db.prepare('SELECT count(*) n FROM sales_confirmations').get()!.n),1)
  fs.unlinkSync(files[1])
- await draft('mobile-order-3',3);await request('mobile-order-3','mobile-request-finish-003');loseFinish=true
+ await draft('mobile-order-3',3);await pg.exec('RESET ROLE');await pg.query("UPDATE sales_orders SET note=$1 WHERE id='mobile-order-3'",['n'.repeat(1000)]);await pg.exec('SET ROLE authenticated');await request('mobile-order-3','mobile-request-finish-003');loseFinish=true
  await assert.rejects(()=>processLocalCloudSale(db,root,rpc),/Lost finish reply/)
  assert.equal((await processLocalCloudSale(db,root,rpc)).pending,false)
  assert.equal(Number(db.prepare('SELECT count(*) n FROM sales_units').get()!.n),2)
  assert.equal(Number((await one('SELECT count(*) n FROM sales_units')).n),2)
+ assert.equal(String(db.prepare("SELECT note FROM sales_orders WHERE id='mobile-order-3'").get()!.note).length,1000,'valid legacy Cloud notes are preserved')
  assert.equal(salesExecutionService(db,root).pending(),false)
  // A deposit is intent until LOCAL commits it. Exercise all money/aftercare
  // services, including a lost upload reply and a later sale of the same draft.
