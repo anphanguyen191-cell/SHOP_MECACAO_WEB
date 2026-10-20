@@ -86,3 +86,10 @@ test('Travel Luxe parity: full laptop, real logo/ICO, independent content scroll
  assert.match(read('scripts/v8/build-shop-icon.mts'),/catalog-shop-logo\.jpg/)
  assert.match(csproj,/ApplicationIcon/)
 })
+
+test('Local Windows Cloud view exposes a reliable return path to CORE and updater',()=>{
+ const main=read('apps/web/src/AdminRuntime.tsx')
+ assert.match(main,/windowsLocalHost&&remote&&<button/)
+ assert.match(main,/Quay về CORE laptop để cập nhật/)
+ assert.match(main,/localUrl\.searchParams\.delete\('cloud'\);setRemote\(false\)/)
+})
