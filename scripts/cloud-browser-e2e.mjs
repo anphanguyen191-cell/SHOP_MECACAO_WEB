@@ -391,7 +391,7 @@ try{
  // Optional styling uses the same live workspace, navigation and unsaved guards.
  const appearanceStart=trace.length,businessBefore=JSON.stringify({orders:state.orders,items:state.items,confirmations:state.confirmations,customers:state.customers})
  const skinClick=async selector=>{await run(`document.querySelector(${JSON.stringify(selector)}).click()`);await delay(50)}
- const contrast=(a,b)=>{const l=hex=>{const h=hex.replace('#',''),v=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);return .2126*v[0]+.7152*v[1]+.0722*v[2]};const x=l(a),y=l(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
+ const contrast=(a,b)=>{const l=hex=>{const raw=hex.replace('#',''),h=raw.length===3?[...raw].map(x=>x+x).join(''):raw,v=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);return .2126*v[0]+.7152*v[1]+.0722*v[2]};const x=l(a),y=l(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
  for(const width of [375,390,430,768]){
   await cmd('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true});await route('Cài đặt');await until("!!document.querySelector('.mobilePersonalization')")
   for(const dark of [false,true]){
