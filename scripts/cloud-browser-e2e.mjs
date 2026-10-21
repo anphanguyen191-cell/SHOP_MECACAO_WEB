@@ -229,9 +229,8 @@ try{
  await run("window.dispatchEvent(new Event('mecacao-cloud-sold-check'))");await delay(500);
  assert.equal(trace.filter(t=>t.method==='DELETE').length,deletes,'Completed cleanup must not repeat deletion')
 
- // A fresh workspace has no selected order. Otherwise entering finance resumes
- // that order's ledger rather than the debt list this viewport check targets.
- await cmd('Page.reload');await until("!!document.querySelector('.inventoryPage')")
+ // Mobile reload now returns to Overview; debt navigation is independently reset.
+ await cmd('Page.reload');await until("!!document.querySelector('.mobileOverview')")
  await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Khách hàng').click()")
  await until("!!document.querySelector('.mobileCustomersPage .salesOrderRow')")
  await run("document.querySelector('.mobileCustomersPage .salesOrderRow').click()")
@@ -243,7 +242,7 @@ try{
  const customerRequest=state.customerRequests[0];state.customers[0]={...state.customers[0],...customerRequest.payload,version:2};customerRequest.state='CONFIRMED';customerRequest.result={version:2,currentVersion:2};state.sequence++
  await until("document.body.innerText.includes('Cloud đã xác nhận')&&!document.querySelector('.contactCard fieldset').disabled")
  assert(!trace.some(t=>t.body?.includes('"p_action":"customer.save"')),'customer UI must not write through legacy direct Cloud command')
- await cmd('Page.reload');await until("!!document.querySelector('.inventoryPage')")
+ await cmd('Page.reload');await until("!!document.querySelector('.mobileOverview')")
  const pages=[['Tổng quan','.overviewStats'],['Kết nối Cloud','.cloudSettings'],['Tồn kho','.inventoryPage'],['Danh mục sản phẩm','.catalogPage'],['Bán hàng','.salesWorkspace'],['Khách hàng','.contactCard'],['Công nợ','.financeMetrics'],['Báo cáo','.stage4Metrics'],['Kiểm kê','.stocktakePanel'],['Ảnh SOLD','.soldRetentionPage'],['Ảnh iPhone','.phoneInbox'],['Cài đặt','.displayPreferences']]
  for(const width of [1366,390])for(const dark of [false,true]){
   await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:900,deviceScaleFactor:1,mobile:width===390})
