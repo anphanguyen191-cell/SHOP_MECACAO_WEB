@@ -13,7 +13,7 @@
     "typecheck": "npm --workspace apps/web run typecheck && npm --workspace apps/api run typecheck",
     "test:core": "npm --workspace apps/api run test:core",
     "test:schema": "npm --workspace apps/api run test:schema",
-    "test:ui": "node scripts/ui-regression.mjs && node scripts/mobile-reform-dom.mjs && node --test scripts/v8/mobile-luxe-m2-nav.test.mjs scripts/v8/mobile-luxe-m2-responsive.test.mjs scripts/v8/ui-v2-desktop.test.mjs scripts/v8/ui-v2-design-contract.test.mjs scripts/v8/windows-startup-ui.test.mjs scripts/v8/ui-v2-ux-refinements.test.mjs && node --import tsx --test scripts/v8/windows-auth.test.mts",
+    "test:ui": "node scripts/cloud-debts-contact-dom.mjs && node scripts/ui-regression.mjs && node scripts/mobile-reform-dom.mjs && node --test scripts/v8/mobile-luxe-m2-nav.test.mjs scripts/v8/mobile-luxe-m2-responsive.test.mjs scripts/v8/ui-v2-desktop.test.mjs scripts/v8/ui-v2-design-contract.test.mjs scripts/v8/windows-startup-ui.test.mjs scripts/v8/ui-v2-ux-refinements.test.mjs && node --import tsx --test scripts/v8/windows-auth.test.mts",
     "test:performance": "npm --workspace apps/api run test:performance",
     "test:inventory-value": "npm --workspace apps/api run test:inventory-value",
     "test:stock-return": "node --import tsx scripts/stock-return-selftest.mts && node scripts/stock-return-dom.mjs",
