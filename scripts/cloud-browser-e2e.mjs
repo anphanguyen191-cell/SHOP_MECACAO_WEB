@@ -220,6 +220,9 @@ try{
  await run("window.dispatchEvent(new Event('mecacao-cloud-sold-check'))");await delay(500);
  assert.equal(trace.filter(t=>t.method==='DELETE').length,deletes,'Completed cleanup must not repeat deletion')
 
+ // A fresh workspace has no selected order. Otherwise entering finance resumes
+ // that order's ledger rather than the debt list this viewport check targets.
+ await cmd('Page.reload');await until("!!document.querySelector('.inventoryPage')")
  const pages=[['Tổng quan','.overviewStats'],['Kết nối Cloud','.cloudSettings'],['Tồn kho','.inventoryPage'],['Danh mục sản phẩm','.catalogPage'],['Bán hàng','.salesWorkspace'],['Khách hàng','.contactCard'],['Công nợ','.financeMetrics'],['Báo cáo','.stage4Metrics'],['Kiểm kê','.stocktakePanel'],['Ảnh SOLD','.soldRetentionPage'],['Ảnh iPhone','.phoneInbox'],['Cài đặt','.displayPreferences']]
  for(const width of [1366,390])for(const dark of [false,true]){
   await cmd('Emulation.setDeviceMetricsOverride',{width,height:width===390?844:900,deviceScaleFactor:1,mobile:width===390})
