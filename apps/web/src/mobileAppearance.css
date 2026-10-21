@@ -1,0 +1,119 @@
+/* Optional mobile decoration. No desktop, image, money/status or layout overrides. */
+.mobileBannerArt,.mobileCaCaoMascot,.mobilePersonalization{display:none}
+@media(max-width:800px){
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay)[data-mobile-palette="rose"]{
+  --mobile-luxe-bg:#fcf5f8;--mobile-luxe-paper:#fffdfd;--mobile-luxe-ink:#382537;--mobile-luxe-muted:#716071;
+  --mobile-luxe-accent:#8b2f63;--mobile-luxe-rose:#c06392;--mobile-luxe-line:#eadce4;--mobile-luxe-soft:#f6e4ee;
+ }
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay)[data-mobile-palette="lavender"]{
+  --mobile-luxe-bg:#f7f5fc;--mobile-luxe-paper:#fffefe;--mobile-luxe-ink:#30253f;--mobile-luxe-muted:#6e627e;
+  --mobile-luxe-accent:#674398;--mobile-luxe-rose:#a17bc7;--mobile-luxe-line:#e5deee;--mobile-luxe-soft:#eee6f8;
+ }
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay)[data-mobile-palette="mint"]{
+  --mobile-luxe-bg:#f2f8f5;--mobile-luxe-paper:#fdfffe;--mobile-luxe-ink:#243c36;--mobile-luxe-muted:#576f67;
+  --mobile-luxe-accent:#176655;--mobile-luxe-rose:#63a58f;--mobile-luxe-line:#d8e8df;--mobile-luxe-soft:#e0f1e9;
+ }
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay)[data-mobile-palette="champagne"]{
+  --mobile-luxe-bg:#fbf7ef;--mobile-luxe-paper:#fffefa;--mobile-luxe-ink:#3e3326;--mobile-luxe-muted:#786b57;
+  --mobile-luxe-accent:#7b531e;--mobile-luxe-rose:#b89059;--mobile-luxe-line:#e9dfcd;--mobile-luxe-soft:#f3e9d7;
+ }
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay).themeDark[data-mobile-palette]:not([data-mobile-palette="classic"]){
+  --mobile-luxe-bg:#1c1926;--mobile-luxe-paper:#292432;--mobile-luxe-ink:#f8f1f8;--mobile-luxe-muted:#c4b6ca;--mobile-luxe-line:#514455;--mobile-luxe-soft:#413446;
+ }
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay).themeDark[data-mobile-palette="rose"]{--mobile-luxe-accent:#f3b8d4;--mobile-luxe-rose:#dc8db5}
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay).themeDark[data-mobile-palette="lavender"]{--mobile-luxe-accent:#d8beff;--mobile-luxe-rose:#baa0de;--mobile-luxe-soft:#3e3352}
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay).themeDark[data-mobile-palette="mint"]{--mobile-luxe-accent:#a2dec7;--mobile-luxe-rose:#79baa5;--mobile-luxe-soft:#2b423e}
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay).themeDark[data-mobile-palette="champagne"]{--mobile-luxe-accent:#efd098;--mobile-luxe-rose:#c5a46f;--mobile-luxe-soft:#443c30}
+ .shell.mobileLuxeWorkspace[data-mobile-palette]:not([data-mobile-palette="classic"]) .mobileLuxeNav button.selected{
+  background:var(--mobile-luxe-soft);color:var(--mobile-luxe-accent)
+ }
+ .shell.mobileLuxeWorkspace[data-mobile-palette]:not([data-mobile-palette="classic"]) :is(.mobileFilterChips [aria-pressed="true"],.mobileQuickLinks button){
+  background:var(--mobile-luxe-soft);color:var(--mobile-luxe-accent);border-color:var(--mobile-luxe-line)
+ }
+ .shell.mobileLuxeWorkspace[data-mobile-palette]:not([data-mobile-palette="classic"]) .mobileChartRow>i>i{background:var(--mobile-luxe-rose)}
+ .shell.mobileLuxeWorkspace[data-mobile-palette]:not([data-mobile-palette="classic"]) :is(.mobileWelcome,.mobileStylePreview){background:linear-gradient(115deg,var(--mobile-luxe-soft),var(--mobile-luxe-bg));color:var(--mobile-luxe-ink)}
+ .shell.mobileLuxeWorkspace[data-mobile-palette]:not([data-mobile-palette="classic"]) .mobileWelcome small{color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace[data-mobile-palette]:not([data-mobile-palette="classic"]) .mobileLoginIntro h1{color:var(--mobile-luxe-accent)}
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay)[data-mobile-palette]:not([data-mobile-palette="classic"]){--mobile-luxe-action-ink:#fff}
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay).themeDark[data-mobile-palette]:not([data-mobile-palette="classic"]){--mobile-luxe-action-ink:#1c1926}
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay)[data-mobile-palette]:not([data-mobile-palette="classic"]) :is(.mobilePrimary,.salesActionPrimary){background:var(--mobile-luxe-accent);color:var(--mobile-luxe-action-ink,#fff)}
+ .shell.mobileLuxeWorkspace[data-mobile-palette]:not([data-mobile-palette="classic"]) .drawerLinks .selected .drawerIcon{background:var(--mobile-luxe-soft);color:var(--mobile-luxe-accent)}
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay)[data-mobile-palette]:not([data-mobile-palette="classic"]) button:focus-visible{outline-color:var(--mobile-luxe-accent)}
+
+ /* Only the two fixed chrome surfaces use blur; content/photo grids stay light. */
+ .shell.mobileLuxeWorkspace[data-mobile-material="flat"] :is(.topbar,.mobileQuickNav){backdrop-filter:none;-webkit-backdrop-filter:none}
+ .shell.mobileLuxeWorkspace[data-mobile-material="glass"] :is(.topbar,.mobileQuickNav){
+  background:var(--mobile-luxe-paper);background:color-mix(in srgb,var(--mobile-luxe-paper) 92%,transparent);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)
+ }
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay)[data-mobile-material="pearl"] :is(.mobileCard,.mobileMetric,.mobileLuxeSheet>header){
+  background-image:linear-gradient(130deg,#ffffff12,transparent 45%,#caa0cb0a)!important
+ }
+ .shell.mobileLuxeWorkspace[data-mobile-material="pearl"] :is(.topbar,.mobileQuickNav){
+  background:linear-gradient(115deg,var(--mobile-luxe-paper),var(--mobile-luxe-soft));backdrop-filter:none;-webkit-backdrop-filter:none
+ }
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay)[data-mobile-cards="soft"] :is(.mobileCard,.mobileMetric,.mobileStockCard,.panel){border-radius:23px}
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay)[data-mobile-cards="outlined"] :is(.mobileCard,.mobileMetric,.mobileStockCard,.panel){box-shadow:inset 0 0 0 1px var(--mobile-luxe-line)!important}
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay)[data-mobile-cards="lifted"] :is(.mobileCard,.mobileMetric,.mobileStockCard,.panel){box-shadow:0 5px 15px #432a4312!important}
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay).themeDark[data-mobile-cards="lifted"] :is(.mobileCard,.mobileMetric,.mobileStockCard,.panel){box-shadow:0 5px 15px #0003!important}
+
+ /* Existing heading dimensions, labels, source badge and pointer targets are kept. */
+ .shell.mobileLuxeWorkspace :is(.mobileLuxeSectionHeader,.mobileWelcome,.mobileStylePreview){position:relative;isolation:isolate}
+ .shell.mobileLuxeWorkspace .mobileBannerArt{display:block;position:absolute;inset:0 0 0 45%;z-index:-1;overflow:hidden;pointer-events:none;color:var(--mobile-luxe-accent);opacity:.18;border-radius:inherit;mask-image:linear-gradient(90deg,transparent,#000 55%);-webkit-mask-image:linear-gradient(90deg,transparent,#000 55%)}
+ .shell.mobileLuxeWorkspace .mobileBannerArt svg{position:absolute;right:0;top:50%;height:160%;width:auto;transform:translateY(-50%)}
+ .shell.mobileLuxeWorkspace .mobileBannerArt img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+ .shell.mobileLuxeWorkspace .mobileBannerArt.banner-custom{opacity:.2}
+ .shell.mobileLuxeWorkspace .mobileLuxeSectionHeader .mobileBannerArt{inset:0 0 10px 45%;border-radius:10px}
+ .shell.mobileLuxeWorkspace .mobileCaCaoMascot,.mobileLuxeOverlay .mobileCaCaoMascot{display:inline-block;position:relative;flex:none;box-sizing:border-box;width:44px;height:44px;overflow:hidden;border:3px solid var(--mobile-luxe-paper);border-radius:50%;background:#fff;box-shadow:0 2px 8px #74416b12}
+ .shell.mobileLuxeWorkspace .mobileCaCaoMascot img,.mobileLuxeOverlay .mobileCaCaoMascot img{position:absolute;width:160%;height:auto;max-width:none;left:-30%;top:-6%;border:0;border-radius:0}
+ .shell.mobileLuxeWorkspace .mobileWelcome>.mobileCaCaoMascot{align-self:center}
+ .mobileLuxeOverlay .mobileConnectionState>.mobileCaCaoMascot{margin-bottom:10px}
+ .shell.mobileLuxeWorkspace[data-mobile-mascot="true"] .mobileEmpty::before{content:"";display:block;width:52px;height:52px;margin:0 auto 12px;border:2px solid var(--mobile-luxe-line);border-radius:50%;background-color:#fff;background-image:var(--mobile-mascot-image);background-size:160%;background-position:center 12%;background-repeat:no-repeat}
+ .shell.mobileLuxeWorkspace[data-mobile-mascot="true"] .luxeToastIcon{background-color:#fff;background-image:var(--mobile-mascot-image);background-size:160%;background-position:center 12%;font-size:0}
+
+ /* Settings use native, labelled controls and the same safe-area page scrolling. */
+ .shell.mobileLuxeWorkspace .mobilePersonalization{display:block;padding:16px;min-width:0;max-width:100%;box-sizing:border-box}
+ .shell.mobileLuxeWorkspace .mobilePersonalization>header h3{margin:6px 0 8px;font-size:19px;letter-spacing:-.03em}
+ .shell.mobileLuxeWorkspace .mobilePersonalization>header p{font-size:12px;line-height:1.6;color:var(--mobile-luxe-muted);margin:0 0 16px}
+ .shell.mobileLuxeWorkspace .mobileStyleEyebrow{font-size:9px;letter-spacing:.14em;color:var(--mobile-luxe-accent);font-weight:700}
+ .shell.mobileLuxeWorkspace .mobileStylePreview{display:flex;gap:10px;align-items:center;overflow:hidden;padding:17px 12px;margin-bottom:20px;border-radius:16px;background:var(--mobile-luxe-soft);min-height:100px;box-sizing:border-box}
+ .shell.mobileLuxeWorkspace .mobileStylePreview>img{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none}
+ .shell.mobileLuxeWorkspace .mobileStylePreview>div{min-width:0;display:grid;gap:6px}
+ .shell.mobileLuxeWorkspace .mobileStylePreview small{font-size:8px;letter-spacing:.06em;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace .mobileStylePreview b{font-size:14px;line-height:1.4;color:var(--mobile-luxe-ink)}
+ .shell.mobileLuxeWorkspace .mobileStylePreview>div>span{font-size:10px;line-height:1.5;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace :is(.mobileStyleChoices,.mobileStylePresets){margin:0 0 20px;padding:0;border:0;min-width:0}
+ .shell.mobileLuxeWorkspace :is(.mobileStyleChoices,.mobileStylePresets)>legend{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--mobile-luxe-ink);padding:0}
+ .shell.mobileLuxeWorkspace .mobileStyleChoices>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .shell.mobileLuxeWorkspace .mobileStyleChoices button{display:flex;gap:7px;align-items:center;text-align:left;box-sizing:border-box;min-width:0;min-height:52px;margin:0;padding:10px 8px;border:1px solid var(--mobile-luxe-line);border-radius:12px;background:var(--mobile-luxe-paper);color:var(--mobile-luxe-ink);box-shadow:none}
+ .shell.mobileLuxeWorkspace .mobileStyleChoices button>i{width:18px;height:18px;flex:none;border-radius:50%;box-shadow:inset 0 0 0 1px #0002}
+ .shell.mobileLuxeWorkspace .mobileStyleChoices button>span:first-of-type{flex:1;min-width:0}
+ .shell.mobileLuxeWorkspace .mobileStyleChoices b{display:block;font-size:12px;line-height:1.5;overflow-wrap:anywhere;font-weight:650}
+ .shell.mobileLuxeWorkspace .mobileStyleChoices small{display:block;font-size:10px;color:var(--mobile-luxe-muted);line-height:1.5;margin-top:3px}
+ .shell.mobileLuxeWorkspace .mobileStyleCheck{width:13px;font-size:12px;flex:none;color:var(--mobile-luxe-accent)}
+ .shell.mobileLuxeWorkspace .mobileStyleChoices [aria-pressed="true"],.shell.mobileLuxeWorkspace .mobileStylePresets [aria-pressed="true"]{border-color:var(--mobile-luxe-accent);box-shadow:inset 0 0 0 1px var(--mobile-luxe-accent);background:var(--mobile-luxe-soft)}
+ .shell.mobileLuxeWorkspace .mobileStylePresets>div{display:flex;gap:8px;flex-wrap:wrap}
+ .shell.mobileLuxeWorkspace .mobileStylePresets button{flex:1 1 120px;min-width:0;min-height:44px;border:1px solid var(--mobile-luxe-line);border-radius:12px;background:var(--mobile-luxe-paper);color:var(--mobile-luxe-ink);padding:10px;font-size:12px;font-weight:650;line-height:1.4}
+ .shell.mobileLuxeWorkspace .mobileBannerUpload{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 20px}
+ .shell.mobileLuxeWorkspace .mobileStyleFile{display:block;position:relative;overflow:hidden;cursor:pointer;min-height:44px;box-sizing:border-box;max-width:100%;padding:12px;border:1px dashed var(--mobile-luxe-accent);border-radius:11px;color:var(--mobile-luxe-accent);font-size:12px;font-weight:650}
+ .shell.mobileLuxeWorkspace .mobileStyleFile input[type=file]{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+ .shell.mobileLuxeWorkspace .mobileStyleFile:focus-within{outline:3px solid var(--mobile-luxe-accent);outline-offset:2px}
+ .shell.mobileLuxeWorkspace .mobileBannerUpload>button{font-size:12px;min-height:44px;border:1px solid var(--mobile-luxe-line);background:var(--mobile-luxe-paper);color:var(--mobile-luxe-ink);border-radius:11px;padding:10px}
+ .shell.mobileLuxeWorkspace .mobileMascotToggle{display:flex;align-items:center;gap:12px;min-height:56px;margin:0 0 12px;cursor:pointer}
+ .shell.mobileLuxeWorkspace .mobileMascotToggle input{width:20px;height:20px;flex:none;accent-color:var(--mobile-luxe-accent)}
+ .shell.mobileLuxeWorkspace .mobileMascotToggle b{display:block;font-size:13px}
+ .shell.mobileLuxeWorkspace .mobileMascotToggle small{display:block;font-size:11px;line-height:1.5;margin-top:4px;color:var(--mobile-luxe-muted)}
+ .shell.mobileLuxeWorkspace .mobileStyleStatus{font-size:12px;line-height:1.6;color:var(--mobile-luxe-muted);overflow-wrap:anywhere}
+ .shell.mobileLuxeWorkspace .mobileStyleStatus:empty{display:none}
+ .shell.mobileLuxeWorkspace .mobileStyleReset{width:100%;min-height:46px;margin-top:8px;padding:11px;border:1px solid var(--mobile-luxe-line);background:var(--mobile-luxe-paper);color:var(--mobile-luxe-ink);border-radius:12px;font-size:13px;font-weight:650}
+}
+@media(max-width:800px) and (prefers-reduced-motion:no-preference){
+ .shell.mobileLuxeWorkspace[data-mobile-motion="gentle"] :is(.mobileLuxeNav button,.mobileStyleChoices button,.mobileStylePresets button,.mobileQuickLinks button){transition:background-color .14s,color .14s,box-shadow .14s}
+ .shell.mobileLuxeWorkspace[data-mobile-motion="gentle"] :is(.mobileLuxeNav button,.mobileStyleChoices button,.mobileStylePresets button):active{box-shadow:inset 0 0 0 2px var(--mobile-luxe-line)}
+}
+@media(max-width:800px){
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay)[data-mobile-motion="none"] *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+@media(max-width:800px) and (prefers-reduced-motion:reduce){
+ :is(.shell.mobileLuxeWorkspace,.mobileLuxeOverlay)[data-mobile-motion] *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}

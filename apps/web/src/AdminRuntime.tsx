@@ -20,7 +20,8 @@ import './travelLuxeStartup.css'
 import './travelLuxeDemoAuth.css' // Approved demo splash/login over legacy startup styling
 import './travelLuxePolish.css' // Final Windows-only visual parity and independent workspace scrolling
 import './travelLuxeContrast.css' // Device-local Travel Luxe contrast levels and fixed workspace chrome
-import './mobileLuxeV2.css' // Mobile-only overrides loaded last; Windows remains unchanged
+import './mobileLuxeV2.css' // Mobile-only overrides; Windows remains unchanged
+import './mobileAppearance.css' // Optional device-local mobile decoration, scoped below 801px
 
 const updateSW=registerSW({ immediate: true,onNeedRefresh(){window.dispatchEvent(new Event('mecacao-update-ready'))} })
 const windowsLocalHost=['localhost','127.0.0.1','[::1]'].includes(location.hostname)

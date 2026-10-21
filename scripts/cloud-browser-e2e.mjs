@@ -388,6 +388,48 @@ try{
  await route('Báo cáo');assert(!await run("new URLSearchParams(location.search).has('order')"))
  await cmd('Page.reload');await until("!!document.querySelector('.mobileOverview .mobileMetricGrid')")
  console.log('PASS mobile navigation: Overview launch/reload, Sales list reset, independent debts summary/back, explicit order links and unsaved finance guards at 375/390/430/768px')
+ // Optional styling uses the same live workspace, navigation and unsaved guards.
+ const appearanceStart=trace.length,businessBefore=JSON.stringify({orders:state.orders,items:state.items,confirmations:state.confirmations,customers:state.customers})
+ const skinClick=async selector=>{await run(`document.querySelector(${JSON.stringify(selector)}).click()`);await delay(50)}
+ const contrast=(a,b)=>{const l=hex=>{const h=hex.replace('#',''),v=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);return .2126*v[0]+.7152*v[1]+.0722*v[2]};const x=l(a),y=l(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
+ for(const width of [375,390,430,768]){
+  await cmd('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true});await route('Cài đặt');await until("!!document.querySelector('.mobilePersonalization')")
+  for(const dark of [false,true]){
+   await click(dark?'Tối dịu mắt':'Sáng nhẹ nhàng')
+   for(const preset of ['classic','signature','garden','lavender','champagne']){
+    await skinClick('[data-appearance-preset="'+preset+'"]')
+    const view=await run("(()=>{const s=document.querySelector('.cloudWorkspace'),css=getComputedStyle(s),n=document.querySelector('.mobileLuxeNav').getBoundingClientRect();return {palette:s.dataset.mobilePalette,ink:css.getPropertyValue('--mobile-luxe-ink').trim(),muted:css.getPropertyValue('--mobile-luxe-muted').trim(),accent:css.getPropertyValue('--mobile-luxe-accent').trim(),paper:css.getPropertyValue('--mobile-luxe-paper').trim(),overflow:document.documentElement.scrollWidth>innerWidth+2,nav:n.bottom<=innerHeight+2,controls:[...document.querySelectorAll('[data-appearance-preset],[data-appearance-choice]')].every(b=>b.getBoundingClientRect().height>=44),art:document.querySelector('.mobileStylePreview .mobileBannerArt')?.getBoundingClientRect().width||0}})()")
+    assert(!view.overflow&&view.nav&&view.controls,'Personalization must fit and retain touch targets: '+JSON.stringify({width,dark,preset,view}))
+    for(const color of [view.ink,view.muted,view.accent])assert(contrast(color,view.paper)>=4.5,'Theme text contrast '+JSON.stringify({width,dark,preset,color,paper:view.paper}))
+    if(width===390){await run("document.querySelector('.mobilePersonalization').scrollIntoView({block:'start'});window.scrollBy(0,-90)");fs.writeFileSync('artifacts/cloud-browser/appearance-'+preset+'-'+(dark?'dark':'light')+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))}
+   }
+  }
+ }
+ await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await route('Cài đặt');await click('Sáng nhẹ nhàng');await skinClick('[data-appearance-preset="signature"]')
+ for(const material of ['flat','glass','pearl']){await skinClick('[data-appearance-choice="material:'+material+'"]');const blur=await run("getComputedStyle(document.querySelector('.topbar')).backdropFilter");assert.equal(blur,material==='glass'?'blur(12px)':'none')}
+ for(const cards of ['original','soft','outlined','lifted'])await skinClick('[data-appearance-choice="cards:'+cards+'"]')
+ const localBanner=path.join(temp,'appearance-banner.jpg');fs.writeFileSync(localBanner,image)
+ const bannerDoc=await cmd('DOM.getDocument'),bannerNode=await cmd('DOM.querySelector',{nodeId:bannerDoc.root.nodeId,selector:'[aria-label="Chọn ảnh banner riêng"]'});await cmd('DOM.setFileInputFiles',{nodeId:bannerNode.nodeId,files:[localBanner]})
+ await until("document.querySelector('.cloudWorkspace').dataset.mobileBanner==='custom'&&document.querySelector('.mobileStylePreview .mobileBannerArt img')?.naturalWidth>0")
+ assert(await run("JSON.parse(localStorage.getItem('mecacao-ui-mobile-appearance-v1')).customBanner.startsWith('data:image/jpeg;base64,')"),'Banner stays as a local thumbnail')
+ await cmd('Page.reload');await until("!!document.querySelector('.mobileOverview')&&!document.querySelector('.mobileLuxeSplash')")
+ assert.equal(await run("document.querySelector('.cloudWorkspace').dataset.mobileBanner"),'custom','Style survives app reload')
+ await run("window.skinAnimations=0;window.skinAnimate=Element.prototype.animate;Element.prototype.animate=function(...args){if(this.matches('.mobileLuxeSectionHeader'))window.skinAnimations++;return window.skinAnimate.apply(this,args)}")
+ await cmd('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});await route('Bán hàng');assert.equal(await run('window.skinAnimations'),0,'System Reduce Motion overrides gentle animation')
+ await cmd('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});await route('Cài đặt');assert(await run('window.skinAnimations>0'),'Gentle motion runs on decorative surfaces')
+ await skinClick('[data-appearance-choice="motion:none"]');await run('window.skinAnimations=0');await route('Bán hàng');assert.equal(await run('window.skinAnimations'),0,'Off means no page animation');await run('Element.prototype.animate=window.skinAnimate')
+ await run("document.querySelector('.salesOrderRow').click()");await until("!!document.querySelector('.mobileDetailOpen')");await click('Tiền / Công nợ');await until("!!document.querySelector('.financePanel')")
+ await run("document.querySelector('.financePanel input[type=number]').focus()");await cmd('Input.insertText',{text:'2000'})
+ await run("localStorage.setItem('mecacao-ui-mobile-appearance-v1',JSON.stringify({palette:'mint',material:'glass',cards:'soft',banner:'family',motion:'none',mascot:true}));dispatchEvent(new StorageEvent('storage',{key:'mecacao-ui-mobile-appearance-v1'}))")
+ assert(await run("document.querySelector('.financePanel input[type=number]').value==='2000'&&document.querySelector('.cloudWorkspace').dataset.mobilePalette==='mint'"),'Changing appearance never remounts a money form')
+ await click('Bỏ thay đổi và đọc số mới');await route('Cài đặt')
+ await run("document.querySelector('.mobileStatusBell').click()");await until("!!document.querySelector('.mobileLuxeOverlay')");assert.equal(await run("document.querySelector('.mobileLuxeOverlay').dataset.mobilePalette"),'mint');await run("document.querySelector('[aria-label=\"Đóng Thông báo & kết nối\"]').click()")
+ await click('Về phong cách mặc định');assert.equal(await run("document.querySelector('.cloudWorkspace').dataset.mobilePalette"),'classic')
+ await skinClick('[data-appearance-preset="signature"]');await cmd('Emulation.setDeviceMetricsOverride',{width:1366,height:900,deviceScaleFactor:1,mobile:false});await until("!document.querySelector('.cloudWorkspace').hasAttribute('data-mobile-palette')")
+ assert(await run("!document.querySelector('.mobilePersonalization')&&getComputedStyle(document.querySelector('.mobileLuxeNav')).display==='none'"),'Saved mobile decoration does not change desktop controls')
+ assert.equal(JSON.stringify({orders:state.orders,items:state.items,confirmations:state.confirmations,customers:state.customers}),businessBefore,'Personalization cannot mutate shop data')
+ assert(!trace.slice(appearanceStart).some(t=>t.body&&(/"p_action":"(draft.save|finance.entry|finance.configure|customer.save|request)"/.test(t.body))),'Style controls never submit operational writes')
+ console.log('PASS mobile personalization browser: five presets/light-dark/375-768px, AA text contrast, touch targets, glass, cards, local banner/reload, reduced motion, independent sheets, unsaved finance retained and desktop isolation')
  await Promise.all([...activeInterceptions]);await delay(100)
  failures.push(...interceptionErrors.filter(({error,networkId})=>!cancelledInterception(error,networkId)).map(({error})=>error))
  console.log('Confirmed cancelled stale interceptions:',interceptionErrors.length-failures.length)
