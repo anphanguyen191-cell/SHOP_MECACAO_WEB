@@ -389,6 +389,10 @@ try{
  await cmd('Page.reload');await until("!!document.querySelector('.mobileOverview .mobileMetricGrid')")
  console.log('PASS mobile navigation: Overview launch/reload, Sales list reset, independent debts summary/back, explicit order links and unsaved finance guards at 375/390/430/768px')
  // Optional styling uses the same live workspace, navigation and unsaved guards.
+ await until("!document.querySelector('.mobileLuxeSplash')")
+ // This fixture serves Cloud on loopback for native archive tests; the real
+ // phone site has no Windows return button. Keep it out of appearance captures.
+ await run("document.querySelector('[aria-label=\"Quay về CORE laptop để cập nhật\"]')?.style.setProperty('visibility','hidden')")
  const appearanceStart=trace.length,businessBefore=JSON.stringify({orders:state.orders,items:state.items,confirmations:state.confirmations,customers:state.customers})
  const skinClick=async selector=>{await run(`document.querySelector(${JSON.stringify(selector)}).click()`);await delay(50)}
  const contrast=(a,b)=>{const l=hex=>{const raw=hex.replace('#',''),h=raw.length===3?[...raw].map(x=>x+x).join(''):raw,v=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);return .2126*v[0]+.7152*v[1]+.0722*v[2]};const x=l(a),y=l(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}

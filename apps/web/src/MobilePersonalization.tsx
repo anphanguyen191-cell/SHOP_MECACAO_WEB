@@ -67,6 +67,6 @@ export default function MobilePersonalization(){
   <p className="mobileHelp">Luôn tôn trọng chế độ Giảm chuyển động của iPhone.</p>
   <label className="mobileMascotToggle"><input type="checkbox" disabled={busy} checked={p.mascot} onChange={e=>apply({mascot:e.target.checked})}/><span><b>Mascot CaCao</b><small>Bé trai logo trong lời chào, màn hình trống và thông báo</small></span></label>
   <p className="mobileStyleStatus" role="status" aria-live="polite">{status}</p><button type="button" className="mobileStyleReset" disabled={busy} onClick={reset}>Về phong cách mặc định</button>
-  <p className="mobileHelp">Đặt lại bộ màu, chất liệu, thẻ, hoạ tiết, mascot và hiệu ứng. Giữ lựa chọn Sáng/Tối và cỡ chữ hiện tại.</p>
+  <p className="mobileHelp">Đặt lại bộ màu, chất liệu, thẻ, hoạ tiết, mascot và hiệu ứng. Giữ lựa chọn Sáng/Tối và cỡ hiển thị hiện tại.</p>
  </section>
 }
