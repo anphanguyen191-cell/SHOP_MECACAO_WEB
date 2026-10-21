@@ -234,7 +234,7 @@ try{
  await run("document.querySelector('.mobileCustomersPage .salesOrderRow').click()")
  await until("document.querySelector('.contactCard fieldset input')?.value==='FAKE Khách'")
  await run("(()=>{const input=document.querySelector('.contactCard fieldset input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'FAKE tên chờ laptop');input.dispatchEvent(new Event('input',{bubbles:true}))})()")
- await click('Lưu khách hàng');await until("document.querySelector('.contactCard fieldset')?.disabled&&document.body.innerText.includes('chờ laptop')")
+ await click('Lưu khách hàng');await until("document.querySelector('.contactCard fieldset')?.disabled&&document.querySelector('.contactCard [role=status]')?.textContent.includes('Đã gửi yêu cầu; chờ laptop xác nhận hồ sơ khách.')")
  assert.equal(state.customers[0].name,'FAKE Khách','queued customer edit must not change Cloud truth')
  assert.equal(state.customerRequests.length,1)
  const customerRequest=state.customerRequests[0];state.customers[0]={...state.customers[0],...customerRequest.payload,version:2};customerRequest.state='CONFIRMED';customerRequest.result={version:2,currentVersion:2};state.sequence++
