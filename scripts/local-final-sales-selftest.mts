@@ -17,6 +17,8 @@ import {bootstrapStocktake} from '../apps/api/src/stocktake.js'
 import {bootstrapPriceBulk} from '../apps/api/src/priceBulk.js'
 import {optimizeCloudImage} from '../apps/api/src/cloudImages.js'
 import {processLocalCloudSale} from '../apps/api/src/localCloudSales.js'
+import {businessDigest,uploadLocalBusiness} from '../apps/api/src/cloudBusiness.js'
+import {salesPreflightService} from '../apps/api/src/salesPreflight.js'
 import {salesHistory} from '../apps/api/src/salesHistory.js'
 import {financeService} from '../apps/api/src/orderFinance.js'
 import {cloudRouter} from '../apps/api/src/cloudRoutes.js'
@@ -26,7 +28,7 @@ import {createLanChangeFeed} from '../apps/api/src/lanChangeFeed.js'
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cacao-local-final-')),db=new DatabaseSync(path.join(root,'shop.db')),pg=new PGlite()
 const instance='11111111-1111-4111-8111-111111111111',owner='22222222-2222-4222-8222-222222222222'
 const one=async(sql:string,args:any[]=[])=>((await pg.query(sql,args)).rows[0] as any)
-let loseUpload=false,loseFinish=false
+let loseUpload=false,loseFinish=false,loseReject=false
 let server:Server|undefined
 const realFetch=globalThis.fetch
 const rpc=async(name:string,args:any={})=>{
@@ -36,6 +38,7 @@ const rpc=async(name:string,args:any={})=>{
  const result=(await one(`SELECT public.${name}($1,$2,$3) data`,values)).data
  if(name==='mc_v8_business_sync'&&loseUpload){loseUpload=false;throw Error('Lost upload reply after Cloud commit')}
  if(name==='mc_v8_local_sales'&&args.p_action==='finish'&&loseFinish){loseFinish=false;throw Error('Lost finish reply after Cloud commit')}
+ if(name==='mc_v8_local_sales'&&args.p_action==='reject'&&loseReject){loseReject=false;throw Error('Lost rejection reply after Cloud commit')}
  return result
 }
 const request=async(id:string,key:string,version=1)=>rpc('mc_v8_local_sales',{p_action:'request',p_key:key,p_payload:{id,version,confirmed:true,acknowledgeZeroPrice:false}})
@@ -59,6 +62,15 @@ try{
  await pg.exec(fs.readFileSync('supabase/migrations/20261011070333_v7_command_variable_scope.sql','utf8'))
  await pg.exec(fs.readFileSync('supabase/migrations/20261020135932_local_final_workflow.sql','utf8'))
  await pg.exec(fs.readFileSync('supabase/migrations/20261020141658_local_final_receipt_advance.sql','utf8'))
+ const functionMetadata=()=>one("SELECT oid,prosecdef,proacl::text,proconfig FROM pg_proc WHERE oid='private.mc_v8_local_sales(text,text,jsonb)'::regprocedure")
+ const originalMetadata=await functionMetadata(),originalFunction=(await one("SELECT prosrc FROM pg_proc WHERE oid='private.mc_v8_local_sales(text,text,jsonb)'::regprocedure")).prosrc
+ const migration=fs.readFileSync('supabase/migrations/20261021004704_local_sale_conflict_rejection.sql','utf8')
+ await pg.exec(migration)
+ assert.deepEqual(await functionMetadata(),originalMetadata,'migration preserves function OID, security mode, grants and search path')
+ const installedFunction=(await one("SELECT prosrc FROM pg_proc WHERE oid='private.mc_v8_local_sales(text,text,jsonb)'::regprocedure")).prosrc
+ const replacement=migration.split('$guard$')[1],needle="IF q.action='sale.confirm' AND EXISTS(SELECT 1 FROM public.sales_confirmations WHERE order_id=q.order_id) THEN RAISE EXCEPTION 'CLOUD_LOCAL_PROOF_REQUIRED'; END IF;"
+ assert.equal(installedFunction.replace(replacement,needle),originalFunction,'only the targeted rejection guard changes; finish/role/locking paths are identical')
+ await assert.rejects(()=>pg.exec(migration),/LOCAL_SALE_REJECTION_CONTRACT_CHANGED/,'changed deployment source must fail closed')
  await pg.exec(`UPDATE app_metadata SET value='CLOUD_TEST_READY' WHERE key='cloud_status';INSERT INTO app_metadata(key,value) VALUES('cloud_business_source','${instance}');GRANT USAGE ON SCHEMA auth TO authenticated;SET ROLE authenticated`)
  await rpc('mc_v8_local_sales',{p_action:'enable',p_payload:{instance}})
  const changes=createLanChangeFeed(),app=express();app.use(express.json());app.use(changes.middleware);app.use('/api',salesRequestGuard(db,root,true));app.use('/api/cloud',cloudRouter(db,root,undefined,undefined,true));server=app.listen(0,'127.0.0.1');await once(server,'listening');const base='http://127.0.0.1:'+(server.address() as any).port
@@ -79,6 +91,7 @@ try{
  const lost=await post('/local-sales');assert.equal(lost.status,409);assert.match(lost.data.error,/Lost upload reply/)
  assert.equal(Number(db.prepare('SELECT count(*) n FROM sales_confirmations').get()!.n),1)
  assert.equal((await rpc('mc_v8_local_sales',{p_action:'list'}))[0].state,'PENDING')
+ await assert.rejects(()=>rpc('mc_v8_local_sales',{p_action:'reject',p_key:key,p_payload:{instance,error:'Must resume our own sale'}}),/CLOUD_LOCAL_PROOF_REQUIRED/)
  const resumed=await post('/local-sales');assert.equal(resumed.status,200);assert.equal(resumed.data.state,'CONFIRMED','production HTTP guard must not count the coordinator as its own reader')
  assert.equal(Number(db.prepare('SELECT count(*) n FROM sales_units').get()!.n),1,'retry never sells twice')
  const revision=changes.view().revision;assert(revision>0,'a completed LOCAL request signals the other screens');assert.equal((await post('/local-sales')).data.pending,false);assert.equal(changes.view().revision,revision,'empty polling must not reload inventory and interrupt forms every five seconds')
@@ -151,6 +164,61 @@ try{
  await rpc('mc_v8_local_sales',{p_action:'request',p_key:'mobile-cancel-request-001',p_payload:{action:'draft.cancel',id:'mobile-order-cancel',version:1}})
  assert.equal((await processLocalCloudSale(db,root,rpc)).state,'CONFIRMED','cancellation does not require a missing source file')
  assert.equal(db.prepare("SELECT status FROM sales_orders WHERE id='mobile-order-cancel'").get()!.status,'CANCELLED_DRAFT')
+ // Head-of-line race: a different native laptop sale wins A after mobile has
+ // queued A and B. Use real LOCAL preflight/archive and business upload, twice.
+ for(let round=0;round<2;round++){
+  const imageA=5+round*2,imageB=imageA+1;
+  for(const imageId of [imageA,imageB]){
+   const file=path.join(root,imageId+'.png');await sharp({create:{width:40,height:50,channels:3,background:'#ffbbee'}}).png().toFile(file)
+   db.prepare('INSERT INTO product_images(id,product_id,variant_id,file_path) VALUES(?,1,1,?)').run(imageId,file)
+   await pg.exec('RESET ROLE');await pg.query("INSERT INTO product_images(id,product_id,variant_id,file_path) VALUES($1,1,1,$2)",[imageId,'v7/'+instance+'/'+imageId+'.jpg'])
+   await pg.query('INSERT INTO cloud_image_assets(image_id,object_path,bytes,sha256,revision,ready) VALUES($1,$2,100,$3,1,true)',[imageId,'v7/'+instance+'/'+imageId+'.jpg',(await optimizeCloudImage(file)).sha256]);await pg.exec('SET ROLE authenticated')
+  }
+  db.exec("INSERT INTO inventory_transactions(variant_id,transaction_type,quantity) VALUES(1,'OPENING',2)")
+  await pg.exec("RESET ROLE;INSERT INTO inventory_transactions(variant_id,transaction_type,quantity) VALUES(1,'OPENING',2);SET ROLE authenticated")
+  const a=salesDraftService(db,root).create({items:[{imageId:imageA,unitPrice:45000}],discount:0,note:'Independent laptop draft'},'queue-laptop-draft-'+round)
+  await uploadLocalBusiness(db,root,rpc,true)
+  const b='queue-following-order-'+round,keyA='queue-a-conflict-request-'+round,keyB='queue-b-following-request-'+round
+  await draft(b,imageB);await request(a.id,keyA);await request(b,keyB)
+  assert.equal((await rpc('mc_v8_local_sales',{p_action:'next',p_payload:{instance}})).requestKey,keyA)
+  const check=await salesPreflightService(db,root).check(a.id,1);assert(check.checksPassed);assert.equal(check.conflicts.length,0)
+  const native=await salesExecutionService(db,root).confirm(a.id,{version:1,token:check.token,confirmed:true,acknowledgeZeroPrice:true},'independent-laptop-sale-'+round);assert(native.sold)
+  await uploadLocalBusiness(db,root,rpc,true)
+  const localProof=JSON.stringify(db.prepare('SELECT * FROM sales_confirmations WHERE order_id=?').get(a.id))
+  const cloudProof=JSON.stringify(await one('SELECT * FROM sales_confirmations WHERE order_id=$1',[a.id]))
+  const protectedKey='mobile-sale-'+businessDigest(keyB)
+  assert.equal((await one("SELECT 'mobile-sale-'||encode(sha256(convert_to(to_jsonb($1::text)::text,'UTF8')),'hex') value",[keyB])).value,protectedKey,'Cloud and laptop derive exactly the same request identity')
+  await assert.rejects(()=>rpc('mc_v8_local_sales',{p_action:'reject',p_key:keyA,p_payload:{instance:'wrong-instance',error:'Denied'}}),/CLOUD_ROLE_DENIED/)
+  await pg.exec('RESET ROLE');await pg.query("UPDATE cloud_members SET role='cashier' WHERE user_id=$1",[owner]);await pg.exec('SET ROLE authenticated')
+  await assert.rejects(()=>rpc('mc_v8_local_sales',{p_action:'reject',p_key:keyA,p_payload:{instance,error:'Cashier cannot reject'}}),/CLOUD_ROLE_DENIED/)
+  await pg.exec('RESET ROLE');await pg.query("UPDATE cloud_members SET role='owner' WHERE user_id=$1",[owner]);await pg.exec('SET ROLE authenticated')
+  if(round===1){loseReject=true;await assert.rejects(()=>processLocalCloudSale(db,root,rpc),/Lost rejection reply/)}
+  else assert.equal((await processLocalCloudSale(db,root,rpc)).state,'REJECTED')
+  assert.equal((await rpc('mc_v8_local_sales',{p_action:'list'})).find((r:any)=>r.request_key===keyA).state,'REJECTED')
+  assert.equal((await request(a.id,keyA)).state,'REJECTED','lost request/rejection replies never requeue A')
+  assert.equal((await rpc('mc_v8_local_sales',{p_action:'next',p_payload:{instance}})).requestKey,keyB,'B is no longer blocked by sold A')
+  assert.equal(JSON.stringify(db.prepare('SELECT * FROM sales_confirmations WHERE order_id=?').get(a.id)),localProof)
+  assert.equal(JSON.stringify(await one('SELECT * FROM sales_confirmations WHERE order_id=$1',[a.id])),cloudProof,'rejecting intent must not change the winning SOLD proof')
+  loseUpload=true;await assert.rejects(()=>processLocalCloudSale(db,root,rpc),/Lost upload reply/)
+  // Uploaded proof for our OWN request must remain PENDING and be resumed,
+  // regardless of a caller claiming a different operation in the reject body.
+  await assert.rejects(()=>rpc('mc_v8_local_sales',{p_action:'reject',p_key:keyB,p_payload:{instance,operationId:native.operationId,localRequest:'invented',error:'Cannot reject committed request'}}),/CLOUD_LOCAL_PROOF_REQUIRED/)
+  assert.equal((await rpc('mc_v8_local_sales',{p_action:'list'})).find((r:any)=>r.request_key===keyB).state,'PENDING')
+  assert.equal((await processLocalCloudSale(db,root,rpc)).state,'CONFIRMED')
+  assert.equal(Number(db.prepare('SELECT count(*) n FROM sales_units WHERE order_id IN (?,?)').get(a.id,b)!.n),2)
+  assert.equal(Number(db.prepare('SELECT count(*) n FROM sales_ledger WHERE order_id IN (?,?)').get(a.id,b)!.n),2)
+  assert.equal(Number((await one('SELECT count(*) n FROM sales_units WHERE order_id IN ($1,$2)',[a.id,b])).n),2)
+  assert.equal((await processLocalCloudSale(db,root,rpc)).pending,false)
+ }
+ console.log('PASS queue conflict regression twice: different native SOLD releases A, B resumes once, winning proof unchanged, lost rejection/upload replies, own-sale rejection blocked, exact key parity and owner-only gates')
+ // Legacy/unknown Cloud-origin evidence is NOT sufficient to relax rejection.
+ // Roll back this deliberately incomplete fixture before any business upload.
+ await pg.exec('BEGIN')
+ try{
+  await draft('queue-legacy-proof',2);await request('queue-legacy-proof','queue-legacy-proof-request')
+  await pg.exec(`RESET ROLE;INSERT INTO sales_operations(id,request_key,input_hash,payload,payload_hash,status) VALUES('queue-legacy-operation','queue-legacy-operation-key','h','{"origin":"CLOUD"}','h','SOLD');INSERT INTO sales_confirmations(order_id,operation_id,version,subtotal,discount,total,note) VALUES('queue-legacy-proof','queue-legacy-operation',1,45000,0,45000,'');SET ROLE authenticated`)
+  await assert.rejects(()=>rpc('mc_v8_local_sales',{p_action:'reject',p_key:'queue-legacy-proof-request',p_payload:{instance,error:'Insufficient Windows proof'}}),/CLOUD_LOCAL_PROOF_REQUIRED/)
+ }finally{await pg.exec('ROLLBACK')}
  await pg.exec(`RESET ROLE;CREATE TABLE public.customer_catalog_inquiries(id uuid DEFAULT gen_random_uuid(),reference text,customer_name text,contact text,note text,items jsonb,status text,order_id text,version integer,created_at timestamptz DEFAULT now(),updated_at timestamptz DEFAULT now());INSERT INTO customer_catalog_inquiries(reference,customer_name,contact,note,items,status,version) SELECT 'CC-'||i,'Tên '||i,'090-'||i,'','[]','NEW',1 FROM generate_series(1,251) i;INSERT INTO customer_catalog_inquiries(reference,customer_name,contact,note,items,status,version,created_at) VALUES('OLD-REF','OLD-SECRET','OLD-SECRET','','[]','CLOSED',1,now()-interval '100 days');SET ROLE authenticated`)
  const inbox=async(q:string,status='',offset=0)=>(await one('SELECT public.mc_v8_catalog_inbox($1,$2,$3) data',[q,status,offset])).data
  assert.equal((await inbox('090-251')).total,1)

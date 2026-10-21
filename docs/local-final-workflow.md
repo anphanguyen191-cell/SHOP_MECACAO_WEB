@@ -42,3 +42,23 @@ Physical acceptance still requires the shop's actual laptop/iPhone: create and
 edit a draft, submit a request with the laptop offline, reconnect, verify one
 SOLD and one stock deduction, then check the same payment and customer debt on
 both devices. Historical screenshot counts are not a current stock measurement.
+
+## Queue conflict rejection (2026-10-21)
+
+Only the Cloud rejection guard changes. If a pending mobile sale loses to a
+different uploaded Windows operation, the laptop can reject that intent and
+continue to the next request. The winning SOLD, archive, stock and money evidence
+is untouched. An uploaded operation with the same deterministic mobile request
+key still cannot be rejected: lost upload/finish replies must resume it instead.
+Unknown or legacy Cloud-origin proof does not qualify as a different verified
+Windows operation. Owner/warehouse checks, the transaction lock and all finish
+checks retain their installed definitions and grants.
+
+`scripts/local-final-sales-selftest.mts` reproduces the independent laptop-sale
+race twice with real isolated preflight/archive/upload, checks B advances once,
+lost rejection/upload replies, same-request refusal and owner-only rejection.
+It also verifies SQL/LOCAL key derivation and that the migration changes only the
+targeted guard while preserving the function OID, ACL and security settings.
+No production test orders or manual terminal-state edits are needed. Existing
+pending requests are retried by the normal laptop worker; no updater is required
+for this Cloud-only guard correction on an already compatible option-A laptop.
