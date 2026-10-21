@@ -50,6 +50,7 @@ export default function CloudWorkspace(){
  useLayoutEffect(()=>{if(mobile)window.scrollTo(0,0)},[tab,mobile])
  useEffect(()=>{const dock=document.querySelector<HTMLElement>('.mobileQuickNav'),shell=document.querySelector<HTMLElement>('.cloudWorkspace');if(!dock||!shell)return;const measure=()=>shell.style.setProperty('--mobile-nav-offset',getComputedStyle(dock).display==='none'?'0px':Math.ceil(innerHeight-dock.getBoundingClientRect().top)+'px');const observer=new ResizeObserver(measure);observer.observe(dock);window.addEventListener('resize',measure);measure();return()=>{observer.disconnect();window.removeEventListener('resize',measure)}},[density])
  useEffect(()=>{if(desktop)void apiJson('/api/health').then(h=>setLocalRestore(!!h.sandbox||!!h.localV2Business)).catch(()=>{})},[desktop])
+ const [customerRequests,setCustomerRequests]=useState<any[]>([])
  const [localSales,setLocalSales]=useState<any[]>([])
  const lastSnapshot=useRef('')
  const active=useRef(true),loading=useRef(false),dirty=useRef(false),generation=useRef(0),urlCache=useRef(new Map<string,{url:string;expires:number}>())
@@ -60,7 +61,7 @@ export default function CloudWorkspace(){
    do{
     dirty.current=false;const token=generation.current
     const health=await cloudRpc('mc_v7_health');if(health.contract!==1||health.schema!==130)throw Error('Phiên bản Cloud chưa tương thích.')
-    if(['owner','cashier'].includes(health.role)){const requests=await cloudRpc('mc_v8_local_sales',{p_action:'list'});if(!Array.isArray(requests))throw Error('Chưa đọc được trạng thái yêu cầu laptop; đọc lại trước khi thao tác.');setLocalSales(requests)}else setLocalSales([])
+    if(['owner','cashier'].includes(health.role)){const requests=await cloudRpc('mc_v8_local_sales',{p_action:'list'});if(!Array.isArray(requests))throw Error('Chưa đọc được trạng thái yêu cầu laptop; đọc lại trước khi thao tác.');setLocalSales(requests);const customers=await cloudRpc('mc_v8_local_customers',{p_action:'list'});if(!Array.isArray(customers))throw Error('Chưa đọc được yêu cầu hồ sơ khách.');if(!active.current||token!==generation.current)return;setCustomerRequests(customers)}else{setLocalSales([]);setCustomerRequests([])}
     const signature=JSON.stringify([token,health.sequence,health.role,health.status,health.instance]);if(lastSnapshot.current===signature){setStatus('Đã kiểm tra Cloud · '+new Date().toLocaleTimeString('vi-VN'));return}
     const rows=await Promise.all(tables.map(t=>cloudRows(t)))
     const after=await cloudRpc('mc_v7_health')
@@ -78,7 +79,7 @@ export default function CloudWorkspace(){
  },[])
  useEffect(()=>{
   active.current=true;void cloud.auth.getSession().then(({data})=>setSigned(!!data.session))
-  const {data:auth}=cloud.auth.onAuthStateChange((event,session)=>{generation.current++;setSigned(!!session);if(event==='PASSWORD_RECOVERY'&&session)setTab('settings');if(!session){setData({});setUrls({});urlCache.current.clear();setSelection([]);setFinance(null);setRole('');setLocalSales([])}})
+  const {data:auth}=cloud.auth.onAuthStateChange((event,session)=>{generation.current++;setSigned(!!session);if(event==='PASSWORD_RECOVERY'&&session)setTab('settings');if(!session){setData({});setUrls({});urlCache.current.clear();setSelection([]);setFinance(null);setRole('');setLocalSales([]);setCustomerRequests([])}})
   const connected=()=>{setOnline(navigator.onLine);if(navigator.onLine)void load()}
   const sync=(event:Event)=>setSyncStatus((event as CustomEvent<string>).detail);window.addEventListener('mecacao-cloud-sync-status',sync);
   window.addEventListener('online',connected);window.addEventListener('offline',connected)
@@ -136,7 +137,7 @@ export default function CloudWorkspace(){
   }finally{setBusy(false)}
  }
 
- const recoveryAction=<button className="salesAction salesActionSecondary mobileRecoveryAction" disabled={busy||!online} onClick={()=>run(async()=>{const pending=await pendingCloudCommand();const result=await retryCloudCommand();if(result&&pending?.action==='draft.save')setSelection([]);if(result&&pending?.action.startsWith('finance.'))await openFinance(pending.payload.id);setStatus(result?'Đã xác minh thao tác trước. Đọc lại đơn trước khi tiếp tục.':'Không có thao tác đang chờ xác minh.');if(result?.id&&pending?.action==='customer.save')setTab('customers');else if(result?.id&&pending?.action.startsWith('draft.')){setCurrent(result.id);setTab('orders')}})}>Kiểm tra thao tác trước</button>
+ const recoveryAction=<button className="salesAction salesActionSecondary mobileRecoveryAction" disabled={busy||!online} onClick={()=>run(async()=>{const pending=await pendingCloudCommand();const result=await retryCloudCommand();if(result&&pending?.action==='draft.save')setSelection([]);if(result&&pending?.action.startsWith('finance.'))await openFinance(pending.payload.id);setStatus(result?'Đã xác minh thao tác trước. Đọc lại đơn trước khi tiếp tục.':'Không có thao tác đang chờ xác minh.');if(result?.id&&pending?.action.startsWith('customer.'))setTab('customers');else if(result?.id&&pending?.action.startsWith('draft.')){setCurrent(result.id);setTab('orders')}})}>Kiểm tra thao tác trước</button>
  return <div className={'shell mobileLuxeWorkspace cloudWorkspace'+(!signed?' mobileAuthWorkspace':'')+' density'+density[0].toUpperCase()+density.slice(1)+(density==='small'?' densityCompact':' densityComfort')+(dark?' themeDark':'')}>
  {draftConflict.dialog}<ShopHeader density={density} onDensity={setDensity} dark={dark} onTheme={()=>setDark(v=>!v)} onMenu={()=>setMenuOpen(true)} menuOpen={menuOpen} mode="CLOUD">{mobile&&signed&&<MobileSystemPanel children={recoveryAction} status={status} online={online} disabled={busy} onRefresh={()=>void load()} notices={sections.some(s=>s.key==='orders')?[...effectiveOrders].sort((a,b)=>String(b.updated_at||b.created_at||'').localeCompare(String(a.updated_at||a.created_at||''))).slice(0,5).map(o=>({id:o.id,title:'Đơn '+o.id.slice(0,8).toUpperCase(),description:o.status==='DRAFT'?'Đơn nháp · chưa trừ tồn':o.status==='SOLD'?'Đã bán · xem lịch sử':'Đã hủy nháp',onOpen:()=>{if(window.dispatchEvent(new Event('mecacao-before-navigate',{cancelable:true}))){setCurrent(o.id);navigate('orders')}}})):[]}/>}</ShopHeader>
  {menuOpen&&<ShopDrawer sections={sections} active={tab} onNavigate={navigate} onClose={()=>setMenuOpen(false)} search={menuSearch} onSearch={setMenuSearch} density={density} onDensity={setDensity} mode="CLOUD" onMobileLogout={mobile&&signed&&!busy?()=>void mobileLogout():undefined}/>}
@@ -168,7 +169,7 @@ export default function CloudWorkspace(){
  {signed&&['localhost','127.0.0.1'].includes(location.hostname)&&tab==='sold'&&<SoldRetentionView/>}
  {signed&&tab==='reports'&&<CloudReports onOrder={id=>{setCurrent(id);navigate('orders')}}/>}
  {signed&&tab==='stocktake'&&<CloudStocktake sessions={data.stocktake_sessions||[]} rows={data.stocktake_rows||[]} editable={role==='owner'||role==='inventory'} onChanged={load}/>}
- {signed&&tab==='customers'&&<CloudCustomers onOrder={id=>{setCurrent(id);navigate('orders')}} rows={data.shop_customers||[]} editable={canSell} onChanged={load}/>}
+ {signed&&tab==='customers'&&<CloudCustomers requests={customerRequests} onOrder={id=>{setCurrent(id);navigate('orders')}} rows={data.shop_customers||[]} editable={canSell} onChanged={load}/>}
  {signed&&tab==='finance'&&<section className="salesDraftPage"><header className="salesHeading"><div><h2>Tiền / Công nợ</h2></div></header>{finance&&current?<>{localSales.some(r=>r.order_id===current&&r.state==='PENDING')&&<p className="notice" role="status">Yêu cầu đang chờ laptop. Sổ tiền chỉ đổi sau khi laptop kiểm tra và ghi nhận.</p>}<p>Đơn {current.slice(0,8).toUpperCase()}</p><p>{({COD:'COD',CASH:'Tiền mặt',TRANSFER:'Chuyển khoản'} as Record<string,string>)[finance.method]||finance.method} · {({NEW:'Chưa giao',SHIPPED:'Đã gửi',DELIVERED:'Đã giao',FAILED:'Giao thất bại'} as Record<string,string>)[finance.delivery]||finance.delivery}</p><CloudFinance requests={localSales} key={current} entries={data.finance_entries||[]} cases={data.aftercare_cases||[]} id={current} summary={finance} editable={canSell&&!localSales.some(r=>r.order_id===current&&r.state==='PENDING')} onChanged={async()=>{await openFinance(current);await load()}}/><button disabled={busy||!online} onClick={()=>run(()=>openFinance(current))}>Đọc lại số tiền</button></>:<CloudDebts contacts={data.order_contacts||[]} refresh={data} onOpen={id=>void run(()=>openFinance(id))}/>}</section>}
  </main></div>
  <MobileLuxeNav items={sections} active={tab} onNavigate={navigate} onMore={()=>setMenuOpen(true)} cloudRoute="connect"/>

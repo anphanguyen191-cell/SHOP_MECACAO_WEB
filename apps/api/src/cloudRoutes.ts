@@ -12,6 +12,7 @@ import {isInternalWarehousePath} from './warehouseAreas.js'
 import {reconcileCloudSale} from './cloudReconcile.js'
 import {uploadLocalBusiness,assertBusinessUploaded,verifyImportedLocalSale,pullCloudBusiness} from './cloudBusiness.js'
 import {processLocalCloudSale} from './localCloudSales.js'
+import {processLocalCloudCustomer} from './localCloudCustomers.js'
 const cloudUrl='https://eyckwoewpomssjjggslr.supabase.co'
 const publishable='sb_publishable_iyEI25gFfU4pXxmdFJ823Q_YYG-ViGJ'
 export function cloudRouter(db:DatabaseSync,root:string,live?:WarehouseLive,businessChanges?:()=>unknown,localAuthority=!!v8Home){
@@ -23,7 +24,7 @@ export function cloudRouter(db:DatabaseSync,root:string,live?:WarehouseLive,busi
   res.set('Cache-Control','no-store'); next()
  })
  router.get('/sync-status',(_req,res)=>res.json({lastSuccess:metadata('cloud-sync-success'),lastAttempt:metadata('cloud-sync-attempt'),business:metadata('cloud-business-upload')}))
- router.get('/state',(_req,res)=>res.json({imageDigestBatch:true,localAuthority,businessHistorySync:true,business:businessChanges?.(),syncEnabled:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-instance'").get(),instance:db.prepare("SELECT value FROM app_metadata WHERE key='cloud-instance'").get()?.value,enabled:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(),live:live?.snapshot(),reconciled:db.prepare("SELECT substr(key,12) id FROM app_metadata WHERE key LIKE 'cloud-sold:%' UNION SELECT substr(key,18) id FROM app_metadata WHERE key LIKE 'cloud-local-sold:%'").all().map(r=>r.id)}))
+ router.get('/state',(_req,res)=>res.json({imageDigestBatch:true,customerRequests:true,localAuthority,businessHistorySync:true,business:businessChanges?.(),syncEnabled:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-instance'").get(),instance:db.prepare("SELECT value FROM app_metadata WHERE key='cloud-instance'").get()?.value,enabled:!!db.prepare("SELECT 1 FROM app_metadata WHERE key='cloud-authority' AND value='enabled'").get(),live:live?.snapshot(),reconciled:db.prepare("SELECT substr(key,12) id FROM app_metadata WHERE key LIKE 'cloud-sold:%' UNION SELECT substr(key,18) id FROM app_metadata WHERE key LIKE 'cloud-local-sold:%'").all().map(r=>r.id)}))
  router.post('/live/ack',async(req,res)=>{
   try{
    if(!live)throw Error('Kho chưa bật theo dõi folder')
@@ -62,6 +63,12 @@ export function cloudRouter(db:DatabaseSync,root:string,live?:WarehouseLive,busi
    }else record.error=String(req.body.error||'Chưa đồng bộ hoàn tất.').slice(0,500)
    db.prepare("INSERT INTO app_metadata(key,value) VALUES('cloud-sync-attempt',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(JSON.stringify(record));res.json(record)
   }catch(e){res.status(409).json({error:e instanceof Error?e.message:'Chưa xác nhận đồng bộ.'})}
+ })
+ router.post('/local-customers',async(req,res)=>{
+  if(!localAuthority)return res.status(409).json({error:'Chỉ laptop LOCAL xác nhận hồ sơ khách.'})
+  if(businessInFlight)return res.status(409).json({error:'Đang đồng bộ hồ sơ. Yêu cầu khách sẽ được kiểm tra lại.'})
+  businessInFlight=true
+  try{const token=req.get('authorization')||'',result=await processLocalCloudCustomer(db,root,(name,args)=>rpc(token,name,args));if(!result.pending)res.locals.skipChangeFeed=true;res.json(result)}catch(e){res.status(409).json({error:e instanceof Error?e.message:'Chưa xử lý được hồ sơ khách.'})}finally{businessInFlight=false}
  })
  router.post('/local-sales',async(req,res)=>{
   if(!localAuthority)return res.status(409).json({error:'Chỉ laptop LOCAL xác nhận yêu cầu mobile.'})

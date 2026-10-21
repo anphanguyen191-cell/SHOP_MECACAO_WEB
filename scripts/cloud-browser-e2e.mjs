@@ -12,7 +12,7 @@ import {createHash} from 'node:crypto'
 import {setTimeout as delay} from 'node:timers/promises'
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'mc-cloud-browser-')),profile=path.join(temp,'profile'),image=await sharp({create:{width:100,height:140,channels:3,background:'#923e71'}}).jpeg().toBuffer()
 const imageSha=createHash('sha256').update(image).digest('hex')
-const state={proofPath:null,proofUploaded:false,loginPassword:'fake-correct-password',autoEnabled:false,archiveValid:true,filePresent:true,deletedAt:null,prepared:false,allowCleanupRetry:true,sequence:0,localSales:[],orders:[],items:[],confirmations:[],reconciled:[],requests:new Map(),lost:false,customers:[{id:'fake-customer',name:'FAKE Khách',phone:'0900000000',address:'FAKE địa chỉ',note:'',version:1}],counts:[{session_id:'fake-count',variant_id:1,counted:null,note:'',snapshot:JSON.stringify({productCode:'FAKE1',productName:'FAKE áo thử',size:'S1',sku:'FAKE1-S1',physical:1,ledger:1})}],countVersion:1}
+const state={proofPath:null,proofUploaded:false,loginPassword:'fake-correct-password',autoEnabled:false,archiveValid:true,filePresent:true,deletedAt:null,prepared:false,allowCleanupRetry:true,sequence:0,customerRequests:[],localSales:[],orders:[],items:[],confirmations:[],reconciled:[],requests:new Map(),lost:false,customers:[{id:'fake-customer',name:'FAKE Khách',phone:'0900000000',address:'FAKE địa chỉ',note:'',version:1}],counts:[{session_id:'fake-count',variant_id:1,counted:null,note:'',snapshot:JSON.stringify({productCode:'FAKE1',productName:'FAKE áo thử',size:'S1',sku:'FAKE1-S1',physical:1,ledger:1})}],countVersion:1}
 const product={id:1,product_code:'FAKE1',name:'FAKE áo thử',status:'active',cloud_revision:1},variant={id:1,product_id:1,sku:'FAKE1-S1',size:'S1',status:'active',sale_price:50000,cost_price:10000,cloud_revision:1}
 function rows(table){return ({inventory_transactions:[{variant_id:1,transaction_type:'OPENING',quantity:1}],shop_customers:state.customers,order_contacts:state.orders.map(o=>({order_id:o.id,customer_id:'fake-customer',recipient_name:'FAKE Khách',phone:'0900000000'})),stocktake_sessions:[{id:'fake-count',status:'OPEN',title:'FAKE Kiểm kê',version:state.countVersion}],stocktake_rows:state.counts,products:[product],product_variants:[variant],product_images:[{id:1,product_id:1,variant_id:1}],cloud_image_assets:[{image_id:1,object_path:'fake1.jpg',ready:!state.deletedAt,cleanup_requested:state.prepared,deleted_at:state.deletedAt,sha256:'a'.repeat(64),proof_path:state.proofPath,proof_sha256:state.proofPath?imageSha:null}],sales_orders:state.orders,sales_order_images:state.items,sales_confirmations:state.confirmations,sales_units:state.confirmations.length?[{image_id:1,order_id:state.orders[0].id,variant_id:1,snapshot:JSON.stringify(state.items[0])}]:[]})[table]||[]}
 function finance(id){return {orderId:id,orderVersion:state.orders.find(o=>o.id===id)?.version||1,orderStatus:state.confirmations.length?'SOLD':'DRAFT',version:0,method:'COD',delivery:'NEW',tracking:'',adjustedTotal:50000,netCollected:0,due:50000,originalTotal:50000,refundDue:0}}
@@ -51,7 +51,13 @@ async function intercept(p){trace.push({url:p.request.url,method:p.request.metho
  else if(u.pathname==='/auth/v1/otp'){assert.equal(body.email,user.email);assert.equal(u.searchParams.get('redirect_to'),'https://anphanguyen191-cell.github.io/SHOP_MECACAO_WEB/?cloud=1');response={}}
  else if(u.pathname==='/auth/v1/verify'){assert.equal(body.token_hash,'fake-unopened-link');assert.equal(body.type,'email');response=session}
  else if(u.pathname.includes('/rest/v1/rpc/')){
-  if(endpoint==='mc_v7_health')response={contract:1,schema:130,role:'owner',status:'CLOUD_TEST_READY',instance:'fake',sequence:state.sequence}
+  if(endpoint==='mc_v8_local_customers'&&body.p_action==='list')response=state.customerRequests
+  else if(endpoint==='mc_v8_local_customers'&&body.p_action==='request'){
+   let request=state.customerRequests.find(r=>r.request_key===body.p_key)
+   if(!request){request={request_key:body.p_key,customer_id:body.p_payload.id,payload:body.p_payload,state:'PENDING'};state.customerRequests.unshift(request);state.sequence++}
+   response={queued:true,requestKey:request.request_key,customerId:request.customer_id,state:request.state}
+  }
+  else if(endpoint==='mc_v7_health')response={contract:1,schema:130,role:'owner',status:'CLOUD_TEST_READY',instance:'fake',sequence:state.sequence}
   else if(endpoint==='mc_v8_local_sales'&&body.p_action==='list')response=state.localSales
   else if(endpoint==='mc_v8_local_sales'&&body.p_action==='request'){const old=state.localSales.find(r=>r.request_key===body.p_key);if(!old){state.localSales.unshift({request_key:body.p_key,order_id:body.p_payload.id,action:'sale.confirm',state:'PENDING'});state.sequence++}response={queued:true,requestKey:body.p_key,state:old?.state||'PENDING'}}
   else if(endpoint==='mc_v7_rows'){const all=rows(body.p_table),offset=Number(body.p_after||0);response={rows:all.slice(offset,offset+body.p_limit),nextOffset:Math.min(offset+Number(body.p_limit||500),all.length)}}
@@ -222,6 +228,18 @@ try{
 
  // A fresh workspace has no selected order. Otherwise entering finance resumes
  // that order's ledger rather than the debt list this viewport check targets.
+ await cmd('Page.reload');await until("!!document.querySelector('.inventoryPage')")
+ await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Khách hàng').click()")
+ await until("!!document.querySelector('.mobileCustomersPage .salesOrderRow')")
+ await run("document.querySelector('.mobileCustomersPage .salesOrderRow').click()")
+ await until("document.querySelector('.contactCard fieldset input')?.value==='FAKE Khách'")
+ await run("(()=>{const input=document.querySelector('.contactCard fieldset input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'FAKE tên chờ laptop');input.dispatchEvent(new Event('input',{bubbles:true}))})()")
+ await click('Lưu khách hàng');await until("document.querySelector('.contactCard fieldset')?.disabled&&document.body.innerText.includes('chờ laptop')")
+ assert.equal(state.customers[0].name,'FAKE Khách','queued customer edit must not change Cloud truth')
+ assert.equal(state.customerRequests.length,1)
+ const customerRequest=state.customerRequests[0];state.customers[0]={...state.customers[0],...customerRequest.payload,version:2};customerRequest.state='CONFIRMED';customerRequest.result={version:2,currentVersion:2};state.sequence++
+ await until("document.body.innerText.includes('Cloud đã xác nhận')&&!document.querySelector('.contactCard fieldset').disabled")
+ assert(!trace.some(t=>t.body?.includes('"p_action":"customer.save"')),'customer UI must not write through legacy direct Cloud command')
  await cmd('Page.reload');await until("!!document.querySelector('.inventoryPage')")
  const pages=[['Tổng quan','.overviewStats'],['Kết nối Cloud','.cloudSettings'],['Tồn kho','.inventoryPage'],['Danh mục sản phẩm','.catalogPage'],['Bán hàng','.salesWorkspace'],['Khách hàng','.contactCard'],['Công nợ','.financeMetrics'],['Báo cáo','.stage4Metrics'],['Kiểm kê','.stocktakePanel'],['Ảnh SOLD','.soldRetentionPage'],['Ảnh iPhone','.phoneInbox'],['Cài đặt','.displayPreferences']]
  for(const width of [1366,390])for(const dark of [false,true]){

@@ -21,7 +21,7 @@ export function text(value:unknown,label:string,max:number){if(typeof value!=='s
 export function customerService(db:DatabaseSync){
  const get=(id:string)=>{const row=db.prepare('SELECT * FROM shop_customers WHERE id=?').get(id);if(!row)throw new SalesError('Không tìm thấy khách hàng',404);return row}
  return {get,list(q=''){if(q.length>100)throw new SalesError('Từ khóa quá dài');const needle='%'+q.trim()+'%';return db.prepare('SELECT * FROM shop_customers WHERE name LIKE ? OR phone LIKE ? OR phone_key LIKE ? ORDER BY updated_at DESC,id LIMIT 200').all(needle,needle,needle)},
- save(raw:any,id?:string){
+ save(raw:any,id?:string,createId?:string){
  const name=text(raw?.name,'Tên khách',100),phone=text(raw?.phone,'Điện thoại',30),address=text(raw?.address,'Địa chỉ',500),note=text(raw?.note,'Ghi chú',500)
  if(!name)throw new SalesError('Nhập tên khách hàng')
  if(phone&&!/^[+0-9().\s-]{5,30}$/.test(phone))throw new SalesError('Số điện thoại không hợp lệ')
@@ -29,7 +29,7 @@ export function customerService(db:DatabaseSync){
  const duplicate=key?db.prepare('SELECT id,name,phone FROM shop_customers WHERE phone_key=? AND id<>?').all(key,id??''):[]
  if(duplicate.length&&raw.allowDuplicate!==true)throw new SalesError('Số điện thoại đã có khách hàng. Chọn khách cũ hoặc xác nhận tạo riêng.',409,{code:'CUSTOMER_DUPLICATE',duplicates:duplicate})
  if(id){const old=get(id);if(raw.version!==old.version)throw new SalesError('Khách đã thay đổi. Mở lại trước khi lưu.',409);db.prepare("UPDATE shop_customers SET name=?,phone=?,phone_key=?,address=?,note=?,version=version+1,updated_at=datetime('now') WHERE id=?").run(name,phone,key,address,note,id)}
- else{id=randomUUID();db.prepare('INSERT INTO shop_customers(id,name,phone,phone_key,address,note) VALUES(?,?,?,?,?,?)').run(id,name,phone,key,address,note)}
+ else{if(createId!==undefined&&(typeof createId!=='string'||!/^[-A-Za-z0-9_]{1,100}$/.test(createId)))throw new SalesError('Mã khách hàng không hợp lệ');id=createId??randomUUID();db.prepare('INSERT INTO shop_customers(id,name,phone,phone_key,address,note) VALUES(?,?,?,?,?,?)').run(id,name,phone,key,address,note)}
  return get(id)
  }}
 }

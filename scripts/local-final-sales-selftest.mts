@@ -11,7 +11,7 @@ import {PGlite} from '@electric-sql/pglite'
 import {bootstrapSalesDrafts} from '../apps/api/src/salesSchema.js'
 import {salesDraftService} from '../apps/api/src/salesDrafts.js'
 import {bootstrapSalesExecution,salesExecutionService} from '../apps/api/src/salesExecution.js'
-import {bootstrapCustomers} from '../apps/api/src/customers.js'
+import {bootstrapCustomers,customerService} from '../apps/api/src/customers.js'
 import {bootstrapFinance} from '../apps/api/src/orderFinance.js'
 import {bootstrapStocktake} from '../apps/api/src/stocktake.js'
 import {bootstrapPriceBulk} from '../apps/api/src/priceBulk.js'
@@ -34,11 +34,11 @@ const realFetch=globalThis.fetch
 const rpc=async(name:string,args:any={})=>{
  if(name==='mc_v7_health')return {role:'owner',instance,status:'CLOUD_TEST_READY'}
  if(name==='mc_v8_stock_integrity')return {ready:Number((await one('SELECT count(*) n FROM cloud_image_assets a WHERE ready AND source_present AND NOT EXISTS(SELECT 1 FROM sales_units u WHERE u.image_id=a.image_id)')).n),missingOrInvalidFiles:0,sharedActivePaths:0,invalidHashes:0}
- const values=name==='mc_v8_local_sales'?[args.p_action,args.p_key||'',JSON.stringify(args.p_payload||{})]:[args.p_instance,args.p_request,JSON.stringify(args.p_payload)]
+ const values=['mc_v8_local_sales','mc_v8_local_customers'].includes(name)?[args.p_action,args.p_key||'',JSON.stringify(args.p_payload||{})]:[args.p_instance,args.p_request,JSON.stringify(args.p_payload)]
  const result=(await one(`SELECT public.${name}($1,$2,$3) data`,values)).data
  if(name==='mc_v8_business_sync'&&loseUpload){loseUpload=false;throw Error('Lost upload reply after Cloud commit')}
- if(name==='mc_v8_local_sales'&&args.p_action==='finish'&&loseFinish){loseFinish=false;throw Error('Lost finish reply after Cloud commit')}
- if(name==='mc_v8_local_sales'&&args.p_action==='reject'&&loseReject){loseReject=false;throw Error('Lost rejection reply after Cloud commit')}
+ if(['mc_v8_local_sales','mc_v8_local_customers'].includes(name)&&args.p_action==='finish'&&loseFinish){loseFinish=false;throw Error('Lost finish reply after Cloud commit')}
+ if(['mc_v8_local_sales','mc_v8_local_customers'].includes(name)&&args.p_action==='reject'&&loseReject){loseReject=false;throw Error('Lost rejection reply after Cloud commit')}
  return result
 }
 const request=async(id:string,key:string,version=1)=>rpc('mc_v8_local_sales',{p_action:'request',p_key:key,p_payload:{id,version,confirmed:true,acknowledgeZeroPrice:false}})
@@ -71,6 +71,11 @@ try{
  const replacement=migration.split('$guard$')[1],needle="IF q.action='sale.confirm' AND EXISTS(SELECT 1 FROM public.sales_confirmations WHERE order_id=q.order_id) THEN RAISE EXCEPTION 'CLOUD_LOCAL_PROOF_REQUIRED'; END IF;"
  assert.equal(installedFunction.replace(replacement,needle),originalFunction,'only the targeted rejection guard changes; finish/role/locking paths are identical')
  await assert.rejects(()=>pg.exec(migration),/LOCAL_SALE_REJECTION_CONTRACT_CHANGED/,'changed deployment source must fail closed')
+ const customerMigration=fs.readFileSync('supabase/migrations/20261021020447_local_customer_requests.sql','utf8')
+ const commandBefore=await one("SELECT prosrc,proacl::text,proconfig,prosecdef FROM pg_proc WHERE oid='private.mc_v7_command(text,text,jsonb)'::regprocedure")
+ await pg.exec(customerMigration)
+ const commandAfter=await one("SELECT prosrc,proacl::text,proconfig,prosecdef FROM pg_proc WHERE oid='private.mc_v7_command(text,text,jsonb)'::regprocedure")
+ assert.deepEqual({...commandAfter,prosrc:commandAfter.prosrc.replace(customerMigration.split('$guard$')[1],'')},commandBefore,'legacy command retains all installed validations, replay logic, sale guards and privileges')
  await pg.exec(`UPDATE app_metadata SET value='CLOUD_TEST_READY' WHERE key='cloud_status';INSERT INTO app_metadata(key,value) VALUES('cloud_business_source','${instance}');GRANT USAGE ON SCHEMA auth TO authenticated;SET ROLE authenticated`)
  await rpc('mc_v8_local_sales',{p_action:'enable',p_payload:{instance}})
  const changes=createLanChangeFeed(),app=express();app.use(express.json());app.use(changes.middleware);app.use('/api',salesRequestGuard(db,root,true));app.use('/api/cloud',cloudRouter(db,root,undefined,undefined,true));server=app.listen(0,'127.0.0.1');await once(server,'listening');const base='http://127.0.0.1:'+(server.address() as any).port
@@ -225,10 +230,73 @@ try{
  assert.equal((await inbox('OLD-SECRET')).total,0,'redacted personal data cannot be searched')
  assert.equal((await inbox('','NEW',250)).rows.length,1)
  assert.equal((await inbox('')).counts.NEW,251)
+ // Customer intent: separate queue, exact base comparison, atomic native save
+ // journal and no rewrite of historical order contacts or any money/stock rows.
+ const customerRequest=(key:string,payload:any)=>rpc('mc_v8_local_customers',{p_action:'request',p_key:key,p_payload:payload})
+ const existing=customerService(db).get(customer),contactBefore=JSON.stringify(db.prepare('SELECT * FROM order_contacts WHERE customer_id=? ORDER BY order_id').all(customer))
+ const businessBefore=JSON.stringify(['sales_confirmations','sales_units','sales_ledger','finance_entries'].map(t=>db.prepare('SELECT * FROM '+t+' ORDER BY 1').all()))
+ const editPayload={id:customer,version:existing.version,name:'Tên mới đã được laptop xác nhận',phone:'0901234567',address:'Địa chỉ mới',note:'Ghi chú',allowDuplicate:false}
+ await assert.rejects(()=>customerRequest('customer-worker-not-enabled',editPayload),/CLOUD_CUSTOMER_LAPTOP_UPDATE_REQUIRED/)
+ const legacyArgs=['legacy-customer-replay-key','customer.save',JSON.stringify({id:'legacy-customer-id',version:0,name:'Legacy customer',phone:'',address:'',note:''})]
+ const legacySaved=await one('SELECT public.mc_v7_command($1,$2,$3) data',legacyArgs)
+ assert.equal((await post('/local-customers')).data.pending,false)
+ assert.deepEqual(await one('SELECT public.mc_v7_command($1,$2,$3) data',legacyArgs),legacySaved,'committed legacy retries survive activation of the new write fence')
+ const emptyRevision=changes.view().revision;await post('/local-customers');assert.equal(changes.view().revision,emptyRevision,'empty customer polling causes no screen refresh')
+ await assert.rejects(()=>command('customer.save',customer),/CLOUD_CUSTOMER_LAPTOP_UPDATE_REQUIRED/,'legacy direct writes are fenced once the new laptop enables its worker')
+ const customerKey='customer-edit-request-001'
+ assert.equal((await customerRequest(customerKey,editPayload)).state,'PENDING');assert.equal((await customerRequest(customerKey,editPayload)).state,'PENDING')
+ await assert.rejects(()=>customerRequest(customerKey,{...editPayload,name:'Different replay'}),/CLOUD_REQUEST_CONFLICT/)
+ assert.equal((await post('/local-sales')).data.pending,false,'a pending customer request does not enter or hold the sale queue')
+ await assert.rejects(()=>one('SELECT * FROM private.mc_local_customers'),/permission denied/)
+ assert.equal((await one('SELECT name FROM shop_customers WHERE id=$1',[customer])).name,existing.name,'mobile does not change Cloud truth while laptop is off')
+ assert.equal(customerService(db).get(customer).name,existing.name)
+ await assert.rejects(()=>customerRequest('customer-edit-second-request',editPayload),/CLOUD_CUSTOMER_PENDING/)
+ await assert.rejects(()=>rpc('mc_v8_local_customers',{p_action:'finish',p_key:customerKey,p_payload:{instance,appliedVersion:2,customer:{id:customer}}}),/CLOUD_LOCAL_PROOF_REQUIRED/)
+ const savedCustomer=await post('/local-customers');assert.equal(savedCustomer.status,200,JSON.stringify(savedCustomer));assert.equal(savedCustomer.data.state,'CONFIRMED')
+ assert.equal(customerService(db).get(customer).name,editPayload.name)
+ await uploadLocalBusiness(db,root,rpc,true)
+ assert.equal((await one('SELECT name FROM shop_customers WHERE id=$1',[customer])).name,editPayload.name,'subsequent LOCAL upload keeps the acknowledged mobile edit')
+ await assert.rejects(()=>customerRequest('customer-old-version-check',editPayload),/CLOUD_CUSTOMER_VERSION_CONFLICT/)
+ const nextEdit={...editPayload,version:2,name:'Đổi trước khi mất phản hồi'}
+ await customerRequest('customer-edit-lost-upload',nextEdit);loseUpload=true
+ const lostCustomer=await post('/local-customers');assert.equal(lostCustomer.status,409);assert.match(lostCustomer.data.error,/Lost upload reply/)
+ assert.equal(customerService(db).get(customer).version,3)
+ customerService(db).save({...nextEdit,version:3,name:'Chủ shop sửa tiếp tại laptop'},customer)
+ assert.equal((await post('/local-customers')).data.state,'CONFIRMED')
+ assert.equal(customerService(db).get(customer).version,4,'retry does not increment or reapply the old customer edit')
+ assert.equal((await one('SELECT name FROM shop_customers WHERE id=$1',[customer])).name,'Chủ shop sửa tiếp tại laptop')
+ await customerRequest('customer-stale-owner-edit',{...editPayload,version:4,name:'Nội dung mobile cũ'})
+ customerService(db).save({...editPayload,version:4,name:'LOCAL ưu tiên'},customer)
+ assert.equal((await post('/local-customers')).data.state,'REJECTED')
+ assert.equal(customerService(db).get(customer).name,'LOCAL ưu tiên')
+ const newId='44444444-4444-4444-8444-444444444444',newPayload={id:newId,version:0,name:'Khách mới mobile',phone:'0912345678',address:'A',note:'',allowDuplicate:false}
+ await customerRequest('customer-create-lost-finish',newPayload);loseFinish=true
+ assert.equal((await post('/local-customers')).status,409)
+ assert.equal(customerService(db).get(newId).version,1)
+ assert.equal((await customerRequest('customer-create-lost-finish',newPayload)).state,'CONFIRMED','lost create reply returns the same terminal request, not a second customer')
+ assert.equal((await post('/local-customers')).data.pending,false)
+ assert.equal(Number(db.prepare('SELECT count(*) n FROM shop_customers WHERE id=?').get(newId)!.n),1)
+ const cloudOnly='66666666-6666-4666-8666-666666666666'
+ await pg.exec('RESET ROLE');await pg.query("INSERT INTO shop_customers(id,name,phone,phone_key,address,note) VALUES($1,'Khách Cloud cũ','','','','')",[cloudOnly]);await pg.exec('SET ROLE authenticated')
+ await customerRequest('customer-legacy-cloud-only',{id:cloudOnly,version:1,name:'Đã nhận về laptop',phone:'',address:'',note:''})
+ assert.equal((await post('/local-customers')).data.state,'CONFIRMED');assert.equal(customerService(db).get(cloudOnly).version,2)
+ await customerRequest('customer-atomic-journal-key',{id:cloudOnly,version:2,name:'Ghi nguyên tử',phone:'',address:'',note:''})
+ db.exec("CREATE TEMP TRIGGER customer_journal_failure BEFORE INSERT ON app_metadata WHEN NEW.key='cloud-customer-request:customer-atomic-journal-key' BEGIN SELECT RAISE(ABORT,'FAKE journal failure');END")
+ assert.equal((await post('/local-customers')).status,409)
+ assert.equal(customerService(db).get(cloudOnly).version,2,'failure writing the applied marker rolls the customer save back')
+ db.exec('DROP TRIGGER customer_journal_failure');assert.equal((await post('/local-customers')).data.state,'CONFIRMED');assert.equal(customerService(db).get(cloudOnly).version,3)
+ const duplicateId='55555555-5555-4555-8555-555555555555'
+ await customerRequest('customer-duplicate-request',{...newPayload,id:duplicateId})
+ assert.equal((await post('/local-customers')).data.state,'REJECTED');assert.equal(db.prepare('SELECT 1 FROM shop_customers WHERE id=?').get(duplicateId),undefined)
+ assert.equal(JSON.stringify(db.prepare('SELECT * FROM order_contacts WHERE customer_id=? ORDER BY order_id').all(customer)),contactBefore,'customer profile edits never rewrite SOLD recipient snapshots')
+ assert.equal(JSON.stringify(['sales_confirmations','sales_units','sales_ledger','finance_entries'].map(t=>db.prepare('SELECT * FROM '+t+' ORDER BY 1').all())),businessBefore,'customer processing leaves money and stock evidence unchanged')
+ console.log('PASS local customer requests: offline intent, HTTP worker, durable create/edit, LOCAL conflict priority, lost upload/finish replies, later owner edit retained, duplicate rollback, no SOLD/contact/money mutation')
  await pg.exec('RESET ROLE');await pg.query("UPDATE cloud_members SET role='viewer' WHERE user_id=$1",[owner]);await pg.exec('SET ROLE authenticated')
  await assert.rejects(()=>rpc('mc_v8_local_sales',{p_action:'next',p_payload:{instance}}),/CLOUD_ROLE_DENIED/)
+ await assert.rejects(()=>rpc('mc_v8_local_customers',{p_action:'list'}),/CLOUD_ROLE_DENIED/)
  await pg.exec('RESET ROLE;SET ROLE anon')
  await assert.rejects(()=>rpc('mc_v8_local_sales',{p_action:'list'}),/permission denied/)
+ await assert.rejects(()=>rpc('mc_v8_local_customers',{p_action:'list'}),/permission denied/)
  console.log('PASS local-final sales: offline queue, LOCAL archives, retries, deposit/refund/delivery/aftercare, customer debt, >200-order search, global inquiries and redaction, owner/anonymous gates')
 }catch(e){console.error('FAIL local-final sales:',(e as Error).message);process.exitCode=1}
 finally{globalThis.fetch=realFetch;if(server)await new Promise<void>((resolve,reject)=>server!.close(e=>e?reject(e):resolve()));db.close();await pg.close();fs.rmSync(root,{recursive:true,force:true})}

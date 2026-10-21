@@ -33,9 +33,15 @@ export default function CloudSettings({desktop=true,autoSync=false}:{desktop?:bo
     if(!state.localAuthority||!state.enabled)return
     if((await cloudRpc('mc_v7_health')).role!=='owner')return
     const session=authSession.current;if(!session)return
-    const result=await apiJson('/api/cloud/local-sales',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:'{}'})
-    if(alive){setLocalSalesChecked(new Date().toLocaleTimeString('vi-VN'));setLocalSalesStatus(result.state==='CONFIRMED'?'Laptop đã ghi nhận nghiệp vụ và Cloud đã nhận chứng từ.':result.state==='REJECTED'?'Yêu cầu chưa ghi nhận: '+result.error:'Đang nhận yêu cầu mobile. Laptop xác nhận nghiệp vụ cuối cùng.')}
-    if(result.pending){window.dispatchEvent(new Event('mecacao-server-change'));window.dispatchEvent(new Event('mecacao-cloud-sync-now'))}
+    const messages:string[]=[]
+    // Independent queues: failure in one does not prevent polling the other.
+    for(const route of state.customerRequests?['local-sales','local-customers']:['local-sales']){
+     try{
+      const result=await apiJson('/api/cloud/'+route,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:'{}'})
+      if(result.pending){messages.push(result.state==='CONFIRMED'?'Laptop đã ghi nhận; Cloud đã xác nhận.':'Yêu cầu chưa ghi nhận: '+result.error);window.dispatchEvent(new Event('mecacao-server-change'));window.dispatchEvent(new Event('mecacao-cloud-sync-now'))}
+     }catch(e){messages.push('Đang chờ: '+(e as Error).message)}
+    }
+    if(alive){setLocalSalesChecked(new Date().toLocaleTimeString('vi-VN'));setLocalSalesStatus(messages.join(' · ')||'Đang nhận yêu cầu mobile. Laptop xác nhận nghiệp vụ cuối cùng.')}
    }catch(e){if(alive)setLocalSalesStatus('Yêu cầu mobile đang chờ: '+(e as Error).message)}
    finally{inflight.current=false;running=false;window.dispatchEvent(new Event('mecacao-cloud-sync-idle'))}
   }

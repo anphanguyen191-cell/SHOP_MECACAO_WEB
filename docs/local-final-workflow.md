@@ -62,3 +62,33 @@ targeted guard while preserving the function OID, ACL and security settings.
 No production test orders or manual terminal-state edits are needed. Existing
 pending requests are retried by the normal laptop worker; no updater is required
 for this Cloud-only guard correction on an already compatible option-A laptop.
+
+## Customer profile requests (2026-10-21)
+
+New and edited mobile customer profiles use a separate private queue. Cloud keeps
+the current profile unchanged until the owner laptop commits the native save and
+uploads it. The LOCAL save and durable applied marker share one SQLite transaction.
+Retries upload current LOCAL truth, so an owner edit after a lost reply is retained.
+Conflicting versions or snapshots are rejected, not silently rebased. Historical
+SOLD recipient snapshots, stock and money are not edited by this worker.
+
+Update Windows using the existing in-app updater, open the LOCAL warehouse and
+sign into Cloud. The updated worker enables customer requests for that warehouse;
+until then the mobile request endpoint asks for the laptop update instead of
+reporting a successful save. Legacy direct Cloud customer writes are fenced only
+after this worker is enabled; already committed legacy request retries retain
+their original result. Mobile must reload the new build. Accepted pending requests
+remain accessible after reload, and rejected input is retained for owner review.
+Creating a separate customer with a duplicate phone requires explicit confirmation.
+
+The customer worker has its own localhost-only endpoint and shares the existing
+business-upload serialization gate. Each polling tick independently attempts both
+queues; failure in one cannot suppress polling of the other. Empty polls do not
+emit screen changes. The new endpoint is advertised through a capability flag so
+older Windows APIs are not polled for a nonexistent route.
+
+Regression coverage includes real isolated SQLite/PostgreSQL/HTTP create/edit,
+offline waiting, subsequent LOCAL re-upload, owner conflicts, later owner edits,
+Cloud-only historical customers, duplicate rollback, lost upload/finish replies,
+direct-write fencing, role denial, immutable sale evidence, React pending/reload/
+rejection and lost-response forms. CI adds real Chrome pending-to-confirmed UI.

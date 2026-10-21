@@ -28,3 +28,6 @@
 @media(max-width:640px){.contactGrid{grid-template-columns:1fr}.contactCard,.orderSlip{padding:12px}.customerResults>div{flex-wrap:wrap}}
 
 .themeDark .salesFold{color:#fff5fa}
+.customerRequestList{max-height:20rem;overflow:auto;margin-bottom:1rem}
+.customerRequestList summary{cursor:pointer;padding:.5rem}
+.customerRequestList button{display:block;width:100%;margin-top:.5rem;text-align:left;white-space:normal;overflow-wrap:anywhere}
