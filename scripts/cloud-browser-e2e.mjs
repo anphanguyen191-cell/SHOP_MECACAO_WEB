@@ -109,7 +109,10 @@ try{
  ws.addEventListener('message',e=>{const m=JSON.parse(e.data),cb=pending.get(m.id);if(cb){pending.delete(m.id);m.error?cb.reject(Error(JSON.stringify(m.error))):cb.resolve(m.result)}else if(m.method==='Fetch.requestPaused'){const task=intercept(m.params).catch(error=>interceptionErrors.push({error,networkId:m.params.networkId,url:m.params.request.url}));activeInterceptions.add(task);void task.finally(()=>activeInterceptions.delete(task))}else if(m.method==='Network.requestWillBeSent'&&m.params.request.url.startsWith('https://eyckwoewpomssjjggslr.supabase.co/'))inflightNetwork.set(m.params.requestId,m.params.request.url);else if(m.method==='Network.loadingFinished'||m.method==='Network.loadingFailed'){inflightNetwork.delete(m.params.requestId);if(m.params.canceled)cancelledRequests.add(m.params.requestId);}else if(m.method==='Page.javascriptDialogOpening')void cmd('Page.handleJavaScriptDialog',{accept:true})})
  await cmd('Page.enable');await cmd('Runtime.enable');await cmd('Network.enable');await cmd('Network.setBypassServiceWorker',{bypass:true});await cmd('Network.setBlockedURLs',{urls:['wss://eyckwoewpomssjjggslr.supabase.co/*']});await cmd('Fetch.enable',{patterns:[{urlPattern:'https://eyckwoewpomssjjggslr.supabase.co/*'}]})
  const authInit=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`localStorage.setItem('mecacao-v7-auth',${JSON.stringify(JSON.stringify(session))});localStorage.setItem('mecacao-ui-cloud-auto-sync','false')`})
- await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await cmd('Page.navigate',{url});await until("!!document.querySelector('.mobileStockCard img')&&document.querySelector('.mobileStockCard img').complete&&document.querySelector('.mobileStockCard img').naturalWidth>0")
+ await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await cmd('Page.navigate',{url});await until("!!document.querySelector('.mobileOverview .mobileMetricGrid')")
+ assert(await run("document.querySelector('.pageBreadcrumb strong').textContent==='Tổng quan'"),'Fresh mobile launch must open Overview')
+ await run("Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent==='Tồn kho').click()")
+ await until("!!document.querySelector('.mobileStockCard img')&&document.querySelector('.mobileStockCard img').complete&&document.querySelector('.mobileStockCard img').naturalWidth>0")
  await until("!document.querySelector(\'.mobileLuxeSplash\')")
  fs.mkdirSync('artifacts/cloud-browser',{recursive:true})
  for(const width of [375,390,430,768]){
@@ -356,6 +359,36 @@ try{
   await until("document.querySelectorAll('.salesOrderRow').length===8")
  }
  console.log('PASS historical SOLD mobile: 7 sold / 1 cancelled, un-clipped page scroll, physical click opens all 7 details/back at 375/390/430/768px')
+ // The three reported navigation regressions, using the actual workspace and forms.
+ const route=async label=>{await run(`Array.from(document.querySelectorAll('.sidebar button')).find(b=>b.textContent===${JSON.stringify(label)}).click()`);await delay(100)}
+ for(const width of [375,390,430,768]){
+  await cmd('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true})
+  await route('Bán hàng');await until("!!document.querySelector('.salesOrderRow')&&!document.querySelector('.mobileDetailOpen')")
+  await run("document.querySelectorAll('.salesOrderRow')[1].click()");await until("!!document.querySelector('.mobileDetailOpen')")
+  await route('Báo cáo');await route('Bán hàng')
+  assert(await run("!!document.querySelector('.salesList')&&!document.querySelector('.mobileDetailOpen')"),'Sales tab must return to its list at '+width)
+  await run("document.querySelectorAll('.salesOrderRow')[1].click()");await until("!!document.querySelector('.mobileDetailOpen')")
+  await click('Tiền / Công nợ');await until("!!document.querySelector('.financePanel')")
+  assert.equal(await run("document.querySelector('.salesDraftPage>p').textContent"),'Đơn HIST0001','Order action must open the requested finance record')
+  await click('‹ Tổng quan công nợ');await until("document.body.innerText.includes('Theo khách hàng')&&!document.querySelector('.financePanel')")
+  await route('Bán hàng');await run("document.querySelectorAll('.salesOrderRow')[2].click()");await until("!!document.querySelector('.mobileDetailOpen')")
+  const beforeFinance=trace.filter(t=>t.url.endsWith('/rpc/mc_v7_finance')).length
+  await route('Công nợ');await until("document.body.innerText.includes('Theo khách hàng')")
+  assert(!await run("!!document.querySelector('.financePanel')"),'Generic debts route must not inherit selected sales order')
+  assert.equal(trace.filter(t=>t.url.endsWith('/rpc/mc_v7_finance')).length,beforeFinance,'Generic debts route must not query an inherited order')
+ }
+ // Unsaved finance input must still prevent both the new Back action and tab resets.
+ await route('Bán hàng');await run("document.querySelector('.salesOrderRow').click()");await click('Tiền / Công nợ');await until("!!document.querySelector('.financePanel')")
+ await run("document.querySelector('.financePanel input[type=number]').focus()");await cmd('Input.insertText',{text:'1000'})
+ await click('‹ Tổng quan công nợ');assert(await run("!!document.querySelector('.financePanel')&&document.querySelector('.financePanel input[type=number]').value==='1000'"),'Back must retain unrecorded finance input')
+ await route('Bán hàng');assert(await run("!!document.querySelector('.financePanel')"),'Tab switch must preserve unrecorded finance input')
+ await click('Bỏ thay đổi và đọc số mới');await click('‹ Tổng quan công nợ');await until("document.body.innerText.includes('Theo khách hàng')")
+ // Explicit links remain supported, then are consumed by ordinary navigation.
+ await cmd('Page.navigate',{url:url+'&order=hist0003-fixture'});await until("!!document.querySelector('.mobileDetailOpen')&&!document.querySelector('.mobileLuxeSplash')")
+ assert.equal(await run("document.querySelector('.cloudOrder h3').textContent"),'Đơn HIST0003')
+ await route('Báo cáo');assert(!await run("new URLSearchParams(location.search).has('order')"))
+ await cmd('Page.reload');await until("!!document.querySelector('.mobileOverview .mobileMetricGrid')")
+ console.log('PASS mobile navigation: Overview launch/reload, Sales list reset, independent debts summary/back, explicit order links and unsaved finance guards at 375/390/430/768px')
  await Promise.all([...activeInterceptions]);await delay(100)
  failures.push(...interceptionErrors.filter(({error,networkId})=>!cancelledInterception(error,networkId)).map(({error})=>error))
  console.log('Confirmed cancelled stale interceptions:',interceptionErrors.length-failures.length)
