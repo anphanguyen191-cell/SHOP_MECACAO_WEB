@@ -74,6 +74,7 @@ try{
  const customerMigration=fs.readFileSync('supabase/migrations/20261021020447_local_customer_requests.sql','utf8')
  const commandBefore=await one("SELECT prosrc,proacl::text,proconfig,prosecdef FROM pg_proc WHERE oid='private.mc_v7_command(text,text,jsonb)'::regprocedure")
  await pg.exec(customerMigration)
+ await pg.exec(fs.readFileSync('supabase/migrations/20261021021748_local_customer_duplicate_guard.sql','utf8'))
  const commandAfter=await one("SELECT prosrc,proacl::text,proconfig,prosecdef FROM pg_proc WHERE oid='private.mc_v7_command(text,text,jsonb)'::regprocedure")
  assert.deepEqual({...commandAfter,prosrc:commandAfter.prosrc.replace(customerMigration.split('$guard$')[1],'')},commandBefore,'legacy command retains all installed validations, replay logic, sale guards and privileges')
  await pg.exec(`UPDATE app_metadata SET value='CLOUD_TEST_READY' WHERE key='cloud_status';INSERT INTO app_metadata(key,value) VALUES('cloud_business_source','${instance}');GRANT USAGE ON SCHEMA auth TO authenticated;SET ROLE authenticated`)
@@ -286,8 +287,13 @@ try{
  assert.equal(customerService(db).get(cloudOnly).version,2,'failure writing the applied marker rolls the customer save back')
  db.exec('DROP TRIGGER customer_journal_failure');assert.equal((await post('/local-customers')).data.state,'CONFIRMED');assert.equal(customerService(db).get(cloudOnly).version,3)
  const duplicateId='55555555-5555-4555-8555-555555555555'
- await customerRequest('customer-duplicate-request',{...newPayload,id:duplicateId})
- assert.equal((await post('/local-customers')).data.state,'REJECTED');assert.equal(db.prepare('SELECT 1 FROM shop_customers WHERE id=?').get(duplicateId),undefined)
+ await assert.rejects(()=>customerRequest('customer-duplicate-request',{...newPayload,id:duplicateId}),/CLOUD_CUSTOMER_DUPLICATE/)
+ await customerRequest('customer-duplicate-approved',{...newPayload,id:duplicateId,allowDuplicate:true})
+ assert.equal((await post('/local-customers')).data.state,'CONFIRMED','explicit duplicate-phone choice remains supported')
+ const localOnlyId='77777777-7777-4777-8777-777777777777',localOnly={id:localOnlyId,version:0,name:'Khách chờ kiểm tra LOCAL',phone:'0923456789',address:'',note:''}
+ await customerRequest('customer-duplicate-local-race',localOnly)
+ customerService(db).save({...localOnly,name:'LOCAL thêm trong lúc chờ'})
+ assert.equal((await post('/local-customers')).data.state,'REJECTED');assert.equal(db.prepare('SELECT 1 FROM shop_customers WHERE id=?').get(localOnlyId),undefined)
  assert.equal(JSON.stringify(db.prepare('SELECT * FROM order_contacts WHERE customer_id=? ORDER BY order_id').all(customer)),contactBefore,'customer profile edits never rewrite SOLD recipient snapshots')
  assert.equal(JSON.stringify(['sales_confirmations','sales_units','sales_ledger','finance_entries'].map(t=>db.prepare('SELECT * FROM '+t+' ORDER BY 1').all())),businessBefore,'customer processing leaves money and stock evidence unchanged')
  console.log('PASS local customer requests: offline intent, HTTP worker, durable create/edit, LOCAL conflict priority, lost upload/finish replies, later owner edit retained, duplicate rollback, no SOLD/contact/money mutation')
