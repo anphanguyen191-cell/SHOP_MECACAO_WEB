@@ -13,6 +13,7 @@ import {setTimeout as delay} from 'node:timers/promises'
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'mc-cloud-browser-')),profile=path.join(temp,'profile'),image=await sharp({create:{width:100,height:140,channels:3,background:'#923e71'}}).jpeg().toBuffer()
 const imageSha=createHash('sha256').update(image).digest('hex')
 const state={proofPath:null,proofUploaded:false,loginPassword:'fake-correct-password',autoEnabled:false,archiveValid:true,filePresent:true,deletedAt:null,prepared:false,allowCleanupRetry:true,sequence:0,customerRequests:[],localSales:[],orders:[],items:[],confirmations:[],reconciled:[],requests:new Map(),lost:false,customers:[{id:'fake-customer',name:'FAKE Khách',phone:'0900000000',address:'FAKE địa chỉ',note:'',version:1}],counts:[{session_id:'fake-count',variant_id:1,counted:null,note:'',snapshot:JSON.stringify({productCode:'FAKE1',productName:'FAKE áo thử',size:'S1',sku:'FAKE1-S1',physical:1,ledger:1})}],countVersion:1}
+const catalogSettings={enabled:false,version:1,products:[],config:{banner_url:'/brand/catalog-boutique-hero.jpg',size_image_url:'/brand/catalog-shop-size.jpg'}}
 const product={id:1,product_code:'FAKE1',name:'FAKE áo thử',status:'active',cloud_revision:1},variant={id:1,product_id:1,sku:'FAKE1-S1',size:'S1',status:'active',sale_price:50000,cost_price:10000,cloud_revision:1}
 function rows(table){return ({inventory_transactions:[{variant_id:1,transaction_type:'OPENING',quantity:1}],shop_customers:state.customers,order_contacts:state.orders.map(o=>({order_id:o.id,customer_id:'fake-customer',recipient_name:'FAKE Khách',phone:'0900000000'})),stocktake_sessions:[{id:'fake-count',status:'OPEN',title:'FAKE Kiểm kê',version:state.countVersion}],stocktake_rows:state.counts,products:[product],product_variants:[variant],product_images:[{id:1,product_id:1,variant_id:1}],cloud_image_assets:[{image_id:1,object_path:'fake1.jpg',ready:!state.deletedAt,cleanup_requested:state.prepared,deleted_at:state.deletedAt,sha256:'a'.repeat(64),proof_path:state.proofPath,proof_sha256:state.proofPath?imageSha:null}],sales_orders:state.orders,sales_order_images:state.items,sales_confirmations:state.confirmations,sales_units:state.confirmations.length?[{image_id:1,order_id:state.orders[0].id,variant_id:1,snapshot:JSON.stringify(state.items[0])}]:[]})[table]||[]}
 function finance(id){return {orderId:id,orderVersion:state.orders.find(o=>o.id===id)?.version||1,orderStatus:state.confirmations.length?'SOLD':'DRAFT',version:0,method:'COD',delivery:'NEW',tracking:'',adjustedTotal:50000,netCollected:0,due:50000,originalTotal:50000,refundDue:0}}
@@ -60,6 +61,8 @@ async function intercept(p){trace.push({url:p.request.url,method:p.request.metho
   else if(endpoint==='mc_v7_health')response={contract:1,schema:130,role:'owner',status:'CLOUD_TEST_READY',instance:'fake',sequence:state.sequence}
   else if(endpoint==='mc_v8_local_sales'&&body.p_action==='list')response=state.localSales
   else if(endpoint==='mc_v8_local_sales'&&body.p_action==='request'){const old=state.localSales.find(r=>r.request_key===body.p_key);if(!old){state.localSales.unshift({request_key:body.p_key,order_id:body.p_payload.id,action:'sale.confirm',state:'PENDING'});state.sequence++}response={queued:true,requestKey:body.p_key,state:old?.state||'PENDING'}}
+  else if(endpoint==='mc_catalog_admin'){if(body.p_action==='settings')response=catalogSettings;else if(body.p_action==='publish'){catalogSettings.products=[{product_id:body.p_payload.product_id,public_enabled:body.p_payload.enabled}];response={ok:true}}else if(body.p_action==='configure'){assert.equal(body.p_payload.version,catalogSettings.version);Object.assign(catalogSettings,{...body.p_payload,version:catalogSettings.version+1});response={ok:true}}else throw Error('Unsupported fixture catalog action')}
+  else if(endpoint==='mc_v8_catalog_inbox')response={rows:[],total:0,counts:{}}
   else if(endpoint==='mc_v7_rows'){const all=rows(body.p_table),offset=Number(body.p_after||0);response={rows:all.slice(offset,offset+body.p_limit),nextOffset:Math.min(offset+Number(body.p_limit||500),all.length)}}
   else if(endpoint==='mc_v7_price_snapshot')response={scope:'CLOUD',instance:'fake',exportedAt:new Date().toISOString(),rows:[{id:1,productCode:product.product_code,sku:variant.sku,name:product.name,size:variant.size,stock:1,cost:variant.cost_price,sale:variant.sale_price,costSet:variant.cost_price>0||!!variant.cost_price_set,saleSet:true,version:variant.cloud_revision}],history:[]}
   else if(endpoint==='mc_v7_prices'){assert.equal(body.p_payload.instance,'fake');assert.equal(body.p_payload.rows[0].cost,10000);const apply=variant.cost_price===0&&!variant.cost_price_set?10000:null;response={costCount:apply===null?0:1,saleCount:0,rows:[{id:1,sku:variant.sku,name:product.name,size:variant.size,applyCost:apply,applySale:null,status:body.p_action==='prices.commit'?'Đã bổ sung':'Sẽ bổ sung'}]};if(body.p_action==='prices.commit'){variant.cost_price=10000;variant.cost_price_set=true;variant.cloud_revision++;state.sequence++;}}
@@ -434,6 +437,44 @@ try{
  assert.equal(JSON.stringify({orders:state.orders,items:state.items,confirmations:state.confirmations,customers:state.customers}),businessBefore,'Personalization cannot mutate shop data')
  assert(!trace.slice(appearanceStart).some(t=>t.body&&(/"p_action":"(draft.save|finance.entry|finance.configure|customer.save|request)"/.test(t.body))),'Style controls never submit operational writes')
  console.log('PASS mobile personalization browser: five presets/light-dark/375-768px, AA text contrast, touch targets, glass, cards, local banner/reload, reduced motion, independent sheets, unsaved finance retained and desktop isolation')
+
+ // Actual Catalog admin inside the mobile shell: semantic actions and no save overlay.
+ const catalogBefore=JSON.stringify({orders:state.orders,items:state.items,customers:state.customers,confirmations:state.confirmations})
+ for(const width of [320,375,390,430,768]){
+  await cmd('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true})
+  await until("document.querySelector('.cloudWorkspace').hasAttribute('data-mobile-palette')")
+  for(const dark of [false,true]){
+   await route('Cài đặt');await click(dark?'Tối dịu mắt':'Sáng nhẹ nhàng')
+   await route('Catalog khách hàng');await until("!!document.querySelector('.cc-admin-tabs')")
+   await click('Công khai sản phẩm');await until("!!document.querySelector('.cc-admin-publish')")
+   assert(await run("(()=>{const b=document.querySelector('.cc-admin-publish'),s=getComputedStyle(b),c=s.backgroundColor.match(/\\d+/g).map(Number);return c[1]>c[0]&&c[1]>c[2]&&b.getBoundingClientRect().height>=44})()"),'Publish is green and touch-sized')
+   await click('Bật công khai');await until("!!document.querySelector('.cc-admin-hide')")
+   assert(await run("(()=>{const b=document.querySelector('.cc-admin-hide'),s=getComputedStyle(b),c=s.backgroundColor.match(/\\d+/g).map(Number);return c[0]>c[1]&&c[0]>c[2]&&b.getBoundingClientRect().height>=44})()"),'Hide is red and touch-sized')
+   await run("document.querySelector('.cc-admin-product').scrollIntoView({block:'center'})")
+   assert(await run("document.documentElement.scrollWidth<=innerWidth+1"),'Catalog product has no horizontal overflow '+width)
+   if(width===390)fs.writeFileSync('artifacts/cloud-browser/catalog-admin-products-'+(dark?'dark':'light')+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
+   await click('Ẩn khỏi Catalog');await until("!!document.querySelector('.cc-admin-publish')")
+   await click('Banner & cấu hình')
+   await until("!!document.querySelector('.cc-admin-save')")
+   assert(await run("getComputedStyle(document.querySelector('.cc-admin-save')).position==='static'"),'Save must be in page flow, not overlay')
+   await run("document.querySelector('.cc-admin-presets article:last-child').scrollIntoView({block:'center'})")
+   assert(await run("(()=>{const s=document.querySelector('.cc-admin-save').getBoundingClientRect(),p=document.querySelector('.cc-admin-presets').getBoundingClientRect();return s.top>=p.bottom&&document.documentElement.scrollWidth<=innerWidth+1})()"),'Save cannot cover banner/size '+width)
+   if(width===390)fs.writeFileSync('artifacts/cloud-browser/catalog-admin-size-'+(dark?'dark':'light')+'.png',Buffer.from((await cmd('Page.captureScreenshot',{format:'png'})).data,'base64'))
+   await run("document.querySelector('.cc-admin-open input').click()")
+   await until("!document.querySelector('.cc-admin-save-actions button').disabled")
+   await run("document.querySelector('.cc-admin-save').scrollIntoView({block:'center'})")
+   assert(await run("(()=>{const b=document.querySelector('.cc-admin-save-actions button').getBoundingClientRect(),n=document.querySelector('.mobileLuxeNav').getBoundingClientRect();return b.bottom<=n.top&&b.height>=44})()"),'Save reachable above navigation '+width)
+   await click('Bỏ thay đổi')
+   assert(await run("document.querySelector('.cc-admin-save-actions button').disabled"),'Discard returns clean state')
+  }
+ }
+ await run("document.querySelector('.cc-admin-open input').click()")
+ await click('Lưu cấu hình Catalog')
+ await until("document.querySelector('.cc-admin-save-actions button').disabled")
+ assert.equal(catalogSettings.enabled,true)
+ assert.equal(JSON.stringify({orders:state.orders,items:state.items,customers:state.customers,confirmations:state.confirmations}),catalogBefore,'Catalog admin must not mutate sales/customer/stock')
+ console.log('PASS Catalog admin mobile: green publish/red hide, 320-768px light/dark, in-flow save avoids size/banner/nav, save/discard and unchanged business data')
+
  await Promise.all([...activeInterceptions]);await delay(100)
  failures.push(...interceptionErrors.filter(({error,networkId})=>!cancelledInterception(error,networkId)).map(({error})=>error))
  console.log('Confirmed cancelled stale interceptions:',interceptionErrors.length-failures.length)

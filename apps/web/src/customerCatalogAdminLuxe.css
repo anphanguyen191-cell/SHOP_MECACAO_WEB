@@ -60,3 +60,59 @@
  .cc-admin-luxe .cc-admin-photos{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(prefers-reduced-motion:reduce){.cc-admin-luxe *{transition:none!important}}
+
+/* Actions retain semantic colors, independently of the chosen appearance palette. */
+.cc-admin-luxe .cc-admin-publish-action{min-height:44px;padding:11px 16px;border:1px solid;border-radius:12px;font-weight:700;line-height:1.4;white-space:normal;flex-shrink:0}
+.cc-admin-luxe .cc-admin-publish{background:#176b45;color:#fff;border-color:#176b45}
+.cc-admin-luxe .cc-admin-hide{background:#b42332;color:#fff;border-color:#b42332}
+.cc-admin-luxe .cc-admin-publish-action:disabled{opacity:.5;cursor:not-allowed}
+.cc-admin-save-state{flex-basis:100%;margin:0;font-size:13px;line-height:1.5}
+.cc-admin-save-actions{display:flex;flex-wrap:wrap;gap:10px;width:100%}
+.cc-admin-save-actions button:first-child{background:#bd2f67;color:#fff;border-color:#bd2f67}
+.cc-admin-search{display:grid;gap:8px;margin:16px 0}
+.cc-admin-search input{width:100%;min-width:0;box-sizing:border-box}
+
+@media(max-width:800px){
+ .shell.mobileLuxeWorkspace .cc-admin-luxe{max-width:100%;min-width:0;padding-bottom:12px;--cc-paper:var(--mobile-luxe-paper);--cc-line:var(--mobile-luxe-line);--cc-ink:var(--mobile-luxe-ink);--cc-muted:var(--mobile-luxe-muted);color:var(--cc-ink)}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe>header{padding:16px;background:var(--mobile-luxe-soft);border-color:var(--cc-line);box-shadow:none}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe>header h2{font-size:21px;color:var(--cc-ink)}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe :is(.cc-admin-subtitle,.cc-admin-info,.cc-admin-mini-kpis span,.cc-admin-product p,.cc-admin-presets small){color:var(--cc-muted)}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe>header .eyebrow{color:var(--mobile-luxe-accent);font-size:10px;letter-spacing:1px;overflow-wrap:anywhere}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe>header a{min-height:44px;box-sizing:border-box;width:100%;font-size:13px}
+ .shell.mobileLuxeWorkspace .cc-admin-info{background:var(--cc-paper);line-height:1.6}
+ .shell.mobileLuxeWorkspace .cc-admin-mini-kpis{gap:7px}
+ .shell.mobileLuxeWorkspace .cc-admin-mini-kpis article{padding:10px;background:var(--cc-paper);border-color:var(--cc-line);box-shadow:none}
+ .shell.mobileLuxeWorkspace .cc-admin-mini-kpis span{font-size:11px;line-height:1.4;min-height:31px}
+ .shell.mobileLuxeWorkspace .cc-admin-mini-kpis strong{font-size:22px;color:var(--mobile-luxe-accent)}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe>.cc-admin-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-tabs>button{min-height:44px;font-size:13px;line-height:1.4;white-space:normal;background:var(--cc-paper);border-color:var(--cc-line);color:var(--mobile-luxe-accent)}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-tabs>button[aria-pressed=true]{background:#a83877;color:#fff;border-color:#a83877}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe>label{display:grid;gap:8px;margin:16px 0;font-size:14px}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe>label input{width:100%}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-product{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding:16px;margin-bottom:12px;background:var(--cc-paper);border-color:var(--cc-line);box-shadow:none}
+ .shell.mobileLuxeWorkspace .cc-admin-product>div{min-width:0}
+ .shell.mobileLuxeWorkspace .cc-admin-product strong{display:block;font-size:16px;line-height:1.5;color:var(--cc-ink);overflow-wrap:anywhere}
+ .shell.mobileLuxeWorkspace .cc-admin-product p{font-size:13px;line-height:1.6;margin:6px 0 0;overflow-wrap:anywhere}
+ .shell.mobileLuxeWorkspace .cc-admin-product .cc-admin-publish-action{width:100%;font-size:14px}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-inbox{display:block}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-list{max-height:none;overflow:visible}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-list>button{background:var(--cc-paper);border-color:var(--cc-line)}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-list>button :is(strong,span:not(.cc-admin-status),small){color:var(--cc-ink)}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-status-chips button{min-height:44px}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe :is(.cc-admin-setup,.cc-admin-detail){min-width:0;padding:14px;background:var(--cc-paper);color:var(--cc-ink);border-color:var(--cc-line)}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-presets{grid-template-columns:minmax(0,1fr);gap:14px;margin:18px 0}
+ .shell.mobileLuxeWorkspace .cc-admin-presets article{min-width:0;padding:12px;background:var(--mobile-luxe-bg);border-color:var(--cc-line)}
+ .shell.mobileLuxeWorkspace .cc-admin-presets h4{margin:4px 0 12px;font-size:15px;line-height:1.5}
+ .shell.mobileLuxeWorkspace .cc-admin-presets img{box-sizing:border-box;height:auto;max-width:100%;max-height:300px}
+ .shell.mobileLuxeWorkspace .cc-admin-presets small{font-size:12px;line-height:1.6}
+ .shell.mobileLuxeWorkspace .cc-admin-advanced{padding:12px;min-width:0;border-color:var(--cc-line);overflow-wrap:anywhere}
+ .shell.mobileLuxeWorkspace .cc-admin-advanced summary{font-size:14px;line-height:1.5;min-height:44px}
+ .shell.mobileLuxeWorkspace .cc-admin-advanced table{width:100%;font-size:13px;table-layout:fixed}
+ .shell.mobileLuxeWorkspace .cc-admin-open{background:var(--mobile-luxe-soft);color:var(--cc-ink);font-size:14px;line-height:1.5}
+ /* In-flow save footer: never overlays the size guide or the bottom navigation. */
+ .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-save{position:static;bottom:auto;z-index:auto;display:block;margin-top:20px;padding:14px;background:var(--cc-paper);border-color:var(--cc-line);box-shadow:none}
+ .shell.mobileLuxeWorkspace .cc-admin-save-state{margin:0 0 10px;color:var(--cc-muted)}
+ .shell.mobileLuxeWorkspace .cc-admin-save-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+ .shell.mobileLuxeWorkspace .cc-admin-save-actions button{width:100%;min-height:48px;box-sizing:border-box;white-space:normal;font-size:14px;line-height:1.5}
+ .shell.mobileLuxeWorkspace .cc-admin-save-actions button:disabled{opacity:.5}
+}

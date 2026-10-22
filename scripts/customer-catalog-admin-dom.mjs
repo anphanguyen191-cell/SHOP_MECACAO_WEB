@@ -7,9 +7,9 @@ import { build } from "esbuild";
 import { JSDOM } from "jsdom";
 const temp = fs.mkdtempSync(path.join(process.cwd(), ".catalog-admin-test-"));
 const source = `import React,{act} from 'react';import {createRoot} from 'react-dom/client';import Admin from '../apps/web/src/CustomerCatalogAdmin';import {cloud} from '../apps/web/src/cloudClient';
-const state={role:'owner',commands:[],opened:'',drafted:false};window.fixture=state;window.IS_REACT_ACT_ENVIRONMENT=true;
+const state={role:'owner',commands:[],opened:'',drafted:false,published:false,enabled:false,version:1,failConfigure:false};window.fixture=state;window.IS_REACT_ACT_ENVIRONMENT=true;
 const inquiry={id:'11111111-1111-4111-8111-111111111111',reference:'CC-FAKE',customer_name:'Fixture Guest',contact:'fixture@example.invalid',note:'',items:[{product_id:1,variant_id:1,name:'Fixture Product',size:'8',quick_quantity:1,selected_image_ids:[1],sale_price:50000}],status:'NEW',version:1,created_at:new Date().toISOString()};
-cloud.rpc=async(name,args)=>{if(name==='mc_v7_health')return {data:{role:state.role},error:null};if(name==='mc_v7_rows'){const tables={products:[{id:1,name:'Fixture Product',product_code:'FIX1',status:'active'}],product_variants:[{id:1,product_id:1,size:'8',status:'active',sale_price:50000,sale_price_set:true}],product_images:[{id:1,product_id:1,variant_id:1},{id:2,product_id:1,variant_id:1}],cloud_image_assets:[{image_id:1,ready:true,source_present:true,object_path:'content-one.jpg'},{image_id:2,ready:true,source_present:true,object_path:'content-two.jpg'}]};const rows=tables[args.p_table]||[];return {data:{rows,nextOffset:rows.length},error:null}}if(args.p_action==='settings')return {data:{enabled:false,version:1,products:[],config:{guide:[],banner_url:'',size_image_url:'',zalo_url:'',messenger_url:''}},error:null};if(name==='mc_v8_catalog_inbox'){const rows=[{...inquiry,status:state.drafted?'DRAFTED':'NEW'}].filter(r=>!args.p_q||r.reference.toLowerCase().includes(args.p_q.toLowerCase()));return {data:{rows,total:rows.length,counts:{NEW:1}},error:null}}state.commands.push(args);if(args.p_action==='draft'){state.drafted=true;return {data:{id:inquiry.id},error:null}}return {data:{ok:true},error:null}};
+cloud.rpc=async(name,args)=>{if(name==='mc_v7_health')return {data:{role:state.role},error:null};if(name==='mc_v7_rows'){const tables={products:[{id:1,name:'Fixture Product',product_code:'FIX1',status:'active'},{id:2,name:'Inactive Product',product_code:'FIX2',status:'inactive'}],product_variants:[{id:1,product_id:1,size:'8',status:'active',sale_price:50000,sale_price_set:true}],product_images:[{id:1,product_id:1,variant_id:1},{id:2,product_id:1,variant_id:1}],cloud_image_assets:[{image_id:1,ready:true,source_present:true,object_path:'content-one.jpg'},{image_id:2,ready:true,source_present:true,object_path:'content-two.jpg'}]};const rows=tables[args.p_table]||[];return {data:{rows,nextOffset:rows.length},error:null}}if(args.p_action==='settings')return {data:{enabled:state.enabled,version:state.version,products:[{product_id:1,public_enabled:state.published}],config:{guide:[],banner_url:'',size_image_url:'',zalo_url:'',messenger_url:''}},error:null};if(name==='mc_v8_catalog_inbox'){const rows=[{...inquiry,status:state.drafted?'DRAFTED':'NEW'}].filter(r=>!args.p_q||r.reference.toLowerCase().includes(args.p_q.toLowerCase()));return {data:{rows,total:rows.length,counts:{NEW:1}},error:null}}state.commands.push(args);if(args.p_action==='publish'){state.published=args.p_payload.enabled;return {data:{ok:true},error:null}}if(args.p_action==='configure'){if(state.failConfigure)return {data:null,error:{message:'FIXTURE save failed'}};state.enabled=args.p_payload.enabled;state.version++;return {data:{ok:true},error:null}}if(args.p_action==='draft'){state.drafted=true;return {data:{id:inquiry.id},error:null}}return {data:{ok:true},error:null}};
 cloud.storage.from=()=>({createSignedUrls:async(paths)=>({data:paths.map(path=>({path,signedUrl:'https://fixture.invalid/'+path})),error:null})});
 const r=createRoot(document.getElementById('root'));state.act=act;state.mount=()=>r.render(<Admin onOrder={id=>state.opened=id}/>);state.unmount=()=>r.unmount();`;
 try {
@@ -101,6 +101,26 @@ try {
   assert.deepEqual(Array.from(a.commands[0].p_payload.image_ids), [1, 2]);
   assert.equal(a.opened, "11111111-1111-4111-8111-111111111111");
   assert(!a.commands.some((c) => c.p_action === "sale.confirm"));
+
+  await click("Công khai sản phẩm");
+  assert(w.document.querySelector(".cc-admin-publish-action").classList.contains("cc-admin-publish"));
+  assert(w.document.querySelectorAll(".cc-admin-publish-action")[1].disabled, "Inactive product cannot be published");
+  w.confirm=()=>false;
+  await click("Bật công khai");
+  assert(!a.commands.some(c=>c.p_action==="publish"), "Cancel never changes visibility");
+  w.confirm=()=>true;
+  await click("Bật công khai");
+  assert(a.published);
+  assert(w.document.querySelector(".cc-admin-publish-action").classList.contains("cc-admin-hide"));
+  assert.equal(a.commands.at(-1).p_payload.product_id,1);
+  await click("Ẩn khỏi Catalog");
+  assert(!a.published);
+  assert.equal(a.commands.at(-1).p_payload.enabled,false);
+  const productSearch=w.document.querySelector(".cc-admin-search input");
+  await act(()=>{setter.call(productSearch,"no-match");productSearch.dispatchEvent(new w.Event("input",{bubbles:true}))});
+  assert(w.document.querySelector(".cc-admin-empty"));
+  await act(()=>{setter.call(productSearch,"");productSearch.dispatchEvent(new w.Event("input",{bubbles:true}))});
+
   await click("Banner & cấu hình");
   assert(
     w.document.body.textContent.includes(
@@ -127,7 +147,20 @@ try {
     !w.document.querySelector(".cc-admin-open input").checked,
     "Never open Catalog automatically",
   );
+
+  assert(w.document.querySelector(".cc-admin-save-actions button").disabled);
   await act(() => w.document.querySelector(".cc-admin-open input").click());
+  assert(w.document.querySelector(".cc-admin-save-state").textContent.includes("Có thay đổi"));
+  w.confirm=()=>false;
+  await click("Lưu cấu hình Catalog");
+  assert(!a.commands.some(c=>c.p_action==="configure"));
+  w.confirm=()=>true;
+  a.failConfigure=true;
+  await click("Lưu cấu hình Catalog");
+  assert(w.document.body.textContent.includes("FIXTURE save failed"));
+  assert(w.document.querySelector(".cc-admin-open input").checked, "Failed save retains draft");
+  assert(!w.document.querySelector(".cc-admin-save-actions button").disabled);
+  a.failConfigure=false;
   await click("Lưu cấu hình Catalog");
   const saved = a.commands.find((c) => c.p_action === "configure");
   assert(saved);
@@ -140,6 +173,12 @@ try {
   );
   assert.equal(saved.p_payload.config.zalo_url, "https://zalo.me/0949656477");
   assert.equal(saved.p_payload.config.messenger_url, "https://m.me/thi.nguyen.321179");
+
+  assert(w.document.querySelector(".cc-admin-save-actions button").disabled, "Successful save clears dirty flag");
+  await act(()=>w.document.querySelector(".cc-admin-open input").click());
+  await click("Bỏ thay đổi");
+  assert(w.document.querySelector(".cc-admin-open input").checked, "Discard restores saved config");
+  assert(w.document.querySelector(".cc-admin-save-actions button").disabled);
   await close();
   const nonOwner = await setup("cashier");
   assert(
