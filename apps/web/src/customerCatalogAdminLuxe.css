@@ -95,7 +95,7 @@
  .shell.mobileLuxeWorkspace .cc-admin-product p{font-size:13px;line-height:1.6;margin:6px 0 0;overflow-wrap:anywhere}
  .shell.mobileLuxeWorkspace .cc-admin-product .cc-admin-publish-action{width:100%;font-size:14px}
  .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-inbox{display:block}
- .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-list{max-height:none;overflow:visible}
+ .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-list{max-height:310px;overflow:auto;margin:13px 0}
  .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-list>button{background:var(--cc-paper);border-color:var(--cc-line)}
  .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-list>button :is(strong,span:not(.cc-admin-status),small){color:var(--cc-ink)}
  .shell.mobileLuxeWorkspace .cc-admin-luxe .cc-admin-status-chips button{min-height:44px}
