@@ -49,7 +49,7 @@ export function renderOrderSlip(canvas:SlipCanvas,banner:SlipBitmap,items:Item[]
  ctx.strokeStyle='#eddce4';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(60,y+row.height-14);ctx.lineTo(1020,y+row.height-14);ctx.stroke();y+=row.height})
  box(ctx,60,totalsY,960,totalsHeight,22,'#fff4f8')
  const amounts=[['Tổng đơn:',model.subtotal],['Phí ship:',model.shipping],['Giảm giá:',model.discount],['Đã thu/cọc:',model.collected]] as const
- amounts.forEach(([label,amount],i)=>{text(86,totalsY+22+i*51,label,28,i===0);right(totalsY+22+i*51,slipMoney(amount),29,i===0)})
+ amounts.forEach(([label,amount],i)=>{text(86,totalsY+22+i*51,label,28,i===0);right(totalsY+22+i*51,(label==='Giảm giá:'&&amount>0?'-':'')+slipMoney(amount),29,i===0)})
  ctx.strokeStyle='#dab7c9';ctx.beginPath();ctx.moveTo(86,totalsY+237);ctx.lineTo(994,totalsY+237);ctx.stroke();text(86,totalsY+260,'CÒN PHẢI THU:',31,true,pink);right(totalsY+255,slipMoney(model.due),39,true,pink)
  if(model.refundDue>0){text(86,totalsY+311,'Cần hoàn lại:',28);right(totalsY+311,slipMoney(model.refundDue),29)}
  y=footerY;for(const paragraph of footer){for(const line of paragraph){setFont(ctx,24);text((W-ctx.measureText(line).width)/2,y,line,24,false,muted);y+=34}y+=12}
