@@ -1,10 +1,19 @@
 import assert from 'node:assert/strict'
-import {renderOrderSlip,slipDate,slipModel,slipFooter} from '../apps/web/src/orderSlipLayout.ts'
+import {draftSlipFinance,renderOrderSlip,slipDate,slipModel,slipFooter} from '../apps/web/src/orderSlipLayout.ts'
 const items=[80000,80000,65000,72000].map(unit_price=>({product_name:'TDQD gái',product_code:'TD0001',size:'Size 10',unit_price}))
 const order={id:'ab25319c-fake',discount:17000},contact={recipient_name:'FAKE Khách',phone:'0900000000',address:'FAKE Cà Mau',shipping_fee:30000},finance={credit:10000,netCollected:100000,adjustedTotal:300000,due:200000,refundDue:0}
 const model=slipModel(order,items,contact,finance,'13/10/2026')
 assert.equal(model.subtotal,297000);assert.equal(model.shipping,30000);assert.equal(model.discount,27000);assert.equal(model.collected,100000);assert.equal(model.due,200000)
 assert.throws(()=>slipModel(order,items,{...contact,shipping_fee:31000},finance,''));assert.throws(()=>slipModel(order,items,contact,{...finance,due:1},''))
+const draftOrder={...order,version:7,discount:17000},draftContact={...contact,shipping_fee:45000}
+const draftFinance=draftSlipFinance(draftOrder,items,draftContact,{orderId:order.id,orderVersion:7,version:4,credit:10000,netCollected:100000,adjustedTotal:300000,due:200000,refundDue:0})
+assert.equal(draftFinance.originalTotal,325000,'Pending draft uses its own subtotal, shipping and discount')
+assert.equal(draftFinance.adjustedTotal,315000,'Existing Cloud credit remains applied')
+assert.equal(draftFinance.due,215000,'Current Cloud collections are reconciled against the pending draft')
+const draftModel=slipModel(draftOrder,items,draftContact,draftFinance,'13/10/2026')
+assert.equal(draftModel.discount,27000);assert.equal(draftModel.due,215000)
+assert.throws(()=>draftSlipFinance({...draftOrder,discount:220000},items,{...draftContact,shipping_fee:0},{orderId:order.id,orderVersion:7,version:4,credit:0,netCollected:100000}),/thấp hơn tiền đã thu/)
+assert.throws(()=>draftSlipFinance(draftOrder,items,draftContact,{orderId:order.id,orderVersion:6,version:4,credit:10000,netCollected:100000}),/Đơn đã thay đổi/);
 assert.equal(slipDate('2026-10-12 18:00:00',new Date()),'13/10/2026');assert.equal(slipDate(undefined,new Date('2026-10-13T00:00:00Z')),'13/10/2026')
 const text:string[]=[],draws:any[]=[]
 const ctx:any={font:'',measureText(s:string){return {width:s.length*Number(this.font.match(/(\d+)px/)?.[1]||28)*0.6}},fillText(s:string){text.push(s)},drawImage(...args:any[]){draws.push(args)},fillRect(){},beginPath(){},moveTo(){},lineTo(){},quadraticCurveTo(){},closePath(){},fill(){},stroke(){}}

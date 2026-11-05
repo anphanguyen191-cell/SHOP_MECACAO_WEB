@@ -14,6 +14,30 @@ export function slipDate(value:string|undefined,issuedAt:Date){
  const date=value?new Date(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)?value.replace(' ','T')+'Z':value):issuedAt
  return Number.isNaN(date.getTime())?'Chưa xác định':new Intl.DateTimeFormat('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'numeric'}).format(date)
 }
+/**
+ * Reconcile an in-progress mobile draft against the current Cloud finance ledger.
+ * The saved Cloud order can be one version behind while draft.save waits for the
+ * Windows owner. Recalculate only the order side; never reset finance history.
+ */
+export function draftSlipFinance(order:any,items:any[],contact:any,finance:any){
+ const integer=(value:unknown,label:string)=>{const n=Number(value);if(!Number.isSafeInteger(n)||n<0)throw Error(label+' không hợp lệ.');return BigInt(n)}
+ if(!order||!Array.isArray(items)||items.length<1||items.length>100)throw Error('Bản nháp không có danh sách sản phẩm hợp lệ.')
+ if(finance?.orderId!==undefined&&finance.orderId!==order.id)throw Error('Sổ tiền không thuộc đơn đang xuất phiếu.')
+ if(finance?.orderVersion!==undefined&&finance.orderVersion!==order.version)throw Error('Đơn đã thay đổi. Đọc lại trước khi tạo phiếu.')
+ const subtotal=items.reduce((sum,item)=>sum+integer(item?.unit_price,'Giá bán'),0n)
+ const shipping=integer(contact?.shipping_fee??0,'Phí ship')
+ const discount=integer(order.discount??0,'Giảm giá')
+ const credit=integer(finance?.credit??0,'Điều chỉnh giảm')
+ const collected=integer(finance?.netCollected??0,'Tiền đã thu')
+ const payable=subtotal+shipping-discount
+ const adjusted=payable-credit
+ const max=BigInt(Number.MAX_SAFE_INTEGER)
+ if(payable<0n||adjusted<0n||payable>max||adjusted>max)throw Error('Tổng đơn vượt giới hạn hoặc giảm giá/điều chỉnh không hợp lệ.')
+ // Match assertFinanceEdit(): never export a draft below money already retained.
+ if(adjusted<collected)throw Error('Giá trị bản nháp thấp hơn tiền đã thu/điều chỉnh. Đối soát tiền trước khi xuất phiếu.')
+ const due=adjusted-collected
+ return {...finance,originalTotal:Number(payable),adjustedTotal:Number(adjusted),due:Number(due),refundDue:0}
+}
 export function slipModel(order:any,items:any[],contact:any,finance:any,date:string):SlipModel{
  const subtotal=items.reduce((n,i)=>n+Number(i.unit_price),0),shipping=Number(contact?.shipping_fee||0),discount=Number(order.discount||0)+Number(finance.credit||0),collected=Number(finance.netCollected),due=Number(finance.due),refundDue=Number(finance.refundDue||0)
  if([subtotal,shipping,discount,collected,due,refundDue].some(n=>!Number.isSafeInteger(n)||n<0)||subtotal+shipping-discount!==Number(finance.adjustedTotal)||due!==Math.max(0,subtotal+shipping-discount-collected))throw Error('Số tiền đơn đã thay đổi. Đọc lại đơn trước khi tạo phiếu.')
