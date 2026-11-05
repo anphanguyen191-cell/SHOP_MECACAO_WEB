@@ -93,8 +93,8 @@ jobs:
               'hoặc ghi nhận giao dịch tiền.'
               '</div>'
           )
-          html = html.replace("<head>", '<head>\\n<meta name="robots" content="noindex,nofollow">', 1)
-          html = html.replace("<body>", "<body>\\n" + banner, 1)
+          html = html.replace("<head>", "<head>" + chr(10) + '<meta name="robots" content="noindex,nofollow">', 1)
+          html = html.replace("<body>", "<body>" + chr(10) + banner, 1)
           page.write_text(html, encoding="utf-8")
           PY
 
@@ -127,7 +127,7 @@ jobs:
         with:
           script: |
             const number = context.issue.number;
-            const base = process.env.PAGES_URL;
+            const rawBase = process.env.PAGES_URL;\n            const base = rawBase.endsWith('/') ? rawBase : rawBase + '/';
             const url = `${base}pr-preview/pr-${number}/?cloud=1`;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
