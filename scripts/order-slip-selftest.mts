@@ -9,7 +9,7 @@ const draftOrder={...order,version:7,discount:17000},draftContact={...contact,sh
 const draftFinance=draftSlipFinance(draftOrder,items,draftContact,{orderId:order.id,orderVersion:7,version:4,credit:10000,netCollected:100000,adjustedTotal:300000,due:200000,refundDue:0})
 assert.equal(draftFinance.originalTotal,325000,'Pending draft uses its own subtotal, shipping and discount')
 assert.equal(draftFinance.adjustedTotal,315000,'Existing Cloud credit remains applied')
-assert.equal(draftFinance.due,215000,'Current Cloud collections are reconciled against the pending draft');assert.equal(draftFinance.credit,10000,'Existing Cloud credits are preserved');assert.equal(draftFinance.netCollected,100000,'Existing Cloud collections are preserved');assert.equal(draftFinance.version,4,'Cloud finance version is not rewritten')
+assert.equal(draftFinance.due,215000,'Current Cloud collections are reconciled against the pending draft');assert.equal(draftFinance.credit,10000,'Existing Cloud credits are preserved');assert.equal(draftFinance.netCollected,100000,'Existing Cloud collections are preserved');assert.equal(draftFinance.version,4,'Cloud finance version is not rewritten');assert.equal(draftFinance.refundDue,0,'Draft preview does not create a refund ledger amount')
 const draftModel=slipModel(draftOrder,items,draftContact,draftFinance,'13/10/2026')
 assert.equal(draftModel.discount,27000);assert.equal(draftModel.due,215000)
 assert.throws(()=>draftSlipFinance({...draftOrder,discount:220000},items,{...draftContact,shipping_fee:0},{orderId:order.id,orderVersion:7,version:4,credit:0,netCollected:100000}),/thấp hơn tiền đã thu/)
