@@ -32,3 +32,5 @@ const refund=slipModel(order,items,contact,{...finance,netCollected:350000,due:0
 console.log('PASS order slip: money reconciliation, stale data rejection, Vietnam date, proportional images, 4-item numbering, long contact/name wrapping, cross-page numbering and refund visibility')
 
 // No-op marker: retrigger the mobile PR preview workflow after its setup.
+
+// Trigger the preview rebuild with the corrected Pages service-worker routing.
