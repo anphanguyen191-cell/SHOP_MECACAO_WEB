@@ -1,0 +1,72 @@
+name: Publish Shop Mẹ CaCao mobile PR preview
+on:
+  workflow_run:
+    workflows: ["Mobile draft PNG preview"]
+    types: [completed]
+    branches: [fix/mobile-draft-png-snapshot-20261105]
+
+permissions:
+  actions: read
+  contents: read
+  pages: write
+  id-token: write
+  pull-requests: write
+  deployments: write
+
+concurrency:
+  group: mobile-pr-preview-fast-publish
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download the verified preview and unchanged main site
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          run-id: ${{ github.event.workflow_run.id }}
+          path: site
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload preview bundle
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+          name: mobile-pr-preview
+
+      - name: Publish the iPhone preview path
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: mobile-pr-preview
+
+      - name: Comment the mobile preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prs = context.payload.workflow_run.pull_requests || [];
+            const number = prs[0]?.number || 4;
+            const rawBase = process.env.PAGES_URL;
+            const base = rawBase.endsWith('/') ? rawBase : rawBase + '/';
+            const url = `${base}pr-preview/pr-${number}/?cloud=1`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: number,
+              body: [
+                'Mobile preview đã được xuất bản:',
+                url,
+                '',
+                'Bản thử tách giao diện, dùng chung dữ liệu Cloud thật. Chỉ thử đơn nháp; không xác nhận SOLD hoặc ghi nhận giao dịch tiền.'
+              ].join(String.fromCharCode(10))
+            });
+        env:
+          PAGES_URL: ${{ steps.deployment.outputs.page_url }}
