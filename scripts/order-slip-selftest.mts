@@ -30,3 +30,5 @@ const long=renderOrderSlip(canvas,banner,[{...items[0],product_name:'Tên sản 
 assert.equal(long.numberedFrom,9);assert.equal(long.numberedTo,9);assert(text.includes('9'));assert(text.includes('9 bộ · Trang 2/2'));assert(long.height>normal.height)
 const refund=slipModel(order,items,contact,{...finance,netCollected:350000,due:0,refundDue:50000},'13/10/2026');renderOrderSlip(canvas,banner,items,images,refund,0,4,1,1);assert(text.includes('Cần hoàn lại:'))
 console.log('PASS order slip: money reconciliation, stale data rejection, Vietnam date, proportional images, 4-item numbering, long contact/name wrapping, cross-page numbering and refund visibility')
+
+// No-op marker: retrigger the mobile PR preview workflow after its setup.
