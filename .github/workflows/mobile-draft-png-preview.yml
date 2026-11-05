@@ -1,0 +1,144 @@
+name: Mobile draft PNG preview
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize, edited]
+    paths:
+      - 'apps/web/src/CloudOrderEditor.tsx'
+      - 'apps/web/src/CloudOrders.tsx'
+      - 'apps/web/src/CloudOrderSlip.tsx'
+      - 'apps/api/src/orderSlipLayout.ts'
+      - 'scripts/order-slip-selftest.mts'
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  contents: read
+  pull-requests: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: mobile-draft-png-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out current production source
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main-src
+
+      - name: Check out proposed mobile draft fix
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: preview-src
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build unchanged main website for the root URL
+        working-directory: main-src
+        run: |
+          npm ci
+          npm run build
+        env:
+          VITE_SHOP_RELEASE_CHANNEL: STABLE
+
+      - name: Stage the unchanged production website
+        run: |
+          mkdir -p site
+          cp -a main-src/apps/web/dist/. site/
+          touch site/.nojekyll
+
+      - name: Build and test the proposed version
+        working-directory: preview-src
+        run: |
+          npm ci
+          npm run build
+          npm run typecheck
+          npm run test:cloud
+        env:
+          VITE_SHOP_RELEASE_CHANNEL: PREVIEW
+
+      - name: Stage the separate PR preview URL
+        env:
+          PREVIEW_DIR: site/pr-preview/pr-${{ github.event.pull_request.number }}
+        run: |
+          mkdir -p "$PREVIEW_DIR"
+          cp -a preview-src/apps/web/dist/. "$PREVIEW_DIR/"
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+
+          page = Path(os.environ["PREVIEW_DIR"]) / "index.html"
+          html = page.read_text(encoding="utf-8")
+          banner = (
+              '<div style="position:sticky;top:0;z-index:999999;'
+              'padding:9px 12px;text-align:center;'
+              'background:#fff0c2;color:#6d4300;'
+              'border-bottom:1px solid #e6c56a;'
+              'font:700 12px/1.45 system-ui,sans-serif">'
+              'BẢN KIỂM THỬ PR #4 · GIAO DIỆN RIÊNG, NHƯNG DỮ LIỆU CLOUD '
+              'VẪN LÀ DỮ LIỆU SHOP THẬT. Chỉ thử đơn nháp; không xác nhận SOLD '
+              'hoặc ghi nhận giao dịch tiền.'
+              '</div>'
+          )
+          html = html.replace("<head>", '<head>\\n<meta name="robots" content="noindex,nofollow">', 1)
+          html = html.replace("<body>", "<body>\\n" + banner, 1)
+          page.write_text(html, encoding="utf-8")
+          PY
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload production plus isolated preview path
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+          name: github-pages
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+      pull-requests: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Add the mobile preview link to this PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const number = context.issue.number;
+            const base = process.env.PAGES_URL;
+            const url = `${base}pr-preview/pr-${number}/?cloud=1`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: number,
+              body: [
+                'Mobile preview đã được deploy (bản root vẫn build từ main):',
+                url,
+                '',
+                'Lưu ý: preview dùng cùng tài khoản và dữ liệu Cloud/Supabase thật. Chỉ thử trên đơn nháp thử; không xác nhận SOLD hoặc ghi nhận giao dịch tiền.'
+              ].join('\\n')
+            });
+        env:
+          PAGES_URL: ${{ steps.deployment.outputs.page_url }}
