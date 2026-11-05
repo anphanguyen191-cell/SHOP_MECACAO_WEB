@@ -127,7 +127,8 @@ jobs:
         with:
           script: |
             const number = context.issue.number;
-            const rawBase = process.env.PAGES_URL;\n            const base = rawBase.endsWith('/') ? rawBase : rawBase + '/';
+            const rawBase = process.env.PAGES_URL;
+            const base = rawBase.endsWith('/') ? rawBase : rawBase + '/';
             const url = `${base}pr-preview/pr-${number}/?cloud=1`;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
@@ -138,7 +139,7 @@ jobs:
                 url,
                 '',
                 'Lưu ý: preview dùng cùng tài khoản và dữ liệu Cloud/Supabase thật. Chỉ thử trên đơn nháp thử; không xác nhận SOLD hoặc ghi nhận giao dịch tiền.'
-              ].join('\\n')
+              ].join(String.fromCharCode(10))
             });
         env:
           PAGES_URL: ${{ steps.deployment.outputs.page_url }}
