@@ -34,3 +34,5 @@ console.log('PASS order slip: money reconciliation, stale data rejection, Vietna
 // No-op marker: retrigger the mobile PR preview workflow after its setup.
 
 // Trigger the preview rebuild with the corrected Pages service-worker routing.
+
+// Retry preview after correcting the Pages worker-exclusion workflow syntax.
