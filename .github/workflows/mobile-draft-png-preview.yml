@@ -58,6 +58,22 @@ jobs:
         with:
           node-version: 22
 
+      - name: Exclude the nested preview URL from the production PWA fallback
+        working-directory: main-src
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("apps/web/vite.config.ts")
+          s = p.read_text(encoding="utf-8")
+          needle = "      registerType: 'prompt',"
+          patch = needle + "\\n      workbox: {navigateFallbackDenylist: [/\\\\/pr-preview\\\\//]},"
+          if "navigateFallbackDenylist" not in s:
+              if needle not in s:
+                  raise SystemExit("Could not locate VitePWA registerType setting")
+              s = s.replace(needle, patch, 1)
+              p.write_text(s, encoding="utf-8")
+          PY
+
       - name: Build unchanged main website for the root URL
         working-directory: main-src
         run: |
