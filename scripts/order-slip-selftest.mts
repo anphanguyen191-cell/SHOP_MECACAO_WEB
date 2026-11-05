@@ -9,7 +9,7 @@ const draftOrder={...order,version:7,discount:17000},draftContact={...contact,sh
 const draftFinance=draftSlipFinance(draftOrder,items,draftContact,{orderId:order.id,orderVersion:7,version:4,credit:10000,netCollected:100000,adjustedTotal:300000,due:200000,refundDue:0})
 assert.equal(draftFinance.originalTotal,325000,'Pending draft uses its own subtotal, shipping and discount')
 assert.equal(draftFinance.adjustedTotal,315000,'Existing Cloud credit remains applied')
-assert.equal(draftFinance.due,215000,'Current Cloud collections are reconciled against the pending draft')
+assert.equal(draftFinance.due,215000,'Current Cloud collections are reconciled against the pending draft');assert.equal(draftFinance.credit,10000,'Existing Cloud credits are preserved');assert.equal(draftFinance.netCollected,100000,'Existing Cloud collections are preserved');assert.equal(draftFinance.version,4,'Cloud finance version is not rewritten')
 const draftModel=slipModel(draftOrder,items,draftContact,draftFinance,'13/10/2026')
 assert.equal(draftModel.discount,27000);assert.equal(draftModel.due,215000)
 assert.throws(()=>draftSlipFinance({...draftOrder,discount:220000},items,{...draftContact,shipping_fee:0},{orderId:order.id,orderVersion:7,version:4,credit:0,netCollected:100000}),/thấp hơn tiền đã thu/)
@@ -31,8 +31,5 @@ assert.equal(long.numberedFrom,9);assert.equal(long.numberedTo,9);assert(text.in
 const refund=slipModel(order,items,contact,{...finance,netCollected:350000,due:0,refundDue:50000},'13/10/2026');renderOrderSlip(canvas,banner,items,images,refund,0,4,1,1);assert(text.includes('Cần hoàn lại:'))
 console.log('PASS order slip: money reconciliation, stale data rejection, Vietnam date, proportional images, 4-item numbering, long contact/name wrapping, cross-page numbering and refund visibility')
 
-// No-op marker: retrigger the mobile PR preview workflow after its setup.
 
-// Trigger the preview rebuild with the corrected Pages service-worker routing.
 
-// Retry preview after correcting the Pages worker-exclusion workflow syntax.
