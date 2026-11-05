@@ -12,6 +12,18 @@ on:
       - 'scripts/order-slip-selftest.mts'
       - 'package.json'
       - 'package-lock.json'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: GitHub pull request number
+        required: true
+        default: '4'
+        type: string
+      preview_ref:
+        description: Branch or commit to build
+        required: true
+        default: 'fix/mobile-draft-png-snapshot-20261105'
+        type: string
 
 permissions:
   contents: read
@@ -20,7 +32,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: mobile-draft-png-preview-${{ github.event.pull_request.number }}
+  group: mobile-draft-png-preview-${{ github.event.pull_request.number || inputs.pr_number }}
   cancel-in-progress: true
 
 jobs:
@@ -38,7 +50,7 @@ jobs:
       - name: Check out proposed mobile draft fix
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || inputs.preview_ref }}
           path: preview-src
 
       - name: Set up Node.js
@@ -72,7 +84,8 @@ jobs:
 
       - name: Stage the separate PR preview URL
         env:
-          PREVIEW_DIR: site/pr-preview/pr-${{ github.event.pull_request.number }}
+          PREVIEW_DIR: site/pr-preview/pr-${{ github.event.pull_request.number || inputs.pr_number }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
         run: |
           mkdir -p "$PREVIEW_DIR"
           cp -a preview-src/apps/web/dist/. "$PREVIEW_DIR/"
@@ -88,7 +101,7 @@ jobs:
               'background:#fff0c2;color:#6d4300;'
               'border-bottom:1px solid #e6c56a;'
               'font:700 12px/1.45 system-ui,sans-serif">'
-              'BẢN KIỂM THỬ PR #4 · GIAO DIỆN RIÊNG, NHƯNG DỮ LIỆU CLOUD '
+              f'BẢN KIỂM THỬ PR #{os.environ["PR_NUMBER"]} · GIAO DIỆN RIÊNG, NHƯNG DỮ LIỆU CLOUD '
               'VẪN LÀ DỮ LIỆU SHOP THẬT. Chỉ thử đơn nháp; không xác nhận SOLD '
               'hoặc ghi nhận giao dịch tiền.'
               '</div>'
@@ -123,6 +136,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: Add the mobile preview link to this PR
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
