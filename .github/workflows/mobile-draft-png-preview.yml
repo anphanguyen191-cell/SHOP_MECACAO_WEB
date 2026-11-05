@@ -66,7 +66,7 @@ jobs:
           p = Path("apps/web/vite.config.ts")
           s = p.read_text(encoding="utf-8")
           needle = "      registerType: 'prompt',"
-          patch = needle + "\n      workbox: {navigateFallbackDenylist: [/\/SHOP_MECACAO_WEB\/pr-preview\//]},
+          patch = needle + "\n      workbox: {navigateFallbackDenylist: [new RegExp('/SHOP_MECACAO_WEB/pr-preview/')]},
           if "navigateFallbackDenylist" not in s:
               if needle not in s:
                   raise SystemExit("Could not locate VitePWA registerType setting")
