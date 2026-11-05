@@ -25,6 +25,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
+      // The production PWA must not serve the main app shell for the nested PR preview.
+      workbox: {navigateFallbackDenylist: [new RegExp('/SHOP_MECACAO_WEB/pr-preview/')]},
       includeAssets: [],
       manifest: {
         name: 'Shop Mẹ CaCao',
